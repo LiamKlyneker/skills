@@ -16,7 +16,7 @@ Pick the register before drafting. If unclear, ask.
 | Register | When to use | Signature moves |
 |---|---|---|
 | **1. Narrative-technical** | Blog posts, articles, long-form published content. | Tells tech as memoir: the "whys", trial and error, sleepless nights. Chapter framing. Ends with a signoff like `Till further notice ✋` or `¡Y bueno!`. |
-| **2. Slack-work** | Team Slack messages — PR announcements, status updates, process suggestions, deploys, heads-ups. | Dash-sectioned (`– Commits Format –`), occasional parentheticals, tagged teammates, `:wave:` openers, `:hand:` signoff on long posts only. |
+| **2. Slack-work** | Team Slack messages — PR announcements, status updates, process suggestions, deploys, heads-ups. | Flows as paragraphs (no section titles, even when multi-topic), occasional parentheticals, tagged teammates, `:wave:` openers, `:hand:` signoff on long posts only. |
 | **3. Casual-conversational** | Replies to friends, chats, photo comments, off-the-cuff takes. | Lowercase starts (`hahahahah yes`), ellipses as breath, end-of-thought emoji (`:joy:`). No signoff. |
 | **4. Personal-reflective** | Journal-style notes, diary entries, travel musings. | Starts with `So…` or `Well…`. Lots of ellipses. Self-questioning (`butterflies?`). Introspective pacing. |
 
@@ -54,14 +54,16 @@ These are features, not bugs. Every one of them is attested in `references/liam-
 
 4. **Do not sanitize non-native English rhythms.** They are part of the voice, not defects.
 
-5. **Do not impose corporate structure.** Headers, bullet lists, formal sections — only use when Liam would naturally use them (his Slack PR announcements use dashed section headers `– Commits Format –`, his blog posts use prose-heavy structure). Avoid defaulting to "corporate assistant" formatting.
+5. **Do not impose corporate structure.** Headers, bullet lists, formal sections — only use when Liam would naturally use them (his blog posts can use H2/H3 chapter framing; his Slack messages flow as paragraphs without titles). Avoid defaulting to "corporate assistant" formatting.
+
+6. **Section titles / dashed headers (`– Section –`) are for LONG ARTICLES ONLY.** Slack messages flow as paragraphs, not labeled sections — even when multi-topic. If you find yourself reaching for a header to introduce a paragraph, drop the header and let the paragraph break do the work. Long Slack posts can absolutely be multi-paragraph; they just don't get titles. This is a hard rule Liam gave explicitly.
 
 ## Register-picking decision guide
 
 Ask yourself:
 
 - Is this a **short message** (under ~3 sentences, quick heads-up, quick reply)? → Register 2 or 3. **No signoff. No em-dashes.** Ellipses and commas as pauses.
-- Is this a **long team-facing Slack post** (PR announcement, process change, deploy)? → Register 2. Use dashed section headers if multi-topic. `Till further notice :hand:` at the end IS appropriate here.
+- Is this a **long team-facing Slack post** (PR announcement, process change, deploy)? → Register 2. Multi-paragraph is fine; **no section titles** (no headers, no `– Section –` dashes — let paragraph breaks do the work). `Till further notice :hand:` at the end IS appropriate here.
 - Is this a **blog post / article / published piece**? → Register 1. Narrative-technical. Memoir framing. Signoff with `Till further notice ✋` or `¡Y bueno!`. Em-dashes OK if natural.
 - Is this a **casual reply to a friend or group**? → Register 3. Lowercase, emoji, no signoff.
 - Is this a **personal / reflective note**? → Register 4. Start with `So…` or `Well…`. Introspective pacing, lots of ellipses.
