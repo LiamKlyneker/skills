@@ -5,8 +5,6 @@ description: Break a plan, spec, or PRD into independently-grabbable issues on t
 
 # To Issues
 
-_Inspired by Matt Pocock's `to-issues` skill, adjusted for my own workflow._
-
 Break a plan into independently-grabbable issues using vertical slices (tracer bullets).
 
 The issue tracker and triage label vocabulary should have been provided in context — ask the user to share them if not.

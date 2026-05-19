@@ -3,8 +3,6 @@ name: to-prd
 description: Turn the current conversation context into a PRD and publish it to the project issue tracker. Use when user wants to create a PRD from the current context.
 ---
 
-_Inspired by Matt Pocock's `to-prd` skill, adjusted for my own workflow._
-
 This skill takes the current conversation context and codebase understanding and produces a PRD. Do NOT interview the user — just synthesize what you already know.
 
 The issue tracker and triage label vocabulary should have been provided in context — ask the user to share them if not.
