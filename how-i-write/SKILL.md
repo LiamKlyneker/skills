@@ -1,6 +1,6 @@
 ---
 name: how-i-write
-description: Draft text in Liam's personal writing voice. Use when Liam asks to draft, write, compose, or rephrase a Slack message, PR announcement, blog post, article, status update, README blurb, job-form answer, vacation message, or any text he'll send under his name. Matches his voice tics — ellipses-as-breath, self-deprecating parentheticals, storytelling frame for technical content, `:hand:` signoff reserved for long-form only.
+description: Draft text in Liam's personal writing voice. Use when Liam asks to draft, write, compose, or rephrase a Slack message, PR announcement, blog post, article, status update, README blurb, job-form answer, vacation message, or any text he'll send under his name. Matches his voice tics — ellipses-as-breath, self-deprecating parentheticals, storytelling frame for technical content, `Till further notice ✋` signoff reserved strictly for published articles and vacation/away messages.
 ---
 
 # How Liam writes
@@ -16,7 +16,7 @@ Pick the register before drafting. If unclear, ask.
 | Register | When to use | Signature moves |
 |---|---|---|
 | **1. Narrative-technical** | Blog posts, articles, long-form published content. | Tells tech as memoir: the "whys", trial and error, sleepless nights. Chapter framing. Ends with a signoff like `Till further notice ✋` or `¡Y bueno!`. |
-| **2. Slack-work** | Team Slack messages — PR announcements, status updates, process suggestions, deploys, heads-ups. | Flows as paragraphs (no section titles, even when multi-topic), occasional parentheticals, tagged teammates, `:wave:` openers, `:hand:` signoff on long posts only. |
+| **2. Slack-work** | Team Slack messages — PR announcements, status updates, process suggestions, deploys, heads-ups. Also ticket comments, code review replies, anything that reads as an "instant" team-facing reply. | Flows as paragraphs (no section titles, even when multi-topic), occasional parentheticals, tagged teammates, `:wave:` openers. **No signoff** — these are instant-reply messages, they just end. |
 | **3. Casual-conversational** | Replies to friends, chats, photo comments, off-the-cuff takes. | Lowercase starts (`hahahahah yes`), ellipses as breath, end-of-thought emoji (`:joy:`). No signoff. |
 | **4. Personal-reflective** | Journal-style notes, diary entries, travel musings. | Starts with `So…` or `Well…`. Lots of ellipses. Self-questioning (`butterflies?`). Introspective pacing. |
 
@@ -48,7 +48,7 @@ These are features, not bugs. Every one of them is attested in `references/liam-
 
 1. **Em-dashes (`—`) are RARE.** Only use them in long-form articles where they land naturally in context. **NEVER** use em-dashes in short Slack messages, quick updates, or casual replies — use ellipses (`...`) or commas instead. This is a hard rule Liam gave explicitly.
 
-2. **The signoff `Till further notice ✋` / `til further notice :hand:` is for LONG-FORM ONLY.** Acceptable on: published articles, detailed PR announcements, end-of-initiative wrap-ups, vacation/away messages. **NEVER** on short updates, quick heads-ups, or brief Slack messages — those should just end naturally without a signoff. Another hard rule Liam gave explicitly.
+2. **The signoff `Till further notice ✋` / `til further notice :hand:` is STRICTLY for published articles and vacation/away messages.** That's it. **NEVER** use it on Slack messages of any length, PR announcements, deploy heads-ups, status updates, ticket comments, code review replies, or anything else that functions as an "instant" team-facing reply — even the long multi-paragraph ones. Those should just end naturally, no signoff. The signoff frames a piece as a published work or an absence notice; everything else is conversation and shouldn't borrow that frame. Hard rule Liam gave explicitly.
 
 3. **Storytelling frame over tutorial frame for technical content.** Include the "whys", the trial and error, the texture. No sterile step-by-step unless specifically requested.
 
@@ -63,8 +63,9 @@ These are features, not bugs. Every one of them is attested in `references/liam-
 Ask yourself:
 
 - Is this a **short message** (under ~3 sentences, quick heads-up, quick reply)? → Register 2 or 3. **No signoff. No em-dashes.** Ellipses and commas as pauses.
-- Is this a **long team-facing Slack post** (PR announcement, process change, deploy)? → Register 2. Multi-paragraph is fine; **no section titles** (no headers, no `– Section –` dashes — let paragraph breaks do the work). `Till further notice :hand:` at the end IS appropriate here.
+- Is this a **long team-facing Slack post or ticket comment** (PR announcement, process change, deploy, handoff)? → Register 2. Multi-paragraph is fine; **no section titles** (no headers, no `– Section –` dashes — let paragraph breaks do the work). **No signoff** — this is still an instant-reply context, just end the message naturally.
 - Is this a **blog post / article / published piece**? → Register 1. Narrative-technical. Memoir framing. Signoff with `Till further notice ✋` or `¡Y bueno!`. Em-dashes OK if natural.
+- Is this a **vacation / away / I'm-offline message**? → Register 2 with the `Till further notice :hand:` signoff (this and articles are the only places it belongs).
 - Is this a **casual reply to a friend or group**? → Register 3. Lowercase, emoji, no signoff.
 - Is this a **personal / reflective note**? → Register 4. Start with `So…` or `Well…`. Introspective pacing, lots of ellipses.
 
@@ -84,7 +85,9 @@ When in doubt about register, ask Liam.
 > "¡Y bueno! That's the first part of my experience building UI libraries for my team. In the next chapter, I'll dive deeper into the specifics of the library itself... For now, that's about it. Till further notice ✋."
 
 **Register 2 — Slack-work (PR announcement):**
-> "@channel there are 2 PRs in GrimmeUI that need to be merge before you keep using the lib, more details on each PR... This PR tho, introduces a 'mini' breaking change for the ones that are already using the current version... the change is very very veeeery simple... And that's it from me... til further notice :hand:"
+> "@channel there are 2 PRs in GrimmeUI that need to be merge before you keep using the lib, more details on each PR... This PR tho, introduces a 'mini' breaking change for the ones that are already using the current version... the change is very very veeeery simple... And that's it from me, lmk if anything :slightly_smiling_face:"
+>
+> Note: older archive samples sometimes end PR announcements with `til further notice :hand:` — that pattern is **deprecated**. The signoff is now reserved for articles and vacation messages only. Current PR announcements just end naturally.
 
 **Register 2 — Slack-work (short heads-up, no signoff, no em-dash):**
 > "Hey @channel :wave:, quick heads up... pushing a fix tomorrow for the date picker, there were some edge cases causing filthy bugs when using it with react-hook-form. Nothing breaking, just a drop-in fix, so once is merged you can bump the version and keep going as usual."
