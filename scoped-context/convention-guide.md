@@ -47,6 +47,22 @@ How the pieces fit together. Data flow direction, key abstractions, component co
 Patterns specific to this area that differ from or extend the project-wide patterns in CLAUDE.md.
 ```
 
+## Design reference (for pages built from a visual design)
+
+A page's `CONTEXT.md` can carry a `## Design reference` table pointing at the design node(s) that are its visual source of truth. This is the durable home `verify-ui` reads from; populate it when a UI feature ships (acceptance criterion on UI issues).
+
+```markdown
+## Design reference
+
+> ⚠️ Design nodes live in a file we don't control — designers may reorganize. Validate before trusting.
+
+| Area | Design node | Node name | Verified |
+|------|-------------|-----------|----------|
+| Manage Photos modal | <url#node-id> | "Manage Photos / Modal" | 2026-05-28 |
+```
+
+**Staleness hard-stop:** any skill consuming a node pointer must first validate it via the design tool's MCP (`get_metadata`). If the node 404s **or** its live name no longer matches the recorded `Node name`, STOP and ask for a fresh URL — never build or verify against a drifted node. The `Node name` is the anchor; the `Verified` date is the staleness signal.
+
 ## What NOT to Include
 
 - Full prop type definitions (TypeScript is the source of truth)

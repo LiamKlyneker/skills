@@ -55,6 +55,25 @@ A list of implementation decisions that were made. This can include:
 
 Do NOT include specific file paths or code snippets. They may end up being outdated very quickly.
 
+## UI Primitives
+
+Only for PRDs that implement a visual design. The component manifest agreed during the grill — every UI primitive the design needs, so `to-issues` can emit one issue per primitive that must be built or changed.
+
+| Primitive | Status | Home | API surface | Consumed by |
+|-----------|--------|------|-------------|-------------|
+| IconBadge | ❌ build | custom UI library | color, icon, size | feature cards |
+| Button | ⚠️ extend | component library | add solid variant | primary CTA |
+
+Status ∈ ✅ exists / ⚠️ extend-or-extract / ❌ build. Home ∈ component library (e.g. shadcn) / the project's custom UI library / new dependency. Omit this section (or write "None — no new/changed UI primitives") for non-visual PRDs.
+
+## Design reference
+
+The design node pointers recorded during the grill, so a cold implementation or verify session can find the target. Omit for non-visual PRDs.
+
+| Area | Design node | Node name |
+|------|-------------|-----------|
+| Edit dialog | <url#node-id> | "Edit / Options" |
+
 ## Migration risk
 
 A list of tables, RPC functions, or columns where this PRD requires an expand/contract migration (i.e. cannot be deployed atomically). For each entry, specify:

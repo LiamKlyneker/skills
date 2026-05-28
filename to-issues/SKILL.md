@@ -32,7 +32,10 @@ Break the plan into **tracer bullet** issues. Each issue is a thin vertical slic
   4. Bundled AC count would exceed ~5 (split on the most natural seam)
 - A completed issue lands as one PR to main. It does NOT need to be independently demoable in prod — partial-feature PRs are fine as long as prod stays unbroken.
 - Bundle schema + RPC + consumer together by default so prod is never half-wired. Only split when the PRD's `## Migration risk` section explicitly flags expand/contract.
+- **UI primitive exception (the one exception to bundling):** treat UI primitives as if they ship from a UI library. Each ⚠️/❌ row in the PRD's `## UI Primitives` section becomes its **own issue**, published first, and listed as `Blocked by` for every feature issue that consumes it. This is a deliberate horizontal slice — a primitive's API deserves isolated review so it doesn't get improvised inside a feature PR (the root cause of design drift). Trivial one-off styling tweaks stay bundled; this exception is scoped to *shared primitives that must be built or have their API changed/extracted*. Everything non-UI keeps the bundling rules above.
 </vertical-slice-rules>
+
+Read the PRD's `## UI Primitives` section if present. Emit one issue per ⚠️/❌ row (see the UI primitive exception in `<vertical-slice-rules>`), published ahead of and listed as `Blocked by` for the feature issues that consume them.
 
 Read the PRD's `## Migration risk` section if present. For each entry there:
 - If the PRD's `## Implementation Decisions` mentions removing/dropping the legacy column/RPC afterward, generate a 3-part split (expand → cutover → contract).
@@ -81,11 +84,21 @@ Or "None — fully implementable from the editor" if the issue requires no manua
 
 A concise description of this vertical slice. Describe the end-to-end behavior, not layer-by-layer implementation.
 
+## Design reference
+
+For UI issues only. Carry the design node(s) from the PRD's `## Design reference` so a cold implementation session has the target with no prior context. Omit for non-UI issues.
+
+| Area | Design node | Node name |
+|------|-------------|-----------|
+| <area> | <url#node-id> | "<node name>" |
+
 ## Acceptance criteria
 
 - [ ] Criterion 1
 - [ ] Criterion 2
 - [ ] Criterion 3
+- [ ] (UI issues) Implementation matches the design node 1:1
+- [ ] (UI issues) The node URL + name recorded in the page's `CONTEXT.md` `## Design reference` table
 
 ## Blocked by
 
