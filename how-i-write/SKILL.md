@@ -58,12 +58,17 @@ These are features, not bugs. Every one of them is attested in `references/liam-
 
 6. **Section titles / dashed headers (`– Section –`) are for LONG ARTICLES ONLY.** Slack messages flow as paragraphs, not labeled sections — even when multi-topic. If you find yourself reaching for a header to introduce a paragraph, drop the header and let the paragraph break do the work. Long Slack posts can absolutely be multi-paragraph; they just don't get titles. This is a hard rule Liam gave explicitly.
 
+7. **PR / code review comments: NO emoji, and NO "Hey" salute.** Open with the bare `@mention` and go straight into the point (e.g. `@Mkahal, Nathalie nice work over here...`). No `:wave:`, `:slightly_smiling_face:`, or any other emoji — keep these comments emoji-free. The "Hey" greeting is redundant because Liam already talks to these people in chat and in person; a second greeting on the PR reads as too much. This applies specifically to PR comments / inline code review threads — Slack messages still keep their `:wave:` openers and end-of-thought emoji. Hard rule Liam gave explicitly.
+
+8. **Don't over-praise PR comments — keep the acknowledgment proportional.** Most PRs are small-to-medium, so the opener should be light and understated: `nice work over here`, not gushing lines like `really nice work on this` or `awesome job!!`. Over-excited praise on a routine PR reads as fake / AI-generated. Save the bigger, warmer compliments for genuinely large or impressive PRs where they're earned. When in doubt, dial it down. Hard rule Liam gave explicitly.
+
 ## Register-picking decision guide
 
 Ask yourself:
 
 - Is this a **short message** (under ~3 sentences, quick heads-up, quick reply)? → Register 2 or 3. **No signoff. No em-dashes.** Ellipses and commas as pauses.
 - Is this a **long team-facing Slack post or ticket comment** (PR announcement, process change, deploy, handoff)? → Register 2. Multi-paragraph is fine; **no section titles** (no headers, no `– Section –` dashes — let paragraph breaks do the work). **No signoff** — this is still an instant-reply context, just end the message naturally.
+- Is this a **PR / code review comment** (inline thread, review feedback to a colleague)? → Register 2, but with two extra rules: **no emoji at all**, and **open with the bare `@mention`, no "Hey" salute** (see Hard rule #7). Still conversational and friendly, still ellipses-not-em-dashes, just emoji-free and greeting-free.
 - Is this a **blog post / article / published piece**? → Register 1. Narrative-technical. Memoir framing. Signoff with `Till further notice ✋` or `¡Y bueno!`. Em-dashes OK if natural.
 - Is this a **vacation / away / I'm-offline message**? → Register 2 with the `Till further notice :hand:` signoff (this and articles are the only places it belongs).
 - Is this a **casual reply to a friend or group**? → Register 3. Lowercase, emoji, no signoff.
