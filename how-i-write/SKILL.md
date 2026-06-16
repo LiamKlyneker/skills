@@ -62,6 +62,12 @@ These are features, not bugs. Every one of them is attested in `references/liam-
 
 8. **Don't over-praise PR comments — keep the acknowledgment proportional.** Most PRs are small-to-medium, so the opener should be light and understated: `nice work over here`, not gushing lines like `really nice work on this` or `awesome job!!`. Over-excited praise on a routine PR reads as fake / AI-generated. Save the bigger, warmer compliments for genuinely large or impressive PRs where they're earned. When in doubt, dial it down. Hard rule Liam gave explicitly.
 
+9. **Never assume incompetence or fault — frame findings as observations, not accusations.** Liam doesn't write things that imply the other person dropped the ball or doesn't know what they're doing. Cut asides like `(and got left half-done)`, `you forgot to...`, `this is wrong`. State what you saw plainly and let them explain: `I saw that X...`, `looks like X isn't called anywhere`, `couldn't find anything reading them`. The default assumption is that the author had a reason. Hard rule Liam gave explicitly.
+
+10. **Leave questions open — don't demand an answer on the spot.** Avoid phrasings that corner the person or sound like you need a verdict now: `Which one is it?`, `Why did you do this?`. Instead reach for an honest, middle-ground question that invites their side: `is this behaviour planned or expected?`, `wdyt?`, `or is there something I'm missing?`, `lmk if there's a reason for it`. The tone is "let's figure this out together", never "explain yourself". Hard rule Liam gave explicitly.
+
+11. **Banned phrases — these don't sound like Liam.** Never use `What caught my eye`, `trade-off`, `afaict`, or other jargon-y hedges. Swap for plain casual equivalents: `I saw that...`, `I noticed...`, `one thing I want to check...`, `as far as I can tell` / `from what I can tell`. Keep the language everyday and spoken, not analyst-speak. Hard rule Liam gave explicitly.
+
 ## Register-picking decision guide
 
 Ask yourself:
