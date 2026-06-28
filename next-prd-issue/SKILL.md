@@ -59,7 +59,11 @@ Apply rules in order:
 2. **One eligible issue** → recommend it.
 3. **Multiple eligible** → recommend the issue with the smallest `## External steps` list (less context-switching). Tie-break by lowest issue number (oldest first). Never batch — issues are already PR-sized after the `/to-issues` rewrite.
 
-### 6. Print the recommendation
+### 6. Judge model / effort / plan mode
+
+Read `../_shared/model-effort-heuristics.md` and apply it to the recommended issue. Produce three outputs: plan-mode y/n, model tier, effort. This is a downgrade detector against the operator's Opus-high default — flag loudly when it's safe to go lighter, otherwise confirm staying on the default. Speak in tiers; if exact model ids are needed, defer to `claude-api`. Hedge borderline calls.
+
+### 7. Print the recommendation
 
 Use this exact structure (omit empty sections):
 
@@ -88,13 +92,17 @@ Needs backfill (## External steps section missing — predates template change):
 Token-conscious note:
   <one to three lines explaining size/risk: e.g. "#244 spans lib/ai/ scaffolding, /api/chat refactor, and the collection chat builder — ~300+ LOC across 6 files. Plan accordingly.">
 
+Model/effort: <tier> · <effort>   (<downgrade from default | stay on default | borderline>)
+  Why: <matched signals from the heuristics — no score>
+Plan mode: <yes | optional> — <one-line reason>
+
 Suggested next step:
-  Enter plan mode and implement #<n>. After the PR merges and you've verified in prod, close the issue on GitHub and re-run /next-prd-issue.
+  Switch to the recommended model/effort if it differs from your current session, then enter plan mode and implement #<n>. After the PR merges and you've verified in prod, close the issue on GitHub and re-run /next-prd-issue.
 ```
 
-### 7. Stop here
+### 8. Stop here
 
-Do not enter plan mode. Do not begin implementation. Do not edit code. Do not close the issue. The user reads the recommendation and decides what to do.
+Do not enter plan mode. Do not begin implementation. Do not edit code. Do not close the issue. The user reads the recommendation (including the model/effort call) and decides what to do.
 
 ## Edge cases
 
@@ -111,4 +119,5 @@ Do not enter plan mode. Do not begin implementation. Do not edit code. Do not cl
 
 - Be extremely concise per `CLAUDE.md`. Sacrifice grammar for concision in the output.
 - Recommend plan mode before implementation — the user prefers it for non-trivial work.
+- Model/effort is a recommendation only, decided at pickup — never written back into the issue body (the lineup churns; see `../_shared/model-effort-heuristics.md`).
 - Never modify the PRD or any child issue from this skill.

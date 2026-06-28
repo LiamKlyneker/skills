@@ -5,7 +5,25 @@ description: Turn the current conversation context into a PRD and publish it to 
 
 This skill takes the current conversation context and codebase understanding and produces a PRD. Do NOT interview the user — just synthesize what you already know.
 
-The issue tracker and triage label vocabulary should have been provided in context — ask the user to share them if not.
+The issue tracker and triage label vocabulary should have been provided to you — run `/setup-matt-pocock-skills` if not.
+
+## Mode: CREATE vs UPDATE
+
+- **CREATE (default):** invoked with no issue reference → publish a brand-new PRD via the Process below and apply the `needs-triage` triage label.
+- **UPDATE:** invoked with an existing issue reference (number/URL/path) as an argument → **enrich that PRD in place** instead of creating a new one. This lets a fidelity PRD accrue detail across multiple grills — e.g. the AI-dialog grill appends to #314's sibling rather than spawning a fresh PRD.
+
+### UPDATE mode rules
+
+1. Fetch the issue and read its **full current body** first.
+2. Do a **section-aware, contract-preserving merge**: replace only the sections *this grill produced*; leave every other section **byte-intact**. Don't reflow, reorder, or re-tone untouched prose.
+3. **Never clobber the headings `to-issues` parses.** These are a downstream contract — `to-issues` reads them verbatim:
+   - `## Implementation Decisions`
+   - `## UI Primitives`
+   - `## Design reference`
+   - `## Migration risk`
+   When you update one, replace its **body in place under the exact heading text** — never rename, remove, duplicate, or change the level of these headings. If a contract heading doesn't exist yet and this grill produced content for it, insert it in template order.
+4. Sections are **append/replace by ownership**: tables like `## UI Primitives` and `## Design reference` accumulate **rows** (merge new rows in, don't drop existing ones unless this grill supersedes a specific row); narrative sections this grill owns are replaced wholesale. Anything outside this grill's scope is untouched.
+5. **Do not re-apply triage labels** in UPDATE mode — leave the issue's labels exactly as they are. (Only CREATE applies `needs-triage`.)
 
 ## Process
 
@@ -17,7 +35,7 @@ A deep module (as opposed to a shallow module) is one which encapsulates a lot o
 
 Check with the user that these modules match their expectations. Check with the user which modules they want tests written for.
 
-3. Write the PRD using the template below, then publish it to the project issue tracker. Apply the `needs-triage` triage label so it enters the normal triage flow.
+3. Write the PRD using the template below, then publish it to the project issue tracker. **(CREATE mode)** apply the `needs-triage` triage label so it enters the normal triage flow. **(UPDATE mode)** instead merge into the referenced issue per the UPDATE rules above and leave its labels untouched.
 
 <prd-template>
 
@@ -61,18 +79,18 @@ Only for PRDs that implement a visual design. The component manifest agreed duri
 
 | Primitive | Status | Home | API surface | Consumed by |
 |-----------|--------|------|-------------|-------------|
-| IconBadge | ❌ build | custom UI library | color, icon, size | feature cards |
-| Button | ⚠️ extend | component library | add solid variant | primary CTA |
+| IconBadge | ❌ build | luar-ui/ | color, icon, size | Editar-con-IA cards |
+| Button | ⚠️ extend | components/ui/ | add solid-green variant | Continuar CTA |
 
-Status ∈ ✅ exists / ⚠️ extend-or-extract / ❌ build. Home ∈ component library (e.g. shadcn) / the project's custom UI library / new dependency. Omit this section (or write "None — no new/changed UI primitives") for non-visual PRDs.
+Status ∈ ✅ exists / ⚠️ extend-or-extract / ❌ build. Home ∈ `components/ui` (shadcn) / `luar-ui` (custom) / new dependency. Omit this section (or write "None — no new/changed UI primitives") for non-visual PRDs.
 
 ## Design reference
 
-The design node pointers recorded during the grill, so a cold implementation or verify session can find the target. Omit for non-visual PRDs.
+The Figma node pointers recorded during the grill, so a cold implementation or verify session can find the target. Omit for non-visual PRDs.
 
-| Area | Design node | Node name |
-|------|-------------|-----------|
-| Edit dialog | <url#node-id> | "Edit / Options" |
+| Area | Figma node | Node name |
+|------|-----------|-----------|
+| Editar con IA dialog | <url#node-id> | "Edit with AI / Options" |
 
 ## Migration risk
 
