@@ -38,7 +38,7 @@ The `../_shared/` references inside the skills depend on this layout.
 
 ## 3. First run
 
-1. **Blank or token-less repo:** `/tokens-init <foundations-frame-url>` — seed with the foundations/style-guide frame (fallback: the most representative component). Then review the generated `tokens.css`, Tailwind mapping, and `.claude/skills/<repo>-ui/SKILL.md` — the profile is the contract for every future run; correcting it once is cheaper than correcting every build.
+1. **Blank or token-less repo:** `/tokens-init <foundations-frame-url> [<type-specimen-url>]` — seed with the foundations/style-guide frame, **plus the type specimen frame if the ramp lives on its own** (it usually does; a colors-only seed yields no typography). Fallback: the most representative component. Then review the generated `tokens.css`, Tailwind mapping, and `.claude/skills/<repo>-ui/SKILL.md` — the profile is the contract for every future run; correcting it once is cheaper than correcting every build.
 2. `/figma-component <component-node-url>` — first component. Expect the ❌-build path: nothing exists yet to reuse.
 3. **Round two — the real test:** a second component that *reuses* round-one tokens/primitives. This exercises the ✅/⚠️ resolution logic a blank repo can't.
 

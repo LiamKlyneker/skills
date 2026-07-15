@@ -88,7 +88,7 @@ It iterates **every mode**, not just `modes[0]` — light/dark is the common cas
 Same split as the color pass, both halves inside one `use_figma` call: **scope** from walking the seeds' TEXT nodes, **structure** from resolving each style. Load `/figma-use` first, then run this read-only script (verified working; creates and mutates nothing):
 
 ```js
-const seedIds = ['2:2', '31:2']; // from each URL's node-id — dash → colon
+const seedIds = ['<SEED_ID>', '<SEED_ID>']; // one per seed URL; node-id dash → colon ('31-2' → '31:2')
 const usedIds = new Set(), unstyled = [], seen = [];
 
 for (const seedId of seedIds) {
@@ -158,7 +158,7 @@ Text styles:
 | Used in a seed, `remote: true` | Library-backed | `getStyleByIdAsync` still resolved it — **emit it**, and note the origin. Unlike variables, this is not a dead end. |
 | In `localNames`, unused by any seed | Exists in the file, out of the seed's scope | Skip. Don't widen scope to the whole file. |
 | `textStyleId === figma.mixed` | One text node carrying several styles | **Report; never guess** which style is the specimen's subject. |
-| No `textStyleId` (`why: 'RAW'`) | Text with unbound font properties | **Usually the frame's own chrome** — section headers, swatch labels, spec captions — and expected on a documentation frame. **Report the count, never a row per node**; specimens run ~10:1 chrome to subject, so enumerating buries the five tokens that matter. It's a genuine hygiene finding on *component* nodes, which is `figma-component`'s job, not this skill's. |
+| No `textStyleId` (`why: 'RAW'`) | Text with unbound font properties | **Usually the frame's own chrome** — section headers, swatch labels, spec captions — and expected on a documentation frame. **Report the count, never a row per node** — a specimen is mostly chrome and the styled nodes are usually a small minority of it, so enumerating buries the handful of tokens that matter. It's a genuine hygiene finding on *component* nodes, which is `figma-component`'s job, not this skill's. |
 | `boundVariables` empty | Style's values are literal; no primitive tier beneath it | Emit as semantic with literal values, and **report the missing tier**. Do not invent primitives to sit under it. |
 | Zero text styles across all seeds | Seed has no type on it at all | Ask for a type specimen node (§2). Don't emit a color-only system silently. |
 
@@ -194,7 +194,7 @@ Batch ALL ambiguities into ONE question set with recommended answers (e.g. "`gre
 
 ```css
 :root {
-  --font-size-sm: 13px;          /* tier 1 — the `typography` collection */
+  --font-size-sm: 13px;          /* tier 1 — from the type-primitive collection */
   --font-line-height-sm: 18px;
 }
 
@@ -219,7 +219,7 @@ One utility, `text-label`, carrying size, line-height and weight together.
 
 - Token inventory table: Figma name → CSS var → Tailwind utility, grouped by tier, **with each semantic's alias target shown** — this table is where a collapsed tier becomes visible.
 - **Type ramp table**: Figma text style → Tailwind utility → font / size / line-height → **bound-to targets**. Same purpose as the alias column above — a style with an empty `Bound to` cell is a type token with no primitive under it, visible at a glance.
-- Gap/hygiene findings vs the designer contract (`../_shared/ui-standard.md`): e.g. "3 fills bound to raw hex, not variables". Report unstyled text **as a count** (`52 of 57 text nodes carry no text style — specimen chrome`), not as a list. Spacing/radius the seeds didn't scope in are the **accrual boundary, not a defect** — name them so the next component knows they're coming, don't treat them as a gap this run failed to fill.
+- Gap/hygiene findings vs the designer contract (`../_shared/ui-standard.md`): e.g. "3 fills bound to raw hex, not variables". Report unstyled text **as a count** (`<n> of <m> text nodes carry no text style — specimen chrome`), not as a list. Spacing/radius the seeds didn't scope in are the **accrual boundary, not a defect** — name them so the next component knows they're coming, don't treat them as a gap this run failed to fill.
 - **Harvest reconciliation findings** (from the tables in §3), each stated plainly rather than resolved silently:
   - alias targets pulled in from outside the seed's scope,
   - variables in the defs but absent from the local harvest (**library-backed — structure unknown**),
