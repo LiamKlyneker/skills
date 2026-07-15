@@ -27,50 +27,16 @@ When the task involves implementing from a Figma file or other visual design, do
 
 4. **Record the Figma node pointers.** For every distinct area/screen, capture the node **URL** and its **node name** (from `get_metadata`). These flow downstream into the PRD's `## Design reference` and, after build, into the page's `CONTEXT.md` `## Design reference` table — so a cold implementation/verify session can find the target with zero conversation context.
 
-## UI Primitive Manifest (HARD GATE — design tasks only)
+## Manifest gates (HARD GATES — design tasks only)
 
-After the variant table, before leaving design questions, build a manifest of **every** primitive the design needs. This is the step that prevents the recurring failure where a missing primitive gets **improvised inline** (e.g. a colored icon-badge rendered as ad-hoc Tailwind instead of a shared component), causing the implementation to drift from the design.
+Right after the variant table, build the **UI Primitive Manifest** and the **Token Manifest** per `../_shared/ui-manifests.md` — full classification rules (✅/⚠️/❌, "earn the abstraction" homes, never-improvise-a-token) and table formats live there. In this skill both run **interactively**: present each table back to the user and resolve every ⚠️/❌ row during the interview.
 
-For each primitive, classify it:
+Project specifics:
 
-- ✅ **exists as-is** — a shared `components/ui` or `luar-ui` primitive already matches.
-- ⚠️ **drifts / needs an API change** — covers two cases: (a) the primitive exists but its current API can't express the design (needs a new variant/state/prop), or (b) **brownfield**: it already exists *in the feature code* but as an inline/ad-hoc implementation that should be extracted into a shared primitive (e.g. an inline icon-badge → a shared `IconBadge`).
-- ❌ **must be built** — no primitive exists.
+- Resolve tokens via the project's Figma → code map (`building-luar-ui` when present, or a generated `<repo>-ui` profile skill) and its token definitions (`tailwind.config.js`). Watch the documented traps (e.g. `green-1` bright vs `green-2` dark; `ai`/AI Gradient → `bg-ai-gradient` / Button `variant="gradient"`).
+- Custom primitives' shared home is the project UI lib (e.g. `luar-ui/`); promote there only with a real second consumer.
+- Treat each ⚠️/❌ primitive as if it ships from a UI library — each becomes its own issue downstream (see the `to-issues` exception).
 
-For every ⚠️ and ❌ row, resolve **before the grill is "done"**:
-- **Home** — pick by *earning the abstraction*, not by reflex:
-  - `components/ui` (shadcn) — a standard primitive shadcn offers; install it rather than hand-rolling.
-  - `luar-ui/` (custom) — a genuinely reusable, **cross-feature** custom primitive. Only promote here once there's a real second consumer.
-  - colocated `_components/` — single-consumer for now; hasn't earned shared status yet. Default new bespoke UI here and bubble it up to `luar-ui/` only when a second consumer actually appears.
-  - a new dependency — last resort.
-- **API surface** — props, variants, states, sizes.
-- **Consumers** — which screens/cards use it.
+Both are **hard gates**: do not conclude the grill while any primitive or token row is unresolved.
 
-This is a **hard gate**: do not conclude the grill while any ⚠️/❌ primitive is unresolved. Treat UI primitives as if they ship from a UI library — each will become its own issue downstream (see the `to-issues` exception). Present the manifest back to the user as a table and get confirmation:
-
-| Primitive | Status | Home | API surface | Consumed by |
-|-----------|--------|------|-------------|-------------|
-| IconBadge | ❌ build | luar-ui/ | color, icon, size | Editar-con-IA cards |
-| Button | ⚠️ extend | components/ui/ | add solid-green variant | Continuar CTA |
-
-Only after the variant table, the Token Manifest, the UI Primitive Manifest, and the vertical-slice approach are agreed on should engineering questions (motion tech, perf gates, breakpoints, reduced-motion, etc.) begin.
-
-## Token Manifest (HARD GATE — design tasks only)
-
-Run this right after the variant table, alongside the UI Primitive Manifest. Where the Primitive Manifest catches improvised *components*, this catches improvised *tokens* — the other half of the design-drift failure (e.g. mistaking the dark brand color `green-2` for "a green fill", or inventing a raw Tailwind `gray-300` because no semantic token was checked).
-
-Build a manifest of **every** Figma variable/token the design uses and resolve each one to an **existing code token** before building:
-
-- **Never improvise a token.** If a Figma value has no brand equivalent, that is a finding to surface — not a license to drop in a raw palette class (`gray-300`, `slate-500`, an arbitrary hex).
-- Resolve via the `building-luar-ui` skill's **Figma → code map** and the project's token definitions (`tailwind.config.js`). Watch the documented traps (e.g. `green-1` bright vs `green-2` dark; `ai`/AI Gradient → `bg-ai-gradient` / Button `variant="gradient"`).
-- Any token that won't resolve gets a ⚠️ row and is raised to the user with options (closest semantic token, add a new token, or confirm it's intentional one-off) — decide together; don't silently invent.
-
-Present as a table and get confirmation:
-
-| Figma token | Code token | Status |
-|-------------|-----------|--------|
-| base/foreground | `foreground` | ✅ resolves |
-| AI Gradient | `bg-ai-gradient` / Button `variant="gradient"` | ✅ resolves |
-| gray-300 (raw) | — | ⚠️ no brand equivalent — flag, do not invent |
-
-This is a **hard gate**: do not conclude the grill while any token is unresolved.
+Only after the variant table, both manifests, and the vertical-slice approach are agreed on should engineering questions (motion tech, perf gates, breakpoints, reduced-motion, etc.) begin.
