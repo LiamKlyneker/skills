@@ -33,7 +33,8 @@ Naming mirrors Figma slash paths 1:1: `color/surface/primary` → `--color-surfa
 
 - CSF3 + autodocs (`tags: ['autodocs']`).
 - One story per variant/state axis, plus an `AllVariants` grid story for visual comparison.
-- Play-function interaction tests only where real behavior exists (open/close, keyboard).
+- Play-function interaction tests only where real behavior exists (open/close, keyboard) — **plus** a regression guard wherever a styling failure would be *silent* (computed size/weight on the type slots). Guarding a silent failure is not over-testing; it is the only thing that catches it.
+- Never assert a pseudo-state that an addon forces for display — it won't apply in the test runner. Real focus is assertable; synthetic hover is not. See `figma-component/references/render-verification.md`.
 - **Naming parity**: Figma property = component prop = story arg. A mismatch (`type` in code vs `variant` in Figma) breaks the single source of truth — it's a checkpoint question, never a silent rename.
 
 ## Designer contract (Figma hygiene checklist)

@@ -9,6 +9,19 @@ The official Figma MCP is the feed. Its noise problem is a *usage* problem — s
 3. **`get_screenshot`** — one per variant/state. Screenshots are the visual ground truth; capture them before generating any code.
 4. **`get_design_context`** — LAST, and only on small scoped frames (a single variant, never the whole set). If the response is huge or truncated, re-scope smaller instead of pushing on.
 
+## The binding read — what the four tools above can't tell you
+
+None of them answer the question the build actually turns on: **which variable is bound to which property, in which variant.**
+
+- `get_metadata` is **shallow**: names, types, positions, sizes. It does not recurse into a component set's variants' children, and it renders a `COMPONENT_SET` as `<frame>` — so the node you were handed can look like a plain frame when it isn't.
+- `get_variable_defs` is a **flat name→value map** for the selection. It says which tokens are in play, never where they land. It flattens alias chains, and returns code-syntax names (`var(--x)`) only for the variables that happen to have one set — so one call can mix `fg/default` and `var(--color-border-hover)`.
+
+So add one read-only `use_figma` script (load `/figma-use` first) that walks the set and resolves each node's `boundVariables` → variable **names**, plus `textStyleId` → style name, auto-layout, and per-node font size/LH. One call replaces N `get_design_context` calls and is the only source for the next rule.
+
+**Hard rule: resolve a fill by its bound variable name, never by matching the hex.** Design systems routinely alias two semantics onto one primitive — a focus ring and an accent fill both `#3b82f6`; a disabled surface and a subtle surface both `#f5f5f5`. Matching on value is a coin flip that silently collapses the tier.
+
+Gotcha: reading `componentPropertyDefinitions` on a **variant** child throws (`Can only get … of a component set or non-variant component`) — read it on the set, and guard the access.
+
 ## Treat output as intent, never final code
 
 `get_design_context` returns generated React + Tailwind. It is a *representation of the design*, not code to paste:
