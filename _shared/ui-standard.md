@@ -19,6 +19,8 @@ Implementation: CSS custom properties exposed through the Tailwind theme (v4 `@t
 
 Naming mirrors Figma slash paths 1:1: `color/surface/primary` → `--color-surface-primary` → `bg-surface-primary`.
 
+**Typography maps onto the same tiers, through different Figma objects.** A **text style** *is* the semantic tier (`heading/lg` → `text-heading-lg`, one utility carrying size + line-height + weight); the `font/size/*` and `font/lineHeight/*` variables its fields bind to are the primitives. Weight stays **literal** — Figma keeps it in `fontName.style`, bound to nothing, so tokenising it invents a tier the file doesn't have.
+
 **Hard rule:** no raw palette classes or hex in components. A value with no semantic token is a manifest finding (see `ui-manifests.md`), never an inline improvisation.
 
 ## Component conventions
@@ -38,7 +40,8 @@ Naming mirrors Figma slash paths 1:1: `color/surface/primary` → `--color-surfa
 
 What `figma-component`'s hygiene report measures a node against:
 
-- All colors/spacing/radius/typography bound to **variables** with semantic slash names (`color/surface/primary`, never `blue-500` or a raw hex). Code syntax set where the plan allows.
+- All colors/spacing/radius bound to **variables** with semantic slash names (`color/surface/primary`, never `blue-500` or a raw hex). Code syntax set where the plan allows.
+- **Typography bound to text styles** — *not* variables; a text style is a different object entirely. Role-based slash names (`heading/lg`, `body` — never `text-20`, which becomes a lie the day the size changes), with each style's `fontSize`/`lineHeight` bound to variables so the ramp has a primitive tier beneath it. Text carrying unbound font properties is the type equivalent of a raw hex fill.
 - **Auto layout** everywhere — spacing defined, not implied.
 - Component properties are code-friendly: lowercase variant values (`primary`, not `Primary`), boolean `is*`/`has*` states (`isDisabled`, not `State=Disabled`).
 - Layers named semantically (`PriceLabel`, not `Frame 42 copy`); 2–3 nesting levels max.

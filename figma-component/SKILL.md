@@ -55,4 +55,4 @@ Persist:
 - Node URL + node name → the area's `CONTEXT.md` `## Design reference` table (scoped-context convention). If the repo has no CONTEXT convention, record in the ui-profile's fallback table instead.
 - Newly minted tokens/primitives → the ui-profile's map + minted log (with date).
 
-Leave the working tree **uncommitted**. Close with: verification is manual — run `verify-ui` against the recorded node when ready.
+Leave the working tree **uncommitted**. Close with: verification is manual — this skill does not verify its own output.

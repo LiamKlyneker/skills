@@ -14,8 +14,10 @@ Desktop server (Figma desktop app running, "Enable Dev Mode MCP Server" turned o
 
 ```json
 // .mcp.json
-{ "mcpServers": { "figma": { "url": "http://127.0.0.1:3845/mcp" } } }
+{ "mcpServers": { "figma": { "type": "http", "url": "http://127.0.0.1:3845/mcp" } } }
 ```
+
+`type` is required — an entry with a bare `url` is silently skipped at startup.
 
 Or the remote server (no desktop app): `https://mcp.figma.com/mcp`, OAuth on first use.
 
@@ -39,7 +41,6 @@ The `../_shared/` references inside the skills depend on this layout.
 1. **Blank or token-less repo:** `/tokens-init <foundations-frame-url>` — seed with the foundations/style-guide frame (fallback: the most representative component). Then review the generated `tokens.css`, Tailwind mapping, and `.claude/skills/<repo>-ui/SKILL.md` — the profile is the contract for every future run; correcting it once is cheaper than correcting every build.
 2. `/figma-component <component-node-url>` — first component. Expect the ❌-build path: nothing exists yet to reuse.
 3. **Round two — the real test:** a second component that *reuses* round-one tokens/primitives. This exercises the ✅/⚠️ resolution logic a blank repo can't.
-4. Fidelity check when ready: run `verify-ui` (needs `claude --chrome`).
 
 ## 4. Designer contract
 
