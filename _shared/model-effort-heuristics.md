@@ -10,6 +10,10 @@ Model can't be switched mid-session, so the recommendation must print **before**
 
 **Do not hardcode versioned model names here.** The lineup is volatile (e.g. Opus and Fable versions move). Speak in tiers (Opus-class / Sonnet-class). When exact model ids are needed, defer to the `claude-api` skill.
 
+## Orchestrated mode (`work-on-prd`) — the default flips
+
+Human sessions default Opus-class·high, so this file detects downgrades. Orchestrated workers are the opposite: they **default Sonnet-class · medium** and *upgrade* to Opus-class·high when any "Heavier" signal below matches. Same signals, opposite direction. The orchestrator announces the call (tier + matched signals) before spawning; plan mode doesn't apply (workers get `## Worker context` instead).
+
 ## Two outputs, two confidence levels
 
 - **Plan mode** (high confidence) — derive from scope alone. Non-trivial / multi-file / any risk signal → yes.

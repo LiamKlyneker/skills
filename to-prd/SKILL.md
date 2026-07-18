@@ -5,7 +5,7 @@ description: Turn the current conversation context into a PRD and publish it to 
 
 This skill takes the current conversation context and codebase understanding and produces a PRD. Do NOT interview the user — just synthesize what you already know.
 
-The issue tracker and triage label vocabulary should have been provided to you — run `/setup-matt-pocock-skills` if not.
+The issue tracker and triage label vocabulary should have been provided in context — ask the user to share them if not.
 
 ## Mode: CREATE vs UPDATE
 
@@ -21,6 +21,7 @@ The issue tracker and triage label vocabulary should have been provided to you �
    - `## UI Primitives`
    - `## Design reference`
    - `## Migration risk`
+   - `## Data & Access`
    When you update one, replace its **body in place under the exact heading text** — never rename, remove, duplicate, or change the level of these headings. If a contract heading doesn't exist yet and this grill produced content for it, insert it in template order.
 4. Sections are **append/replace by ownership**: tables like `## UI Primitives` and `## Design reference` accumulate **rows** (merge new rows in, don't drop existing ones unless this grill supersedes a specific row); narrative sections this grill owns are replaced wholesale. Anything outside this grill's scope is untouched.
 5. **Do not re-apply triage labels** in UPDATE mode — leave the issue's labels exactly as they are. (Only CREATE applies `needs-triage`.)
@@ -86,10 +87,10 @@ Status ∈ ✅ exists / ⚠️ extend-or-extract / ❌ build. Home ∈ `componen
 
 ## Design reference
 
-The Figma node pointers recorded during the grill, so a cold implementation or verify session can find the target. Omit for non-visual PRDs.
+The design node pointers recorded during the grill, so a cold implementation or verify session can find the target. Omit for non-visual PRDs.
 
-| Area | Figma node | Node name |
-|------|-----------|-----------|
+| Area | Design node | Node name |
+|------|-------------|-----------|
 | Editar con IA dialog | <url#node-id> | "Edit with AI / Options" |
 
 ## Migration risk
@@ -100,6 +101,17 @@ A list of tables, RPC functions, or columns where this PRD requires an expand/co
 - Whether the legacy shape will be removed afterward (drives 3-part vs 2-part split)
 
 Or "None — all schema/RPC changes can land atomically in a single deploy" if no expand/contract is needed.
+
+## Data & Access
+
+The Data & Access Manifest agreed during the grill (grill-me's hard gate) — one row **per CRUD operation** the implementation actually exercises on each table, so `to-issues` can spin the access-control work into the right slices. This is orthogonal to `## Migration risk`: that section asks "can this deploy atomically?"; this one asks "is every operation permitted, correctly scoped, and its error surfaced?". The trap it exists to catch is a **new operation on an already-used table** (e.g. a first UPDATE/DELETE on a read/insert-only table) whose missing access policy (e.g. RLS) silently blocks the write.
+
+| Table | Operation | Client | Access policy exists? | Status |
+|-------|-----------|--------|-----------------------|--------|
+| document | UPDATE | user-scoped | ❌ no `for update` policy | ⚠️ needs migration |
+| job | UPDATE | service-role / admin | n/a — policies bypassed by design | ✅ covered |
+
+Client ∈ user-scoped (policies apply) / service-role / admin (policies bypassed). Status ∈ ✅ covered / ⚠️ gap (needs migration or fix) / ❌ unchecked. For every write row, the grill must also have confirmed the transitions of any status column and that the write path checks the response error. Omit this section (or write "None — no table reads/writes") for PRDs whose code touches no table.
 
 ## Testing Decisions
 

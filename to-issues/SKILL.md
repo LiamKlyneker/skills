@@ -25,12 +25,14 @@ Break the plan into **tracer bullet** issues. Each issue is a thin vertical slic
 
 <vertical-slice-rules>
 - Each slice is a vertical cut through every relevant layer (schema, API, UI, tests). Slices are NOT horizontal layers.
-- Default to BUNDLE multiple tracer bullets into one issue when they would naturally land in a single PR to main. Only split when one of these seams applies:
+- Default to BUNDLE multiple tracer bullets into one issue when they fit **one fresh worker session**: a single context window, a single commit, a single verify pass. (The PR unit is the PRD branch — `/work-on-prd` maintains one PR per PRD — so "would it land as one PR" is NOT a sizing seam.) Only split when one of these seams applies:
   1. HITL gate in the middle (one bullet needs the user to do something outside the editor before the next bullet can start)
   2. Expand/contract migration flagged in the PRD's `## Migration risk` section (split into expand → cutover, plus contract if the PRD mentions removing legacy)
   3. Different code areas with zero touch overlap (e.g. backend schema + unrelated frontend copy change in the same PRD)
-  4. Bundled AC count would exceed ~5 (split on the most natural seam)
-- A completed issue lands as one PR to main. It does NOT need to be independently demoable in prod — partial-feature PRs are fine as long as prod stays unbroken.
+  4. Bundled AC count would exceed ~5 — the concrete proxy for "too big for one worker" (split on the most natural seam)
+  5. Prefactoring: a refactor that would make the feature bullets trivial becomes its own leading slice ("make the change easy, then make the easy change"), listed as `Blocked by` for the slices it unblocks.
+- Splitting with a `Blocked by` edge is cheap in orchestrated mode (an in-PRD blocker is satisfied as soon as its commit lands on the PRD branch), so when in doubt between one big issue and two chained ones, chain.
+- A completed issue = one commit on the PRD branch that passes verify on its own. It does NOT need to be independently demoable — but it MUST be independently verifiable: the orchestrator judges each worker report in isolation, and a failed issue discards the whole bundle's uncommitted work.
 - Bundle schema + RPC + consumer together by default so prod is never half-wired. Only split when the PRD's `## Migration risk` section explicitly flags expand/contract.
 - **UI primitive exception (the one exception to bundling):** treat UI primitives as if they ship from a UI library. Each ⚠️/❌ row in the PRD's `## UI Primitives` section becomes its **own issue**, published first, and listed as `Blocked by` for every feature issue that consumes it. This is a deliberate horizontal slice — a primitive's API deserves isolated review so it doesn't get improvised inside a feature PR (the root cause of design drift). Trivial one-off styling tweaks stay bundled; this exception is scoped to *shared primitives that must be built or have their API changed/extracted*. Everything non-UI keeps the bundling rules above.
 </vertical-slice-rules>
@@ -40,6 +42,13 @@ Read the PRD's `## UI Primitives` section if present. Emit one issue per ⚠️/
 Read the PRD's `## Migration risk` section if present. For each entry there:
 - If the PRD's `## Implementation Decisions` mentions removing/dropping the legacy column/RPC afterward, generate a 3-part split (expand → cutover → contract).
 - Otherwise generate a 2-part split (expand → cutover).
+
+Read the PRD's `## Data & Access` section if present. For each ⚠️ row (a CRUD op with a missing/wrong access policy, or a mis-scoped client):
+- The access-policy migration must land **in the same slice as — or as a `Blocked by` of — the slice that first introduces that operation**, never a slice later. A user-scoped write with no policy is silently denied, so the write and its policy cannot ship apart.
+- This matters most for a **new operation on an already-used table** (e.g. the first UPDATE/DELETE on a read/insert-only table): there's no `create table` migration to hang the policy off, so it's easy to slice the write into a feature issue and lose the policy entirely. Call it out explicitly in that issue's acceptance criteria (see the template note below).
+- ✅ rows need nothing — they're already covered.
+
+While drafting each slice, also gather its `## Worker context` and `## QA notes` (see the template): explore the codebase for the real file paths, scoped `CONTEXT.md`s, and prior-art examples the slice needs; take verify commands from `_shared/project-adapter.md` (never hardcode them); mark **User-visible: y/n** (y = app boot + screenshot verification applies). These two sections are what let an isolated orchestrated worker (`/work-on-prd`) implement the slice without plan mode — vague pointers here mean a blind worker there.
 
 ### 4. Quiz the user
 
@@ -62,7 +71,7 @@ Iterate until the user approves the breakdown.
 
 ### 5. Publish the issues to the issue tracker
 
-For each approved slice, publish a new issue to the issue tracker. Use the issue body template below. Apply the `needs-triage` triage label so each issue enters the normal triage flow.
+For each approved slice, publish a new issue to the issue tracker. Use the issue body template below. Apply the `ready-to-start` triage label so each issue is immediately pickable.
 
 Publish issues in dependency order (blockers first) so you can reference real issue identifiers in the "Blocked by" field.
 
@@ -73,7 +82,7 @@ A reference to the parent issue on the issue tracker (if the source was an exist
 
 ## External steps
 
-A checklist of in-session manual actions Claude cannot perform — anything you'll need to do yourself during the implementation session (Vercel dashboard config, Supabase RPC tweaks, env var changes, copy approval, manual prod verification, GrowthBook flag toggles, Stripe webhook setup, etc.).
+A checklist of in-session manual actions Claude cannot perform — anything you'll need to do yourself during the implementation session (dashboard config, RPC/policy tweaks, env var changes, copy approval, manual prod verification, feature-flag toggles, webhook setup, etc.).
 
 - [ ] Step 1
 - [ ] Step 2
@@ -92,6 +101,19 @@ For UI issues only. Carry the design node(s) from the PRD's `## Design reference
 |------|-------------|-----------|
 | <area> | <url#node-id> | "<node name>" |
 
+## Worker context
+
+Everything a cold, isolated worker session needs to implement this slice without plan mode. The PRD stays path-free (paths rot over months); this section gets real paths because issues are consumed within days.
+
+- **Files**: real paths the slice touches (create/edit), plus the scoped `CONTEXT.md`(s) to read first.
+- **Prior art**: concrete in-repo examples to copy the pattern from (path + one line on what to imitate).
+- **Verify**: exact commands, taken from `_shared/project-adapter.md` (L2 test command; L3 app/boot command if applicable).
+- **User-visible**: y/n — y means the verify ladder's L3 (app boot + screenshot) applies.
+
+## QA notes
+
+2–3 lines for the human QA pass (these seed the PRD's QA doc): what to do in the running app, what they should see, edge cases worth poking.
+
 ## Acceptance criteria
 
 - [ ] Criterion 1
@@ -99,6 +121,7 @@ For UI issues only. Carry the design node(s) from the PRD's `## Design reference
 - [ ] Criterion 3
 - [ ] (UI issues) Implementation matches the design node 1:1
 - [ ] (UI issues) The node URL + name recorded in the page's `CONTEXT.md` `## Design reference` table
+- [ ] (Issues introducing a new write on an existing table — from the PRD's `## Data & Access`) An access policy `for <operation>` exists for the acting user, and the write path checks `response.error` (does not return `void`)
 
 ## Blocked by
 
@@ -108,4 +131,4 @@ Or "None - can start immediately" if no blockers.
 
 </issue-template>
 
-Do NOT close or modify any parent issue.
+Once all child issues are published, transition the parent PRD's triage label from `needs-triage` to `ready-to-start` (it has now been broken down and is ready to be picked up). Do NOT close the parent issue or modify anything else about it.
