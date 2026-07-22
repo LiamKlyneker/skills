@@ -2,7 +2,6 @@
 name: pinpoint
 description: Locate something in the codebase via a throwaway Explore subagent and report back only what's needed to continue. Use when you want to find where/how something is implemented without polluting the main thread with searches and file dumps.
 argument-hint: [what to locate]
-disable-model-invocation: true
 ---
 
 Locate the following in the current codebase and report back concisely: **$ARGUMENTS**
