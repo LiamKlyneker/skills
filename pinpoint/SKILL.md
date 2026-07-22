@@ -26,7 +26,7 @@ This is a **specialized locator**: it should surface more grounded detail than t
 3. **Signature** — one copied line: the props type, function, or hook signature of the primary symbol.
 4. **Used by** — grep the primary symbol and list the `file:line` sites that import or render it (this is literal grep output, not analysis).
 5. **Neighbors** — the other files in the containing folder, listed (`ls`-level), so the area's neighborhood is visible.
-6. **One-line orientation** — a single sentence on what the area is responsible for.
+6. **Orientation** — 2–3 sentences on what the area is responsible for and its main pieces (the primary export plus any notable local helpers/subcomponents it's composed of). Stay descriptive — what it is, not how it flows or why.
 
 Keep it skimmable — paths, names, and signatures over prose. If nothing matches, say so and suggest the closest candidates.
 
