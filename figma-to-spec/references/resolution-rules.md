@@ -2,13 +2,13 @@
 
 How a region agent decides whether a Figma property **resolves** to the design system,
 **near-misses** it (human call), or is **off-system** (gap). Applied against
-`grimme-ui-catalog`'s `catalog.md`. Status vocabulary mirrors the shared manifests
-(`figma-component/../_shared/ui-manifests.md`): ✅ resolves · ⚠️ flag / confirm · ❌ gap.
+`grimme-ui-catalog`'s `catalog.md`. Status vocabulary: ✅ resolves · ⚠️ flag / confirm ·
+❌ gap.
 
 ## Colors / tokens
 
-1. **Read the bound variable NAME, never the hex.** Use `get_variable_defs` +
-   the `use_figma` binding read (`figma-component/references/figma-feed.md`). Two
+1. **Read the bound variable NAME, never the hex.** Use `get_variable_defs` + the
+   `use_figma` binding read (call discipline in `references/region-agent-prompt.md`). Two
    semantics routinely alias one primitive — matching on value is a coin flip that
    silently collapses the tier.
 2. **Prefer semantic.** If a semantic token (Tailwind-classed, **consumer form —

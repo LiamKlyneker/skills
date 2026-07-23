@@ -8,7 +8,7 @@ description: >
 disable-model-invocation: true
 metadata:
   author: liam
-  version: "1.6.1"
+  version: "1.6.2"
 ---
 
 # Figma → Spec
@@ -21,7 +21,8 @@ Turn one Figma **page** node into two linked artifacts:
    as PBIs on the **GRIMME Libraries** backlog).
 
 **This skill is a spec producer, not a builder.** It never writes page code. The specs
-it emits are implemented later — by `figma-component`, `develop-ticket`, or a human.
+it emits are implemented later — by a downstream build workflow (e.g. `develop-ticket`) or
+a human.
 
 **The spec is high-fidelity; the 1:1 risk lives at implementation — which this skill
 hands off.** Extraction here can be near-complete: the region subagents read bound
