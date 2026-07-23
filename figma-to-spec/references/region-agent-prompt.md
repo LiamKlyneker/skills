@@ -49,11 +49,16 @@ region agent.
 4. **Binding read** via `use_figma` (if `/figma-use` is available, a separate server) —
    resolve each node's `boundVariables` → variable **NAMES** per property, `textStyleId` →
    style name, auto-layout, per-node font size/line-height. This is the ONLY source for
-   variable-name-**per-property**. Resolve fills by bound name, never by hex. **If
-   `use_figma` is unavailable (degraded color mode):** you still have `get_variable_defs`
-   region-level name→value — keep those token **names**; what you lose is the per-property
-   binding, so set every color's status/flag to `binding-unverified`. Never present an
-   unverified value as on-system.
+   variable-name-**per-property**. Resolve fills by bound name, never by hex. On a
+   successful per-property read, set that color's `bindingVerified: true`.
+   **If `use_figma` is unavailable (degraded color mode):** you still have
+   `get_variable_defs` region-level name→value — keep those token **names**; what you lose is
+   the per-property binding. In that mode **every** color object you emit MUST carry
+   `bindingVerified: false`, `status: "flag"`, and `flagReason: "binding-unverified"` — no
+   exceptions, not even a clean semantic-name match. `bindingVerified` is a required,
+   non-droppable field: a color without it is an invalid finding. Never present an
+   unverified value as on-system (`status: "resolves"` / `bindingVerified: true` are
+   forbidden in degraded mode).
 5. `get_design_context` — LAST, only on a small scoped sub-frame if you still need intent.
    Treat as intent, not pasteable code; strip arbitrary values.
 
@@ -111,8 +116,14 @@ For the region:
     { "property": "background", "boundName": "surface/primary|null",
       "figmaValue": "#0a5c2b", "resolvedToken": "bg-surface-button-primary|null",
       "tier": "semantic|alias|primitive|none", "deltaE": 0.0,
-      "status": "resolves|flag|gap", "flagReason": "raw-hex|primitive-only|near-miss|null" }
+      "bindingVerified": true,
+      "status": "resolves|flag|gap",
+      "flagReason": "raw-hex|primitive-only|near-miss|binding-unverified|null" }
   ],
+  // `bindingVerified` (bool) is REQUIRED on every color and never omitted. It is `true` only
+  // when the per-property binding read (step 4) confirmed this property's variable name.
+  // In degraded color mode it is `false` for EVERY color, with
+  // `status:"flag"` + `flagReason:"binding-unverified"`.
   "typography": [
     { "property": "heading", "figmaTextStyle": "heading/lg|null",
       "resolvedToken": "...|null", "status": "resolves|flag|gap" }

@@ -8,7 +8,7 @@ description: >
 disable-model-invocation: true
 metadata:
   author: liam
-  version: "1.6.0"
+  version: "1.6.1"
 ---
 
 # Figma → Spec
@@ -60,9 +60,12 @@ dependency as detachable:
      server):** resolves each node's `boundVariables` → variable **name per property**. If
      unreachable, **degrade** — but *not* to pure hex: `get_variable_defs` still yields
      region-level name→value, so you keep token **names**; what's lost is the *per-property*
-     binding, so flag every color `binding-unverified` (its tier is unconfirmed). Never
-     silently treat an unverified value as on-system. (Call discipline is spelled out in
-     `references/region-agent-prompt.md`; the same traps apply here.)
+     binding, so every color a region agent emits carries the required
+     `bindingVerified: false` field with `status:"flag"` + `flagReason:"binding-unverified"`
+     (its tier is unconfirmed) — no exceptions, not even clean name matches. Never silently
+     treat an unverified value as on-system. (The field is mandatory and non-droppable in the
+     region-agent schema — see `references/region-agent-prompt.md`; the same traps apply
+     here.)
 - **A Figma node URL** (a page/frame, or a single component node in component mode).
   Missing → ask, never guess.
 - **`grimme-ui-components-best-practices` (optional).** The page spec **cites** its rules

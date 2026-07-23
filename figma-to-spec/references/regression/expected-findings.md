@@ -14,9 +14,12 @@ file to a grader agent and have it return pass/fail per line.
 ## CASE-01 — matches FIXTURE-01 (configurations list, degraded)
 
 ### B1 — hidden state-bearing nodes are NOT dropped
-- [ ] **MUST** — the **expired-config warning** (the hidden warning Chip / banner on the
-      list) appears in the spec, in the region's **Data states** subsection. Its absence is
-      the exact silent-correctness failure v1.6.0 fixes.
+- [ ] **MUST** — a **hidden status/warning Chip representing a per-card config state** (the
+      list encodes an expired/outdated-configuration state as a `visible:false` Chip/banner)
+      lands in the spec's region **Data states** subsection. Grade on *a per-card config
+      state Chip surfacing*, not on the literal word "expired" — the hidden Chips carry no
+      tool-extractable text, so the label is inferred from position + warning tokens. Its
+      absence is the exact silent-correctness failure v1.6.0 fixes.
 - [ ] **MUST** — the region agent returns a non-empty `hiddenVariants` array for the region
       that carries it (`visible:false`, `kind: chip|banner|…`, `represents:` the state).
 - [ ] **MUST** — the Phase A coverage tally is `log()`ged and reports **≥1 hidden-variant
@@ -25,10 +28,13 @@ file to a grader agent and have it return pass/fail per line.
       pruned as noise.
 
 ### B2 — enumeration descends through the content wrapper
-- [ ] **MUST** — the primary node yields **≥3 content regions** (feature Top Bar, card
-      list, and the card/empty affordances) — **not one mega-region**.
-- [ ] **MUST** — the `SidebarNavigation` content-wrapper is **recursed into**, not emitted
-      as a single region; the real regions are its descendants.
+- [ ] **MUST** — the primary node yields **≥3 content regions** — expected: **Top Bar**,
+      **search/filter row**, **card list** (+ an **empty state** region off the state node)
+      — **not one mega-region**. Grade on the ≥3 count against the actual regions above.
+- [ ] **MUST** — the **`Side bar` content wrapper (`11044:27568`)** is **recursed into**,
+      not emitted as a single region; the real regions are its descendants. (Do not confuse
+      it with the separately-named global **`Sidebar Navigation` (`11044:27681`)**, which is
+      chrome and MUST be excluded — see Chrome scoping below.)
 - [ ] **MUST** — the coverage self-check passes: every `get_metadata` child at every depth
       lands in a region or is listed as pruned scaffolding (nothing unaccounted for).
 
@@ -46,8 +52,13 @@ file to a grader agent and have it return pass/fail per line.
 
 ### Degraded-mode disclosure
 - [ ] **MUST** — the run **announces degraded color mode up front** (binding-read absent).
-- [ ] **MUST** — **every** color carries `binding-unverified`; none is presented as
-      confirmed on-system.
+- [ ] **MUST** — in the **region-agent raw findings** (the source of truth, not just the
+      synthesized spec), **every** color object carries `bindingVerified: false` with
+      `status: "flag"` + `flagReason: "binding-unverified"`. None is presented as confirmed
+      on-system (`status:"resolves"` / `bindingVerified:true` = FAIL). Check the raw findings
+      because agent output and synthesis can disagree — synthesis re-flagging a leak is
+      diligence, not a pass. Now mechanically checkable: `bindingVerified` is a required,
+      non-droppable field in the region-agent schema.
 
 ### Triage gate (no premature writes)
 - [ ] **MUST** — the run **STOPs at the Phase C triage checkpoint**; **zero ADO writes**
