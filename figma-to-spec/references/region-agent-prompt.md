@@ -30,10 +30,12 @@ Scope every call to THIS region node — never the whole page.
 1. `get_metadata` — map the region: children, names, types, sizes.
 2. `get_variable_defs` — bound token names+values for the region (flat name→value).
 3. `get_screenshot` — visual ground truth for the region and each distinct sub-state.
-4. **Binding read** via `use_figma` (a `/figma-use` skill is loaded) — resolve each
-   node's `boundVariables` → variable **NAMES** per property, `textStyleId` → style name,
+4. **Binding read** via `use_figma` (if `/figma-use` is available) — resolve each node's
+   `boundVariables` → variable **NAMES** per property, `textStyleId` → style name,
    auto-layout, per-node font size/line-height. This is the ONLY source for
-   variable-name-per-property. Resolve fills by bound name, never by hex.
+   variable-name-per-property. Resolve fills by bound name, never by hex. **If `use_figma`
+   is unavailable (degraded color mode):** resolve colors by hex and set every color's
+   status/flag to `binding-unverified` — never present an unverified hex as on-system.
 5. `get_design_context` — LAST, only on a small scoped sub-frame if you still need intent.
    Treat as intent, not pasteable code; strip arbitrary values.
 

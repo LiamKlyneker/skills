@@ -8,7 +8,7 @@ description: >
 disable-model-invocation: true
 metadata:
   author: liam
-  version: "1.3.0"
+  version: "1.4.0"
 ---
 
 # Figma → Spec
@@ -36,21 +36,37 @@ interaction states.
 
 ## Prerequisites
 
-- **Figma MCP** (official plugin `figma@claude-plugins-official`): `get_metadata`,
-  `get_variable_defs`, `get_screenshot`, `get_design_context`, and `use_figma`. STOP
-  if absent. Call discipline lives in `figma-component/references/figma-feed.md` —
-  follow it; the same traps apply here.
-- **A Figma node URL** (a page or large frame). Missing → ask, never guess.
-- **`grimme-ui-catalog`** — the existence catalog this scan resolves against. Its
-  `catalog.md` must exist and be current (Phase 0 handles this).
+This skill depends on **inputs and capabilities**, not on sibling skills being invokable
+from the current session. Skills resolve by directory scope, so a run rooted in a consumer
+repo (e.g. `mygrimme-frontend`) **cannot invoke** Marketplace skills like
+`grimme-ui-catalog`, `grimme-ui-components-best-practices`, or `/figma-use`. Treat every
+dependency as detachable:
+
+- **`catalog.md` (required artifact).** The existence source. Resolve it by **path** — a
+  passed arg, a known location, or ask. The `grimme-ui-catalog` *skill* is only needed to
+  *(re)generate* it, and only if reachable; the skill runs fine from a plain `catalog.md`
+  file. Read its embedded staleness stamp and **warn if stale** rather than hard-failing.
+- **Figma MCP (required capability):** `get_metadata`, `get_variable_defs`,
+  `get_screenshot`, `get_design_context`. STOP if absent — no fallback. `use_figma` (the
+  binding read, via `/figma-use`) is **strongly preferred**; if unreachable, degrade —
+  resolve colors by hex and **flag every one `binding-unverified`** (token tier can't be
+  confirmed). Never silently treat hex as on-system. (Call discipline is spelled out in
+  `references/region-agent-prompt.md`; the same traps apply here.)
+- **A Figma node URL** (a page/frame, or a single component node in component mode).
+  Missing → ask, never guess.
+- **`grimme-ui-components-best-practices` (optional).** The page spec **cites** its rules
+  by stable name and never duplicates them — so citations stand even when the skill isn't
+  loaded. Load it to enrich HOW-guidance only if reachable.
 
 ## Resolution sources (what "does it exist?" reads)
 
-- **Existence** → `grimme-ui-catalog`'s `catalog.md` (components, cva variants, tokens
-  by tier, SYSTEM_ICONS keys). This is the ONLY source for "does the DS have this?".
-- **Usage / HOW** → the `grimme-ui-components-best-practices` skill (Marketplace). The
-  page spec **cites** its rules; it never duplicates them.
-- **Resolution + tolerance rules** → `references/resolution-rules.md`.
+- **Existence** → the `catalog.md` **artifact** (components, cva variants, tokens by tier,
+  SYSTEM_ICONS keys), resolved by path — not by invoking `grimme-ui-catalog`. This is the
+  ONLY source for "does the DS have this?".
+- **Usage / HOW** → `grimme-ui-components-best-practices` rules, **cited by stable name**
+  (loaded if reachable; citations stand regardless). The page spec cites; never duplicates.
+- **Resolution + tolerance rules** → `references/resolution-rules.md` (bundled with this
+  skill — always available).
 
 grimme-ui has **no Code Connect and no documented Figma-name↔code mapping** — component
 detection **infers** by layer-name convention + visual confirmation. That inference is
@@ -67,10 +83,14 @@ Decompose: **Sonnet**. Region agents: **Sonnet ×N** parallel. Synthesis & triag
 ## Phase 0 — Setup (main thread)
 
 1. Require the Figma node URL arg. Ask if missing.
-2. Ensure `catalog.md` is current: run `grimme-ui-catalog`'s staleness check; if drifted
-   or absent, refresh it (that skill) before continuing. Load `catalog.md` into context.
-3. Load the Figma MCP. If the binding read is needed (it will be — see Phase B), load
-   the `/figma-use` skill first so `use_figma` is available.
+2. **Resolve `catalog.md` by path** (arg → known location → ask), and read it in. If the
+   `grimme-ui-catalog` skill is reachable, run its staleness check / refresh; otherwise
+   read the catalog's embedded staleness stamp and **warn if stale** — do not hard-fail on
+   an unreachable skill. The only hard STOP here is no resolvable `catalog.md` at all.
+3. **Confirm Figma capability.** Ensure the Figma MCP is present (STOP if not). Try to make
+   `use_figma` available (load `/figma-use` if reachable). If it isn't, continue in
+   **degraded color mode** — hex-only resolution, every color flagged `binding-unverified`
+   — and announce that up front so the user knows token tiers are unconfirmed.
 4. **Ask the user: "Is there a separate mobile/tablet node?"** A Figma node is one
    viewport — breakpoints are not node properties. If yes, take that URL too; if no,
    responsive will be *inferred* and the assumptions flagged.
