@@ -25,17 +25,25 @@ offers — you do **not** write page code.
 
 ## Figma call discipline (do not deviate)
 
-Scope every call to THIS region node — never the whole page.
+Scope every call to THIS region node — never the whole page. Steps 1–3 are `figma-dev-mode`
+tools; step 4 is a **separate** server (`use_figma`). Front-load the essential reads (1–3):
+`figma-dev-mode` sessions can expire on long runs, and the `get_design_context` LAST
+ordering keeps a late failure non-fatal. If the session drops, re-auth and re-run this one
+region agent.
 
-1. `get_metadata` — map the region: children, names, types, sizes.
-2. `get_variable_defs` — bound token names+values for the region (flat name→value).
+1. `get_metadata` — map the region: children, names, types, **positions & sizes**.
+2. `get_variable_defs` — bound token **names**+values for the region (flat name→value).
 3. `get_screenshot` — visual ground truth for the region and each distinct sub-state.
-4. **Binding read** via `use_figma` (if `/figma-use` is available) — resolve each node's
-   `boundVariables` → variable **NAMES** per property, `textStyleId` → style name,
-   auto-layout, per-node font size/line-height. This is the ONLY source for
-   variable-name-per-property. Resolve fills by bound name, never by hex. **If `use_figma`
-   is unavailable (degraded color mode):** resolve colors by hex and set every color's
-   status/flag to `binding-unverified` — never present an unverified hex as on-system.
+   Viewed **inline** as a check; it returns an inline image, not a path — do **not** rely on
+   persisting it. The layout tree (below) is the durable source of truth.
+4. **Binding read** via `use_figma` (if `/figma-use` is available, a separate server) —
+   resolve each node's `boundVariables` → variable **NAMES** per property, `textStyleId` →
+   style name, auto-layout, per-node font size/line-height. This is the ONLY source for
+   variable-name-**per-property**. Resolve fills by bound name, never by hex. **If
+   `use_figma` is unavailable (degraded color mode):** you still have `get_variable_defs`
+   region-level name→value — keep those token **names**; what you lose is the per-property
+   binding, so set every color's status/flag to `binding-unverified`. Never present an
+   unverified value as on-system.
 5. `get_design_context` — LAST, only on a small scoped sub-frame if you still need intent.
    Treat as intent, not pasteable code; strip arbitrary values.
 
@@ -51,17 +59,27 @@ For the region:
 - **Colors** — per resolution rules: semantic → primitive/alias (flag) → raw hex
   (nearest + always flag). Record the bound variable name, resolved catalog token (or
   none), status, and ΔE to nearest if unbound/raw.
-- **Typography & spacing** — resolve against catalog type/dimension tokens; flag
-  off-system. Weight is literal, not a token.
+- **Typography & spacing** — **first decide which kind of spacing it is.** *Generic layout
+  spacing* between elements/regions (page rhythm: 24/16/12/8/4px gaps between siblings) maps
+  to the **Tailwind spacing scale** (`gap-4`, `p-3`, …) and is **not a DS concern — do not
+  flag it.** Only *component-internal dimensions* (a control's own padding/height/radius)
+  resolve against catalog **dimension** tokens; flag those off-system. Typography: `g-text-*`
+  utilities resolve **by prefix/convention** — the catalog lists them by example, so absence
+  from that list is **not** off-system; don't flag ordinary text as a gap. Weight is literal,
+  not a token.
 - **Icons** — layered: SystemIcon → FontAwesome (app-only) → gap (add SystemIcon) →
   custom-inline. Flag ambiguous near-duplicates.
 - **States** — capture ONLY for components you classified unknown/new. Known DS
   components' states are DS-owned; don't spec them.
-- **Layout / placement** — from the binding read's auto-layout data, capture the region's
-  containment tree (child order preserved) and each container's auto-layout intent:
-  direction (row/column), gap (resolved token if bound), alignment, wrap. This is what
-  lets the implementer place elements without a screenshot. Record *relative* intent only
-  — never absolute x/y coordinates.
+- **Layout / placement** — the **output** is always *relative auto-layout intent*, never
+  absolute coordinates. Capture the region's containment tree (child order preserved) and
+  each container's intent: direction (row/column), gap (resolved token if bound), alignment,
+  wrap. **Preferred input:** the binding read's auto-layout data. **Fallback (input only):**
+  when auto-layout data is unavailable, you MAY *infer* relative intent from `get_metadata`
+  positions & sizes (siblings sharing a Y are a row, an X are a column; gaps from the
+  deltas) — this reads geometry to derive intent, it does **not** put coordinates in the
+  output. Flag any container derived this way `layout-inferred` in the layout note. Never
+  record absolute x/y.
 
 ## Return exactly this JSON (no prose around it)
 

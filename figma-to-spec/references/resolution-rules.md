@@ -37,10 +37,28 @@ that a machine can't tell an intentional new shade from a sloppy one.
 
 ## Typography & spacing
 
-Resolve against catalog dimension tokens and text/type tokens. Weight stays **literal**
-(Figma keeps it in `fontName.style`, bound to nothing — tokenising it invents a tier the
-file doesn't have). Off-system size/spacing/line-height → ⚠️ flag or ❌ gap by the same
-"is there a nearest token" logic as colors.
+**Spacing splits in two — classify before resolving:**
+
+1. **Generic layout spacing** — gaps/padding between *siblings or regions* (page rhythm:
+   24/16/12/8/4px). grimme-ui has **no general layout-spacing token scale**; its dimension
+   tokens are **component-scoped** (button/chip/input internals). So generic layout spacing
+   maps to the **Tailwind spacing scale** (`gap-4`, `p-3`, `space-y-2`, …) and is **✅ not a
+   DS concern — do not flag it.** Flagging every layout gap against dimension tokens is a
+   false positive; the nearest-token test does **not** apply here.
+2. **Component-internal dimension** — a control's own padding, height, radius, icon box.
+   *This* resolves against catalog **dimension** tokens; off-system → ⚠️ flag / ❌ gap by the
+   same "is there a nearest token" logic as colors.
+
+The test: *is this the space **between** things (layout → Tailwind), or a **fixed dimension
+of one control** (→ dimension token)?*
+
+**Typography** resolves against the catalog's `g-text-*` utility classes **by
+prefix/convention**. The catalog enumerates them **by example** (`g-text-h4`, `g-text-body1`,
+`g-text-overline`, …), so a class's absence from that list is **not** evidence it's
+off-system — do **not** ❌ gap ordinary text just because the exact utility isn't listed. Only
+flag type that clearly has no `g-text-*` home (novel size/role). Weight stays **literal**
+(Figma keeps it in `fontName.style`, bound to nothing — tokenising it invents a tier the file
+doesn't have).
 
 ## Icons (layered resolution)
 

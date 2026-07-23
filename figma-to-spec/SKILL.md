@@ -8,7 +8,7 @@ description: >
 disable-model-invocation: true
 metadata:
   author: liam
-  version: "1.4.0"
+  version: "1.5.0"
 ---
 
 # Figma → Spec
@@ -42,16 +42,27 @@ repo (e.g. `mygrimme-frontend`) **cannot invoke** Marketplace skills like
 `grimme-ui-catalog`, `grimme-ui-components-best-practices`, or `/figma-use`. Treat every
 dependency as detachable:
 
-- **`catalog.md` (required artifact).** The existence source. Resolve it by **path** — a
-  passed arg, a known location, or ask. The `grimme-ui-catalog` *skill* is only needed to
-  *(re)generate* it, and only if reachable; the skill runs fine from a plain `catalog.md`
-  file. Read its embedded staleness stamp and **warn if stale** rather than hard-failing.
-- **Figma MCP (required capability):** `get_metadata`, `get_variable_defs`,
-  `get_screenshot`, `get_design_context`. STOP if absent — no fallback. `use_figma` (the
-  binding read, via `/figma-use`) is **strongly preferred**; if unreachable, degrade —
-  resolve colors by hex and **flag every one `binding-unverified`** (token tier can't be
-  confirmed). Never silently treat hex as on-system. (Call discipline is spelled out in
-  `references/region-agent-prompt.md`; the same traps apply here.)
+- **`catalog.md` (required artifact).** The existence source — and foundational: it's what
+  tells the spec which classname, semantic token, component, and cva variant actually
+  exist. **Bundled with this skill at `references/catalog.md`** (v1.5.0), so a run needs no
+  cross-repo path. Resolution order: a **passed arg** overrides → else the **bundled
+  `references/catalog.md`** → else ask. The `grimme-ui-catalog` *skill* is only needed to
+  *(re)generate* it, and only if reachable; the skill runs fine from the bundled file.
+  Staleness is **opportunistic and soft** — see Phase 0 step 2 — never a hard fail.
+  *(Trade recorded: the bundled copy can drift from live grimme-ui until regenerated. This
+  reverses the earlier "reference by path, one source of truth" stance deliberately, to let
+  the skill be tested self-contained. `TODO: initiate mode` — a future skill mode that
+  regenerates `references/catalog.md` in place — retires the manual copy.)*
+- **Figma MCP — two distinct capability checks, do not conflate them:**
+  1. **`figma-dev-mode` present (required):** `get_metadata`, `get_variable_defs`,
+     `get_screenshot`, `get_design_context`. STOP if this server is absent — no fallback.
+  2. **Binding read (`use_figma`, via `/figma-use`) available (strongly preferred, separate
+     server):** resolves each node's `boundVariables` → variable **name per property**. If
+     unreachable, **degrade** — but *not* to pure hex: `get_variable_defs` still yields
+     region-level name→value, so you keep token **names**; what's lost is the *per-property*
+     binding, so flag every color `binding-unverified` (its tier is unconfirmed). Never
+     silently treat an unverified value as on-system. (Call discipline is spelled out in
+     `references/region-agent-prompt.md`; the same traps apply here.)
 - **A Figma node URL** (a page/frame, or a single component node in component mode).
   Missing → ask, never guess.
 - **`grimme-ui-components-best-practices` (optional).** The page spec **cites** its rules
@@ -61,8 +72,9 @@ dependency as detachable:
 ## Resolution sources (what "does it exist?" reads)
 
 - **Existence** → the `catalog.md` **artifact** (components, cva variants, tokens by tier,
-  SYSTEM_ICONS keys), resolved by path — not by invoking `grimme-ui-catalog`. This is the
-  ONLY source for "does the DS have this?".
+  SYSTEM_ICONS keys), read from the **bundled `references/catalog.md`** (or an arg override)
+  — not by invoking `grimme-ui-catalog`. This is the ONLY source for "does the DS have
+  this?".
 - **Usage / HOW** → `grimme-ui-components-best-practices` rules, **cited by stable name**
   (loaded if reachable; citations stand regardless). The page spec cites; never duplicates.
 - **Resolution + tolerance rules** → `references/resolution-rules.md` (bundled with this
@@ -83,14 +95,36 @@ Decompose: **Sonnet**. Region agents: **Sonnet ×N** parallel. Synthesis & triag
 ## Phase 0 — Setup (main thread)
 
 1. Require the Figma node URL arg. Ask if missing.
-2. **Resolve `catalog.md` by path** (arg → known location → ask), and read it in. If the
-   `grimme-ui-catalog` skill is reachable, run its staleness check / refresh; otherwise
-   read the catalog's embedded staleness stamp and **warn if stale** — do not hard-fail on
-   an unreachable skill. The only hard STOP here is no resolvable `catalog.md` at all.
-3. **Confirm Figma capability.** Ensure the Figma MCP is present (STOP if not). Try to make
-   `use_figma` available (load `/figma-use` if reachable). If it isn't, continue in
-   **degraded color mode** — hex-only resolution, every color flagged `binding-unverified`
-   — and announce that up front so the user knows token tiers are unconfirmed.
+2. **Resolve `catalog.md`** — arg override → else the bundled `references/catalog.md` → else
+   ask. Read it in. Then run the **skill-free staleness check** (no `grimme-ui-catalog`
+   invocation needed): if `~/schmiede-one/grimme-ui` is reachable, recompute the fingerprint
+   over its source-of-truth files and compare to the catalog's line-1 stamp —
+
+   ```
+   shasum \
+     <(sed -n '/"exports"/,/^  }/p' ~/schmiede-one/grimme-ui/package.json) \
+     ~/schmiede-one/grimme-ui/theme/tokens/primitives.generated.css \
+     ~/schmiede-one/grimme-ui/theme/tokens/alias.generated.css \
+     ~/schmiede-one/grimme-ui/theme/tokens/semantic.generated.css \
+     ~/schmiede-one/grimme-ui/theme/tokens/dimensions.generated.css \
+     ~/schmiede-one/grimme-ui/system_icons/_list.tsx \
+     | shasum | cut -d' ' -f1
+   ```
+
+   Match → note "catalog current". Mismatch → **soft-warn** ("bundled catalog may lag live
+   grimme-ui — regenerate via `grimme-ui-catalog`") and **continue**. grimme-ui not reachable
+   → note "bundled snapshot, staleness unchecked" and continue. **Never hard-fail on
+   staleness.** The only hard STOP here is no resolvable `catalog.md` at all. *(Caveat: this
+   recipe uses process-substitution paths, so it's reproducible on one machine but not
+   portable across machines — fine for local runs; the future initiate mode should switch to
+   a path-independent hash.)*
+3. **Confirm Figma capability — two separate checks (Prerequisites).** (a) Ensure
+   **`figma-dev-mode`** is present — STOP if not. (b) Try to make the binding read
+   (`use_figma`) available (load `/figma-use` if reachable). If it isn't, continue in
+   **degraded color mode** — token **names** still come from `get_variable_defs`
+   (region-level), but per-property bindings are lost, so every color is flagged
+   `binding-unverified` — and announce that up front so the user knows token tiers are
+   unconfirmed.
 4. **Ask the user: "Is there a separate mobile/tablet node?"** A Figma node is one
    viewport — breakpoints are not node properties. If yes, take that URL too; if no,
    responsive will be *inferred* and the assumptions flagged.
@@ -98,6 +132,23 @@ Decompose: **Sonnet**. Region agents: **Sonnet ×N** parallel. Synthesis & triag
    grid + CTA"). This drives Phase A scoping and intent; it does **not** override canvas
    values (ticket/context = *what to look at*; Figma = *the design values*). If a ticket
    is given, fetch it and keep its ID for Phase D (the `[SPEC]` files as its child).
+
+   **Scope precedence:** freetext (the most recent explicit human instruction) **>** ticket
+   scope **>** the Phase A layer-name heuristic. The ticket is context/default; freetext
+   overrides it.
+
+   **Conflict gate (STOP and ask — don't silently pick).** Two conflicts surface here, both
+   cheap to resolve before any fan-out:
+   - **Scope conflict:** the ticket scopes narrower/differently than the freetext (e.g. the
+     ticket is "1/4" — search only — while the freetext also names create-button +
+     card-actions from sibling stories). Surface both and ask which governs. Offer the
+     third option the user may actually want: **spec the wider set, but mark the
+     out-of-ticket regions `spec-only`** (fully specced, *not* integrated this pass — see
+     Phase A dispositions).
+   - **Node canonicity:** the ticket links a different primary node than the invocation URL.
+     Default recommendation: the **invocation node** is the design source (Figma = values).
+     Ask whether to (a) use the given node, (b) switch to the ticket's node, or (c) treat
+     them as multiple nodes by role (step 6). Never assume.
 6. **Accept additional nodes by role.** One implementation can span several nodes. Each
    extra node URL carries a role, read from the freetext context, on one of two axes:
    - **`viewport:*`** (mobile / tablet) — same design, different breakpoint (see step 4).
@@ -133,17 +184,34 @@ header/footer) that is noise for a feature spec:
 1. Classify each region **content** vs **app-chrome** — heuristics on layer names
    (`Navbar`, `Sidebar`, `TopBar`, `Footer`), pinned/fixed position, and "repeats on
    every page" shape.
-2. Fold in the Phase 0 scope context (ADO ticket + freetext) as the deciding input — an
-   explicit "only the card grid" overrides the heuristic.
-3. **Auto-skip when scope is explicit:** if the context names the regions unambiguously,
-   proceed with just those and simply **`log()` the excluded regions**. Only **pause for
-   confirmation** when scope is fuzzy — present the annotated in-scope / excluded list.
-4. **Record the accepted scope** — it goes into `page-spec.md` as an "Excluded regions"
-   note so re-runs are deterministic and the exclusion is auditable.
+   - **Granularity / thin sub-headers:** a *thin* structural header that carries
+     page-**feature** content (e.g. a feature "Top Bar" with the page title + a search
+     field) is its **own region**, not chrome. A *repeated global* bar is chrome. When a
+     node is genuinely ambiguous (neither clearly a region nor chrome), default to
+     **including it as a region and `log()` the call**; only pause to ask if scope is fuzzy.
+2. Fold in the Phase 0 scope context (ADO ticket + freetext) per the **precedence** in
+   Phase 0 step 5 (freetext > ticket > heuristic) — an explicit "only the card grid"
+   overrides the heuristic.
+3. **Assign each region one of three dispositions:**
+   - **`in-scope`** — specced *and* handed off for implementation.
+   - **`spec-only`** — fully specced (blueprint, tokens, layout, gaps) but flagged **not to
+     be integrated this pass** ("leave as-is / UI-only"). This is the "spec the whole page,
+     but don't build part X yet" case from the Phase 0 conflict gate. It still fans out to a
+     Phase B agent and still runs triage — it just carries a banner downstream so
+     `develop-ticket` / a human skips integration.
+   - **`excluded`** — app chrome or clearly out of scope; not specced.
+4. **Auto-skip when scope is explicit:** if the context names dispositions unambiguously,
+   proceed and simply **`log()`** the `spec-only` and `excluded` regions. Only **pause for
+   confirmation** when scope is fuzzy — present the annotated in-scope / spec-only / excluded
+   list.
+5. **Record the accepted dispositions** — they go into `page-spec.md` as a "Scope
+   dispositions" note (in-scope / spec-only / excluded) so re-runs are deterministic and the
+   scope is auditable.
 
 Decompose **each provided node** (primary + any `viewport:*` / `state:*` nodes) this way,
 and tag every resulting region with its source-node role so Phase C can group the same
-region across viewports / data states. Only in-scope regions fan out to Phase B.
+region across viewports / data states. **`in-scope` and `spec-only` regions fan out to
+Phase B; `excluded` regions do not.**
 
 In **component mode** there is nothing to fan out: the node *is* the single region — skip
 enumeration and hand it straight to one Phase B agent.
@@ -170,7 +238,15 @@ deterministically):
 - **Layout / placement** — capture the region's containment tree, child order, and
   **auto-layout intent** (direction, gap token, alignment, wrap) so an implementer can
   place every element without a screenshot. Capture *relative* intent, never absolute
-  x/y coordinates. Also persist a region reference screenshot into the run dir.
+  x/y coordinates (input-vs-output rule in `references/region-agent-prompt.md`).
+  `get_screenshot` is viewed inline by the agent as a visual check during extraction; under
+  `figma-dev-mode` it returns an inline image, **not a file path**, so it is **not
+  persisted** — the layout tree is the source of truth, not a saved image.
+
+**Session lifetime.** `figma-dev-mode` sessions can expire on long parallel runs (~10–15
+min/agent). The call ordering (`get_design_context` LAST) front-loads the essential reads
+so a late failure is non-fatal. On session loss, re-auth and **re-run only the affected
+region agent** — extraction is per-region and idempotent.
 
 ## Phase C — Synthesis & triage (Opus, main thread or one Opus agent)
 
@@ -199,11 +275,13 @@ deterministically):
 6. **Write the spec** per `references/page-spec-template.md`. **Page mode:** full
    region-by-region blueprint. **Component mode:** just the one targeted region's
    blueprint. Either way — grimme-ui component + props, token per color/spacing/type,
-   **layout/placement (containment tree + auto-layout intent) + reference screenshot**,
-   **data states** where state nodes were given, component states **only for new/unknown
-   components**, responsive notes, and the **Changelog** from step 5 up top; gaps marked
-   inline as `⚠ blocked on gap-NNN`; cite the relevant `grimme-ui-components-best-practices`
-   rules for HOW.
+   **layout/placement (containment tree + auto-layout intent)**, **data states** where
+   state nodes were given, component states **only for new/unknown components**, responsive
+   notes, and the **Changelog** from step 5 up top; gaps marked inline as `⚠ blocked on
+   gap-NNN`; cite the relevant `grimme-ui-components-best-practices` rules for HOW. Record
+   the **Scope dispositions** (in-scope / spec-only / excluded); prefix every `spec-only`
+   region's heading with a **`spec-only — not integrated this pass`** banner so the
+   implementer skips it.
 7. **Write `gaps/gap-NNN-*.md`** per `references/gap-spec-template.md`, one per deduped gap.
 8. **STOP — human triage checkpoint.** Present the gap list. The user marks each
    **build-local** vs **escalate**, and confirms/overrides every near-miss,
@@ -241,13 +319,15 @@ Write specs under a run directory (suggest the scratchpad or a user-named dir):
 ```
 <run-dir>/
   page-spec.md
-  screenshots/
-    <region>.png          # reference image per in-scope region (verification aid)
   gaps/
     gap-001-<slug>.md
     gap-002-<slug>.md
     ...
 ```
+
+Screenshots are **not** persisted — under `figma-dev-mode`, `get_screenshot` returns an
+inline image, not a file path. Region agents view it inline during extraction; the layout
+tree + auto-layout intent are the durable source of truth.
 
 ## What this skill verifies vs what it cannot
 

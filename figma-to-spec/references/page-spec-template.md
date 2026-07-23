@@ -26,16 +26,22 @@ Unchanged: <everything else>. New spec, no prior baseline → "n/a".
 <2–4 sentences: what the page is, its major regions, and the on-system posture — which
 regions resolve cleanly vs which are blocked on DS gaps.>
 
-## Scope
+## Scope dispositions
 
-**In-scope regions:** <list>. **Excluded (app chrome / out of ticket scope):** <navbar,
-global header, …> — recorded so re-runs are deterministic.
+Recorded so re-runs are deterministic and scope is auditable:
+
+- **In-scope** (spec + implement): <list>.
+- **Spec-only** (fully specced, **not integrated this pass** — leave as-is / UI-only):
+  <list | "none">.
+- **Excluded** (app chrome / out of ticket scope): <navbar, global header, …>.
 
 ## Region blueprint
 
 Repeat per region (from Phase A decomposition). *In component mode, only the single
 targeted region appears here — the page-level sections above collapse to that node.* On
-update runs, prefix a changed region's heading with `△`.
+update runs, prefix a changed region's heading with `△`. For a **spec-only** region, add a
+**`> spec-only — not integrated this pass (leave as-is / UI-only)`** banner under its
+heading so the implementer skips integration.
 
 ### <Region name> — node `<id>`
 
@@ -60,8 +66,8 @@ update runs, prefix a changed region's heading with `△`.
 - **Best-practices rules to follow:** cite the relevant
   `grimme-ui-components-best-practices` rule(s) — e.g. form-controller-pattern,
   dialog-standard-structure. Cite, don't restate.
-- **Reference image:** `screenshots/<region>.png` (verification aid — the layout above is
-  the source of truth, not the image).
+  *(Screenshots aren't persisted under `figma-dev-mode` — the region agent viewed the
+  canvas inline during extraction; the layout tree above is the source of truth.)*
 - **Blocked on:** `⚠ gap-NNN` (list any gaps this region depends on).
 
 ## Responsive notes
@@ -82,6 +88,5 @@ update runs, prefix a changed region's heading with `△`.
 
 What an implementer should check after building: computed token values vs the Figma
 numbers per region, Storybook renders match, states behave, and the built layout matches
-each region's containment tree + auto-layout intent (cross-check against
-`screenshots/<region>.png`). (This spec does not build or verify — it hands the
-implementer the checklist.)
+each region's containment tree + auto-layout intent (cross-check against the Figma node
+itself). (This spec does not build or verify — it hands the implementer the checklist.)
