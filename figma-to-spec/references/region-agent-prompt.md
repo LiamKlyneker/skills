@@ -32,6 +32,16 @@ ordering keeps a late failure non-fatal. If the session drops, re-auth and re-ru
 region agent.
 
 1. `get_metadata` — map the region: children, names, types, **positions & sizes**.
+   **Hidden nodes carry state — do not silently prune them.** `get_metadata` reports
+   `visible:false` siblings, and a Figma frame routinely encodes its states as hidden
+   variants inside one node (a warning banner, a status/warning Chip, an empty-state block,
+   an error message). A child whose name implies a **state or variant** — matches
+   `/chip|banner|warning|error|empty|badge|alert|tooltip|state/i`, or sits alongside a
+   visible sibling as its alternate — is **in-scope content**, not noise. Record every such
+   hidden node under `hiddenVariants` (below) with the state it represents; never drop it
+   just because it's hidden. Only prune a hidden node when its name is clearly scaffolding
+   (spacer, guide, placeholder, deprecated/old, `_`-prefixed) — and when you do, list it in
+   `notes` so synthesis can see the call. When unsure, keep it and flag it.
 2. `get_variable_defs` — bound token **names**+values for the region (flat name→value).
 3. `get_screenshot` — visual ground truth for the region and each distinct sub-state.
    Viewed **inline** as a check; it returns an inline image, not a path — do **not** rely on
@@ -72,6 +82,10 @@ For the region:
   custom-inline. Flag ambiguous near-duplicates.
 - **States** — capture ONLY for components you classified unknown/new. Known DS
   components' states are DS-owned; don't spec them.
+- **Hidden variants** — the `visible:false` state-bearing nodes kept in step 1. Each is a
+  content state of this region (a warning banner, status chip, empty block, error message),
+  not a DS-owned component state. Record what it is and the state it represents so synthesis
+  can fold it into the region's **Data states**.
 - **Layout / placement** — the **output** is always *relative auto-layout intent*, never
   absolute coordinates. Capture the region's containment tree (child order preserved) and
   each container's intent: direction (row/column), gap (resolved token if bound), alignment,
@@ -114,6 +128,10 @@ For the region:
   "states": [
     { "component": "unknown-XYZ", "state": "hover|focus|disabled|loading|empty|error",
       "description": "..." }
+  ],
+  "hiddenVariants": [
+    { "node": "Chip/Warning", "visible": false, "represents": "expired-config warning",
+      "kind": "chip|banner|empty|error|badge|...", "note": "alternate of <visible sibling>" }
   ],
   "layout": {
     "tree": "region > Header[Title, SearchField] · Content > CardGrid > Card xN",

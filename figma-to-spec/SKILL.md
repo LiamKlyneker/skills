@@ -8,7 +8,7 @@ description: >
 disable-model-invocation: true
 metadata:
   author: liam
-  version: "1.5.1"
+  version: "1.6.0"
 ---
 
 # Figma → Spec
@@ -179,6 +179,23 @@ table, form, footer, …). Produce a **region list with node IDs**. Do **not** f
 whole page to one agent — the Figma MCP degrades badly on whole-page selections. One
 region = one node ID = one downstream agent.
 
+**Enumeration depth — descend through pass-through wrappers; don't stop at depth-1.** A
+page node's direct child is often a single content-wrapper frame (e.g. `SidebarNavigation`,
+`Content`, `Frame 427`) that holds every real region as a grandchild. Enumerating depth-1
+there yields **one mega-region** and defeats the extract-by-region design. Rule: **if a node
+has a single dominant content child (or a chrome-plus-one-wrapper shape), recurse into it;
+treat a node with mixed, heterogeneous children (a top bar + a list + a CTA) as the region
+boundary and stop.** Descend until you hit that boundary, then each heterogeneous child is
+its own region.
+
+**Completeness self-check (before fan-out).** After enumerating, assert coverage: every
+`get_metadata` child — **visible and state-bearing hidden** (per
+`references/region-agent-prompt.md`), at every depth — must land in exactly one region with a
+disposition, OR be explicitly listed as pruned scaffolding. If any node is unaccounted for,
+you collapsed a wrapper or dropped a hidden state — recurse again. `log()` the coverage
+tally (`N children → M regions, K excluded, J hidden-variants kept`) so a miss is visible
+rather than silent. This is the guard for the two failure modes above.
+
 Then **scope** the list — a page node arrives with app chrome (left navbar, global
 header/footer) that is noise for a feature spec:
 
@@ -260,10 +277,15 @@ region agent** — extraction is per-region and idempotent.
    two ways), one component inventory, one type/spacing scale. Principle: **extract by
    region, reconcile by concern.** It reasons over already-extracted findings — no Figma
    re-traversal, no whole-page MCP read.
-3. **Merge data states.** Group regions that are the same region across `state:*` nodes
-   (e.g. populated list + empty-state list) into one blueprint with a **Data states**
-   subsection (populated / empty / loading / error). This is a page/region-level content
-   state — distinct from DS-owned component states, which stay DS-owned.
+3. **Merge data states — from both sources.** A region's data states arrive two ways, and
+   both feed the same **Data states** subsection (populated / empty / loading / error /
+   warning): (a) **separate `state:*` nodes** — group regions that are the same region across
+   them (e.g. populated list + empty-state list); (b) **`hiddenVariants`** returned within a
+   single region — the `visible:false` state-bearing nodes (a warning banner, status chip,
+   empty block) the region agent kept. Fold every hidden variant into its region's Data
+   states; never let one vanish because it wasn't a separate node URL. This is a
+   page/region-level content state — distinct from DS-owned component states, which stay
+   DS-owned.
 4. **Responsive** — if a mobile node was given, merge responsive notes; otherwise infer
    (table reflow, minor stacking) and record the assumptions explicitly.
 5. **Changelog / delta (if a prior spec exists).** If a previous `page-spec.md` (run-dir)
