@@ -8,7 +8,7 @@ description: >
 disable-model-invocation: true
 metadata:
   author: liam
-  version: "1.2.0"
+  version: "1.3.0"
 ---
 
 # Figma → Spec
@@ -86,6 +86,19 @@ Decompose: **Sonnet**. Region agents: **Sonnet ×N** parallel. Synthesis & triag
    Keep the axes separate: viewport nodes feed responsive notes; state nodes feed the
    region's **Data states** (Phase C). Infer the role from context; if ambiguous, ask —
    never merge a data-state node into the mobile/viewport slot.
+7. **Determine the run mode — from the prompt, not the node.** Node geometry can *suggest*
+   granularity but cannot tell you *intent* (a Card node might be a fresh build or a
+   one-line padding tweak). Read the mode from the invocation:
+   - **`page` (default)** — full decompose + fan-out + full page-spec; auto-files an ADO
+     `[SPEC]` (Phase D).
+   - **`component` (lean)** — the prompt scopes to a single node / component ("lean
+     update", "single-component / single-node", "only X changed", "just this node",
+     "already implemented — give me the delta"). No fan-out; emit a lean **component-delta
+     spec** (one region blueprint + changelog); **files nothing unless the user explicitly
+     asks** (local artifacts only); the triage checkpoint still runs — never silently
+     accept an off-system value, even for one node.
+   Node structure (child count / depth via `get_metadata`) is only a sanity check. If the
+   prompt is silent and the node looks like a lone component, **confirm — don't assume**.
 
 ## Phase A — Decompose & scope (Sonnet)
 
@@ -111,6 +124,9 @@ header/footer) that is noise for a feature spec:
 Decompose **each provided node** (primary + any `viewport:*` / `state:*` nodes) this way,
 and tag every resulting region with its source-node role so Phase C can group the same
 region across viewports / data states. Only in-scope regions fan out to Phase B.
+
+In **component mode** there is nothing to fan out: the node *is* the single region — skip
+enumeration and hand it straight to one Phase B agent.
 
 ## Phase B — Region agents (Sonnet ×N, parallel)
 
@@ -153,14 +169,23 @@ deterministically):
    state — distinct from DS-owned component states, which stay DS-owned.
 4. **Responsive** — if a mobile node was given, merge responsive notes; otherwise infer
    (table reflow, minor stacking) and record the assumptions explicitly.
-5. **Write `page-spec.md`** per `references/page-spec-template.md`: region-by-region
-   blueprint — grimme-ui component + props per region, token per color/spacing/type,
-   **layout/placement (containment tree + auto-layout intent) + region reference
-   screenshot**, **data states** where state nodes were given, component states **only for
-   new/unknown components**, responsive notes; gaps marked inline as `⚠ blocked on
-   gap-NNN`; cite the relevant `grimme-ui-components-best-practices` rules for HOW.
-6. **Write `gaps/gap-NNN-*.md`** per `references/gap-spec-template.md`, one per deduped gap.
-7. **STOP — human triage checkpoint.** Present the gap list. The user marks each
+5. **Changelog / delta (if a prior spec exists).** If a previous `page-spec.md` (run-dir)
+   or a linked ADO `[SPEC]` is found, diff **new spec vs old spec** — spec-vs-spec, never
+   spec-vs-code — and emit a **Changelog** section (what changed: tokens, props, layout,
+   copy; what stayed). Mark affected regions `△ changed`. No prior baseline → note "new
+   spec, no prior" and skip. Computing the *code*-level delta is the implementer's job
+   (`develop-ticket` reconciles this spec against live code and touches only what differs);
+   this skill stays a pure function of the Figma node.
+6. **Write the spec** per `references/page-spec-template.md`. **Page mode:** full
+   region-by-region blueprint. **Component mode:** just the one targeted region's
+   blueprint. Either way — grimme-ui component + props, token per color/spacing/type,
+   **layout/placement (containment tree + auto-layout intent) + reference screenshot**,
+   **data states** where state nodes were given, component states **only for new/unknown
+   components**, responsive notes, and the **Changelog** from step 5 up top; gaps marked
+   inline as `⚠ blocked on gap-NNN`; cite the relevant `grimme-ui-components-best-practices`
+   rules for HOW.
+7. **Write `gaps/gap-NNN-*.md`** per `references/gap-spec-template.md`, one per deduped gap.
+8. **STOP — human triage checkpoint.** Present the gap list. The user marks each
    **build-local** vs **escalate**, and confirms/overrides every near-miss,
    suspected-intentional-deviation, and ambiguous-icon flag. **No ADO write happens
    before this.**
@@ -169,7 +194,9 @@ deterministically):
 
 - **Page spec → ADO `[SPEC]`** in **myGRIMME Core** (reuse the `to-spec` pattern). If a
   scope ticket was given in Phase 0, file the `[SPEC]` as its **child**. On re-run,
-  search for an existing linked `[SPEC]` and **update** it — never duplicate.
+  search for an existing linked `[SPEC]` and **update** it — never duplicate. *(Component
+  mode files nothing by default — no `[SPEC]`, no PBIs — unless the user explicitly asks;
+  it produces local artifacts only.)*
 - **Escalated gaps → PBIs** in **GRIMME Libraries**. First **query available work-item
   types** (ADO MCP) to confirm PBI exists; **search the backlog** (title / fingerprint)
   to avoid duplicates; file only new ones; **write the returned work-item IDs back**

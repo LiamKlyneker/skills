@@ -9,9 +9,17 @@ them), and marks every DS gap inline as `⚠ blocked on gap-NNN`.
 
 # [SPEC] <Page name> — implementation
 
-**Figma node:** <url> · **Mobile/tablet node:** <url | "none — responsive inferred">
+**Mode:** page | component · **Figma node:** <url> · **Mobile/tablet node:** <url | "none — responsive inferred">
 **State nodes:** <state:empty=url, state:error=url | "none"> · **Scope ticket:** #<id | "none">
-**Generated:** <YYYY-MM-DD> · **Gap specs:** `gaps/` (N gaps) · **ADO [SPEC]:** #<id once filed>
+**Generated:** <YYYY-MM-DD> · **Gap specs:** `gaps/` (N gaps) · **ADO [SPEC]:** #<id once filed | "n/a — component mode">
+
+## Changelog
+
+*(update runs only — omit for a brand-new spec)* Diffed **spec-vs-spec** against the prior
+baseline, never against code. Changed since <prior `page-spec.md` / ADO [SPEC] #id>:
+- <region / property>: <old> → <new>
+
+Unchanged: <everything else>. New spec, no prior baseline → "n/a".
 
 ## Overview
 
@@ -25,7 +33,9 @@ global header, …> — recorded so re-runs are deterministic.
 
 ## Region blueprint
 
-Repeat per region (from Phase A decomposition).
+Repeat per region (from Phase A decomposition). *In component mode, only the single
+targeted region appears here — the page-level sections above collapse to that node.* On
+update runs, prefix a changed region's heading with `△`.
 
 ### <Region name> — node `<id>`
 
