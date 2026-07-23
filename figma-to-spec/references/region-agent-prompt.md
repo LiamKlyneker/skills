@@ -63,10 +63,11 @@ For the region:
   spacing* between elements/regions (page rhythm: 24/16/12/8/4px gaps between siblings) maps
   to the **Tailwind spacing scale** (`gap-4`, `p-3`, …) and is **not a DS concern — do not
   flag it.** Only *component-internal dimensions* (a control's own padding/height/radius)
-  resolve against catalog **dimension** tokens; flag those off-system. Typography: `g-text-*`
-  utilities resolve **by prefix/convention** — the catalog lists them by example, so absence
-  from that list is **not** off-system; don't flag ordinary text as a gap. Weight is literal,
-  not a token.
+  resolve against catalog **dimension** tokens; flag those off-system. Typography: resolve
+  against the catalog's enumerated **`text-*`** utilities (consumer form — unprefixed:
+  `text-h4`, `text-body1`, `text-overline`, …); match by name, don't flag ordinary text as a
+  gap, and **never emit the `g-` prefixed form** (grimme-ui-internal, not the consumer API).
+  Weight is literal, not a token.
 - **Icons** — layered: SystemIcon → FontAwesome (app-only) → gap (add SystemIcon) →
   custom-inline. Flag ambiguous near-duplicates.
 - **States** — capture ONLY for components you classified unknown/new. Known DS
@@ -94,7 +95,7 @@ For the region:
   ],
   "colors": [
     { "property": "background", "boundName": "surface/primary|null",
-      "figmaValue": "#0a5c2b", "resolvedToken": "g-bg-surface-button-primary|null",
+      "figmaValue": "#0a5c2b", "resolvedToken": "bg-surface-button-primary|null",
       "tier": "semantic|alias|primitive|none", "deltaE": 0.0,
       "status": "resolves|flag|gap", "flagReason": "raw-hex|primitive-only|near-miss|null" }
   ],

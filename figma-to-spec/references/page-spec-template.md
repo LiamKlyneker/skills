@@ -49,12 +49,12 @@ heading so the implementer skips integration.
   <For any low-confidence match: "⚠ inferred from layer `X`, confirm.">
 - **Layout / placement:** containment tree + child order, and per-container auto-layout
   intent (direction · gap token · align · wrap). Maps to flex/grid — e.g.
-  `Content = column, gap g-4; CardGrid = row, wrap, gap g-4, items stretch`. Relative
+  `Content = column, gap-4; CardGrid = row, wrap, gap-4, items stretch`. Relative
   intent only — never absolute coordinates.
 - **Tokens (color / spacing / type):**
   | Property | Figma | Resolved token | Status |
   |----------|-------|----------------|--------|
-  | background | surface/primary | `g-bg-surface-button-primary` | ✅ |
+  | background | surface/primary | `bg-surface-button-primary` | ✅ |
   | gap | 16px | `<dimension token>` | ✅ |
   | accent | #0a5c2b (raw) | nearest `<token>` | ⚠ flag → gap-003 |
 - **Icons:** `<SystemIcon name="..." />` · or `<FA icon />` (app layer) · or ⚠ gap-005.

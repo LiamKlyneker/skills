@@ -8,7 +8,7 @@ description: >
 disable-model-invocation: true
 metadata:
   author: liam
-  version: "1.5.0"
+  version: "1.5.1"
 ---
 
 # Figma → Spec
@@ -101,7 +101,7 @@ Decompose: **Sonnet**. Region agents: **Sonnet ×N** parallel. Synthesis & triag
    over its source-of-truth files and compare to the catalog's line-1 stamp —
 
    ```
-   shasum \
+   cat \
      <(sed -n '/"exports"/,/^  }/p' ~/schmiede-one/grimme-ui/package.json) \
      ~/schmiede-one/grimme-ui/theme/tokens/primitives.generated.css \
      ~/schmiede-one/grimme-ui/theme/tokens/alias.generated.css \
@@ -114,10 +114,11 @@ Decompose: **Sonnet**. Region agents: **Sonnet ×N** parallel. Synthesis & triag
    Match → note "catalog current". Mismatch → **soft-warn** ("bundled catalog may lag live
    grimme-ui — regenerate via `grimme-ui-catalog`") and **continue**. grimme-ui not reachable
    → note "bundled snapshot, staleness unchecked" and continue. **Never hard-fail on
-   staleness.** The only hard STOP here is no resolvable `catalog.md` at all. *(Caveat: this
-   recipe uses process-substitution paths, so it's reproducible on one machine but not
-   portable across machines — fine for local runs; the future initiate mode should switch to
-   a path-independent hash.)*
+   staleness.** The only hard STOP here is no resolvable `catalog.md` at all. *(The inner step
+   is `cat`, not `shasum`, so the hash is **content-only** — no file paths in it. It matches
+   the `grimme-ui-catalog` recipe exactly and reproduces on any machine. This check compares
+   the bundled snapshot against the **live library**, so it's the one skill file with an
+   upstream that can drift; the rest are hand-authored and have none.)*
 3. **Confirm Figma capability — two separate checks (Prerequisites).** (a) Ensure
    **`figma-dev-mode`** is present — STOP if not. (b) Try to make the binding read
    (`use_figma`) available (load `/figma-use` if reachable). If it isn't, continue in

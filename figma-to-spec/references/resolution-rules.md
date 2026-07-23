@@ -11,8 +11,9 @@ How a region agent decides whether a Figma property **resolves** to the design s
    the `use_figma` binding read (`figma-component/references/figma-feed.md`). Two
    semantics routinely alias one primitive — matching on value is a coin flip that
    silently collapses the tier.
-2. **Prefer semantic.** If a semantic token (Tailwind-classed, e.g.
-   `g-bg-surface-button-primary`) matches → ✅.
+2. **Prefer semantic.** If a semantic token (Tailwind-classed, **consumer form —
+   unprefixed**, e.g. `bg-surface-button-primary`) matches → ✅. Emit the unprefixed form;
+   the `g-` prefix is grimme-ui's internal build only (catalog's Class-prefix note).
 3. **Only a primitive/alias matches** (e.g. `--g-color-grey-100`,
    `--g-primary-full-default`) → recommend it, but **⚠️ flag** — a primitive binding
    looks right and breaks theming silently. (Only Button is on the semantic layer today,
@@ -52,13 +53,13 @@ that a machine can't tell an intentional new shade from a sloppy one.
 The test: *is this the space **between** things (layout → Tailwind), or a **fixed dimension
 of one control** (→ dimension token)?*
 
-**Typography** resolves against the catalog's `g-text-*` utility classes **by
-prefix/convention**. The catalog enumerates them **by example** (`g-text-h4`, `g-text-body1`,
-`g-text-overline`, …), so a class's absence from that list is **not** evidence it's
-off-system — do **not** ❌ gap ordinary text just because the exact utility isn't listed. Only
-flag type that clearly has no `g-text-*` home (novel size/role). Weight stays **literal**
-(Figma keeps it in `fontName.style`, bound to nothing — tokenising it invents a tier the file
-doesn't have).
+**Typography** resolves against the catalog's **enumerated `text-*` utility classes**
+(consumer form — unprefixed: `text-h1`…`text-h6`, `text-body1/2/3`, `text-caption`,
+`text-overline`, `text-button`, …). The catalog now lists the full set, so **match by name**;
+❌ gap only type with no `text-*` home (a genuinely novel size/role). **Never emit the `g-`
+prefixed form** — that's grimme-ui's internal build, not the consumer API (catalog's
+Class-prefix note). Weight stays **literal** (Figma keeps it in `fontName.style`, bound to
+nothing — tokenising it invents a tier the file doesn't have).
 
 ## Icons (layered resolution)
 
