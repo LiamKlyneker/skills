@@ -4,6 +4,8 @@ Single home for every project-specific fact the skills need. Workflow skills (`w
 
 > **This is a template.** Fill every `<placeholder>` with your project's real values before running `work-on-prd`. Delete rows that don't apply; add rows the workflow needs. Nothing else in the skills should mention a tool, path, or command by name — if it does, lift it into this file.
 
+**Canonical source:** skill *logic* is canonical in **this repo** (`LiamKlyneker/skills`) and reaches project repos by **copy, not symlink** — so an improvement made in a project repo is drift until it's back-ported here. Project facts live only in that repo's filled-in copy of this file.
+
 ## Repo
 
 - Issue tracker / PRs: `<owner>/<repo>` (GitHub, via `gh`)
