@@ -22,11 +22,11 @@ Human sessions default Opus-class·high, so this file detects downgrades. Orches
 ## Signals
 
 **Heavier — keep Opus-class, high effort:**
-- Cross-table orchestration (`page.server.ts`), schema change, migration / expand-contract
+- Cross-module orchestration, schema change, migration / expand-contract
 - Money / billing / auth / concurrency / security
 - New shared-primitive API design (the UI-primitive-exception issues from `to-issues`)
 - Net-new architecture (not following an existing pattern)
-- Many files / multiple route groups touched
+- Many files / multiple modules or packages touched
 - Ambiguous AC or unresolved decisions in the issue
 
 **Lighter — drop to Sonnet-class, medium effort:**
@@ -48,14 +48,14 @@ No "complexity: 7/10". Name the signals that drove the call.
 
 ```
 Model/effort: Sonnet · medium   (downgrade from default)
-  Why: single-file copy change in (landing)/, follows existing pattern. No risk signals.
+  Why: single-file copy change, follows an existing pattern. No risk signals.
 Plan mode: optional — one file, no decisions.
 ```
 
 ```
 Model/effort: Opus · high   (stay on default)
   Why: cross-table billing write + expand/contract migration.
-Plan mode: yes — 3 files across 2 route groups.
+Plan mode: yes — 3 files across 2 modules.
 ```
 
 Borderline → hedge: `Model/effort: Sonnet · high (borderline — billing-adjacent; your call).`
