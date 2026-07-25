@@ -1,6 +1,6 @@
 ---
 name: next-prd-issue
-description: Pick the next child issue to implement from a PRD on the project issue tracker. Use when the user wants to continue implementing a PRD, asks "what's next" on a PRD, or passes a PRD URL/issue number to start the next slice. Reads `## External steps` and `## Blocked by` from each child to recommend the next single issue.
+description: Pick the next child issue to implement from a PRD on the project issue tracker. Use when the user wants to continue implementing a PRD, asks `what's next` on a PRD, or passes a PRD URL/issue number to start the next slice. Reads `## External steps` and `## Blocked by` from each child to recommend the next single issue.
 ---
 
 # Next PRD Issue
