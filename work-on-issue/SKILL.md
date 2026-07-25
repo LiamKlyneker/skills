@@ -1,6 +1,6 @@
 ---
 name: work-on-issue
-description: Start work on a single GitHub issue passed by number or URL. Fetches the issue, runs a readiness gate, and either auto-enters plan mode (when scope is clear and unblocked) or tells the user exactly what's missing. Use when the user says "work on #N", "/work-on-issue <url>", or hands you an issue to start.
+description: Start work on a single GitHub issue passed by number or URL. Fetches the issue, runs a readiness gate, and either auto-enters plan mode (when scope is clear and unblocked) or tells the user exactly what's missing. Use when the user says `work on #N`, runs `/work-on-issue <url>`, or hands you an issue to start.
 ---
 
 # Work On Issue
@@ -19,7 +19,7 @@ This skill does the readiness gate + plan-mode handoff only. It does not impleme
 Argument may be a URL (`https://github.com/<owner>/<repo>/issues/N`), `#N`, or bare `N`. Strip query strings.
 
 - URL → derive `<owner>/<repo>` from it.
-- Otherwise let `gh` resolve the default repo (`creativeghosts/neonplace` in this workspace).
+- Otherwise use the issue-tracker repo from `../_shared/project-adapter.md` (or let `gh` resolve its default).
 - No argument and no obvious issue in conversation context → ask for an issue reference. Do not guess.
 
 ### 2. Fetch it

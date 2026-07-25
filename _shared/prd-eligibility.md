@@ -11,12 +11,11 @@ gh issue list --repo <repo> --search "in:body \"#<prd-number>\"" --state all --l
 
 (No `-is:pr` qualifier — `gh issue list` already excludes PRs and current `gh` rejects PR qualifiers here.)
 
-```
-```
-
 The search may include the PRD itself — filter it out by number.
 
 ## Parse each child body
+
+The headings and "None…" sentinels below are a string contract with the writer — normative copy lives in `to-issues`'s issue template. Reword there first, never here alone.
 
 - **External steps**: everything under `## External steps` until the next `## ` heading. Each `- [ ]` line is an unmet step; `- [x]` is met. The literal phrase "None — fully implementable from the editor" (or just "None") means no external steps. Section missing entirely → treat as "None" and flag `needs-backfill` (issue predates the template).
 - **Blocked by**: everything under `## Blocked by` until the next `## ` heading. Collect every `#NNN` reference. "None" (or "None - can start immediately") means no blockers.
@@ -33,6 +32,8 @@ A child is **eligible** when:
 Closed children count for summaries but are never picked. A `## Blocked by` entry that is a PR resolves fine via `gh`; merged/closed = unblocked. Blockers from other PRDs are still respected — only state matters. Closed issues listed as blockers are not blocking.
 
 **Cycle detection**: walk the `Blocked by` graph. On a cycle, report the cycle and stop — do not pick anything.
+
+**Orchestrated-mode exception** (`work-on-prd` only, specced at that skill's Loop step 1): a blocker *inside the PRD being run* also counts as satisfied once its commit exists on the PRD branch (`state:done-on-branch`) — children only close on merge, so strict closed-only would deadlock the loop.
 
 ## Picking order (when multiple eligible)
 

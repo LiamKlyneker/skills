@@ -10,7 +10,7 @@ The issue tracker and triage label vocabulary should have been provided in conte
 ## Mode: CREATE vs UPDATE
 
 - **CREATE (default):** invoked with no issue reference → publish a brand-new PRD via the Process below and apply the `needs-triage` triage label.
-- **UPDATE:** invoked with an existing issue reference (number/URL/path) as an argument → **enrich that PRD in place** instead of creating a new one. This lets a fidelity PRD accrue detail across multiple grills — e.g. the AI-dialog grill appends to #314's sibling rather than spawning a fresh PRD.
+- **UPDATE:** invoked with an existing issue reference (number/URL/path) as an argument → **enrich that PRD in place** instead of creating a new one. This lets a fidelity PRD accrue detail across multiple grills — a later grill on the same feature appends to the existing PRD rather than spawning a fresh one.
 
 ### UPDATE mode rules
 
@@ -30,9 +30,7 @@ The issue tracker and triage label vocabulary should have been provided in conte
 
 1. Explore the repo to understand the current state of the codebase, if you haven't already. Use the project's domain glossary vocabulary throughout the PRD, and respect any ADRs in the area you're touching.
 
-2. Sketch out the major modules you will need to build or modify to complete the implementation. Actively look for opportunities to extract deep modules that can be tested in isolation.
-
-A deep module (as opposed to a shallow module) is one which encapsulates a lot of functionality in a simple, testable interface which rarely changes.
+2. Sketch out the major modules you will need to build or modify to complete the implementation. Prefer deep modules — a simple, stable, testable interface with a lot behind it.
 
 Check with the user that these modules match their expectations. Check with the user which modules they want tests written for.
 
@@ -50,7 +48,7 @@ The solution to the problem, from the user's perspective.
 
 ## User Stories
 
-A LONG, numbered list of user stories. Each user story should be in the format of:
+A numbered list of user stories, each in the format:
 
 1. As an <actor>, I want a <feature>, so that <benefit>
 
@@ -58,7 +56,7 @@ A LONG, numbered list of user stories. Each user story should be in the format o
 1. As a mobile bank customer, I want to see balance on my accounts, so that I can make better informed decisions about my spending
 </user-story-example>
 
-This list of user stories should be extremely extensive and cover all aspects of the feature.
+Cover every actor and every interaction the feature touches; no padding.
 
 ## Implementation Decisions
 
@@ -76,14 +74,13 @@ Do NOT include specific file paths or code snippets. They may end up being outda
 
 ## UI Primitives
 
-Only for PRDs that implement a visual design. The component manifest agreed during the grill — every UI primitive the design needs, so `to-issues` can emit one issue per primitive that must be built or changed.
+Only for PRDs that implement a visual design. The component manifest agreed during the grill — every UI primitive the design needs, so `to-issues` can emit one issue per primitive that must be built or changed. Schema (statuses, homes, column meanings) is normative in `../_shared/ui-manifests.md`.
 
 | Primitive | Status | Home | API surface | Consumed by |
 |-----------|--------|------|-------------|-------------|
-| IconBadge | ❌ build | luar-ui/ | color, icon, size | Editar-con-IA cards |
-| Button | ⚠️ extend | components/ui/ | add solid-green variant | Continuar CTA |
+| IconBadge | ❌ build | shared UI lib | color, icon, size | feature cards |
 
-Status ∈ ✅ exists / ⚠️ extend-or-extract / ❌ build. Home ∈ `components/ui` (shadcn) / `luar-ui` (custom) / new dependency. Omit this section (or write "None — no new/changed UI primitives") for non-visual PRDs.
+Omit this section (or write "None — no new/changed UI primitives") for non-visual PRDs.
 
 ## Design reference
 
@@ -91,7 +88,7 @@ The design node pointers recorded during the grill, so a cold implementation or 
 
 | Area | Design node | Node name |
 |------|-------------|-----------|
-| Editar con IA dialog | <url#node-id> | "Edit with AI / Options" |
+| Edit dialog | <url#node-id> | "Edit / Options" |
 
 ## Migration risk
 

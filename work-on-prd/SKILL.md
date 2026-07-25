@@ -14,7 +14,7 @@ Project facts (repo, commands, verify ladder, QA-doc convention) come from `../_
 `/work-on-prd #N [--gate=issue|events|end]`
 
 - `#N` — PRD issue (number, `#N`, or URL; strip query strings). One PRD per loop — no parallel PRDs in v1.
-- `--gate` (default `issue`):
+- `--gate` (default `events`):
   - `issue` — pause for human approval after every worker report.
   - `events` — run free; pause only on: verify failure after retries · deviation from spec · destructive/irreversible action · ambiguity.
   - `end` — pause only at QA (loop end).
@@ -87,5 +87,7 @@ State lives in git + GitHub only (branch commits, issue labels, PR body). Zero s
    ```
 
 ## Label vocabulary
+
+Normative home for the label vocabulary — `to-issues` and `next-prd-issue` apply/read these; change them here first.
 
 `ready-to-start` (pickable) → `state:in-progress` (claimed) → `state:done-on-branch` (committed, awaiting merge). Merge auto-closes via the PR's Closes line. One state per axis; always remove-before-add. Precondition (one-time, human): the repo setting "auto-close issues with merged linked pull requests" must be on — see the adapter.

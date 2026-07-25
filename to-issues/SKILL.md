@@ -37,7 +37,7 @@ Break the plan into **tracer bullet** issues. Each issue is a thin vertical slic
 - **UI primitive exception (the one exception to bundling):** treat UI primitives as if they ship from a UI library. Each ⚠️/❌ row in the PRD's `## UI Primitives` section becomes its **own issue**, published first, and listed as `Blocked by` for every feature issue that consumes it. This is a deliberate horizontal slice — a primitive's API deserves isolated review so it doesn't get improvised inside a feature PR (the root cause of design drift). Trivial one-off styling tweaks stay bundled; this exception is scoped to *shared primitives that must be built or have their API changed/extracted*. Everything non-UI keeps the bundling rules above.
 </vertical-slice-rules>
 
-Read the PRD's `## UI Primitives` section if present. Emit one issue per ⚠️/❌ row (see the UI primitive exception in `<vertical-slice-rules>`), published ahead of and listed as `Blocked by` for the feature issues that consume them.
+Read the PRD's `## UI Primitives` section if present (row schema: `_shared/ui-manifests.md`). Emit one issue per ⚠️/❌ row (see the UI primitive exception in `<vertical-slice-rules>`), published ahead of and listed as `Blocked by` for the feature issues that consume them.
 
 Read the PRD's `## Migration risk` section if present. For each entry there:
 - If the PRD's `## Implementation Decisions` mentions removing/dropping the legacy column/RPC afterward, generate a 3-part split (expand → cutover → contract).
@@ -71,9 +71,11 @@ Iterate until the user approves the breakdown.
 
 ### 5. Publish the issues to the issue tracker
 
-For each approved slice, publish a new issue to the issue tracker. Use the issue body template below. Apply the `ready-to-start` triage label so each issue is immediately pickable.
+For each approved slice, publish a new issue to the issue tracker. Use the issue body template below. Apply the `ready-to-start` triage label so each issue is immediately pickable (label vocabulary is normative in `work-on-prd`'s `## Label vocabulary`).
 
 Publish issues in dependency order (blockers first) so you can reference real issue identifiers in the "Blocked by" field.
+
+<!-- String contract: this template is the normative writer for the `## External steps`, `## Blocked by`, `## Worker context`, `## Design reference` and `## QA notes` headings and for the two "None…" sentinel phrases below. `_shared/prd-eligibility.md` and `next-prd-issue` parse them; `work-on-prd` consumes `## Worker context`. Change a heading or sentinel here and you must change them there. -->
 
 <issue-template>
 ## Parent
@@ -87,7 +89,8 @@ A checklist of in-session manual actions Claude cannot perform — anything you'
 - [ ] Step 1
 - [ ] Step 2
 
-Or "None — fully implementable from the editor" if the issue requires no manual actions.
+Or "None — fully implementable from the editor" if the issue requires no manual actions. <!-- parsed verbatim — do not reword -->
+
 
 ## What to build
 
@@ -127,7 +130,8 @@ Everything a cold, isolated worker session needs to implement this slice without
 
 - A reference to the blocking ticket (if any)
 
-Or "None - can start immediately" if no blockers.
+Or "None - can start immediately" if no blockers. <!-- parsed verbatim — do not reword -->
+
 
 </issue-template>
 
