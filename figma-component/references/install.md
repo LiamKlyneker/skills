@@ -6,7 +6,7 @@ How to set up any repo — with a UI library or about to grow one — for `/toke
 
 - **Figma**: Professional plan or above with a **paid Dev or Full seat**. Hard requirement — `get_variable_defs` and usable rate limits need it (free/Starter seats get ~6 MCP calls/month). Code Connect is NOT required; it's an Org/Enterprise-only accelerator these skills exploit when present.
 - **Repo**: Node project with Tailwind (v3 or v4). Storybook installed if you want stories — the skills write stories, they don't install Storybook.
-- **Claude Code** with the Figma MCP wired (below).
+- **Claude Code** with the **official** Figma MCP wired (below) — not Framelink. Settled; don't re-litigate. Framelink reads variables through the REST Variables API, which is **Enterprise-only**, so on a Professional Dev seat it cannot return semantic variable names. The official server's `get_variable_defs` can (node-scoped), and that is the feed these skills run on.
 
 ## 1. Wire the Figma MCP
 
