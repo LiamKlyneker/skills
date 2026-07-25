@@ -1,6 +1,6 @@
 ---
 name: work-on-issue
-description: Start work on a single GitHub issue passed by number or URL. Fetches the issue, runs a readiness gate, and either auto-enters plan mode (when scope is clear and unblocked) or tells the user exactly what's missing. Use when the user says `work on #N`, runs `/work-on-issue <url>`, or hands you an issue to start.
+description: Start work on a single GitHub issue passed by number or URL. Fetches the issue, runs a readiness gate, and either auto-enters plan mode (when scope is clear and unblocked) or tells the user exactly what's missing. Use when the user says `work on` with an issue number, runs `/work-on-issue <url>`, or hands you an issue to start.
 ---
 
 # Work On Issue

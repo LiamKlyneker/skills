@@ -1,6 +1,6 @@
 ---
 name: work-on-prd
-description: Orchestrate a whole PRD end-to-end — pick each child issue, spawn a fresh worker subagent per issue, verify, commit, maintain one PR — pausing per the chosen gate. Use when the user says `work on PRD #N` or `run the PRD`, or passes /work-on-prd a PRD number/URL. Re-entrant — the same command cold-starts and resumes.
+description: Orchestrate a whole PRD end-to-end — pick each child issue, spawn a fresh worker subagent per issue, verify, commit, maintain one PR — pausing per the chosen gate. Use when the user says `work on PRD` with a number, or `run the PRD`, or passes /work-on-prd a PRD number/URL. Re-entrant — the same command cold-starts and resumes.
 ---
 
 # Work On PRD
