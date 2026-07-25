@@ -49,7 +49,7 @@ Patterns specific to this area that differ from or extend the project-wide patte
 
 ## Design reference (for pages built from a visual design)
 
-A page's `CONTEXT.md` can carry a `## Design reference` table pointing at the design node(s) that are its visual source of truth. This is the durable home `verify-ui` reads from; populate it when a UI feature ships (acceptance criterion on UI issues).
+A page's `CONTEXT.md` can carry a `## Design reference` table pointing at the design node(s) that are its visual source of truth. This is the durable home a UI-verification pass reads from; populate it when a UI feature ships (acceptance criterion on UI issues).
 
 ```markdown
 ## Design reference
