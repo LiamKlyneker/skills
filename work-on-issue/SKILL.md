@@ -19,7 +19,7 @@ This skill does the readiness gate + plan-mode handoff only. It does not impleme
 Argument may be a URL (`https://github.com/<owner>/<repo>/issues/N`), `#N`, or bare `N`. Strip query strings.
 
 - URL → derive `<owner>/<repo>` from it.
-- Otherwise use the issue-tracker repo from `../_shared/project-adapter.md` (or let `gh` resolve its default).
+- Otherwise use the issue-tracker repo from the **project adapter** at `<project-root>/.claude/skills/_shared/project-adapter.md` — resolved from the project repo root, not relative to this skill's directory, which is typically a symlink into the canonical skills repo (or let `gh` resolve its default).
 - No argument and no obvious issue in conversation context → ask for an issue reference. Do not guess.
 
 ### 2. Fetch it

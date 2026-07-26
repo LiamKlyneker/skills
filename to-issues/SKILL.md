@@ -48,7 +48,7 @@ Read the PRD's `## Data & Access` section if present. For each ⚠️ row (a CRU
 - This matters most for a **new operation on an already-used table** (e.g. the first UPDATE/DELETE on a read/insert-only table): there's no `create table` migration to hang the policy off, so it's easy to slice the write into a feature issue and lose the policy entirely. Call it out explicitly in that issue's acceptance criteria (see the template note below).
 - ✅ rows need nothing — they're already covered.
 
-While drafting each slice, also gather its `## Worker context` and `## QA notes` (see the template): explore the codebase for the real file paths, scoped `CONTEXT.md`s, and prior-art examples the slice needs; take verify commands from `_shared/project-adapter.md` (never hardcode them); mark **User-visible: y/n** (y = app boot + screenshot verification applies). These two sections are what let an isolated orchestrated worker (`/work-on-prd`) implement the slice without plan mode — vague pointers here mean a blind worker there.
+While drafting each slice, also gather its `## Worker context` and `## QA notes` (see the template): explore the codebase for the real file paths, scoped `CONTEXT.md`s, and prior-art examples the slice needs; take verify commands from the **project adapter** at `<project-root>/.claude/skills/_shared/project-adapter.md` — resolved from the project repo root, not relative to this skill's directory, which is typically a symlink into the canonical skills repo (never hardcode them); mark **User-visible: y/n** (y = app boot + screenshot verification applies). These two sections are what let an isolated orchestrated worker (`/work-on-prd`) implement the slice without plan mode — vague pointers here mean a blind worker there.
 
 ### 4. Quiz the user
 
@@ -110,7 +110,7 @@ Everything a cold, isolated worker session needs to implement this slice without
 
 - **Files**: real paths the slice touches (create/edit), plus the scoped `CONTEXT.md`(s) to read first.
 - **Prior art**: concrete in-repo examples to copy the pattern from (path + one line on what to imitate).
-- **Verify**: exact commands, taken from `_shared/project-adapter.md` (L2 test command; L3 app/boot command if applicable).
+- **Verify**: exact commands, taken from the project adapter at `<project-root>/.claude/skills/_shared/project-adapter.md` (L2 test command; L3 app/boot command if applicable).
 - **User-visible**: y/n — y means the verify ladder's L3 (app boot + screenshot) applies.
 
 ## QA notes

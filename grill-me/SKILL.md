@@ -11,7 +11,7 @@ Ask the questions one at a time.
 
 If a question can be answered by exploring the codebase, explore the codebase instead — and for anything beyond a single known file, **don't explore on this (the main) thread**: fan the exploration out to recon subagents first (next section). This thread is the orchestrator and the interviewer; it does not do the raw digging.
 
-Project facts (repo names, explorer agents, token map, access-policy source) come from `../_shared/project-adapter.md` — read it first; never hardcode project specifics in this skill.
+Project facts (repo names, explorer agents, token map, access-policy source) come from the **project adapter** at `<project-root>/.claude/skills/_shared/project-adapter.md` — read it first; never hardcode project specifics in this skill. Resolve that path from the **project repo root**, never relative to this skill's directory: skill directories are typically symlinks into the canonical skills repo, and a relative `../_shared/...` walks past the symlink onto the unfilled template. If what you opened says `TEMPLATE` or has `<placeholder>` values, re-read from the repo root.
 
 ## Recon fan-out (run FIRST — gated)
 

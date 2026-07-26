@@ -7,7 +7,9 @@ description: Orchestrate a whole PRD end-to-end — pick each child issue, spawn
 
 Run a whole PRD in one session: orchestrator (this session's model) + one fresh worker subagent per child issue. The human stays in the creative loop (grill / PRD / issues) and the QA gate.
 
-Project facts (repo, commands, verify ladder, QA-doc convention) come from `../_shared/project-adapter.md` — read it first; never hardcode project specifics in this skill.
+Project facts (repo, commands, verify ladder, QA-doc convention) come from the **project adapter** at `<project-root>/.claude/skills/_shared/project-adapter.md` — read it first; never hardcode project specifics in this skill.
+
+> **Resolve that path from the project repo root, never relative to this skill's directory.** Skill directories are typically symlinks into the canonical skills repo, so a relative `../_shared/...` walks *past* the symlink and lands on the unfilled template. If the file you opened is titled `Project Adapter — TEMPLATE` or contains `<placeholder>` values, you resolved the wrong one — re-read from the repo root before going further.
 
 ## Invocation
 
@@ -67,7 +69,7 @@ State lives in git + GitHub only (branch commits, issue labels, PR body). Zero s
 4. **Route model**: apply `../_shared/model-effort-heuristics.md` **in orchestrated mode** — the default flips: workers start Sonnet-class and *upgrade* to Opus-class on the file's heavier/risk signals. Announce the routing call (tier + matched signals) before spawning.
 5. **Spawn worker**: Agent tool, `general-purpose`, `model` per the routing call, `run_in_background: false`. Flat hierarchy — workers never spawn workers. Isolation is total: everything the worker needs must be in its prompt, the issue, or the repo. Prompt contains:
    - The **full issue body** (incl. `## Worker context`, `## QA notes`, acceptance criteria).
-   - The **full contents of `../_shared/project-adapter.md`**.
+   - The **full contents of the project adapter** (path at the top of this skill — confirm it is the project's filled copy, not the template, before pasting it).
    - Mandates: read the scoped `CONTEXT.md` before touching files in any directory (repo discipline) · work only on branch `prd/<n>-<slug>` · verify **L2 always** (adapter test command); **L3** (app boot + screenshot) if the issue is marked user-visible · commit **only after verify passes**, message ends with `(#N)` · one commit for the issue (fixups squashed locally before the commit exists; never amend an existing commit) · never push, merge, close issues, or touch labels/PR · max 2 self-fix attempts, each announced.
    - The **report contract**: ① what shipped · ② verify evidence (actual test/build output) · ③ deviation log — every place the implementation diverged from the issue spec and why · ④ refined QA notes (concrete steps for the QA doc) · ⑤ or an honest "could not finish X because Y" with attempts announced. No report theater — evidence over prose.
 6. **Judge the report**: commit exists on branch · verify evidence is real (spot-check: re-run the L2 command if evidence looks thin) · deviations acceptable · AC covered.

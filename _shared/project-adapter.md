@@ -3,8 +3,10 @@
 Single home for every project-specific fact the skills need. Workflow skills (`work-on-prd`, `to-issues`, `next-prd-issue`, `work-on-issue`) and `grill-me` reference this file and never hardcode these values. Porting the workflow to another repo = copy the skills + rewrite this file, nothing else.
 
 > **This is a template.** Fill every `<placeholder>` with your project's real values before running `work-on-prd`. Delete rows that don't apply; add rows the workflow needs. Nothing else in the skills should mention a tool, path, or command by name — if it does, lift it into this file.
+>
+> **If you are reading this during a real `work-on-prd` / `grill-me` / `to-issues` run, you resolved the wrong file — stop.** This is the unfilled template in the canonical skills repo. The project's filled adapter lives at `<project-root>/.claude/skills/_shared/project-adapter.md`. A relative `../_shared/...` from a skill directory resolves *past* the symlink and lands here; re-read from the project repo root instead. Never paste this file into a worker prompt.
 
-**Canonical source:** skill *logic* is canonical in **this repo** (`LiamKlyneker/skills`) and reaches project repos by **copy, not symlink** — so an improvement made in a project repo is drift until it's back-ported here. Project facts live only in that repo's filled-in copy of this file.
+**Canonical source:** skill *logic* is canonical in **this repo** (`LiamKlyneker/skills`) and reaches a project repo either by copy or by symlinking each skill directory into its `.claude/skills/` — an improvement made in a copy is drift until it's back-ported here. **This `_shared/` file is always copied, never symlinked**, because each project fills it in with its own values; that copy lives at `<project-root>/.claude/skills/_shared/project-adapter.md`, which is the path skills must resolve from the project repo root.
 
 ## Repo
 
