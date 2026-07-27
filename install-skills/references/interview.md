@@ -45,8 +45,13 @@ Ask only for the sections the bundle declares in `../install/bundles.md`.
 2. The verify floor, and what L3 evidence is when there's no screenshot command.
 3. The deliberate-looking-wrong conventions (`## Repo discipline`).
 
-**`prd-qa`** — `## QA doc convention` and `## Verify ladder` only. If the repo already ran
-a `prd-workflow` install, both are filled: confirm, don't re-ask.
+**`prd-qa`** — a subset of `prd-workflow`'s sections, so if the repo already ran that
+install every one is filled: confirm, don't re-ask. On a standalone install the two worth
+real questions are `## QA doc convention` (where the human-run QA doc lives) and
+`## Sources of truth` — specifically whether a **contract-boundary** repo and explorer
+agent exist. `triage-prd` routes cross-repo findings through them, and "None" is a fine
+answer that makes every finding a this-repo finding; a *guessed* answer sends issues to
+the wrong tracker.
 
 **`figma`** — none. The bundle is adapter-free. The only question worth asking is whether
 this project wants its own `ui-manifests.md` gate, and the honest default is no until it

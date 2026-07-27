@@ -59,16 +59,31 @@ never `~/.claude/agents/`.
 
 The QA loop that runs against a PRD branch before merge.
 
-- **Status:** pending #13
+- **Status:** ready
 - **Skills:** `qa-prd-log`, `triage-prd`
-- **Global reference:** —
-- **Adapter sections:** `## QA doc convention`, `## Verify ladder`
+- **Global reference:** `_shared/model-effort-heuristics.md`, `_shared/prd-eligibility.md`
+- **Adapter sections:** `## Repo`, `## QA doc convention`, `## Verify ladder`, `## Sources of truth`, `## Repo discipline`
 - **Gates:** none
 - **Agents:** none
 
-Neither skill exists in this repo yet. `install-skills install prd-qa` must **refuse**
-and say so — do not partially install it, and do not silently fall back to
-`prd-workflow`.
+Which skill drives which section:
+
+| Section | Wanted by |
+|---|---|
+| `## Repo` | both — `triage-prd` also reads `Related repos` to route across the contract boundary |
+| `## QA doc convention` | `triage-prd` (loads the QA doc as decision context) |
+| `## Verify ladder` | `triage-prd` (every filed issue names its verify step) |
+| `## Sources of truth` | `triage-prd` — the project explorer agent, and the contract-boundary one for cross-repo findings |
+| `## Repo discipline` | both — scoped `CONTEXT.md` loading |
+
+**Pairs with `prd-workflow`, doesn't replace it.** `triage-prd` files issues shaped like
+`to-issues` children, so `work-on-prd` / `work-on-issue` execute them with no new
+machinery. Installing `prd-qa` alone is legal but leaves nothing downstream to run the
+issues it files — say so rather than silently installing both.
+
+Both skills degrade rather than break where the adapter says "None": no related repo
+means every finding is a this-repo finding, and no contract-boundary explorer agent
+means a cross-boundary root cause gets filed locally and flagged as unmodelled.
 
 ## `figma`
 

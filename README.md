@@ -31,7 +31,7 @@ bill of health — or tells you exactly what it couldn't finish.
 | Bundle | Skills |
 |---|---|
 | `prd-workflow` | `to-prd`, `to-issues`, `next-prd-issue`, `work-on-prd`, `work-on-issue`, `deep-grill` |
-| `prd-qa` | `qa-prd-log`, `triage-prd` — *pending #13* |
+| `prd-qa` | `qa-prd-log`, `triage-prd` |
 | `figma` | `figma-to-spec`, `tokens-init`, `figma-component` |
 
 Definitions live in [`install/bundles.md`](install/bundles.md); the installer reads that
