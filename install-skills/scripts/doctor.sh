@@ -194,14 +194,23 @@ elif [ -f "$adapter" ]; then
     warn "no adapter template at $template — skipped the placeholder check"
   fi
 
-  # 4c. sibling pointers the adapter registers must exist
+  # 4c. sibling pointers registered in the adapter's `## Project gates` table
+  # must exist. A gate is only ever named there — the registry is what keeps
+  # canonical skills generic instead of forked to hardcode a project's
+  # filename — so scope the search to that section rather than the whole
+  # file. Whole-file prose routinely mentions `../_shared/x.md` (this repo's
+  # own adapter does, describing the layout in `## Repo discipline`), and
+  # that literally contains the substring `./_shared/x.md`, so strip real
+  # `../`-relative paths first before looking for `./`-relative pointers —
+  # otherwise their tail gets mistaken for a sibling pointer.
+  gates_section="$(awk '/^## Project gates/{flag=1; next} /^## /{flag=0} flag' "$adapter")"
   while IFS= read -r ptr; do
     [ -n "$ptr" ] || continue
     target="$project_dir/${ptr#./}"
     if [ ! -f "$target" ]; then
       err "POINTER" "$(rel "$adapter") points at \`$ptr\`, but $(rel "$target") does not exist"
     fi
-  done < <(grep -o '\./[A-Za-z0-9._/-]\{1,\}\.md' "$adapter" | sort -u)
+  done < <(printf '%s\n' "$gates_section" | sed -E 's#\.\./[A-Za-z0-9._/-]+\.md##g' | grep -o '\./[A-Za-z0-9._/-]\{1,\}\.md' | sort -u)
 
   ok "$(rel "$adapter") present"
 fi

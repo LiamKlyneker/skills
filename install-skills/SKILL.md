@@ -131,7 +131,7 @@ its checks by hand or "spot-check" a subset.
 | `DANGLING` | a symlink under `.claude/` whose target is gone |
 | `HOLE` | an installed skill reads the adapter, and there isn't one |
 | `UNFILLED` | the adapter still carries the TEMPLATE marker or template placeholders |
-| `POINTER` | the adapter names a sibling file that does not exist |
+| `POINTER` | the adapter's `## Project gates` table registers a gate whose file does not exist as a sibling of `adapter.md` |
 | `SHARED` | a skill reads `../_shared/x.md` that does not resolve from where it sits |
 | `STALE` | a vendored skill is N commits behind its stamped SHA |
 | `DIVERGED` | a vendored skill was edited in place since its stamp |
