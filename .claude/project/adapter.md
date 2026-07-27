@@ -13,6 +13,7 @@ same repo. That is self-hosting, not a broken install — expect `doctor` to say
 
 - Issue tracker / PRs: `LiamKlyneker/skills` (GitHub, via `gh`)
 - Default branch: `main` (PRs must target it — `Closes` keywords only fire against the default branch)
+- Triage labels: `needs-triage` → `ready-to-start` → `state:in-progress` → `state:done-on-branch`. All four exist in the repo. The vocabulary is normative in `work-on-prd`'s `## Label vocabulary`; this line exists so a cold session that has only this adapter in context knows which tracker and which labels to use without asking.
 - Related repos (cross-repo issues, API contracts): None. Consumer repos exist
   (`creative-ghost/neonplace`, `creative-ghost/neonplace-ios`,
   `liam-klyneker/liamklyneker`) but they consume this repo's output — there is no
