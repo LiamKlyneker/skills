@@ -1,12 +1,10 @@
 # Project Adapter — TEMPLATE
 
-Single home for every project-specific fact the skills need. Workflow skills (`work-on-prd`, `to-issues`, `next-prd-issue`, `work-on-issue`) and `deep-grill` reference this file and never hardcode these values. (`grill-me` deliberately does **not** — it is the lightweight inline grill and reads nothing from here.) Porting the workflow to another repo = copy the skills + rewrite this file, nothing else.
+Single home for every project-specific fact the skills need. Workflow skills (`work-on-prd`, `to-issues`, `next-prd-issue`, `work-on-issue`) and `deep-grill` reference this file and never hardcode these values. (`grill-me` deliberately does **not** — it is the lightweight inline grill and reads nothing from here.) Porting the workflow to another repo = symlink the skills + fill in this file, nothing else.
 
-> **This is a template.** Fill every `<placeholder>` with your project's real values before running `work-on-prd`. Delete rows that don't apply; add rows the workflow needs. Nothing else in the skills should mention a tool, path, or command by name — if it does, lift it into this file.
->
-> **If you are reading this during a real `work-on-prd` / `deep-grill` / `to-issues` run, you resolved the wrong file — stop.** This is the unfilled template in the canonical skills repo. The project's filled adapter lives at `<project-root>/.claude/skills/_shared/project-adapter.md`. A relative `../_shared/...` from a skill directory resolves *past* the symlink and lands here; re-read from the project repo root instead. Never paste this file into a worker prompt.
+> **This is a template.** Copy it to `<repo-root>/.claude/project/adapter.md` and fill every `<placeholder>` with your project's real values before running `work-on-prd`. Delete rows that don't apply; add rows the workflow needs. Nothing else in the skills should mention a tool, path, or command by name — if it does, lift it into this file.
 
-**Canonical source:** skill *logic* is canonical in **this repo** (`LiamKlyneker/skills`) and reaches a project repo either by copy or by symlinking each skill directory into its `.claude/skills/` — an improvement made in a copy is drift until it's back-ported here. **This `_shared/` file is always copied, never symlinked**, because each project fills it in with its own values; that copy lives at `<project-root>/.claude/skills/_shared/project-adapter.md`, which is the path skills must resolve from the project repo root.
+**Canonical source:** skill *logic* is canonical in **this repo** (`LiamKlyneker/skills`) and reaches a project repo by symlinking each skill directory into its `.claude/skills/` — never by copying, so there is nothing to back-port. Project *facts* live in `<repo-root>/.claude/project/`, which is the one directory skills resolve from the repo root. A project never owns a `_shared/`: `../_shared/…` from any skill can therefore only ever mean the canonical global-reference files in this repo.
 
 ## Repo
 
@@ -50,11 +48,25 @@ Every command a worker or the orchestrator runs. Keep the **Purpose** column sta
 - **Contract-boundary explorer agent**: `<subagent_type>` — owns the related repo/service above (API handlers, contract spec, data layer). Or "None — no contract boundary".
 - **Access-policy source**: `<migrations path, IaC definition, policy console, or MCP>` — how to read the live per-operation policies for a store, wherever this project enforces them (database row policies, document-store rules, IAM, or authorization middleware). Or "None — no user-scoped data layer".
 
+## Project gates
+
+Extra hard gates this project runs, on top of the ones the skills already carry. Each one is a **sibling of this file** in `.claude/project/`, and this table is the **only** place it is named — canonical skills never name a project gate directly, they read this registry and follow the pointer. That is what keeps a skill like `to-prd` generic instead of forked to hardcode one project's filename.
+
+Gates live in their own files rather than inline here for a concrete reason: `work-on-prd` pastes the **full contents of this adapter** into every worker prompt, so anything parked here is a tax on every worker, most of whom don't need it.
+
+| Gate | File | Runs when |
+|---|---|---|
+| `<gate name>` | `./<gate>.md` | `<the trigger — the condition under which a plan must run it, and when it may be skipped>` |
+
+Or "None — no gates beyond the ones the skills carry."
+
+A project-flavored `ui-manifests.md` (concrete primitive homes, real token files, this stack's traps and test vehicle) is registered here the same way; the row schema itself stays canonical in `_shared/ui-manifests.md`.
+
 ## Repo discipline
 
 - **CONTEXT.md**: read the scoped `CONTEXT.md` before touching files in any directory (see the `scoped-context` skill). Update it only if documented architecture changes.
 - `<any house rules: export order, no barrel files, where generated code lives, etc.>`
-- Where skills live: `<.claude/skills or your path>` (note any symlink so real files never land in the wrong place).
+- Where skills live: `.claude/skills/`, one **symlink per skill** into the canonical repo. Writing "into" a skill directory therefore writes into the canonical repo — never create or edit skill files through those symlinks. Project facts and gates live in `.claude/project/` instead, which is real and committed.
 
 ## One-time repo preconditions (human)
 

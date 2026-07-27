@@ -110,6 +110,10 @@ The Data & Access Manifest agreed during the grill (`deep-grill`'s hard gate) �
 
 Client ∈ user-scoped (policies apply) / privileged (policies bypassed — admin key, service credential, or trusted backend job). Status ∈ ✅ covered / ⚠️ gap (needs a policy change or code fix) / ❌ unchecked. For every write row, the grill must also have confirmed the transitions of any status field and that the write path surfaces a denied write rather than swallowing it. Omit this section (or write "None — no stored-data reads/writes") for PRDs whose code touches no stored data.
 
+## Project gates
+
+One section **per extra gate this project registers** in the adapter's `## Project gates` table (at `<repo-root>/.claude/project/adapter.md`) that the grill actually ran — heading named after the gate, carrying its table through verbatim, so `to-issues` can slice any ⚠️ row into the right issue. The gate file owns its row schema; read it through the adapter's pointer and never assume its name. Omit the section entirely when the adapter registers no gates, or when none of them triggered.
+
 ## Testing Decisions
 
 A list of testing decisions that were made. Include:

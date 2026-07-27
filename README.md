@@ -2,6 +2,20 @@
 
 A collection of my agent skills... more to come soon!
 
+## Layout
+
+Every top-level directory is one skill, except two:
+
+| Directory | What's in it |
+|---|---|
+| `_shared/` | **Global reference** — docs several skills read that are true in every project. No templates, no project values. |
+| `install/` | **Templates a project fills in** — `adapter.template.md` and `gates/`, plus the wiring guide. |
+
+Skills reach a project by **symlink**, one per skill into `.claude/skills/`, never
+by copy. A project never owns a `_shared/`, so `../_shared/…` from any skill can
+only mean this repo. Anything project-specific lives in `<repo-root>/.claude/project/`:
+`adapter.md` plus any gates it registers. Full layout and steps: [`install/README.md`](install/README.md).
+
 ## Agents
 
 Some skills ship a custom subagent alongside `SKILL.md` + `references/`. The agent file

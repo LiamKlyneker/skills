@@ -16,7 +16,7 @@ This skill **does not** implement, close issues, or toggle plan mode. It ends at
 Argument may be a URL (`https://github.com/<owner>/<repo>/issues/N`), `#N`, or bare `N`. Strip query strings.
 
 - If a URL is passed, derive `<owner>/<repo>` from it.
-- Otherwise default `--repo` to the issue-tracker repo named in the **project adapter** at `<project-root>/.claude/skills/_shared/project-adapter.md` — resolved from the project repo root, not relative to this skill's directory, which is typically a symlink into the canonical skills repo (or whatever the user's `gh` default is — let `gh` resolve it).
+- Otherwise default `--repo` to the issue-tracker repo named in the **project adapter** at `<repo-root>/.claude/project/adapter.md` (or whatever the user's `gh` default is — let `gh` resolve it).
 - If no argument and no obvious PRD in conversation context: ask the user for a PRD reference. Do not guess.
 
 Validate the issue exists and is an issue (not a PR). If it's a PR, stop and tell the user.

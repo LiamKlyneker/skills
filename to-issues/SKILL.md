@@ -37,7 +37,7 @@ Break the plan into **tracer bullet** issues. Each issue is a thin vertical slic
 - **UI primitive exception (the one exception to bundling):** treat UI primitives as if they ship from a UI library. Each ⚠️/❌ row in the PRD's `## UI Primitives` section becomes its **own issue**, published first, and listed as `Blocked by` for every feature issue that consumes it. This is a deliberate horizontal slice — a primitive's API deserves isolated review so it doesn't get improvised inside a feature PR (the root cause of design drift). Trivial one-off styling tweaks stay bundled; this exception is scoped to *shared primitives that must be built or have their API changed/extracted*. Everything non-UI keeps the bundling rules above.
 </vertical-slice-rules>
 
-Read the PRD's `## UI Primitives` section if present (row schema: `_shared/ui-manifests.md`). Emit one issue per ⚠️/❌ row (see the UI primitive exception in `<vertical-slice-rules>`), published ahead of and listed as `Blocked by` for the feature issues that consume them.
+Read the PRD's `## UI Primitives` section if present (row schema: `../_shared/ui-manifests.md`). Emit one issue per ⚠️/❌ row (see the UI primitive exception in `<vertical-slice-rules>`), published ahead of and listed as `Blocked by` for the feature issues that consume them.
 
 Read the PRD's `## Migration risk` section if present. For each entry there:
 - If the PRD's `## Implementation Decisions` mentions removing/dropping the legacy column/RPC afterward, generate a 3-part split (expand → cutover → contract).
@@ -48,7 +48,9 @@ Read the PRD's `## Data & Access` section if present. For each ⚠️ row (an op
 - This matters most for a **new operation on an already-used store** (e.g. the first update or delete on something only ever read from and appended to): there's no creation step to hang the policy off, so it's easy to slice the write into a feature issue and lose the policy entirely. Call it out explicitly in that issue's acceptance criteria (see the template note below).
 - ✅ rows need nothing — they're already covered.
 
-While drafting each slice, also gather its `## Worker context` and `## QA notes` (see the template): explore the codebase for the real file paths, scoped `CONTEXT.md`s, and prior-art examples the slice needs; take verify commands from the **project adapter** at `<project-root>/.claude/skills/_shared/project-adapter.md` — resolved from the project repo root, not relative to this skill's directory, which is typically a symlink into the canonical skills repo (never hardcode them); mark **User-visible: y/n** (y = app boot + screenshot verification applies). These two sections are what let an isolated orchestrated worker (`/work-on-prd`) implement the slice without plan mode — vague pointers here mean a blind worker there.
+Read the PRD's `## Project gates` section if present — one sub-section per extra gate this project registers in its adapter, each carrying that gate's table. Slice its ⚠️ rows the same way: the fix lands **in, or as a `Blocked by` of**, the slice that first introduces the offending operation, never a slice later. A gate row that resolves in another repo becomes a cross-repo dependency, listed under the slice's `## External steps` or `## Blocked by` as appropriate. Never assume which gates exist — the PRD section and the adapter registry are the only sources.
+
+While drafting each slice, also gather its `## Worker context` and `## QA notes` (see the template): explore the codebase for the real file paths, scoped `CONTEXT.md`s, and prior-art examples the slice needs; take verify commands from the **project adapter** at `<repo-root>/.claude/project/adapter.md` (never hardcode them); mark **User-visible: y/n** (y = app boot + screenshot verification applies). These two sections are what let an isolated orchestrated worker (`/work-on-prd`) implement the slice without plan mode — vague pointers here mean a blind worker there.
 
 ### 4. Quiz the user
 
@@ -75,7 +77,7 @@ For each approved slice, publish a new issue to the issue tracker. Use the issue
 
 Publish issues in dependency order (blockers first) so you can reference real issue identifiers in the "Blocked by" field.
 
-<!-- String contract: this template is the normative writer for the `## External steps`, `## Blocked by`, `## Worker context`, `## Design reference` and `## QA notes` headings and for the two "None…" sentinel phrases below. `_shared/prd-eligibility.md` and `next-prd-issue` parse them; `work-on-prd` consumes `## Worker context`. Change a heading or sentinel here and you must change them there. -->
+<!-- String contract: this template is the normative writer for the `## External steps`, `## Blocked by`, `## Worker context`, `## Design reference` and `## QA notes` headings and for the two "None…" sentinel phrases below. `../_shared/prd-eligibility.md` and `next-prd-issue` parse them; `work-on-prd` consumes `## Worker context`. Change a heading or sentinel here and you must change them there. -->
 
 <issue-template>
 ## Parent
@@ -110,7 +112,7 @@ Everything a cold, isolated worker session needs to implement this slice without
 
 - **Files**: real paths the slice touches (create/edit), plus the scoped `CONTEXT.md`(s) to read first.
 - **Prior art**: concrete in-repo examples to copy the pattern from (path + one line on what to imitate).
-- **Verify**: exact commands, taken from the project adapter at `<project-root>/.claude/skills/_shared/project-adapter.md` (L2 test command; L3 app/boot command if applicable).
+- **Verify**: exact commands, taken from the project adapter at `<repo-root>/.claude/project/adapter.md` (L2 test command; L3 app/boot command if applicable).
 - **User-visible**: y/n — y means the verify ladder's L3 (app boot + screenshot) applies.
 
 ## QA notes

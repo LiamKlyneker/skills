@@ -7,9 +7,7 @@ description: Orchestrate a whole PRD end-to-end — pick each child issue, spawn
 
 Run a whole PRD in one session: orchestrator (this session's model) + one fresh worker subagent per child issue. The human stays in the creative loop (grill / PRD / issues) and the QA gate.
 
-Project facts (repo, commands, verify ladder, QA-doc convention) come from the **project adapter** at `<project-root>/.claude/skills/_shared/project-adapter.md` — read it first; never hardcode project specifics in this skill.
-
-> **Resolve that path from the project repo root, never relative to this skill's directory.** Skill directories are typically symlinks into the canonical skills repo, so a relative `../_shared/...` walks *past* the symlink and lands on the unfilled template. If the file you opened is titled `Project Adapter — TEMPLATE` or contains `<placeholder>` values, you resolved the wrong one — re-read from the repo root before going further.
+Project facts (repo, commands, verify ladder, QA-doc convention) come from the **project adapter** at `<repo-root>/.claude/project/adapter.md` — read it first; never hardcode project specifics in this skill.
 
 ## Invocation
 
@@ -69,7 +67,7 @@ State lives in git + GitHub only (branch commits, issue labels, PR body). Zero s
 4. **Route model**: apply `../_shared/model-effort-heuristics.md` **in orchestrated mode** — the default flips: workers start Sonnet-class and *upgrade* to Opus-class on the file's heavier/risk signals. Announce the routing call (tier + matched signals) before spawning.
 5. **Spawn worker**: Agent tool, `prd-worker`, `model` per the routing call, `run_in_background: false`. Flat hierarchy — workers never spawn workers. Isolation is total: everything the worker needs must be in its prompt, the issue, or the repo. The **mandates and the report contract live in `agents/prd-worker.md`** — never restate them in the prompt, which carries only the per-call inputs:
    - The **full issue body** (incl. `## Worker context`, `## QA notes`, acceptance criteria).
-   - The **full contents of the project adapter** (path at the top of this skill — confirm it is the project's filled copy, not the template, before pasting it).
+   - The **full contents of the project adapter** (path at the top of this skill). The adapter only; a gate it registers goes in the prompt **only** when this issue triggers it — pasting every gate into every worker is the tax that keeps gates out of the adapter in the first place.
    - The **branch name** `prd/<n>-<slug>` and the **issue number** for the `(#N)` commit suffix.
    - The **routing call** you announced in step 4.
 

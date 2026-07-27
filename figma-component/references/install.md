@@ -25,16 +25,17 @@ Verify: `/mcp` in Claude Code shows figma connected with `get_metadata`, `get_va
 
 ## 2. Install the skills
 
-Copy or symlink into the host repo:
+**Symlink** — don't copy — each skill into the host repo:
 
 ```
 .claude/skills/
-  figma-component/   (including references/)
-  tokens-init/
-  _shared/           (ui-manifests.md, ui-standard.md)
+  figma-component -> <canonical>/figma-component
+  tokens-init -> <canonical>/tokens-init
 ```
 
-The `../_shared/` references inside the skills depend on this layout.
+The `../_shared/…` references inside the skills resolve *past* the symlink into the canonical repo, which is where `ui-manifests.md` and `ui-standard.md` live. **Do not create a `_shared/` in the host repo** — that is the one thing that would make those paths ambiguous.
+
+These two skills are **adapter-free**: they read only global reference files, so a repo can run them with no `.claude/project/` at all. If this project does need its own primitive homes and token traps named, that goes in `.claude/project/ui-manifests.md` (template: `install/gates/ui-manifests.template.md`), not in a `_shared/` copy.
 
 ## 3. First run
 
@@ -44,4 +45,4 @@ The `../_shared/` references inside the skills depend on this layout.
 
 ## 4. Designer contract
 
-Share the **Designer contract** section of `_shared/ui-standard.md` with whoever owns the Figma file. Every hygiene report these skills emit measures against that checklist — the cleaner the file, the fewer checkpoint questions.
+Share the **Designer contract** section of the canonical `_shared/ui-standard.md` with whoever owns the Figma file. Every hygiene report these skills emit measures against that checklist — the cleaner the file, the fewer checkpoint questions.

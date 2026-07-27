@@ -16,7 +16,7 @@ Ask the questions one at a time.
 
 If a question can be answered by exploring the codebase, explore the codebase instead — and for anything beyond a single known file, **don't explore on this (the main) thread**: fan the exploration out to recon subagents first (below). This thread is the orchestrator and the interviewer; it does not do the raw digging.
 
-Project facts (repo names, explorer agents, access-policy source) come from the **project adapter** at `<project-root>/.claude/skills/_shared/project-adapter.md` — read it first; never hardcode project specifics in this skill. Resolve that path from the **project repo root**, never relative to this skill's directory: skill directories are typically symlinks into the canonical skills repo, and a relative `../_shared/...` walks past the symlink onto the unfilled template. If what you opened says `TEMPLATE` or has `<placeholder>` values, re-read from the repo root.
+Project facts (repo names, explorer agents, access-policy source) come from the **project adapter** at `<repo-root>/.claude/project/adapter.md` — read it first; never hardcode project specifics in this skill. Its `## Project gates` table also tells you which **extra hard gates** this project runs alongside the Data & Access Manifest below; run each one whose trigger this plan matches, following the adapter's pointer to it. Never assume a gate file's name — a project that registers none has none.
 
 ## Inputs — grill *from* the specs, don't rebuild them
 
@@ -84,3 +84,7 @@ This is a **hard gate**: do not conclude the grill while any row is ⚠️ (gap)
 | `<job>` | delete (cleanup) | privileged (scheduled job) | n/a — bypassed by design | ✅ covered — bypass intended, error checked |
 
 Status ∈ ✅ covered / ⚠️ gap (needs a policy change or code fix) / ❌ unchecked (policy state not yet verified — must resolve). Only after every row is ✅ is the Data & Access Manifest done.
+
+## Project gates (HARD GATES — whatever the adapter registers)
+
+The manifest above is the gate every project gets. A project may register **its own** gates in the adapter's `## Project gates` table — the same shape, catching a silent-failure class specific to that stack (an API contract the app can drift from, a platform review rule). Read that table, run every gate whose trigger this plan matches, and treat each exactly like the one above: enumerate rows, resolve each, don't conclude the grill while any row is ⚠️/❌. The gate file itself carries its row schema; this skill never names one.
