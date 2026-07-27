@@ -1,8 +1,8 @@
 # The install interview
 
-Filling the adapter is the only part of an install that needs a human. Everything else is
-symlinks. So the interview has exactly one job: **ask the smallest number of questions
-that no file in the repo can answer.**
+Filling the adapter is the only part of an install that needs a human — the platform
+delivers the skills themselves. So the interview has exactly one job: **ask the smallest
+number of questions that no file in the repo can answer.**
 
 Two failure modes, and the second is the common one:
 
@@ -37,7 +37,7 @@ warnings as drive-by scope or treats its own new ones as pre-existing. Both are 
 
 ## Per-bundle question sets
 
-Ask only for the sections the bundle declares in `../install/bundles.md`.
+Ask only for the sections the bundle declares in `../../install/bundles.md`.
 
 **`prd-workflow`** — the full set. The three that carry the most weight, in order:
 
@@ -53,9 +53,9 @@ agent exist. `triage-prd` routes cross-repo findings through them, and "None" is
 answer that makes every finding a this-repo finding; a *guessed* answer sends issues to
 the wrong tracker.
 
-**`figma`** — none. The bundle is adapter-free. The only question worth asking is whether
-this project wants its own `ui-manifests.md` gate, and the honest default is no until it
-has been burned once.
+**`figma-tools`** — none. The bundle is adapter-free. The only question worth asking is
+whether this project wants its own `ui-manifests.md` gate, and the honest default is no
+until it has been burned once.
 
 ## Writing the answers down
 

@@ -18,34 +18,35 @@ only mean this repo. Anything project-specific lives in `<repo-root>/.claude/pro
 
 ## Adopting a bundle
 
-From the repo you want to install into:
+Getting the skills is the platform's job — `/plugin marketplace add LiamKlyneker/skills`
+then `/plugin install <plugin>`, or a symlink into a config's `skills/` directory for a
+plain skill and for editing in place.
+
+What no distribution mechanism can do is fill in *your project's* facts. From the repo you
+want to wire up:
 
 ```
 /install-skills install prd-workflow
 ```
 
-One command. It symlinks the bundle's skills and agents, copies the adapter template,
-interviews you only for the facts your repo doesn't already state, and ends with a clean
-bill of health — or tells you exactly what it couldn't finish.
+It copies the adapter template, interviews you only for the facts your repo doesn't
+already state, offers any gate the bundle declares, and ends with a clean bill of health —
+or tells you exactly what it couldn't finish.
 
-| Bundle | Skills |
+| Bundle | What it wires up |
 |---|---|
-| `prd-workflow` | `to-prd`, `to-issues`, `next-prd-issue`, `work-on-prd`, `work-on-issue`, `deep-grill` |
-| `prd-qa` | `qa-prd-log`, `triage-prd` |
-| `figma` | `figma-to-spec` |
+| `prd-workflow` | The PRD → issues → implementation loop — the `prd-workflow` plugin, plus `deep-grill`, which stays a plain skill |
+| `prd-qa` | The QA loop run against a PRD branch before merge |
+| `figma-tools` | Figma → spec — the `figma-tools` plugin. Adapter-free |
 
-Definitions live in [`install/bundles.md`](install/bundles.md); the installer reads that
-file rather than carrying a list of its own.
+Definitions live in [`install/bundles.md`](install/bundles.md); a bundle names the adapter
+sections a set of skills needs filled, not the skills themselves.
 
 `/install-skills doctor` is the other half, and the more important one. Forked copies,
-leftover `_shared/` directories, half-filled adapters and stale vendored skills all fail
+leftover `_shared/` directories, half-filled adapters and dead gate pointers all fail
 **silently** — that's how one project ends up with five drifted skills nobody notices
 until they're diffed by hand. Doctor makes each of those a line of output. Run it in any
 repo, any time; it changes nothing.
-
-For repos where a symlink would only dangle — collaborators, CI, cloud agents —
-`install --vendor` copies the bundle in and stamps each copy with the commit it came from,
-so the copy stays *checkable* instead of quietly becoming a fork.
 
 ## Agents
 
