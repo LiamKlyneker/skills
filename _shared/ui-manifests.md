@@ -1,13 +1,10 @@
 # UI Manifest Gates (Token + Primitive)
 
-Shared reference for design-task skills (`grill-me`, `figma-component`). Two manifests that catch the two halves of design-drift: improvised **components** and improvised **tokens**. Both are **HARD GATES** — the invoking skill is not done while any ⚠️/❌ row is unresolved.
+Shared reference for the skill that **builds** these tables (`figma-component`) and the workflow skills that **consume their rows** downstream (`to-prd`, `to-issues`). Two manifests that catch the two halves of design-drift: improvised **components** and improvised **tokens**. Both are **HARD GATES** — the invoking skill is not done while any ⚠️/❌ row is unresolved.
 
-How rows get resolved differs by consumer:
+`figma-component` resolves rows **autonomously**; unresolvable rows batch into its single checkpoint. Run both right after the variant table, before any code.
 
-- `grill-me` — **interactively**, during the interview, one decision at a time.
-- `figma-component` — **autonomously**; unresolvable rows batch into its single checkpoint.
-
-Run both right after the variant table, before any engineering questions or code.
+The grill skills are **not** consumers. `grill-me` never was, and `deep-grill` deliberately isn't: the design side is already resolved in the spec by the time the interview starts, so a grill reads those rows as answers rather than rebuilding them. Two skills resolving the same manifest is two sources of truth.
 
 ## UI Primitive Manifest
 

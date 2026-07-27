@@ -74,7 +74,7 @@ Do NOT include specific file paths or code snippets. They may end up being outda
 
 ## UI Primitives
 
-Only for PRDs that implement a visual design. The component manifest agreed during the grill — every UI primitive the design needs, so `to-issues` can emit one issue per primitive that must be built or changed. Schema (statuses, homes, column meanings) is normative in `../_shared/ui-manifests.md`.
+Only for PRDs that implement a visual design. The component manifest carried over from the **design spec** (the grill confirms these rows, it does not build them) — every UI primitive the design needs, so `to-issues` can emit one issue per primitive that must be built or changed. Schema (statuses, homes, column meanings) is normative in `../_shared/ui-manifests.md`.
 
 | Primitive | Status | Home | API surface | Consumed by |
 |-----------|--------|------|-------------|-------------|
@@ -84,7 +84,7 @@ Omit this section (or write "None — no new/changed UI primitives") for non-vis
 
 ## Design reference
 
-The design node pointers recorded during the grill, so a cold implementation or verify session can find the target. Omit for non-visual PRDs.
+The design node pointers, carried through from the **design spec** (or recorded during the grill if there is no spec), so a cold implementation or verify session can find the target. Omit for non-visual PRDs.
 
 | Area | Design node | Node name |
 |------|-------------|-----------|
@@ -101,14 +101,14 @@ Or "None — all schema/RPC changes can land atomically in a single deploy" if n
 
 ## Data & Access
 
-The Data & Access Manifest agreed during the grill (grill-me's hard gate) — one row **per CRUD operation** the implementation actually exercises on each table, so `to-issues` can spin the access-control work into the right slices. This is orthogonal to `## Migration risk`: that section asks "can this deploy atomically?"; this one asks "is every operation permitted, correctly scoped, and its error surfaced?". The trap it exists to catch is a **new operation on an already-used table** (e.g. a first UPDATE/DELETE on a read/insert-only table) whose missing access policy (e.g. RLS) silently blocks the write.
+The Data & Access Manifest agreed during the grill (`deep-grill`'s hard gate) — one row **per operation** the implementation actually exercises on each store, so `to-issues` can spin the access-control work into the right slices. This is orthogonal to `## Migration risk`: that section asks "can this deploy atomically?"; this one asks "is every operation permitted, correctly scoped, and its error surfaced?". The trap it exists to catch is a **new operation on an already-used store** (e.g. a first update or delete on something only ever read from and appended to) whose missing access policy silently blocks the write.
 
-| Table | Operation | Client | Access policy exists? | Status |
+| Store | Operation | Client | Access policy exists? | Status |
 |-------|-----------|--------|-----------------------|--------|
-| document | UPDATE | user-scoped | ❌ no `for update` policy | ⚠️ needs migration |
-| job | UPDATE | service-role / admin | n/a — policies bypassed by design | ✅ covered |
+| document | update | user-scoped | ❌ none for update | ⚠️ needs a policy change |
+| job | update | privileged | n/a — policies bypassed by design | ✅ covered |
 
-Client ∈ user-scoped (policies apply) / service-role / admin (policies bypassed). Status ∈ ✅ covered / ⚠️ gap (needs migration or fix) / ❌ unchecked. For every write row, the grill must also have confirmed the transitions of any status column and that the write path checks the response error. Omit this section (or write "None — no table reads/writes") for PRDs whose code touches no table.
+Client ∈ user-scoped (policies apply) / privileged (policies bypassed — admin key, service credential, or trusted backend job). Status ∈ ✅ covered / ⚠️ gap (needs a policy change or code fix) / ❌ unchecked. For every write row, the grill must also have confirmed the transitions of any status field and that the write path surfaces a denied write rather than swallowing it. Omit this section (or write "None — no stored-data reads/writes") for PRDs whose code touches no stored data.
 
 ## Testing Decisions
 

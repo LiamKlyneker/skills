@@ -1,6 +1,6 @@
 # UI Profile Spec
 
-The per-repo memory of the design-to-code skills: a **generated project skill** at `.claude/skills/<repo>-ui/SKILL.md` in the host repo. `tokens-init` creates it at bootstrap; `figma-component` creates it via discovery when missing, reads it every run, and appends to it. Because it's a skill, every session in the host repo benefits from the map (grill-me's "consult the project UI skill" hook included) — same role neonplace's `building-luar-ui` plays, but generated.
+The per-repo memory of the design-to-code skills: a **generated project skill** at `.claude/skills/<repo>-ui/SKILL.md` in the host repo. `tokens-init` creates it at bootstrap; `figma-component` creates it via discovery when missing, reads it every run, and appends to it. Because it's a skill, every session in the host repo benefits from the map — same role neonplace's `building-luar-ui` plays, but generated.
 
 ## Frontmatter
 

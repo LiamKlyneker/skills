@@ -43,9 +43,9 @@ Read the PRD's `## Migration risk` section if present. For each entry there:
 - If the PRD's `## Implementation Decisions` mentions removing/dropping the legacy column/RPC afterward, generate a 3-part split (expand → cutover → contract).
 - Otherwise generate a 2-part split (expand → cutover).
 
-Read the PRD's `## Data & Access` section if present. For each ⚠️ row (a CRUD op with a missing/wrong access policy, or a mis-scoped client):
-- The access-policy migration must land **in the same slice as — or as a `Blocked by` of — the slice that first introduces that operation**, never a slice later. A user-scoped write with no policy is silently denied, so the write and its policy cannot ship apart.
-- This matters most for a **new operation on an already-used table** (e.g. the first UPDATE/DELETE on a read/insert-only table): there's no `create table` migration to hang the policy off, so it's easy to slice the write into a feature issue and lose the policy entirely. Call it out explicitly in that issue's acceptance criteria (see the template note below).
+Read the PRD's `## Data & Access` section if present. For each ⚠️ row (an operation with a missing/wrong access policy, or a mis-scoped client):
+- The access-policy change must land **in the same slice as — or as a `Blocked by` of — the slice that first introduces that operation**, never a slice later. A user-scoped write with no policy is silently denied, so the write and its policy cannot ship apart.
+- This matters most for a **new operation on an already-used store** (e.g. the first update or delete on something only ever read from and appended to): there's no creation step to hang the policy off, so it's easy to slice the write into a feature issue and lose the policy entirely. Call it out explicitly in that issue's acceptance criteria (see the template note below).
 - ✅ rows need nothing — they're already covered.
 
 While drafting each slice, also gather its `## Worker context` and `## QA notes` (see the template): explore the codebase for the real file paths, scoped `CONTEXT.md`s, and prior-art examples the slice needs; take verify commands from the **project adapter** at `<project-root>/.claude/skills/_shared/project-adapter.md` — resolved from the project repo root, not relative to this skill's directory, which is typically a symlink into the canonical skills repo (never hardcode them); mark **User-visible: y/n** (y = app boot + screenshot verification applies). These two sections are what let an isolated orchestrated worker (`/work-on-prd`) implement the slice without plan mode — vague pointers here mean a blind worker there.
@@ -124,7 +124,7 @@ Everything a cold, isolated worker session needs to implement this slice without
 - [ ] Criterion 3
 - [ ] (UI issues) Implementation matches the design node 1:1
 - [ ] (UI issues) The node URL + name recorded in the page's `CONTEXT.md` `## Design reference` table
-- [ ] (Issues introducing a new write on an existing table — from the PRD's `## Data & Access`) An access policy `for <operation>` exists for the acting user, and the write path checks `response.error` (does not return `void`)
+- [ ] (Issues introducing a new write on an existing store — from the PRD's `## Data & Access`) An access policy for that specific operation exists for the acting user, and the write path surfaces a denied write instead of swallowing it
 
 ## Blocked by
 
