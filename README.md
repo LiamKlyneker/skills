@@ -14,7 +14,38 @@ Every top-level directory is one skill, except two:
 Skills reach a project by **symlink**, one per skill into `.claude/skills/`, never
 by copy. A project never owns a `_shared/`, so `../_shared/…` from any skill can
 only mean this repo. Anything project-specific lives in `<repo-root>/.claude/project/`:
-`adapter.md` plus any gates it registers. Full layout and steps: [`install/README.md`](install/README.md).
+`adapter.md` plus any gates it registers. Full layout: [`install/README.md`](install/README.md).
+
+## Adopting a bundle
+
+From the repo you want to install into:
+
+```
+/install-skills install prd-workflow
+```
+
+One command. It symlinks the bundle's skills and agents, copies the adapter template,
+interviews you only for the facts your repo doesn't already state, and ends with a clean
+bill of health — or tells you exactly what it couldn't finish.
+
+| Bundle | Skills |
+|---|---|
+| `prd-workflow` | `to-prd`, `to-issues`, `next-prd-issue`, `work-on-prd`, `work-on-issue`, `deep-grill` |
+| `prd-qa` | `qa-prd-log`, `triage-prd` — *pending #13* |
+| `figma` | `figma-to-spec`, `tokens-init`, `figma-component` |
+
+Definitions live in [`install/bundles.md`](install/bundles.md); the installer reads that
+file rather than carrying a list of its own.
+
+`/install-skills doctor` is the other half, and the more important one. Forked copies,
+leftover `_shared/` directories, half-filled adapters and stale vendored skills all fail
+**silently** — that's how one project ends up with five drifted skills nobody notices
+until they're diffed by hand. Doctor makes each of those a line of output. Run it in any
+repo, any time; it changes nothing.
+
+For repos where a symlink would only dangle — collaborators, CI, cloud agents —
+`install --vendor` copies the bundle in and stamps each copy with the commit it came from,
+so the copy stays *checkable* instead of quietly becoming a fork.
 
 ## Agents
 

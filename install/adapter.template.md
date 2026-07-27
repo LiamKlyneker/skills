@@ -71,3 +71,13 @@ A project-flavored `ui-manifests.md` (concrete primitive homes, real token files
 ## One-time repo preconditions (human)
 
 - GitHub Settings → General → "Auto-close issues with merged linked pull requests" must be **on** (not API-queryable — check in the web UI once). If off, `Closes #N` silently does nothing.
+
+<!--
+`install-skills doctor` flags any `<token>` that appears in **both** this template and a
+filled adapter, on the theory that it was never filled in. A few angle-bracket tokens here
+are notation rather than placeholders and are legitimately still there after filling —
+list them below so the check stays quiet about them and loud about everything else.
+
+doctor:not-a-placeholder <repo-root> <n>
+-->
+

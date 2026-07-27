@@ -6,8 +6,14 @@ directory is one skill. Two directories are not skills:
 - `_shared/` — **global reference only.** Docs several skills read, true in every
   project: `model-effort-heuristics.md`, `prd-eligibility.md`, `ui-manifests.md`,
   `ui-standard.md`. No templates, no project values, ever.
-- `install/` — templates a project fills in: `adapter.template.md` and
-  `gates/`. See `install/README.md` for the layout a wired project ends up with.
+- `install/` — what a project gets wired with: `bundles.md` (the manifest the
+  `install-skills` skill reads), `adapter.template.md`, and `gates/`. See
+  `install/README.md` for the layout a wired project ends up with.
+
+`install-skills` *is* a skill and lives at the top level like any other. It is the
+only one that ships an executable (`scripts/doctor.sh`) — the mechanical checks have
+to be deterministic, and a check that gets paraphrased differently on each run isn't
+one. Everything else here stays prose.
 
 ## Git workflow
 
