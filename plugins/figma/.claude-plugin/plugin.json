@@ -1,0 +1,9 @@
+{
+  "name": "figma",
+  "description": "Figma design-to-spec extraction for Claude Code: reads a Figma file region by region and produces implementation-ready page/gap specs, backed by the figma-region-extractor subagent",
+  "author": {
+    "name": "Liam Klyneker",
+    "url": "https://github.com/LiamKlyneker"
+  },
+  "homepage": "https://github.com/LiamKlyneker/skills"
+}
