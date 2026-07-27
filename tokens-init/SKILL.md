@@ -1,6 +1,7 @@
 ---
 name: tokens-init
-description: Bootstrap a repo's semantic token system from Figma seed nodes (foundations frame, type specimen, or representative component). Harvests color variables and typography text styles via the Figma MCP, classifies primitive/semantic tiers, emits CSS variables + Tailwind theme mapping, and generates the repo's ui-profile skill. Use when a repo has no token system yet, the user says "init tokens", "bootstrap tokens from Figma", or "/tokens-init <node-url>".
+disable-model-invocation: true
+description: DEPRECATED — superseded by `figma-to-spec`; not installed anywhere and not auto-invocable. Retained only until its salvageable parts are moved out. Bootstrap a repo's semantic token system from Figma seed nodes (foundations frame, type specimen, or representative component). Harvests color variables and typography text styles via the Figma MCP, classifies primitive/semantic tiers, emits CSS variables + Tailwind theme mapping, and generates the repo's ui-profile skill. Use when a repo has no token system yet, the user says "init tokens", "bootstrap tokens from Figma", or "/tokens-init <node-url>".
 ---
 
 # Tokens Init

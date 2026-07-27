@@ -1,6 +1,7 @@
 ---
 name: figma-component
-description: Build a production component from a Figma node — scoped MCP triage, Token + Primitive Manifests resolved against the repo, pattern research (APG/shadcn/headless), component + CSF3 story variants, render verification against the Figma spec, manifest + hygiene report. Autonomous; asks only at one batched checkpoint when something won't resolve. Use when handed a Figma component/node URL to implement, "build this component from Figma", or "/figma-component <node-url>".
+disable-model-invocation: true
+description: DEPRECATED — superseded by `figma-to-spec`; not installed anywhere and not auto-invocable. Retained only until its salvageable parts are moved out. Build a production component from a Figma node — scoped MCP triage, Token + Primitive Manifests resolved against the repo, pattern research (APG/shadcn/headless), component + CSF3 story variants, render verification against the Figma spec, manifest + hygiene report. Autonomous; asks only at one batched checkpoint when something won't resolve. Use when handed a Figma component/node URL to implement, "build this component from Figma", or "/figma-component <node-url>".
 ---
 
 # Figma Component

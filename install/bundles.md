@@ -90,7 +90,7 @@ means a cross-boundary root cause gets filed locally and flagged as unmodelled.
 Figma → spec, and the UI-primitive skills that consume the same reference.
 
 - **Status:** ready
-- **Skills:** `figma-to-spec`, `tokens-init` (provisional), `figma-component` (provisional)
+- **Skills:** `figma-to-spec`
 - **Global reference:** `_shared/ui-standard.md`, `_shared/ui-manifests.md`
 - **Adapter sections:** —
 - **Gates:** `install/gates/ui-manifests.template.md` → `.claude/project/ui-manifests.md`, optional
@@ -102,5 +102,8 @@ nothing but symlinks. The optional `ui-manifests.md` gate is the exception: a pr
 that wants its own primitive homes, real token files and stack-specific traps named
 registers one, the same way as any other gate.
 
-`tokens-init` and `figma-component` are marked provisional because #14 is still deciding
-where they live. Install them; be ready for them to move.
+`tokens-init` and `figma-component` are **deprecated** — superseded by `figma-to-spec`.
+They are no longer part of this bundle, are linked into no project, and carry
+`disable-model-invocation: true` so nothing can auto-fire them. The directories stay in
+the canonical repo only until their salvageable parts are moved out; #14 tracks what the
+UI Primitive and Token manifests need once that happens. Do not install them.
