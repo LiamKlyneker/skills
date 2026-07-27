@@ -2,11 +2,9 @@
 name: deep-grill
 description: >
   Interview the user relentlessly about a plan until every branch of the decision
-  tree is resolved — but fan the exploration out to read-only recon subagents first,
-  so the questions are grounded in the code instead of guessed. Use when the plan
-  crosses a service boundary, spans several areas, needs open-web answers, or already
-  has a design spec to grill against. Invoke /deep-grill. For a quick single-area
-  grill that explores inline, use `grill-me` instead.
+  tree is resolved — always fanning the exploration out to read-only recon subagents
+  first, so every question is grounded in the code instead of guessed. Invoke
+  /deep-grill.
 disable-model-invocation: true
 ---
 
@@ -24,19 +22,19 @@ Project facts (repo names, explorer agents, access-policy source) come from the 
 
 Before anything else, ask what already exists and read it. A grill that re-derives a document someone already wrote wastes the interview on settled questions.
 
-- **Design spec.** If the work implements from a design and a spec already exists (e.g. produced by `figma-to-spec`), **read it and grill from it**. The variants, states, tokens, primitives and design-system gaps are resolved there — treat those rows as answers, not as questions, and quote the spec when a decision leans on one. Do **not** re-enumerate variants or rebuild primitive/token manifests on this thread; that is the spec's job and duplicating it invites two conflicting sources of truth.
+- **Design spec.** If the work implements from a design and a spec already exists, **read it and grill from it**. The variants, states, tokens, primitives and design-system gaps are resolved there — treat those rows as answers, not as questions, and quote the spec when a decision leans on one. Do **not** re-enumerate variants or rebuild primitive/token manifests on this thread; that is the spec's job and duplicating it invites two conflicting sources of truth.
 - **No spec, but the work is design-driven?** Say so and recommend producing the design spec first rather than improvising the design side mid-interview. Grill the engineering decisions that don't depend on it in the meantime.
 - **Prior PRDs, issues, ADRs.** Ask for pointers and read them; a decision already recorded is not an open question.
 
 Carry the spec pointers through the interview — whatever this grill feeds downstream should be able to reference the design spec by URL/node rather than restating it.
 
-## Recon fan-out (run FIRST — gated)
+## Recon fan-out (run FIRST — always)
 
 Before interviewing, delegate exploration to a small set of **read-only Sonnet-class subagents**, each scoped to one area, each returning a **condensed brief (~1–2K tokens, never raw file dumps)**. This keeps this thread's context full of *dialogue*, not code — the fix for both recurring failures: shallow exploration that misses details on bigger repos or across a service boundary, and asking me questions the code already answers.
 
-**Gate — run recon IF any of:** the plan crosses the project's contract boundary (the related repo/service named in the adapter), OR it spans ≥2 areas/features, OR an area is large/unfamiliar, OR a question needs external/web knowledge. If none of these hold, you probably want `grill-me` — say so and offer to continue here anyway rather than spawning explorers for a single-file change.
+**This step is unconditional.** Invoking this skill *is* the request for grounded questions, so there is no path that skips recon and interviews from guesses. A narrow plan scales the fan-out **down**, never to zero.
 
-**Decompose** the plan into **2–5** areas (one per decision-tree branch / codebase area) — do **not** over-split; over-spawning is the top anti-pattern. Map each area to a lane and spawn all lanes in **one parallel batch** (one message, multiple `Agent` calls):
+**Decompose** the plan into **1–5** areas (one per decision-tree branch / codebase area) — do **not** over-split; over-spawning is the top anti-pattern, and a single-area plan is one explorer, not three. Map each area to a lane and spawn all lanes in **one parallel batch** (one message, multiple `Agent` calls):
 
 | Lane | Agent (`subagent_type`) | Owns |
 |------|-------------------------|------|
@@ -58,7 +56,7 @@ Guardrails: cap ≈5 explorers; don't split exploration into artificial sub-phas
 
 ## Context Loading
 
-**When recon ran, this is already done** — each explorer reads its area's scoped `CONTEXT.md` first, so this thread does **not** bulk-load them. This section is the **fallback for recon-skipped grills**: if the `scoped-context` skill is available, use it to load the relevant `CONTEXT.md` files before interviewing. If it isn't, read them directly.
+**Recon covers this** — each explorer reads its own area's scoped `CONTEXT.md` before reporting, and the architectural context arrives folded into its brief. This thread does **not** bulk-load `CONTEXT.md` files itself; state the requirement in each spawn prompt instead.
 
 **Conditionally load the access-policy source of truth:** if (and only if) this grill's planned code **reads or writes stored data**, inspect the live access policies before the interview, from the source the adapter names (migrations, an IaC definition, a policy console, or an MCP that can list per-operation policies). This feeds the Data & Access Manifest below. **Skip it for grills whose code touches no stored data at all** (pure visual/copy/client-only). If the adapter names no access-policy source and the plan does touch data, say so and ask where policies live rather than running the gate against nothing.
 
