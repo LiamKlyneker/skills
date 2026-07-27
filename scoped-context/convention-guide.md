@@ -70,16 +70,12 @@ A page's `CONTEXT.md` can carry a `## Design reference` table pointing at the de
 - Implementation details that change frequently
 - Anything already covered in the project's CLAUDE.md
 
-## Installing in a Project
+## Adopting the Convention in a Project
 
-1. Place the skill in `.agents/skills/scoped-context/` (canonical location) and create symlinks:
+The skill itself needs **no per-project install** — it is symlinked into the personal
+global config and reads nothing from the project. Adopting the convention is two steps:
 
-```bash
-ln -s ../../.agents/skills/scoped-context .claude/skills/scoped-context
-ln -s ../../.agents/skills/scoped-context .agent/skills/scoped-context
-```
-
-2. Add the CONTEXT.md convention section to your `CLAUDE.md`:
+1. Add the CONTEXT.md convention section to your `CLAUDE.md`:
 
 ```markdown
 ### Context Files
@@ -87,8 +83,8 @@ ln -s ../../.agents/skills/scoped-context .agent/skills/scoped-context
 Each route/package can have a `CONTEXT.md` file documenting technical decisions.
 **Always read the relevant `CONTEXT.md` before working on a package or route**.
 
-The `scoped-context` skill (`.agents/skills/scoped-context/`) automates context loading.
-See its `convention-guide.md` for placement rules.
+The `scoped-context` skill automates context loading — see its `convention-guide.md`
+for placement rules.
 ```
 
-3. Start adding `CONTEXT.md` files to your route and feature directories as you work on them
+2. Start adding `CONTEXT.md` files to your route and feature directories as you work on them
