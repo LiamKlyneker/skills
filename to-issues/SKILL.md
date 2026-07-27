@@ -77,12 +77,17 @@ For each approved slice, publish a new issue to the issue tracker. Use the issue
 
 Publish issues in dependency order (blockers first) so you can reference real issue identifiers in the "Blocked by" field.
 
-<!-- String contract: this template is the normative writer for the `## External steps`, `## Blocked by`, `## Worker context`, `## Design reference` and `## QA notes` headings and for the two "None…" sentinel phrases below. `../_shared/prd-eligibility.md` and `next-prd-issue` parse them; `work-on-prd` consumes `## Worker context`. Change a heading or sentinel here and you must change them there. -->
+<!-- String contract: this template is the normative writer for the `## Parent`, `## External steps`, `## Blocked by`, `## Worker context`, `## Design reference` and `## QA notes` headings and for the two "None…" sentinel phrases below. `../_shared/prd-eligibility.md` and `next-prd-issue` parse them; `work-on-prd` consumes `## Worker context`. Change a heading or sentinel here and you must change them there. -->
 
 <issue-template>
 ## Parent
 
-A reference to the parent issue on the issue tracker (if the source was an existing issue, otherwise omit this section).
+A reference to the parent issue on the issue tracker — `#N`, on its own line.
+
+**Required when the source was a PRD**, and not decorative: `../_shared/prd-eligibility.md`
+uses this section to tell a real child from an issue that merely mentions the PRD in prose.
+Omit it and the child is invisible to `work-on-prd` and `next-prd-issue`. Omit it only when
+there is no parent issue at all.
 
 ## External steps
 

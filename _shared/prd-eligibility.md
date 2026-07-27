@@ -13,6 +13,28 @@ gh issue list --repo <repo> --search "in:body \"#<prd-number>\"" --state all --l
 
 The search may include the PRD itself — filter it out by number.
 
+## Filter to real children (do this before parsing)
+
+The search is a **substring match on the issue body**, so it returns every issue that
+merely *mentions* `#<prd-number>` in prose — a sibling issue writing "unrelated to #16",
+an old audit issue citing it, a cross-reference in either direction. Those are not
+children, and picking one means working an issue the PRD explicitly scoped out.
+
+Keep an issue only when its `## Parent` section names this PRD:
+
+- `## Parent` present and it references `#<prd-number>` → **child**.
+- `## Parent` present and it references a *different* issue → **not a child**, always.
+- `## Parent` absent → not a child, *unless* the fallback below applies.
+
+**Legacy fallback**: if no returned issue has a `## Parent` section at all, the PRD's
+children predate the section being written and the substring match is all there is —
+use it, and flag `needs-backfill` on the result so the gap is visible. Do not apply the
+fallback per-issue: one issue in the set carrying `## Parent` proves the convention was
+in force when these issues were written, so an issue lacking it is a mention, not a child.
+
+Report the issues you dropped and why. A silently-dropped child looks identical to a PRD
+with fewer slices than it has.
+
 ## Parse each child body
 
 The headings and "None…" sentinels below are a string contract with the writer — normative copy lives in `to-issues`'s issue template. Reword there first, never here alone.

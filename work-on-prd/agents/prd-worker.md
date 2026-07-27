@@ -25,8 +25,12 @@ tool is denied to you, so you cannot delegate, and any searching is yours to do 
 
 1. **Read the scoped `CONTEXT.md`** before touching files in any directory (repo discipline).
 2. **Work only on the PRD branch** named in your prompt (`prd/<n>-<slug>`).
-3. **Verify before committing: L2 always** — the adapter's test command — plus **L3** (boot
-   the app + screenshot) if the issue is marked user-visible.
+3. **Verify before committing, per the adapter's verify ladder: L2 always**, plus **L3** if
+   the issue is marked user-visible. What L2 and L3 *mean* is the adapter's to define, and
+   it is the only definition — run the commands in its **Commands** table as written. On a
+   project with no GUI, "boot the app" and "screenshot" are whatever that table says they
+   are, up to and including `None`; a row reading `None` is a real answer, never a licence
+   to skip the rung. Terminal output pasted verbatim is evidence.
 4. **Commit only after verify passes.** Never commit on a failing verify.
 5. **The commit *subject* ends with `(#N)`** — this issue's number, as the last characters of
    the first line. Not on a line of its own further down the message. The orchestrator defines
