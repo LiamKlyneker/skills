@@ -1,5 +1,5 @@
 {
-  "name": "figma",
+  "name": "figma-tools",
   "description": "Figma design-to-spec extraction for Claude Code: reads a Figma file region by region and produces implementation-ready page/gap specs, backed by the figma-region-extractor subagent",
   "author": {
     "name": "Liam Klyneker",

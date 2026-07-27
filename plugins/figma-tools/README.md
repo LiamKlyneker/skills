@@ -1,16 +1,28 @@
-# figma
+# figma-tools
 
 `figma-to-spec`, packaged as a Claude Code plugin, plus the
 `figma-region-extractor` agent it spawns per region.
 
-Named `figma`, not `figma-to-spec` — plugin skills are invoked as
-`plugin:skill`, so a plugin named after its own skill would double up as
-`/figma-to-spec:figma-to-spec`. `figma` yields the clean `/figma:figma-to-spec`.
+## Naming
+
+Not `figma-to-spec` — plugin skills are invoked as `plugin:skill`, so a plugin
+named after its own skill would double up as `/figma-to-spec:figma-to-spec`.
+
+And not plain `figma` either, which is what PRD #16 originally specified. That
+name is **already taken by `figma@claude-plugins-official`**, Anthropic's own
+Figma integration, which is installed and enabled in `~/.claude` — and all three
+config dirs have that marketplace added, so the other two are one install away
+from the same clash. The collision is not marketplace-only: linking a second
+`figma` into a config's `skills/` reports
+`✘ Not loaded — the name "figma" is already taken`, which breaks the skills-dir
+mode this repo depends on for live authoring.
+
+`figma-tools` collides with nothing and yields `/figma-tools:figma-to-spec`.
 
 ## Layout
 
 ```
-plugins/figma/
+plugins/figma-tools/
   .claude-plugin/plugin.json
   skills/
     _shared -> ../../../_shared                    # symlink
@@ -34,7 +46,7 @@ reasoning and evidence — repeated here only where this plugin differs):
   placement (`plugins/<name>/skills/` is three levels below the repo root
   either way), so the identical relative target is correct verbatim.
 - **Compat shims.** The top-level `figma-to-spec` name survives as a symlink
-  into `plugins/figma/skills/figma-to-spec`, so the three config-dir consumer
+  into `plugins/figma-tools/skills/figma-to-spec`, so the three config-dir consumer
   links (`~/.claude/skills/figma-to-spec`, `~/.claude-schmiede/skills/figma-to-spec`,
   `~/.claude/agents/figma-region-extractor.md`) keep resolving unchanged.
 
@@ -48,7 +60,7 @@ itself resolves straight to `figma-to-spec/agents/figma-region-extractor.md`
 (`references/phases.md`, `references/resolution-rules.md`) link the agent as
 `../agents/figma-region-extractor.md` from inside the skill. Both needed the
 file to still be reachable at that inner path after the real file moved to
-`plugins/figma/agents/`, so `skills/figma-to-spec/agents/figma-region-extractor.md`
+`plugins/figma-tools/agents/`, so `skills/figma-to-spec/agents/figma-region-extractor.md`
 is a symlink back to it — same shape as `prd-workflow`'s
 `skills/work-on-prd/agents/prd-worker.md`.
 
