@@ -5,7 +5,7 @@ model tiers, the phase overview, and the STOP gates; load the section here for t
 you are running.
 
 Normative elsewhere, never restated here: the region-agent extraction contract and the
-`bindingVerified` / degraded-color-mode rules live in `region-agent-prompt.md`; resolution
+`bindingVerified` / degraded-color-mode rules live in `../agents/figma-region-extractor.md`; resolution
 and tolerance rules in `resolution-rules.md`; existence in `catalog.md`.
 
 ---
@@ -36,18 +36,24 @@ and tolerance rules in `resolution-rules.md`; existence in `catalog.md`.
    grimme-ui — regenerate via `grimme-ui-catalog`") and **continue**. grimme-ui not reachable
    → note "bundled snapshot, staleness unchecked" and continue. **Never hard-fail on
    staleness.** The only hard STOP here is no resolvable `catalog.md` at all.
-3. **Confirm Figma capability — two separate checks (see SKILL.md Prerequisites).** (a) Ensure
+3. **Confirm capability — three separate checks (see SKILL.md Prerequisites).** (a) Ensure
    **`figma-dev-mode`** is present — STOP if not. (b) Try to make the binding read
    (`use_figma`) available (load `/figma-use` if reachable). If it isn't, continue in
-   **degraded color mode** per `region-agent-prompt.md` step 4 — and announce it up front so
-   the user knows token tiers are unconfirmed.
+   **degraded color mode** per `../agents/figma-region-extractor.md` step 4 — and announce it up front so
+   the user knows token tiers are unconfirmed. (c) Check whether the
+   **`figma-region-extractor` subagent** is available (it is the first non-bundled
+   dependency this skill has — it must be installed into `~/.claude/agents/`, and a
+   freshly installed agent takes a few minutes to register, so a just-installed one may
+   not resolve yet). Present → Phase B spawns it by type. Absent → Phase B uses the
+   documented inline fallback. **Announce which path the run is taking** — a missing agent
+   must never be silent.
 4. **Ask the user: "Is there a separate mobile/tablet node?"** A Figma node is one
    viewport — breakpoints are not node properties. If yes, take that URL too; if no,
    responsive will be *inferred* and the assumptions flagged.
 5. **Accept optional scope context** — an ADO ticket URL and/or freetext ("only the card
    grid + CTA"). This drives Phase A scoping and intent; it does **not** override canvas
    values (ticket/context = *what to look at*; Figma = *the design values*). If a ticket
-   is given, fetch it and keep its ID for Phase D (the `[SPEC]` files as its child).
+   is given, fetch it and keep its ID for Phase D (the `[DESIGN-SPEC]` files as its child).
 
    **Scope precedence:** freetext (the most recent explicit human instruction) **>** ticket
    scope **>** the Phase A layer-name heuristic. The ticket is context/default; freetext
@@ -77,7 +83,7 @@ and tolerance rules in `resolution-rules.md`; existence in `catalog.md`.
    granularity but cannot tell you *intent* (a Card node might be a fresh build or a
    one-line padding tweak). Read the mode from the invocation:
    - **`page` (default)** — full decompose + fan-out + full page-spec; auto-files an ADO
-     `[SPEC]` (Phase D).
+     `[DESIGN-SPEC]` (Phase D).
    - **`component` (lean)** — the prompt scopes to a single node / component ("lean
      update", "single-component / single-node", "only X changed", "just this node",
      "already implemented — give me the delta"). No fan-out; emit a lean **component-delta
@@ -104,7 +110,7 @@ boundary and stop.** Descend until you hit that boundary, then each heterogeneou
 its own region.
 
 **Completeness self-check (before fan-out).** After enumerating, assert coverage: every
-`get_metadata` child — **visible and state-bearing hidden** (per `region-agent-prompt.md`),
+`get_metadata` child — **visible and state-bearing hidden** (per `../agents/figma-region-extractor.md`),
 at every depth — must land in exactly one region with a disposition, OR be explicitly listed
 as pruned scaffolding. If any node is unaccounted for, you collapsed a wrapper or dropped a
 hidden state — recurse again. `log()` the coverage tally (`N children → M regions, K
@@ -151,10 +157,34 @@ enumeration and hand it straight to one Phase B agent.
 
 ## Phase B — Region agents (Sonnet ×N, parallel)
 
-One agent per region, each scoped to its sub-node, driven by `region-agent-prompt.md` —
-which is normative for the call discipline, the extraction contract, and the return schema.
-Each performs full extraction and returns **structured findings** (the JSON schema in that
-prompt, so synthesis merges deterministically):
+One agent per region, each scoped to its sub-node, driven by
+`../agents/figma-region-extractor.md` — which is normative for the call discipline, the
+extraction contract, and the return schema. Each performs full extraction and returns
+**structured findings** (the JSON schema in that file, so synthesis merges
+deterministically).
+
+**How to spawn (per region).** Agent tool, `subagent_type: figma-region-extractor`,
+`model: 'sonnet'` passed explicitly, `run_in_background: false`. The extraction contract
+lives in the agent, so the per-call prompt carries **only the six inputs** — region node ID
+· region layer name · source-node role (`primary` / `viewport:<bp>` / `state:<name>`) ·
+Figma file/page URL · **absolute** catalog path · **absolute** resolution-rules path. The
+agent hard-STOPs with `{"error": "missing input: <name>"}` if any is absent, so a malformed
+spawn fails loudly instead of hallucinating catalog contents.
+
+End every per-call prompt with this exact line — the schema now sits in the agent's system
+prompt rather than at the end of the prompt, and without it JSON-only compliance drifts:
+
+```
+Return only the JSON object defined in your instructions — no prose before or after.
+```
+
+**If the agent is unavailable** (Phase 0 step 3c said so): fall back to `general-purpose`
+with `model: 'sonnet'`, and build the prompt by reading `../agents/figma-region-extractor.md`
+and pasting **everything below its frontmatter**, then appending the six inputs and the line
+above. Never keep a second copy of the contract — read it from the one file.
+
+**What each agent extracts** (normative detail in the agent file; summarized here so this
+phase reads standalone):
 
 - **Component match** — infer from the Figma layer name (e.g. slash-separated
   `Component/Variant/Size`) → match against `catalog.md` components + cva variants;
@@ -171,7 +201,7 @@ prompt, so synthesis merges deterministically):
 - **Layout / placement** — capture the region's containment tree, child order, and
   **auto-layout intent** (direction, gap token, alignment, wrap) so an implementer can
   place every element without a screenshot. Capture *relative* intent, never absolute
-  x/y coordinates (input-vs-output rule in `region-agent-prompt.md`).
+  x/y coordinates (input-vs-output rule in `../agents/figma-region-extractor.md`).
   `get_screenshot` is viewed inline by the agent as a visual check during extraction; under
   `figma-dev-mode` it returns an inline image, **not a file path**, so it is **not
   persisted** — the layout tree is the source of truth, not a saved image.
@@ -204,7 +234,7 @@ region agent** — extraction is per-region and idempotent.
 4. **Responsive** — if a mobile node was given, merge responsive notes; otherwise infer
    (table reflow, minor stacking) and record the assumptions explicitly.
 5. **Changelog / delta (if a prior spec exists).** If a previous `page-spec.md` (run-dir)
-   or a linked ADO `[SPEC]` is found, diff **new spec vs old spec** — spec-vs-spec, never
+   or a linked ADO `[DESIGN-SPEC]` is found, diff **new spec vs old spec** — spec-vs-spec, never
    spec-vs-code — and emit a **Changelog** section (what changed: tokens, props, layout,
    copy; what stayed). Mark affected regions `△ changed`. No prior baseline → note "new
    spec, no prior" and skip. Computing the *code*-level delta is the implementer's job
@@ -228,11 +258,15 @@ region agent** — extraction is per-region and idempotent.
 
 ## Phase D — Filing (gated — only after triage)
 
-- **Page spec → ADO `[SPEC]`** in **myGRIMME Core** (reuse the `to-spec` pattern). If a
-  scope ticket was given in Phase 0, file the `[SPEC]` as its **child**. On re-run,
-  search for an existing linked `[SPEC]` and **update** it — never duplicate. *(Component
-  mode files nothing by default — no `[SPEC]`, no PBIs — unless the user explicitly asks;
-  it produces local artifacts only.)*
+- **Page spec → ADO `[DESIGN-SPEC]`** in **myGRIMME Core** (reuse the `to-spec` pattern). If a
+  scope ticket was given in Phase 0, file the `[DESIGN-SPEC]` as its **child**. On re-run,
+  search for an existing linked spec and **update** it — never duplicate. **The dedup search
+  must match *either* prefix — `[DESIGN-SPEC]` or the legacy `[SPEC]`.** The prefix was
+  renamed; searching only the new one would miss a spec filed under the old name and file a
+  duplicate, breaking the zero-new-tickets guarantee. On finding a legacy `[SPEC]`, update it
+  in place **and retitle it** to `[DESIGN-SPEC]`. Only new tickets are created with
+  `[DESIGN-SPEC]`. *(Component mode files nothing by default — no `[DESIGN-SPEC]`, no PBIs —
+  unless the user explicitly asks; it produces local artifacts only.)*
 - **Escalated gaps → PBIs** in **GRIMME Libraries**. First **query available work-item
   types** (ADO MCP) to confirm PBI exists; **search the backlog** (title / fingerprint)
   to avoid duplicates; file only new ones; **write the returned work-item IDs back**

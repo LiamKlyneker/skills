@@ -8,7 +8,7 @@ description: >
 disable-model-invocation: true
 metadata:
   author: liam
-  version: "1.7.0"
+  version: "1.8.0"
 ---
 
 # Figma → Spec
@@ -16,7 +16,7 @@ metadata:
 Turn one Figma **page** node into two linked artifacts:
 
 1. a **page-implementation spec** (region-by-region, on-system, filed as an ADO
-   `[SPEC]` in **myGRIMME Core**), and
+   `[DESIGN-SPEC]` in **myGRIMME Core**), and
 2. **N design-system gap specs** (one per real gap, triaged by the user, then filed
    as PBIs on the **GRIMME Libraries** backlog).
 
@@ -53,11 +53,17 @@ detachable:
      server):** resolves each node's `boundVariables` → variable **name per property**. If
      unreachable, the run continues in **degraded color mode** — token *names* survive via
      `get_variable_defs`, per-property bindings do not, and every color is flagged unverified.
-     `references/region-agent-prompt.md` step 4 is the **normative** statement of that rule
+     `agents/figma-region-extractor.md` step 4 is the **normative** statement of that rule
      and its `bindingVerified` schema requirement; announce degraded mode up front and never
      present an unverified value as on-system.
 - **A Figma node URL** (a page/frame, or a single component node in component mode). Missing
   → ask, never guess.
+- **`figma-region-extractor` subagent (preferred, detachable).** Phase B's extraction
+  contract lives at `agents/figma-region-extractor.md`. Installed into `~/.claude/agents/`
+  it is spawned by type (pinned to Sonnet, write tools denied); **not** installed, Phase B
+  reads that same file and pastes its body into a `general-purpose` agent. One source of
+  truth either way — but a freshly installed agent takes a few minutes to register, so
+  Phase 0 checks and announces which path the run takes.
 - **`grimme-ui-components-best-practices` (optional).** The page spec **cites** its rules by
   stable name and never duplicates them, so citations stand even when it isn't loaded. Load it
   to enrich HOW-guidance only if reachable.
@@ -78,15 +84,15 @@ v1: surface low-confidence matches for user confirmation rather than guessing si
 ## Phases
 
 Read `references/phases.md` for the phase you are running — it carries the full procedure.
-Region agents are driven by `references/region-agent-prompt.md`.
+Region agents are driven by `agents/figma-region-extractor.md`.
 
 | Phase | Model | Does |
 |---|---|---|
 | **0 — Setup** | main thread | Resolve catalog + check staleness · confirm Figma capability · collect extra nodes by role (`viewport:*` / `state:*`) · collect scope context · pick run mode (`page` default / `component` lean). |
 | **A — Decompose & scope** | Sonnet | Enumerate regions by node ID (recursing through pass-through wrappers), then assign each `in-scope` / `spec-only` / `excluded`. `in-scope` + `spec-only` fan out. |
-| **B — Region agents** | Sonnet ×N parallel | One agent per region: components, colors/tokens, type, spacing, icons, hidden variants, layout intent → structured JSON findings. |
+| **B — Region agents** | `figma-region-extractor` (Sonnet) ×N parallel | One agent per region: components, colors/tokens, type, spacing, icons, hidden variants, layout intent → structured JSON findings. |
 | **C — Synthesis & triage** | Opus | Dedup gaps · reconcile by concern · merge data states + responsive · changelog vs prior spec · write `page-spec.md` + `gaps/gap-NNN-*.md` · **triage checkpoint**. |
-| **D — Filing** | main thread | Page spec → ADO `[SPEC]` (child of the scope ticket) · escalated gaps → PBIs, IDs written back. |
+| **D — Filing** | main thread | Page spec → ADO `[DESIGN-SPEC]` (child of the scope ticket) · escalated gaps → PBIs, IDs written back. |
 
 (Catalog refresh, if it's needed: Sonnet, via `grimme-ui-catalog`.)
 
@@ -103,13 +109,13 @@ Region agents are driven by `references/region-agent-prompt.md`.
 Two extraction rules the regression fixtures exist to protect: **never resolve a fill by hex**
 (it silently collapses the token tier) and **never record absolute x/y coordinates** (layout
 output is relative auto-layout intent only). Both are normative in
-`references/region-agent-prompt.md`.
+`agents/figma-region-extractor.md`.
 
 ## Idempotency & output
 
 Re-running regenerates the local `page-spec.md` and `gaps/` fresh; ADO filing dedups via
-backlog search + written-back IDs, and the page `[SPEC]` is updated, not duplicated. A second
-run on the same node must create **zero** new PBIs/`[SPEC]`s. Write under a run directory
+backlog search + written-back IDs, and the page `[DESIGN-SPEC]` is updated, not duplicated. A second
+run on the same node must create **zero** new PBIs/`[DESIGN-SPEC]`s. Write under a run directory
 (suggest the scratchpad or a user-named dir): `page-spec.md` plus `gaps/gap-NNN-<slug>.md`.
 
 Screenshots are **not** persisted — `get_screenshot` returns an inline image, not a path.

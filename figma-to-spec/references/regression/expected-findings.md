@@ -62,7 +62,7 @@ file to a grader agent and have it return pass/fail per line.
 
 ### Triage gate (no premature writes)
 - [ ] **MUST** — the run **STOPs at the Phase C triage checkpoint**; **zero ADO writes**
-      happen before the user triages (no `[SPEC]`, no PBIs auto-filed).
+      happen before the user triages (no `[DESIGN-SPEC]`, no PBIs auto-filed).
 
 ---
 

@@ -8,7 +8,7 @@ How a region agent decides whether a Figma property **resolves** to the design s
 ## Colors / tokens
 
 1. **Read the bound variable NAME, never the hex.** Use `get_variable_defs` + the
-   `use_figma` binding read (call discipline in `references/region-agent-prompt.md`). Two
+   `use_figma` binding read (call discipline in `../agents/figma-region-extractor.md`). Two
    semantics routinely alias one primitive — matching on value is a coin flip that
    silently collapses the tier.
 2. **Prefer semantic.** If a semantic token (Tailwind-classed, **consumer form —

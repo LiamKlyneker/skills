@@ -1,22 +1,22 @@
 # Page-implementation spec template
 
 Fill this from the synthesized region findings. It is the primary artifact — filed as an
-ADO `[SPEC]` in **myGRIMME Core**. It tells an implementer HOW to build the page
+ADO `[DESIGN-SPEC]` in **myGRIMME Core**. It tells an implementer HOW to build the page
 on-system, cites `grimme-ui-components-best-practices` for usage rules (never duplicates
 them), and marks every DS gap inline as `⚠ blocked on gap-NNN`.
 
 ---
 
-# [SPEC] <Page name> — implementation
+# [DESIGN-SPEC] <Page name> — implementation
 
 **Mode:** page | component · **Figma node:** <url> · **Mobile/tablet node:** <url | "none — responsive inferred">
 **State nodes:** <state:empty=url, state:error=url | "none"> · **Scope ticket:** #<id | "none">
-**Generated:** <YYYY-MM-DD> · **Gap specs:** `gaps/` (N gaps) · **ADO [SPEC]:** #<id once filed | "n/a — component mode">
+**Generated:** <YYYY-MM-DD> · **Gap specs:** `gaps/` (N gaps) · **ADO [DESIGN-SPEC]:** #<id once filed | "n/a — component mode">
 
 ## Changelog
 
 *(update runs only — omit for a brand-new spec)* Diffed **spec-vs-spec** against the prior
-baseline, never against code. Changed since <prior `page-spec.md` / ADO [SPEC] #id>:
+baseline, never against code. Changed since <prior `page-spec.md` / ADO [DESIGN-SPEC] #id>:
 - <region / property>: <old> → <new>
 
 Unchanged: <everything else>. New spec, no prior baseline → "n/a".

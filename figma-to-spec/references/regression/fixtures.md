@@ -22,7 +22,7 @@ its real regions under a single content-wrapper frame (B2).
 - **Run mode:** `page` (default)
 - **Primary node:** `11044:27567` — configurations list (populated)
 - **Additional node:** `11039:15398` — role `state:empty` — empty state
-- **Scope ticket:** `#12100` (myGRIMME Core) — the `[SPEC]` files as its child
+- **Scope ticket:** `#12100` (myGRIMME Core) — the `[DESIGN-SPEC]` files as its child
 - **Freetext:** `"main configurations list, cards and its empty state"`
 - **Catalog:** bundled `references/catalog.md` (no arg override)
 
