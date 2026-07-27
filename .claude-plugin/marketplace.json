@@ -1,0 +1,20 @@
+{
+  "name": "liam-skills",
+  "description": "Liam Klyneker's personal Claude Code skills, packaged as installable plugins",
+  "owner": {
+    "name": "Liam Klyneker",
+    "url": "https://github.com/LiamKlyneker"
+  },
+  "plugins": [
+    {
+      "name": "prd-workflow",
+      "description": "PRD-to-merge workflow for Claude Code: turn context into a PRD, slice it into tracer-bullet issues, pick the next one, and run the whole thing end-to-end with a per-issue worker subagent",
+      "source": "./plugins/prd-workflow"
+    },
+    {
+      "name": "figma-tools",
+      "description": "Figma design-to-spec extraction for Claude Code: reads a Figma file region by region and produces implementation-ready page/gap specs, backed by the figma-region-extractor subagent",
+      "source": "./plugins/figma-tools"
+    }
+  ]
+}
