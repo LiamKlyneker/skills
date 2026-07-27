@@ -12,7 +12,7 @@ symlinked into the agents directory to be spawnable by type.
 | Agent | Skill | Install | Notes |
 |---|---|---|---|
 | `figma-region-extractor` | `figma-to-spec` (Phase B) | user-scoped | Pinned to Sonnet; write tools denied. Detachable — if not installed, Phase B reads the same file and pastes its body into a `general-purpose` agent. |
-| `prd-worker` | `work-on-prd` (Loop step 5) | **project-scoped** | No `model`/`effort` — the orchestrator routes per issue and passes the tier at spawn time. Project-scoped on purpose: it commits, so a stray auto-spawn must not be possible from an unrelated repo. Detachable the same way. |
+| `prd-worker` | `work-on-prd` (Loop step 5) | **project-scoped** | No `model`/`effort` — the orchestrator routes per issue and passes the tier at spawn time. `Agent` denied (flat hierarchy — costs it `Explore`, so it greps for itself). Project-scoped on purpose: it commits, so a stray auto-spawn must not be possible from an unrelated repo. Detachable the same way. |
 
 ```bash
 # user-scoped
@@ -26,9 +26,13 @@ ln -sfn "<skills-repo>/work-on-prd/agents/prd-worker.md" \
 
 Things worth knowing before adding another one:
 
-- **A newly installed agent takes a few minutes to register.** It does not need a restart,
-  but `subagent_type` will not resolve immediately after you write the file. Any skill that
-  spawns an agent by type should check availability and fall back rather than assume.
+- **A newly installed agent takes a few minutes to register**, and a newly *created* agents
+  directory does not register at all mid-session. Dropping a file into an agents directory
+  that already existed at session start resolves after a few minutes, no restart needed —
+  that is how `figma-region-extractor` behaved. Creating `.claude/agents/` for the first time
+  and symlinking into it left `prd-worker` unresolvable for the rest of the session (three
+  attempts, ~15 min). So the fallback is not a nicety: any skill that spawns by type must
+  check availability and paste the body into `general-purpose` instead.
 - **Agents have no `disable-model-invocation`.** A `description` that reads like a capability
   advertisement invites auto-delegation from unrelated sessions, bypassing the skill's setup
   phase. Write it as a caller contract ("internal to X, never invoke directly"), and where
@@ -41,6 +45,13 @@ Things worth knowing before adding another one:
   descriptions and injected context rather than the system prompt. What measurably does
   **not** survive is the honesty/evidence/don't-fabricate guidance. Restate that in any
   agent whose job is to report results; don't waste lines restating the rest.
+- **Reaching the agent is not the same as being followed.** The probe measured which guidance
+  still *arrives*; it did not measure compliance. A worker built on the strength of that
+  measurement — trailer inherited, so not restated — then committed without the
+  `Co-Authored-By` trailer, and did so even on the `general-purpose` fallback path where the
+  whole system prompt was intact. If an inherited convention has to hold for the skill to be
+  correct, restate it and assert on it; treat the probe as a list of what you *may* omit, not
+  what you can rely on.
 - **Only pin `model` / `effort` in frontmatter when the tier is a property of the *agent*.**
   `figma-region-extractor` always does grep-and-extract work, so Sonnet is pinned. A
   `prd-worker` handles anything from a copy tweak to a migration, and the orchestrator makes
