@@ -33,7 +33,14 @@ runner. The only executable is `install-skills/scripts/doctor.sh`.
 | Install deps | None |
 
 Once a directory here carries a `.claude-plugin/plugin.json`, its structural check
-becomes `claude plugin validate <dir> --strict` and that joins the L2 floor.
+becomes `claude plugin validate <dir>` and that joins the L2 floor.
+
+**Not `--strict`**, deliberately. Plugin manifests here omit `version` on purpose —
+with a version set it becomes the install cache key, and a forgotten bump means
+installs silently never see changes. The CLI emits a warning for the missing field,
+and `--strict` is defined as treating warnings as errors, so the two decisions cannot
+both hold. Plain `validate` must pass with the missing-`version` warning as the *only*
+warning; a second warning is a real failure and does not get waved through.
 
 ## App facts
 
