@@ -126,7 +126,7 @@ its checks by hand or "spot-check" a subset.
 
 | Label | Means |
 |---|---|
-| `FORK` | a real directory where a symlink belongs, unclaimed by any stamp |
+| `FORK` | a real directory where a symlink belongs, unclaimed by any stamp, **shadowing a canonical skill of the same name**. A real directory with no canonical counterpart is a skill the project genuinely owns — reported as `INFO`, not a problem |
 | `BANNED` | a project-owned `_shared/` — shadows canonical for any copied skill |
 | `DANGLING` | a symlink under `.claude/` whose target is gone |
 | `HOLE` | an installed skill reads the adapter, and there isn't one |

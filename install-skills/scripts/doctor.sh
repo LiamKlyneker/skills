@@ -116,6 +116,12 @@ if [ -d "$skills_dir" ]; then
 "
       elif [ "$name" = "_shared" ]; then
         err "BANNED" "$(rel "$entry") — a project never owns a _shared/ (#11). Unstamped, so it shadows canonical for any copied skill."
+      elif [ ! -d "$canonical/$name" ]; then
+        # A fork shadows a canonical skill of the same name. With no canonical
+        # counterpart there is nothing to shadow and nothing to drift from, so
+        # this is a skill the project genuinely owns — the one legitimate reason
+        # for a real directory here.
+        info "$(rel "$entry") is project-owned (no skill of that name in canonical)"
       else
         err "FORK" "$(rel "$entry") is a real directory, not a symlink, and no stamp claims it — this is a fork"
       fi
