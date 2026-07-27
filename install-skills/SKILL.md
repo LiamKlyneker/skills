@@ -124,21 +124,28 @@ its checks by hand or "spot-check" a subset.
 
 | Label | Means |
 |---|---|
-| `FORK` | a real directory where a symlink belongs, **shadowing a canonical skill of the same name**. A real directory with no canonical counterpart is a skill the project genuinely owns — reported as `INFO`, not a problem |
+| `FORK` | a real directory where a symlink belongs, **shadowing a skill of the same name** — one in canonical, or one a reachable plugin provides. A real directory that shadows neither is a skill the project genuinely owns — reported as `INFO`, not a problem |
 | `BANNED` | a project-owned `_shared/` — shadows canonical for any copied skill |
 | `DANGLING` | a symlink under `.claude/` whose target is gone |
-| `HOLE` | an installed skill reads the adapter, and there isn't one |
-| `UNFILLED` | the adapter still carries the TEMPLATE marker or template placeholders |
+| `HOLE` | a skill reaching this repo reads the adapter, and there isn't one — from `.claude/skills/`, or from a plugin the repo's committed `.claude/settings.json` enables |
+| `UNFILLED` | the adapter still carries the TEMPLATE marker or template placeholders, or is missing a `##` section the named bundle needs |
 | `POINTER` | the adapter's `## Project gates` table registers a gate whose file does not exist as a sibling of `adapter.md` |
 | `SHARED` | a skill reads `../_shared/x.md` that does not resolve from where it sits |
-| `MISSING` | a bundle skill reachable neither in the repo nor from a global config dir |
+| `BUNDLE` | `--bundle` named a slug `install/bundles.md` does not define, or one whose **Status** is not `ready` |
+| `MISSING` | a bundle offers a gate template that canonical does not ship |
+
+`WARN` lines (a loose file in the skills directory, a manifest doctor could not read) count
+as warnings, not problems. `OK` and `INFO` are neither, and `--quiet` hides them.
 
 Exit 0 clean · 1 problems · 2 usage error.
 
-The script still carries checks written for the old placement model, and `--bundle` still
-reads a manifest field that no longer exists; #23 removes both. Until then, treat a label
-not in the table above — and any `--bundle` complaint — as noise from that transition
-rather than a finding, and run it without `--bundle`.
+**Where skills come from is a lookup, not a check.** A skill can reach a session from
+`.claude/skills/`, from a plugin cache, from a skills-dir plugin, or from a plugin the
+project enables in committed settings — so doctor reads all four and reports what it finds
+as `INFO`. It never reports a plugin-provided skill as missing, and a repo with no
+`.claude/skills/` at all is the normal post-plugin shape, not a broken one. What stays loud
+is the shadowing: a real directory sitting on top of a skill something else already
+provides.
 
 Interpretation is yours, not the script's. In particular: a `FORK` is a decision, not a
 delete. Someone edited that copy for a reason and the diff against canonical may contain
