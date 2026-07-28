@@ -1,0 +1,24 @@
+name: Validate catalog
+
+# `pull_request` (never `pull_request_target`) so PRs from forks run with a
+# read-only token and no access to secrets. Fork code must never run privileged.
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      # Pinned to a commit SHA, not a tag — a tag can be moved to point at new code.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Validate marketplace, plugins, skills and agents
+        run: python3 .github/scripts/validate_skills.py

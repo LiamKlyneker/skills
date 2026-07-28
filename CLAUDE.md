@@ -63,6 +63,39 @@ undo than an unwanted PR.
 Unchanged by the above: **still only commit or push when Liam asks.** This rule
 governs *where* commits go, not *whether* to make them unprompted.
 
+## GitHub, and what `gh` may and may not do here
+
+`gh` is authenticated as `LiamKlyneker` with scopes `gist`, `read:org`, `repo`,
+`workflow`. That covers issues, PRs, releases, repo settings and workflow files. It
+does **not** cover org/user Projects (`project`), packages, or org admin — if a task
+needs those, say so rather than improvising around it.
+
+This is a **public** repo, and its content is executable instruction, so a few things
+are settings, not conventions:
+
+- **`main` blocks force-push and deletion**, via the `main-history-protection`
+  ruleset, with **no bypass actors** — the block applies to Liam and to admin tokens
+  too. Direct push is deliberately still allowed, so the direct-to-main workflow above
+  is unaffected. Never reach for `git push --force` on `main`; if history genuinely
+  has to be rewritten, that is a conscious ruleset change and Liam's call, not
+  something to work around.
+- **CI must stay fork-safe.** `.github/workflows/validate.yml` triggers on
+  `pull_request`, never `pull_request_target` — the latter would run fork code with a
+  writable token and secrets. Keep `permissions:` least-privilege and keep every
+  action **pinned to a commit SHA**; the repo now enforces SHA pinning, so a tag
+  reference will be rejected outright.
+- **Structural changes must pass `python3 .github/scripts/validate_skills.py`** — it
+  checks the marketplace catalog, plugin manifests, skill and agent frontmatter,
+  symlink integrity, and `_shared` references. Run it before committing anything that
+  moves a skill, renames one, edits a manifest, or touches a symlink. Standard library
+  only; don't give this repo a dependency manifest.
+- **Secret scanning and push protection are on.** A blocked push is a real finding —
+  read what it caught, don't retry past it.
+- Contributors have no push access; fork-and-PR is the only outside route.
+  `CONTRIBUTING.md` and `SECURITY.md` state the review posture — a skill PR gets read
+  as code, because prose here is what an agent executes on someone else's machine.
+  Keep those two files true if the workflow changes.
+
 ## Two delivery routes, and what each means for editing
 
 A skill reaches a machine either as part of an **installed plugin** — a copy in the
