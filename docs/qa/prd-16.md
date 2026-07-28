@@ -3,17 +3,15 @@
 Manual pass for [PR #27](https://github.com/LiamKlyneker/skills/pull/27), branch
 `prd/16-publish-skills-repo-as-plugins`. Run it start to finish before merging.
 
-**This pass covers six of the PRD's nine children** — #18, #19, #20, #21, #22, #23.
-The remaining three are deliberately not here:
+**PR #27 covered six of the PRD's nine children** — #18, #19, #20, #21, #22, #23 —
+and has merged. The remaining three land in a follow-up PR on the same branch; #24
+is below. **PRD #16 stays open until #26 deletes the shims.**
 
-| Issue | Why it is not in this pass |
+| Issue | Status |
 |---|---|
-| #24 cutover | Its committed project settings need a **GitHub** marketplace source, and a GitHub source clones the **default branch**. The catalog only exists on this branch, so #24 cannot be done correctly until this PR merges. |
+| #24 cutover | In this pass — see the section at the end. Needed PR #27 merged first, because its committed project settings need a **GitHub** marketplace source and a GitHub source clones the **default branch**. |
 | #25 install guide | Documents commands that only work once #24 has run. |
 | #26 contract | Deletes the compat shims, which must outlive the cutover. |
-
-So the merge is deliberate, not premature: it unblocks the remaining three, which
-land in a follow-up PR. **PRD #16 stays open until #26 deletes the shims.**
 
 Config dir throughout is `~/.claude` (personal) unless stated. Working directory is
 this repo unless stated.
@@ -235,9 +233,95 @@ bundle check no longer parses a `Skills` list.
 
 ---
 
+## #24 — cutover: repoint three repos and three configs onto the plugins
+
+**What shipped.** Every consumer now gets the workflow from a plugin instead of from
+a symlink. All 15 legacy skill links and both `prd-worker` agent links are gone from
+`liamklyneker`, `neonplace` and `neonplace-ios`; each of the three enables
+`prd-workflow@liamklyneker` in **committed** project settings instead (pushed to
+`main` in each — three commits outside this repo). This repo self-hosts via
+skills-dir mode: one symlink, `.claude/skills/prd-workflow -> ../../plugins/prd-workflow`,
+which `claude plugin list` reports as `prd-workflow@skills-dir · Scope: project` and
+which keeps edit-in-place authoring working. `~/.claude` lost its `figma-to-spec`
+skill link and its `figma-region-extractor` agent link — `figma-tools@liamklyneker`
+is installed user-scope there and provides both.
+
+**Scope changes against the issue body.** Two configs, not three: `~/.claude-schmiede`
+is out (it refuses project/local settings writes into a symlinked `.claude`, and it
+does not use this workflow). And `doctor` needed a fix to land this — see below.
+
+**Exercise it. Steps 1–3 are the ones nobody has observed yet; do those first.**
+
+1. **`prd-worker` resolves by type where it should.** Fresh session in
+   `~/creative-ghost/neonplace`, then `~/creative-ghost/neonplace-ios`, then
+   `~/liam-klyneker/liamklyneker`. Spawn a `prd-worker` **by type**. All three now get
+   it from the plugin, and none of them has a `.claude/agents/prd-worker.md` any more,
+   so this is the whole safety net. **A missing agent degrades silently to
+   `general-purpose`** — that is how `neonplace` ran bare workers for weeks — so
+   confirm the type resolves rather than assuming a successful run proves it.
+2. **`prd-worker` does NOT resolve where it should not.** Same check in
+   `~/creative-ghost/reeckon` (no `enabledPlugins`, never wired). It must be absent.
+   `claude plugin list` there already reports `prd-workflow@liamklyneker` as
+   `✘ disabled`, but that is the setting, not the live agent table. This is the
+   direction that actually matters: `prd-worker` commits.
+3. **This repo's own loop still works.** Fresh session here; `prd-worker` must resolve
+   from `prd-workflow@skills-dir`. This repo also lost its `.claude/agents/prd-worker.md`,
+   and it is where the PRD loop runs, so a miss here stalls #25 and #26. If it is
+   missing, the one-line rollback is
+   `ln -s ../../plugins/prd-workflow/agents/prd-worker.md .claude/agents/prd-worker.md`.
+4. **Skills resolve, namespaced.** In each of the three consumer repos, confirm the
+   five skills appear as `prd-workflow:<skill>` and that `/prd-workflow:work-on-prd`
+   loads. In this repo they come from the skills-dir plugin instead.
+5. **Edit-in-place still works.** Edit a line in `plugins/prd-workflow/skills/to-prd/SKILL.md`
+   here, start a session **in this repo**, and confirm the edit is live with no
+   reinstall. Then confirm it is **not** live in `neonplace` — the marketplace copy is
+   pinned to a committed SHA (`ac7a89ab018a`), which is correct and will surprise you
+   once.
+6. **Nothing project-owned was collateral damage.** `neonplace/.agents/skills/` still
+   has `building-luar-ui`, `data-types-colocation`, `triage`, `verify-ui`;
+   `neonplace-ios/.agents/agents/` still has `grill-explorer`, `grill-web-explorer`.
+7. **TeamSnap config.** Nothing changed there and nothing needed to —
+   `prd-workflow@liamklyneker` is installed `local`-scope and enabled from
+   `organization-frontend-v2/.claude/settings.local.json` (gitignored, zero git
+   footprint). Confirm from a `claude-ts` session that the skills load. The
+   `claude plugin` CLI **cannot** check this — it always reads `~/.claude` regardless
+   of `CLAUDE_CONFIG_DIR`.
+
+**Edge cases.**
+
+- **`~/.claude-schmiede/skills/figma-to-spec` is a live hazard for #26.** It still
+  points at the top-level `figma-to-spec` shim, which #26 deletes. Schmiede was ruled
+  out of scope for #24, so it was deliberately left alone rather than broken — but #26
+  must either install `figma-tools` there (user scope; project/local writes are
+  refused into that symlinked `.claude`) or delete the link, or Schmiede sessions lose
+  `figma-to-spec` with a dangling link and no error.
+- **`doctor` had to learn skills-dir mode to let this land.** It treated every entry in
+  `.claude/skills/` as a skill, so it resolved `../_shared/` from the *plugin root* and
+  invented three `SHARED` failures the moment this repo self-hosted via a plugin. It
+  now recognises an entry carrying `.claude-plugin/plugin.json` as a plugin root and
+  registers the skills one level down at their real paths. Both directions were
+  re-checked: a real directory shadowing a plugin-provided skill still reports `FORK`,
+  and a dangling link still reports `DANGLING`.
+- **Do not add an apostrophe to a `#` comment inside a `$( )` in `doctor.sh`.** macOS
+  ships bash 3.2, which does not strip comments before scanning for quotes — one
+  apostrophe there is a syntax error reported 100+ lines away. There is a comment in
+  the script saying so; keep it.
+- **`--scope project` behaved this time.** It wrote `enabledPlugins` only into the
+  project's own `.claude/settings.json` and left `~/.claude/settings.json` untouched,
+  so "install broadly, enable narrowly" holds. Diff `~/.claude/settings.json` before
+  and after if you ever re-run it — #21 found it leaking to user level once.
+- `neonplace/.agents/agents/` is now an empty directory. Left in place on purpose: a
+  **newly created** agents directory does not register mid-session, so deleting it
+  would make a future project-owned agent there harder to add, not easier.
+- The three repos' skill links were gitignored in `neonplace` and `neonplace-ios`, so
+  only `liamklyneker` shows deleted symlinks in its commit. The other two commits are
+  the settings file alone. That is expected, not an incomplete cutover.
+
+---
+
 ## After the pass
 
-- Merge PR #27. The PRD issue stays **open** — `Closes` fires for the six children on
-  merge; #24, #25 and #26 continue in a follow-up PR.
-- First thing post-merge, do #21 step 1–4 above. That is simultaneously the QA for
-  #21 and the prerequisite for #24.
+- PR #27 merged; `Closes` fired for the six children it carried. The PRD issue stays
+  **open** — #25 and #26 continue on this branch.
+- #21 steps 1–4 were the prerequisite for #24 and are done: the marketplace registers
+  as `liamklyneker` and both plugins install from it.
