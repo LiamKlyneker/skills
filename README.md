@@ -4,23 +4,39 @@ A collection of my agent skills... more to come soon!
 
 ## Layout
 
-Every top-level directory is one skill, except two:
+This repo is both a marketplace and a collection of plain skills. Four top-level
+entries are not skills:
 
 | Directory | What's in it |
 |---|---|
+| `.claude-plugin/` | `marketplace.json` — the catalog, published as marketplace **`liamklyneker`** |
+| `plugins/` | The packaged plugins: `prd-workflow/` and `figma-tools/`. Their skills live one level down, in `<plugin>/skills/` |
 | `_shared/` | **Global reference** — docs several skills read that are true in every project. No templates, no project values. |
-| `install/` | **Templates a project fills in** — `adapter.template.md` and `gates/`, plus the wiring guide. |
+| `install/` | **Templates a project fills in** — `adapter.template.md` and `gates/`, plus the layout guide. |
 
-Skills reach a project by **symlink**, one per skill into `.claude/skills/`, never
-by copy. A project never owns a `_shared/`, so `../_shared/…` from any skill can
-only mean this repo. Anything project-specific lives in `<repo-root>/.claude/project/`:
-`adapter.md` plus any gates it registers. Full layout: [`install/README.md`](install/README.md).
+Every *other* top-level directory is one plain skill — `deep-grill`, `grill-me`,
+`install-skills`, `how-i-write`, `pinpoint`, `qa-prd-log`, `scoped-context`,
+`triage-prd`. The top-level names that are **symlinks** into `plugins/` are compat
+shims from the migration; they keep pre-plugin links resolving and are on their way
+out.
+
+Two delivery routes, on purpose: a plugin from the marketplace (a versioned copy,
+cache-keyed by git commit), or a symlink into a config's `skills/` directory (nothing
+copied, edits live — how this repo authors against itself). Full instructions,
+including which config directory and which scope: [`INSTALL.md`](INSTALL.md).
+
+A project never owns a `_shared/`, so `../_shared/…` from any skill can only mean this
+repo. Anything project-specific lives in `<repo-root>/.claude/project/`: `adapter.md`
+plus any gates it registers, and packaging does not change that — skills resolve the
+adapter from the project the session is running in, so it works the same from a plugin
+cache. Layout: [`install/README.md`](install/README.md).
 
 ## Adopting a bundle
 
 Getting the skills is the platform's job — `/plugin marketplace add LiamKlyneker/skills`
-then `/plugin install <plugin>`, or a symlink into a config's `skills/` directory for a
-plain skill and for editing in place.
+then `/plugin install <plugin>@liamklyneker`, or a symlink into a config's `skills/`
+directory for a plain skill and for editing in place. [`INSTALL.md`](INSTALL.md) walks
+both routes and the traps in each.
 
 What no distribution mechanism can do is fill in *your project's* facts. From the repo you
 want to wire up:
@@ -36,11 +52,12 @@ or tells you exactly what it couldn't finish.
 | Bundle | What it wires up |
 |---|---|
 | `prd-workflow` | The PRD → issues → implementation loop — the `prd-workflow` plugin, plus `deep-grill`, which stays a plain skill |
-| `prd-qa` | The QA loop run against a PRD branch before merge |
+| `prd-qa` | The QA loop run against a PRD branch before merge — two plain skills, no plugin |
 | `figma-tools` | Figma → spec — the `figma-tools` plugin. Adapter-free |
 
 Definitions live in [`install/bundles.md`](install/bundles.md); a bundle names the adapter
-sections a set of skills needs filled, not the skills themselves.
+sections a set of skills needs filled, not the skills themselves. Bundle and plugin are
+separate namespaces and only sometimes the same set.
 
 `/install-skills doctor` is the other half, and the more important one. Forked copies,
 leftover `_shared/` directories, half-filled adapters and dead gate pointers all fail
@@ -52,23 +69,17 @@ repo, any time; it changes nothing.
 
 Some skills ship a custom subagent alongside `SKILL.md` + `references/`. The agent file
 carries the parts of the contract that never change between calls, so the orchestrator only
-passes the per-call inputs. It lives inside the skill directory (one source of truth) and is
-symlinked into the agents directory to be spawnable by type.
+passes the per-call inputs. Each agent ships **inside its plugin**, in `<plugin>/agents/`,
+so it arrives and departs with the plugin — no separate agent link to place or forget.
 
-| Agent | Skill | Install | Notes |
+| Agent | Skill | Reach | Notes |
 |---|---|---|---|
-| `figma-region-extractor` | `figma-to-spec` (Phase B) | user-scoped | Pinned to Sonnet; write tools denied. Detachable — if not installed, Phase B reads the same file and pastes its body into a `general-purpose` agent. |
-| `prd-worker` | `work-on-prd` (Loop step 5) | **project-scoped** | No `model`/`effort` — the orchestrator routes per issue and passes the tier at spawn time. `Agent` denied (flat hierarchy — costs it `Explore`, so it greps for itself). Project-scoped on purpose: it commits, so a stray auto-spawn must not be possible from an unrelated repo. Detachable the same way. |
+| `figma-region-extractor` | `figma-to-spec` (Phase B) | wherever `figma-tools` is enabled — user scope, personal config | Pinned to Sonnet; write tools denied. Detachable — if not installed, Phase B reads the same file and pastes its body into a `general-purpose` agent. |
+| `prd-worker` | `work-on-prd` (Loop step 5) | **only where `prd-workflow` is enabled** | No `model`/`effort` — the orchestrator routes per issue and passes the tier at spawn time. `Agent` denied (flat hierarchy — costs it `Explore`, so it greps for itself). Contained on purpose: it commits, so a stray auto-spawn must not be possible from an unrelated repo. Detachable the same way. |
 
-```bash
-# user-scoped
-ln -sfn "$PWD/figma-to-spec/agents/figma-region-extractor.md" \
-        ~/.claude/agents/figma-region-extractor.md
-
-# project-scoped — from the project repo root, pointing at your clone of this repo
-ln -sfn "<skills-repo>/work-on-prd/agents/prd-worker.md" \
-        .claude/agents/prd-worker.md
-```
+Containment is now the plugin's `enabledPlugins` entry rather than a hand-placed symlink —
+a repo that never enabled `prd-workflow` cannot spawn `prd-worker` at all. See
+[`INSTALL.md`](INSTALL.md) for which scope to enable in which config.
 
 Things worth knowing before adding another one:
 
@@ -78,7 +89,9 @@ Things worth knowing before adding another one:
   that is how `figma-region-extractor` behaved. Creating `.claude/agents/` for the first time
   and symlinking into it left `prd-worker` unresolvable for the rest of the session (three
   attempts, ~15 min). So the fallback is not a nicety: any skill that spawns by type must
-  check availability and paste the body into `general-purpose` instead.
+  check availability and paste the body into `general-purpose` instead. Shipping an agent
+  inside a plugin sidesteps the placement problem — but not the delay, and not the fallback
+  requirement, since a missing agent still degrades silently to `general-purpose`.
 - **Agents have no `disable-model-invocation`.** A `description` that reads like a capability
   advertisement invites auto-delegation from unrelated sessions, bypassing the skill's setup
   phase. Write it as a caller contract ("internal to X, never invoke directly"), and where

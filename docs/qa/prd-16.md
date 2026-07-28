@@ -5,12 +5,12 @@ Manual pass for [PR #27](https://github.com/LiamKlyneker/skills/pull/27), branch
 
 **PR #27 covered six of the PRD's nine children** — #18, #19, #20, #21, #22, #23 —
 and has merged. The remaining three land in a follow-up PR on the same branch; #24
-is below. **PRD #16 stays open until #26 deletes the shims.**
+and #25 are below. **PRD #16 stays open until #26 deletes the shims.**
 
 | Issue | Status |
 |---|---|
-| #24 cutover | In this pass — see the section at the end. Needed PR #27 merged first, because its committed project settings need a **GitHub** marketplace source and a GitHub source clones the **default branch**. |
-| #25 install guide | Documents commands that only work once #24 has run. |
+| #24 cutover | In this pass. Needed PR #27 merged first, because its committed project settings need a **GitHub** marketplace source and a GitHub source clones the **default branch**. |
+| #25 install guide | In this pass. Documents commands that only work once #24 has run. |
 | #26 contract | Deletes the compat shims, which must outlive the cutover. |
 
 Config dir throughout is `~/.claude` (personal) unless stated. Working directory is
@@ -319,9 +319,76 @@ does not use this workflow). And `doctor` needed a fix to land this — see belo
 
 ---
 
+## #25 — install guide; correct the docs the migration falsified
+
+**What shipped.** A top-level **`INSTALL.md`**: marketplace, per-config install,
+per-project enablement, skills-dir live authoring, adapter bootstrap, verify, and
+three traps. `install/README.md` narrowed to what a *project* owns and points at it.
+`README.md`, `CLAUDE.md`, `.claude/project/adapter.md` and
+`install/adapter.template.md` no longer claim one-directory-per-skill or
+symlink-per-project delivery. The adapter's `## Commands` gained the
+`claude plugin validate` line as a named L2 rung.
+
+**The guide's home was a judgement call.** `install/` is the templates-a-project-fills-in
+directory; an estate-wide distribution guide is not a template, so it went top-level
+where `README.md` can point at it directly.
+
+**Exercise it — read it cold.** The whole test is following it without consulting
+anything else. A step that only makes sense if you already did the migration is the
+failure mode.
+
+1. **Traps 1 and 2, hands on.** `CLAUDE_CONFIG_DIR=/tmp/throwaway claude plugin list`
+   and `… marketplace list` — both must report `~/.claude`'s inventory and leave the
+   throwaway directory empty, matching the transcript in the guide. Then
+   `claude plugin validate plugins/prd-workflow` — exactly one warning, the omitted
+   `version`.
+2. **The parts nobody could verify without an interactive session** (see below) — do
+   these in a scratch repo you can throw away:
+   - `/plugin marketplace add LiamKlyneker/skills` in a config that does not have it,
+     and confirm it registers as **`liamklyneker`**.
+   - `/plugin install prd-workflow@liamklyneker`, pick a scope, restart, and confirm
+     the skills appear as `prd-workflow:<skill>`.
+   - Hand-write `enabledPlugins` into a scratch repo's `.claude/settings.json` and
+     confirm a session there sees the plugin while a sibling repo does not.
+   - `ln -s` a plugin directory into a scratch `.claude/skills/`, and confirm
+     `claude plugin list` reports it as `<name>@skills-dir · ✔ loaded`.
+3. **No surviving symlink-delivery claims.** `grep -rn -i symlink --include="*.md" .`
+   Every remaining hit should be one of: a plain skill (still symlinked, still true),
+   the `skills/_shared` symlink inside a plugin, a compat shim #26 deletes,
+   `doctor`'s failure classes, or this QA doc's own history.
+4. **Cross-references resolve.** Every relative link in the changed files.
+
+**Edge cases.**
+
+- **Nothing was installed, uninstalled or reconfigured for this issue**, deliberately —
+  the estate is in a verified good state that #26 depends on. Every claim in the guide
+  is either quoted from a command run read-only against the live estate, or taken from
+  the #21/#24 records. Step 2 above is the part that has *not* been walked end to end
+  in this pass.
+- **The scope rule in the guide contradicts the PRD's "install broadly, enable
+  narrowly."** That phrasing was written for `~/.claude`, which is multi-tenant. In a
+  single-tenant config (`~/.claude-teamsnap`, `~/.claude-schmiede`) **user scope is the
+  narrow option**, and project scope in a client repo writes a committed settings file —
+  the exact footprint user story 3 exists to avoid. The guide states tenancy as the rule.
+  Read it that way rather than reconciling it with the PRD's sentence.
+- **The `--scope project` user-level leak recorded under #21 did not reproduce in #24**
+  and is not repeated in the guide. If it ever recurs, the guide is what needs correcting.
+- **Trap 3 is new to the documentation** — a repo whose `.claude` is *itself* a symlink
+  refuses both project and local scope (`SymlinkWriteRefusedError`). Only user scope
+  works there. Do not confuse it with `neonplace`'s shape, which has a real `.claude/`
+  with links *inside* it and installs fine.
+- `figma-component/references/install.md` still describes the pre-plugin symlink route.
+  Deliberately untouched — that skill is deprecated and #9/#14 decide what survives.
+  It is linked into no project and cannot be auto-invoked.
+- `install/adapter.template.md` was not in #25's file list but carried the same
+  falsified claims, and it is the file every *new* project's adapter is copied from.
+  Fixed for that reason.
+
+---
+
 ## After the pass
 
 - PR #27 merged; `Closes` fired for the six children it carried. The PRD issue stays
-  **open** — #25 and #26 continue on this branch.
+  **open** — #26 continues on this branch.
 - #21 steps 1–4 were the prerequisite for #24 and are done: the marketplace registers
   as `liamklyneker` and both plugins install from it.

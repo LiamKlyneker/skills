@@ -4,10 +4,10 @@ Single home for every project-specific fact the skills need. Workflow skills
 (`work-on-prd`, `to-issues`, `next-prd-issue`, `work-on-issue`) and `deep-grill`
 reference this file and never hardcode these values.
 
-**This repo is the canonical skills repo**, so it is its own install target: the
-symlinks in `.claude/skills/` point at sibling directories here rather than at
-another clone, and `../_shared/…` from a symlinked skill resolves back into this
-same repo. That is self-hosting, not a broken install — expect `doctor` to say so.
+**This repo is the canonical skills repo**, so it is its own install target: what
+`.claude/skills/` holds points at sibling directories here rather than at another
+clone, and `../_shared/…` from a skill reached that way resolves back into this same
+repo. That is self-hosting, not a broken install — expect `doctor` to say so.
 
 ## Repo
 
@@ -28,12 +28,13 @@ runner. The only executable is `install-skills/scripts/doctor.sh`.
 |---|---|
 | Build | None — nothing compiles |
 | Test — **verify L2 floor** | `bash -n install-skills/scripts/doctor.sh && bash install-skills/scripts/doctor.sh --repo . --quiet` |
+| Manifest check — **also L2 floor** | `claude plugin validate plugins/prd-workflow && claude plugin validate plugins/figma-tools && claude plugin validate .` |
 | Boot the app (visual loop) | `claude plugin list` — the loaded-plugin inventory *is* this repo's running state |
 | App screenshot | None — terminal output is the evidence; paste it verbatim |
 | Install deps | None |
 
-Once a directory here carries a `.claude-plugin/plugin.json`, its structural check
-becomes `claude plugin validate <dir>` and that joins the L2 floor.
+The manifest check covers both plugin manifests and the marketplace catalog (`.`).
+Any new directory carrying a `.claude-plugin/plugin.json` joins that line.
 
 **Not `--strict`**, deliberately. Plugin manifests here omit `version` on purpose —
 with a version set it becomes the install cache key, and a forgotten bump means
@@ -45,9 +46,11 @@ warning; a second warning is a real failure and does not get waved through.
 ## App facts
 
 - Markdown/prose skills repo · one Bash script (`install-skills/scripts/doctor.sh`) · no runtime, no dependencies.
-- Every top-level directory is one skill, except `_shared/` (global reference read by several skills) and `install/` (what a consuming project gets wired with).
-- Skills are consumed by **symlink** into config dirs under `~/.claude*/skills/` and into project `.claude/skills/`. Editing a file through a symlink edits this repo. Never write "into" a skill via a consumer's symlink.
-- Three Claude Code config dirs consume this repo, switched by `$PWD` in `~/.zshrc`: `~/.claude` (personal), `~/.claude-teamsnap`, `~/.claude-schmiede`. Each has its own plugin cache, marketplaces and `enabledPlugins` — they do not share state.
+- **Also a plugin marketplace.** `.claude-plugin/marketplace.json` publishes marketplace `liamklyneker` with two plugins, `plugins/prd-workflow/` and `plugins/figma-tools/`. A plugin's skills live in `<plugin>/skills/<skill>/` and its agents in `<plugin>/agents/`; both inventories are discovered from the directory, not listed in the manifest.
+- Every *other* top-level directory is one plain skill, except `.claude-plugin/`, `plugins/`, `_shared/` (global reference read by several skills) and `install/` (what a consuming project gets wired with). Top-level names that are symlinks into `plugins/` are compat shims from the migration and are being deleted by #26 — do not treat them as skills.
+- **Two delivery routes.** A plugin installed from the marketplace is a *copy* in a config's cache, keyed by the git commit SHA, so it pins to committed `HEAD` and uncommitted edits are invisible to it. A `.claude/skills/<name>` symlink pointing at a plugin directory loads as `<name>@skills-dir` with no copy, so edits are live — that is how this repo authors against itself, via the single link `.claude/skills/prd-workflow -> ../../plugins/prd-workflow`. Editing a file through such a symlink edits this repo. Never write "into" a skill via a consumer's link, and never run both routes for one plugin in one place (every skill loads twice).
+- Three Claude Code config dirs consume this repo, switched by `$PWD` in `~/.zshrc`: `~/.claude` (personal), `~/.claude-teamsnap`, `~/.claude-schmiede`. Each has its own plugin cache, marketplaces and `enabledPlugins` — they do not share state. **The `claude plugin` CLI ignores `CLAUDE_CONFIG_DIR`** and always reads `~/.claude`, so the other two are inspected by reading their `settings.json`, `plugins/installed_plugins.json` and `plugins/cache/` directly, and installed into only from an in-session `/plugin` under that config.
+- **Packaging did not move the project.** Skills resolve `<repo-root>/.claude/project/adapter.md` against the project the session runs in, at runtime — unchanged whether the skill came from a cache directory or a symlink. `INSTALL.md` is the guide for all of the above.
 
 ## Verify ladder
 
@@ -85,7 +88,9 @@ None — no gates beyond the ones the skills carry.
 - **No project ever owns a `_shared/`.** Project facts live in `<repo-root>/.claude/project/`. `../_shared/…` from any skill can therefore only mean this repo's global reference.
 - Skills address exactly three things: global reference via a relative path into `_shared/`, the project as `<repo-root>/.claude/project/adapter.md`, and project-specific gates **never by name** — the adapter's `## Project gates` registry names them and skills follow the pointer.
 - Prose over scripts. `install-skills` ships the only executable, because mechanical checks must be deterministic. Everything else stays prose.
-- Adding a skill means adding a symlink too; creating the directory here does not make it discoverable.
+- Adding a skill to a plugin is just the directory under `plugins/<plugin>/skills/` — the inventory is discovered. Adding a **plain** skill means adding a symlink into each config that should see it; creating the directory here does not make it discoverable.
+- **Plugin manifests omit `version` deliberately** (see `## Commands`). Do not add one: with a version set it becomes the install cache key, and a forgotten bump means installs silently never see changes.
+- Distribution claims get **verified against the binary and the live config dirs**, never written from memory or from the platform docs. `INSTALL.md` is written from observed behaviour and is the place a corrected observation lands.
 
 ## One-time repo preconditions (human)
 
