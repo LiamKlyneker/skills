@@ -120,8 +120,18 @@ This is the mechanism that keeps `prd-worker` contained. The agent ships inside
 which matters because `prd-worker` commits. A repo that never enabled the plugin reports it
 as `✘ disabled` and cannot spawn the agent.
 
+**Plugin components are namespaced, agents included.** The type is
+**`prd-workflow:prd-worker`**, not the bare `prd-worker` — same prefix the skills get
+(`/prd-workflow:work-on-prd`). The unprefixed name only ever belonged to the pre-plugin
+route, a hand-placed file in an `agents/` directory. Same for
+`figma-tools:figma-region-extractor`.
+
 **A missing agent degrades silently to `general-purpose` rather than erroring.** After
-wiring a repo, confirm `prd-worker` resolves *by type*; a successful run is not evidence.
+wiring a repo, confirm `prd-workflow:prd-worker` resolves *by type* — list the available
+agent types in a fresh session and read the name. A successful run is not evidence: the
+skills are written to fall back to `general-purpose` when the type does not resolve, so the
+broken case and the working case produce the same output. This has bitten twice — once from
+a missing agent link, once from packaging renaming the type out from under the skills.
 
 ## 4. Live authoring: skills-dir mode
 

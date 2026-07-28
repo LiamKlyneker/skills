@@ -16,9 +16,13 @@ entries are not skills:
 
 Every *other* top-level directory is one plain skill — `deep-grill`, `grill-me`,
 `install-skills`, `how-i-write`, `pinpoint`, `qa-prd-log`, `scoped-context`,
-`triage-prd`. The top-level names that are **symlinks** into `plugins/` are compat
-shims from the migration; they keep pre-plugin links resolving and are on their way
-out.
+`triage-prd` — plus `figma-component/` and `tokens-init/`, both deprecated and linked
+nowhere. The migration's compat shims (top-level symlinks into `plugins/`) are gone;
+nothing resolves through a pre-plugin path any more.
+
+Which config directory and which repo actually has each of these is recorded in
+[`docs/estate-inventory.md`](docs/estate-inventory.md) — the plain skills are placed
+by hand, one symlink at a time, so the inventory is the only place that state exists.
 
 Two delivery routes, on purpose: a plugin from the marketplace (a versioned copy,
 cache-keyed by git commit), or a symlink into a config's `skills/` directory (nothing
@@ -72,10 +76,18 @@ carries the parts of the contract that never change between calls, so the orches
 passes the per-call inputs. Each agent ships **inside its plugin**, in `<plugin>/agents/`,
 so it arrives and departs with the plugin — no separate agent link to place or forget.
 
-| Agent | Skill | Reach | Notes |
+| Agent (type name) | Skill | Reach | Notes |
 |---|---|---|---|
-| `figma-region-extractor` | `figma-to-spec` (Phase B) | wherever `figma-tools` is enabled — user scope, personal config | Pinned to Sonnet; write tools denied. Detachable — if not installed, Phase B reads the same file and pastes its body into a `general-purpose` agent. |
-| `prd-worker` | `work-on-prd` (Loop step 5) | **only where `prd-workflow` is enabled** | No `model`/`effort` — the orchestrator routes per issue and passes the tier at spawn time. `Agent` denied (flat hierarchy — costs it `Explore`, so it greps for itself). Contained on purpose: it commits, so a stray auto-spawn must not be possible from an unrelated repo. Detachable the same way. |
+| `figma-tools:figma-region-extractor` | `figma-to-spec` (Phase B) | wherever `figma-tools` is enabled — user scope, personal config | Pinned to Sonnet; write tools denied. Detachable — if not installed, Phase B reads the same file and pastes its body into a `general-purpose` agent. |
+| `prd-workflow:prd-worker` | `work-on-prd` (Loop step 5) | **only where `prd-workflow` is enabled** | No `model`/`effort` — the orchestrator routes per issue and passes the tier at spawn time. `Agent` denied (flat hierarchy — costs it `Explore`, so it greps for itself). Contained on purpose: it commits, so a stray auto-spawn must not be possible from an unrelated repo. Detachable the same way. |
+
+**The type name carries the plugin prefix.** A plugin namespaces its agents exactly as it
+namespaces its skills, so `subagent_type: prd-worker` does *not* resolve from a plugin
+install — it has to be `prd-workflow:prd-worker`. The bare name only exists on the
+pre-plugin route, a hand-placed file in an `agents/` directory. Getting it wrong is
+**silent**: an unresolvable type falls through to `general-purpose`, the run completes, and
+nothing in the output says the contract was never loaded. That failure has now happened
+twice here — once from a missing agent link, once from packaging renaming the type.
 
 Containment is now the plugin's `enabledPlugins` entry rather than a hand-placed symlink —
 a repo that never enabled `prd-workflow` cannot spawn `prd-worker` at all. See

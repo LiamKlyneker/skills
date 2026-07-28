@@ -19,8 +19,20 @@ Four top-level entries are not skills:
   `install-skills` skill reads), `adapter.template.md`, and `gates/`. See
   `install/README.md` for the layout a wired project ends up with.
 
-Top-level names that are **symlinks into `plugins/`** are compat shims from the
-migration, not skills in their own right. Don't add more; they are being deleted.
+The migration's compat shims — top-level names that were **symlinks into
+`plugins/`** — are **gone** (#26), along with the nested
+`work-on-prd/agents/prd-worker.md` link. Every top-level entry is now either a plain
+skill or one of the four above. Don't reintroduce the shape: a top-level symlink into
+`plugins/` makes the same skill discoverable under two names, which is what the
+migration existed to end. The estate that consumes all of this — which config has
+which plain skill, which repo enables which plugin — is recorded in
+`docs/estate-inventory.md`; update it when you change the wiring.
+
+**A plugin namespaces everything it provides.** Skills invoke as
+`prd-workflow:work-on-prd`, agents resolve as `subagent_type: prd-workflow:prd-worker`,
+and the bare names only exist on the plain-skill symlink route. Getting an agent type
+wrong does **not** error — it degrades silently to `general-purpose` — so any doc or
+skill naming a subagent type has to say which route it means.
 
 `install-skills` *is* a plain skill and lives at the top level like any other. It is
 the only one that ships an executable (`scripts/doctor.sh`) — the mechanical checks

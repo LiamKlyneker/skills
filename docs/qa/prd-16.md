@@ -386,6 +386,64 @@ failure mode.
 
 ---
 
+## #26 — contract: delete the shims, sweep the leftovers, fix the agent type
+
+**What shipped.** All six top-level compat shims (`to-prd`, `to-issues`, `next-prd-issue`,
+`work-on-prd`, `work-on-issue`, `figma-to-spec`) and the nested
+`skills/work-on-prd/agents/prd-worker.md` are deleted; `work-on-prd/SKILL.md` now addresses
+the agent at its real path, `../../agents/prd-worker.md`. **A defect found at pickup is
+fixed in the same slice**: plugin components register **namespaced**, so
+`subagent_type: prd-worker` had stopped resolving and both skills were still asking for the
+bare name. `prd-workflow:prd-worker` and `figma-tools:figma-region-extractor` are now the
+stated primaries. `~/.claude-schmiede/skills/figma-to-spec` was repointed past the shim.
+New: [`docs/estate-inventory.md`](../estate-inventory.md).
+
+**Exercise it. Steps 1–3 have never been observed and are the whole point of the pass.**
+
+1. **`prd-worker` resolves by type in marketplace mode.** Fresh session in
+   `~/creative-ghost/neonplace`, then `neonplace-ios`, then `~/liam-klyneker/liamklyneker`.
+   List the available agent types and read the name — it must be
+   **`prd-workflow:prd-worker`**. Skills-dir mode (this repo) is proven; the **cache path is
+   not**, and it is a different code path. Same check for
+   `figma-tools:figma-region-extractor` under `~/.claude`.
+2. **Negative control.** Same check in `~/creative-ghost/reeckon`, which never enabled the
+   plugin. `prd-worker` must resolve under **neither** name. This is the direction that
+   matters — `prd-worker` commits.
+3. **TeamSnap.** A `claude-ts` session in `organization-frontend-v2`: the five skills load as
+   `prd-workflow:<skill>`, and `deep-grill` / `how-i-write` / `pinpoint` load as plain skills.
+   The `claude plugin` CLI **cannot** inspect that config — this is the only way to know.
+4. **The full PRD workflow end to end, on the plugin path only** (the L5 pass this ladder
+   asks for once per PRD). Run `/prd-workflow:work-on-prd` on a small real PRD in a consumer
+   repo. **Confirm the run announces the namespaced path**, not the detached one — the skill
+   now announces which of the three it took, and a detached run is otherwise
+   indistinguishable from a real one. A `general-purpose` fallback here means step 1 lied.
+5. **Nothing loads where it shouldn't.** `deep-grill`, `how-i-write` and `pinpoint` in all
+   three configs; `grill-me`, `scoped-context`, `qa-prd-log`, `triage-prd`, `install-skills`
+   **only** under `~/.claude`. Cross-check against `docs/estate-inventory.md` — if a session
+   disagrees with that table, the table is what gets corrected.
+6. **Schmiede still has `figma-to-spec`.** Session in a Schmiede repo: the skill loads
+   (unprefixed — it is on the symlink route, not the plugin route) and can read
+   `references/phases.md` and `../_shared/`. Phase 0 must announce the **inline fallback**
+   for region agents, because that config has no `figma-tools` plugin and therefore no agent.
+
+**Edge cases.**
+
+- **The two nested agent links were not symmetrical.** `prd-workflow`'s was pure compat and
+  is deleted; `figma-tools`' `skills/figma-to-spec/agents/figma-region-extractor.md`
+  **stays**, because the skill's own docs address the agent from inside the skill
+  (`../agents/…` from `references/`) and those paths must resolve in a cache copy too. Both
+  plugin READMEs now say so. Do not "finish the job" by deleting the figma one.
+- **Sweep 2's deletions were already done by #24** and were verified as no-ops here: no
+  hand-placed agent symlink survives in any config. Nothing was deleted for sweep 2 in this
+  slice; the work was the type-name fix.
+- **A detached `work-on-prd` run is silent by design.** That is why step 4 checks the
+  announcement rather than the outcome. The #25 run took the detached path and looked
+  perfectly normal.
+- The `doctor` reachability message can name the wrong config (it scans all three and reports
+  the first match). Cosmetic, reported, **not** fixed here — it needs its own issue.
+- `figma-component/` and `tokens-init/` remain untouched at the top level, deprecated and
+  linked nowhere, pending #17.
+
 ## After the pass
 
 - PR #27 merged; `Closes` fired for the six children it carried. The PRD issue stays

@@ -13,6 +13,13 @@ Project facts (repo, commands, verify ladder, QA-doc convention) come from the *
 
 `/work-on-prd #N [--gate=issue|events|end]`
 
+**Invocation name depends on the install route.** From a plugin (marketplace install or a
+skills-dir link) every skill in this plugin is namespaced: `/prd-workflow:work-on-prd`,
+`/prd-workflow:to-issues`, and so on. Only a bare symlink into a config's `skills/`
+directory — the pre-plugin route — gives the unprefixed `/work-on-prd`. The same rule
+governs the agent type; see Loop step 5. Unprefixed names below are shorthand for
+whichever form your route provides.
+
 - `#N` — PRD issue (number, `#N`, or URL; strip query strings). One PRD per loop — no parallel PRDs in v1.
 - `--gate` (default `events`):
   - `issue` — pause for human approval after every worker report.
@@ -65,13 +72,15 @@ State lives in git + GitHub only (branch commits, issue labels, PR body). Zero s
 2. **External steps**: any unmet `- [ ]` under `## External steps` → pause, list them, wait for the human. Always, regardless of gate.
 3. **Claim**: remove `ready-to-start`, add `state:in-progress` (remove-old-before-add-new — always this order; one state per axis).
 4. **Route model**: apply `../_shared/model-effort-heuristics.md` **in orchestrated mode** — the default flips: workers start Sonnet-class and *upgrade* to Opus-class on the file's heavier/risk signals. Announce the routing call (tier + matched signals) before spawning.
-5. **Spawn worker**: Agent tool, `prd-worker`, `model` per the routing call, `run_in_background: false`. Flat hierarchy — workers never spawn workers. Isolation is total: everything the worker needs must be in its prompt, the issue, or the repo. The **mandates and the report contract live in `agents/prd-worker.md`** — never restate them in the prompt, which carries only the per-call inputs:
+5. **Spawn worker**: Agent tool, `subagent_type: prd-workflow:prd-worker` (see *Agent type by route* below), `model` per the routing call, `run_in_background: false`. Flat hierarchy — workers never spawn workers. Isolation is total: everything the worker needs must be in its prompt, the issue, or the repo. The **mandates and the report contract live in `../../agents/prd-worker.md`** — never restate them in the prompt, which carries only the per-call inputs:
    - The **full issue body** (incl. `## Worker context`, `## QA notes`, acceptance criteria).
    - The **full contents of the project adapter** (path at the top of this skill). The adapter only; a gate it registers goes in the prompt **only** when this issue triggers it — pasting every gate into every worker is the tax that keeps gates out of the adapter in the first place.
    - The **branch name** `prd/<n>-<slug>` and the **issue number** for the `(#N)` commit suffix.
    - The **routing call** you announced in step 4.
 
-   *Detachable — expect to need this*: `prd-worker` is project-scoped, and registration lags. A file added to an agents directory that already existed resolves after a few minutes; a **newly created** `.claude/agents/` does not resolve at all for the rest of the session. So if `subagent_type: prd-worker` does not resolve, do not wait and retry — read `agents/prd-worker.md` and paste its body (everything below the frontmatter) into a `general-purpose` agent for the whole run. Same contract, one source of truth. Announce which path the run took.
+   **Agent type by route — get this right before you fall back.** A plugin namespaces every component it provides, so installed from the marketplace *or* linked as a skills-dir plugin the type is **`prd-workflow:prd-worker`**. Only a hand-placed `.claude/agents/prd-worker.md` (the pre-plugin route) registers the bare `prd-worker`. Try the namespaced name first and the bare name second; treating the bare name as primary is what silently produced a whole run of `general-purpose` workers once already.
+
+   *Detachable — expect to need this*: `prd-worker` is project-scoped, and registration lags. A file added to an agents directory that already existed resolves after a few minutes; a **newly created** `.claude/agents/` does not resolve at all for the rest of the session, and a plugin enabled mid-session does not register its agents until the next session. So if **neither** type name resolves, do not wait and retry — read `../../agents/prd-worker.md` and paste its body (everything below the frontmatter) into a `general-purpose` agent for the whole run. Same contract, one source of truth. **Announce which of the three paths the run took** — namespaced, bare, or detached — because a detached run looks identical to a real one in the output, and that is the only signal that the agent did not resolve.
 6. **Judge the report**: commit exists on branch · verify evidence is real (spot-check: re-run the L2 command if evidence looks thin) · deviations acceptable · AC covered.
 7. **Gate** per `--gate` mode (see Invocation). On pause: present the report + your judgement, wait for the human.
 8. **Success path**: push the branch → labels: remove `state:in-progress`, add `state:done-on-branch` → PR body: check the child off + append to the Closes line with the **keyword repeated per issue** — `Closes #41, closes #42` (a bare `#42` after a comma does NOT close).

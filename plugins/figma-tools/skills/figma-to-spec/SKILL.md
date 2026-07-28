@@ -59,11 +59,15 @@ detachable:
 - **A Figma node URL** (a page/frame, or a single component node in component mode). Missing
   → ask, never guess.
 - **`figma-region-extractor` subagent (preferred, detachable).** Phase B's extraction
-  contract lives at `agents/figma-region-extractor.md`. Installed into `~/.claude/agents/`
-  it is spawned by type (pinned to Sonnet, write tools denied); **not** installed, Phase B
-  reads that same file and pastes its body into a `general-purpose` agent. One source of
-  truth either way — but a freshly installed agent takes a few minutes to register, so
-  Phase 0 checks and announces which path the run takes.
+  contract lives at `agents/figma-region-extractor.md`. **The type name depends on the
+  install route**: the `figma-tools` plugin provides the agent and namespaces it, so it is
+  **`figma-tools:figma-region-extractor`**; only a hand-placed `agents/` file (the
+  pre-plugin route, and how a plain-skill symlink install still has to do it) registers the
+  bare `figma-region-extractor`. Spawned by type it is pinned to Sonnet with write tools
+  denied; if **neither** name resolves, Phase B reads that same file and pastes its body
+  into a `general-purpose` agent. One source of truth either way — but a freshly installed
+  agent does not register until the next session, so Phase 0 checks and announces which
+  path the run takes.
 - **`grimme-ui-components-best-practices` (optional).** The page spec **cites** its rules by
   stable name and never duplicates them, so citations stand even when it isn't loaded. Load it
   to enrich HOW-guidance only if reachable.
@@ -90,7 +94,7 @@ Region agents are driven by `agents/figma-region-extractor.md`.
 |---|---|---|
 | **0 — Setup** | main thread | Resolve catalog + check staleness · confirm Figma capability · collect extra nodes by role (`viewport:*` / `state:*`) · collect scope context · pick run mode (`page` default / `component` lean). |
 | **A — Decompose & scope** | Sonnet | Enumerate regions by node ID (recursing through pass-through wrappers), then assign each `in-scope` / `spec-only` / `excluded`. `in-scope` + `spec-only` fan out. |
-| **B — Region agents** | `figma-region-extractor` (Sonnet) ×N parallel | One agent per region: components, colors/tokens, type, spacing, icons, hidden variants, layout intent → structured JSON findings. |
+| **B — Region agents** | `figma-tools:figma-region-extractor` (Sonnet) ×N parallel | One agent per region: components, colors/tokens, type, spacing, icons, hidden variants, layout intent → structured JSON findings. |
 | **C — Synthesis & triage** | Opus | Dedup gaps · reconcile by concern · merge data states + responsive · changelog vs prior spec · write `page-spec.md` + `gaps/gap-NNN-*.md` · **triage checkpoint**. |
 | **D — Filing** | main thread | Page spec → ADO `[DESIGN-SPEC]` (child of the scope ticket) · escalated gaps → PBIs, IDs written back. |
 

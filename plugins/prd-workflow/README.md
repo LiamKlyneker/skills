@@ -51,12 +51,22 @@ reports **Skills (5), Agents (1)** with the symlink in place, so a non-skill
 directory under `skills/` does *not* register as a phantom component. Measured,
 not assumed — later slices of PRD #16 depend on this shape.
 
-### Compat shims
+### Compat shims — gone (#26)
 
-The five top-level directory names in this repo survive as symlinks into
-`skills/`, so the ~22 consumer symlinks across four repos keep resolving with
-no coordinated update. One of them is nested: `neonplace` and `neonplace-ios`
-link `work-on-prd/agents/prd-worker.md`, so
-`skills/work-on-prd/agents/prd-worker.md` is a symlink back to
-`../../../agents/prd-worker.md`. Removing either shim shape is a separate,
-coordinated slice.
+During the migration the five top-level directory names in this repo survived
+as symlinks into `skills/`, plus a nested `skills/work-on-prd/agents/prd-worker.md`
+pointing back at `../../../agents/prd-worker.md`, so the ~22 consumer symlinks
+across four repos kept resolving while the cutover ran. #24 repointed every
+consumer onto the plugin and #26 deleted all of them. Nothing links into this
+plugin by a pre-plugin path any more, and `work-on-prd/SKILL.md` addresses the
+agent at its real location, `../../agents/prd-worker.md`.
+
+### The agent registers namespaced
+
+A plugin namespaces every component it provides, so the type is
+**`prd-workflow:prd-worker`** — not the bare `prd-worker`, which is what a
+hand-placed `.claude/agents/prd-worker.md` registers. Observed in a fresh
+session, not assumed. This matters more than it looks: `work-on-prd`'s
+detachable path treats a non-resolving agent as expected and falls back to
+`general-purpose`, so a wrong type name produces a run that looks completely
+normal and is not.
