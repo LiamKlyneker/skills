@@ -1,10 +1,10 @@
 # Project Adapter — TEMPLATE
 
-Single home for every project-specific fact the skills need. Workflow skills (`work-on-prd`, `to-issues`, `next-prd-issue`, `work-on-issue`) and `deep-grill` reference this file and never hardcode these values. (`grill-me` deliberately does **not** — it is the lightweight inline grill and reads nothing from here.) Porting the workflow to another repo = symlink the skills + fill in this file, nothing else.
+Single home for every project-specific fact the skills need. Workflow skills (`work-on-prd`, `to-issues`, `next-prd-issue`, `work-on-issue`) and `deep-grill` reference this file and never hardcode these values. (`grill-me` deliberately does **not** — it is the lightweight inline grill and reads nothing from here.) Porting the workflow to another repo = install the plugin + fill in this file, nothing else.
 
 > **This is a template.** Copy it to `<repo-root>/.claude/project/adapter.md` and fill every `<placeholder>` with your project's real values before running `work-on-prd`. Delete rows that don't apply; add rows the workflow needs. Nothing else in the skills should mention a tool, path, or command by name — if it does, lift it into this file.
 
-**Canonical source:** skill *logic* is canonical in **this repo** (`LiamKlyneker/skills`) and reaches a project repo by symlinking each skill directory into its `.claude/skills/` — never by copying, so there is nothing to back-port. Project *facts* live in `<repo-root>/.claude/project/`, which is the one directory skills resolve from the repo root. A project never owns a `_shared/`: `../_shared/…` from any skill can therefore only ever mean the canonical global-reference files in this repo.
+**Canonical source:** skill *logic* is canonical in **`LiamKlyneker/skills`** and reaches a project either as an installed plugin from marketplace `liamklyneker` or as a symlink into a config's `skills/` directory. Either way there is nothing to back-port — an installed copy is a regenerated cache keyed by git commit, never a place to edit. Project *facts* live in `<repo-root>/.claude/project/`, which is the one directory skills resolve from the repo root, and they resolve it against the project the session is running in regardless of how the skill was delivered. A project never owns a `_shared/`: `../_shared/…` from any skill can therefore only ever mean the canonical global-reference files in the skills repo.
 
 ## Repo
 
@@ -66,7 +66,7 @@ A project-flavored `ui-manifests.md` (concrete primitive homes, real token files
 
 - **CONTEXT.md**: read the scoped `CONTEXT.md` before touching files in any directory (see the `scoped-context` skill). Update it only if documented architecture changes.
 - `<any house rules: export order, no barrel files, where generated code lives, etc.>`
-- Where skills live: `.claude/skills/`, one **symlink per skill** into the canonical repo. Writing "into" a skill directory therefore writes into the canonical repo — never create or edit skill files through those symlinks. Project facts and gates live in `.claude/project/` instead, which is real and committed.
+- Where skills come from: `<installed plugin + scope, or a symlink in .claude/skills/>`. Either way the skill files are not this project's to edit: a plugin cache is regenerated on install, and a symlink writes straight into the canonical repo. Project facts and gates live in `.claude/project/` instead, which is real and committed.
 
 ## One-time repo preconditions (human)
 

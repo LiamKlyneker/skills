@@ -106,8 +106,18 @@ plugin_roots="$(
         [ -f "$d/.claude-plugin/plugin.json" ] && printf '%s\n' "$d"
       done
     done
-    for d in "$repo"/plugins/*; do
-      [ -f "$d/.claude-plugin/plugin.json" ] && printf '%s\n' "$d"
+    # A repo that ships its own, plus a plugin dropped into the skills dir of this
+    # repo — the project-scoped half of skills-dir mode, which `claude plugin list`
+    # reports as `<name>@skills-dir` with `Scope: project`. Resolved to a physical
+    # path so a project link pointing at a plugin already found above dedupes into
+    # one root rather than reading as two.
+    #
+    # No apostrophes in this comment, deliberately: bash 3.2 (the macOS system
+    # bash, and what this script runs under) does not strip `#` comments inside
+    # `$( )` before scanning for quotes, so one apostrophe here is a syntax error
+    # at a line 100+ further down.
+    for d in "$repo"/plugins/* "$skills_dir"/*; do
+      [ -f "$d/.claude-plugin/plugin.json" ] && printf '%s\n' "$(cd "$d" && pwd -P)"
     done
     true
   } | sort -u
@@ -172,6 +182,26 @@ if [ -d "$skills_dir" ]; then
   for entry in "$skills_dir"/*; do
     [ -e "$entry" ] || [ -L "$entry" ] || continue
     name="$(basename "$entry")"
+
+    # An entry here can be a *plugin root* rather than a skill — skills-dir mode,
+    # and how this repo self-hosts its own plugin while keeping edit-in-place
+    # authoring. A plugin is not a skill: its skills sit one level down at
+    # `<plugin>/skills/<name>/`, so `../_shared/` resolves from *there*. Checking
+    # the plugin root as though it were a skill invents SHARED failures for every
+    # shared file its skills legitimately read. Register the skills it carries
+    # instead, at their real paths.
+    if entry_phys="$(cd "$entry" 2>/dev/null && pwd -P)" &&
+       [ -f "$entry_phys/.claude-plugin/plugin.json" ]; then
+      info "$(rel "$entry") is a skills-dir plugin root — its skills load from the plugin, not as entries here"
+      for sk in "$entry_phys"/skills/*; do
+        [ -d "$sk" ] || continue
+        skname="$(basename "$sk")"
+        [ "$skname" = "_shared" ] && continue
+        installed="$installed$skname	$(cd "$sk" && pwd -P)
+"
+      done
+      continue
+    fi
 
     if [ -L "$entry" ]; then
       if [ ! -e "$entry" ]; then

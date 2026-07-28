@@ -41,12 +41,14 @@ and tolerance rules in `resolution-rules.md`; existence in `catalog.md`.
    (`use_figma`) available (load `/figma-use` if reachable). If it isn't, continue in
    **degraded color mode** per `../agents/figma-region-extractor.md` step 4 — and announce it up front so
    the user knows token tiers are unconfirmed. (c) Check whether the
-   **`figma-region-extractor` subagent** is available (it is the first non-bundled
-   dependency this skill has — it must be installed into `~/.claude/agents/`, and a
-   freshly installed agent takes a few minutes to register, so a just-installed one may
-   not resolve yet). Present → Phase B spawns it by type. Absent → Phase B uses the
-   documented inline fallback. **Announce which path the run is taking** — a missing agent
-   must never be silent.
+   **`figma-region-extractor` subagent** is available, **under either type name**:
+   `figma-tools:figma-region-extractor` when the `figma-tools` plugin provides it (the
+   normal route), or the bare `figma-region-extractor` when it was hand-placed in an
+   `agents/` directory. Registration happens at session start, so a just-installed plugin
+   or a just-added file may not resolve until the next session. Present → Phase B spawns it
+   by the name that resolved. Absent under **both** names → Phase B uses the documented
+   inline fallback. **Announce which path the run is taking** — a missing agent must never
+   be silent.
 4. **Ask the user: "Is there a separate mobile/tablet node?"** A Figma node is one
    viewport — breakpoints are not node properties. If yes, take that URL too; if no,
    responsive will be *inferred* and the assumptions flagged.
@@ -163,7 +165,9 @@ extraction contract, and the return schema. Each performs full extraction and re
 **structured findings** (the JSON schema in that file, so synthesis merges
 deterministically).
 
-**How to spawn (per region).** Agent tool, `subagent_type: figma-region-extractor`,
+**How to spawn (per region).** Agent tool, `subagent_type: figma-tools:figma-region-extractor`
+(the plugin namespaces it; a hand-placed `agents/` file registers the bare
+`figma-region-extractor` instead — try the namespaced name first),
 `model: 'sonnet'` passed explicitly, `run_in_background: false`. The extraction contract
 lives in the agent, so the per-call prompt carries **only the six inputs** — region node ID
 · region layer name · source-node role (`primary` / `viewport:<bp>` / `state:<name>`) ·

@@ -1,1 +1,0 @@
-../../../agents/prd-worker.md

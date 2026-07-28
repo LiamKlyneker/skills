@@ -45,24 +45,36 @@ reasoning and evidence — repeated here only where this plugin differs):
 - **`skills/_shared -> ../../../_shared`.** Same depth as `prd-workflow`'s
   placement (`plugins/<name>/skills/` is three levels below the repo root
   either way), so the identical relative target is correct verbatim.
-- **Compat shims.** The top-level `figma-to-spec` name survives as a symlink
-  into `plugins/figma-tools/skills/figma-to-spec`, so the three config-dir consumer
-  links (`~/.claude/skills/figma-to-spec`, `~/.claude-schmiede/skills/figma-to-spec`,
-  `~/.claude/agents/figma-region-extractor.md`) keep resolving unchanged.
+- **Compat shims — gone (#26).** The top-level `figma-to-spec` name survived the
+  migration as a symlink into `plugins/figma-tools/skills/figma-to-spec` so the
+  config-dir consumer links kept resolving during the cutover. #24 removed
+  `~/.claude/skills/figma-to-spec` and `~/.claude/agents/figma-region-extractor.md`
+  (this plugin, installed user-scope, provides both), #26 repointed
+  `~/.claude-schmiede/skills/figma-to-spec` straight at the skill directory, and the
+  shim is deleted.
 
-### The nested agent shim
+### The nested agent link is not a shim, and stays
 
-Unlike `prd-workflow` — where the nested shim existed only because two
-*consumer repos* linked the inner path — this plugin needs one for a second,
-independent reason found by checking rather than assuming: `~/.claude/agents/figma-region-extractor.md`
-itself resolves straight to `figma-to-spec/agents/figma-region-extractor.md`
-(not through any intermediate symlink), and the skill's own reference docs
-(`references/phases.md`, `references/resolution-rules.md`) link the agent as
-`../agents/figma-region-extractor.md` from inside the skill. Both needed the
-file to still be reachable at that inner path after the real file moved to
-`plugins/figma-tools/agents/`, so `skills/figma-to-spec/agents/figma-region-extractor.md`
-is a symlink back to it — same shape as `prd-workflow`'s
-`skills/work-on-prd/agents/prd-worker.md`.
+`skills/figma-to-spec/agents/figma-region-extractor.md -> ../../../agents/figma-region-extractor.md`
+outlives the migration because it was never only a compat shim. The skill's own
+docs address the agent from **inside** the skill — `SKILL.md` as
+`agents/figma-region-extractor.md`, `references/phases.md` and
+`references/resolution-rules.md` as `../agents/figma-region-extractor.md` — and
+those paths have to resolve in an installed cache copy as well as here. The link
+is what makes them resolve while the real file lives at the plugin root, where
+the platform discovers agents.
+
+`prd-workflow`'s nested link had no such second reason — it existed purely because
+two consumer repos linked the inner path — so #26 deleted it and rewrote
+`work-on-prd/SKILL.md` to address `../../agents/prd-worker.md` instead. The
+asymmetry is deliberate.
+
+### The agent registers namespaced
+
+The type is **`figma-tools:figma-region-extractor`**, because a plugin namespaces
+every component it provides. The bare `figma-region-extractor` only exists where
+the file was hand-placed in an `agents/` directory. Phase 0 checks both names
+before falling back.
 
 ## Out of scope
 
