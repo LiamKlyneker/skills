@@ -85,7 +85,7 @@ None — no gates beyond the ones the skills carry.
 
 ## Repo discipline
 
-- **Commit straight to `main`.** Do not branch and open a PR by default; this repo's history is linear and direct-to-main. Branch only when explicitly asked, or for a sweeping restructure across many skills. Still only commit when asked — this governs *where*, not *whether*.
+- **Branch and open a PR.** The standard workflow, no exceptions — if you are on `main`, branch first. This repo publishes a public marketplace, so a `SKILL.md` edit changes what an agent does on someone else's machine and earns a readable diff plus a green CI run. `main` additionally blocks force-push and deletion for everyone. Still only commit when asked — this governs *how* changes land, not *whether*.
 - **CONTEXT.md**: read the scoped `CONTEXT.md` before touching files in any directory (see the `scoped-context` skill), where one exists.
 - **No project ever owns a `_shared/`.** Project facts live in `<repo-root>/.claude/project/`. `../_shared/…` from any skill can therefore only mean this repo's global reference.
 - Skills address exactly three things: global reference via a relative path into `_shared/`, the project as `<repo-root>/.claude/project/adapter.md`, and project-specific gates **never by name** — the adapter's `## Project gates` registry names them and skills follow the pointer.

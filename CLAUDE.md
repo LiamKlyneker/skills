@@ -46,22 +46,16 @@ own docs.
 
 ## Git workflow
 
-**Commit straight to `main`.** Do *not* branch and open a PR by default — this
-repo's history is linear and direct-to-main, and a PR for a prose edit to a
-`SKILL.md` is pure friction. This overrides the general "if on the default
-branch, branch first" guidance.
+**Branch and open a PR.** The standard workflow applies here with no exceptions —
+if you are on `main`, branch first. This repo publishes a public marketplace, so a
+change to a `SKILL.md` is a change to what an agent does on someone else's machine;
+it earns a diff to read and a green CI run before it lands, the same as code.
 
-Branch only when:
+This repo previously ran direct-to-main. It no longer does. If you find a doc still
+saying otherwise, that doc is stale — fix it.
 
-- Liam explicitly asks for a branch or a PR, or
-- the change is a genuinely exceptional one — a sweeping restructure across
-  many skills, or something he'd plausibly want to review before it lands.
-
-When in doubt, commit to `main` and say so in your summary; that's cheaper to
-undo than an unwanted PR.
-
-Unchanged by the above: **still only commit or push when Liam asks.** This rule
-governs *where* commits go, not *whether* to make them unprompted.
+Unchanged: **still only commit or push when Liam asks.** This governs *how* changes
+land, not *whether* to make them unprompted.
 
 ## GitHub, and what `gh` may and may not do here
 
@@ -75,10 +69,9 @@ are settings, not conventions:
 
 - **`main` blocks force-push and deletion**, via the `main-history-protection`
   ruleset, with **no bypass actors** — the block applies to Liam and to admin tokens
-  too. Direct push is deliberately still allowed, so the direct-to-main workflow above
-  is unaffected. Never reach for `git push --force` on `main`; if history genuinely
-  has to be rewritten, that is a conscious ruleset change and Liam's call, not
-  something to work around.
+  too. Never reach for `git push --force` on `main`; if history genuinely has to be
+  rewritten, that is a conscious ruleset change and Liam's call, not something to
+  work around.
 - **CI must stay fork-safe.** `.github/workflows/validate.yml` triggers on
   `pull_request`, never `pull_request_target` — the latter would run fork code with a
   writable token and secrets. Keep `permissions:` least-privilege and keep every

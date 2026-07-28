@@ -63,6 +63,6 @@ Contributors fork and open a PR — nobody outside the maintainer has push acces
 that is the only route. Keep PRs to one concern. CI runs on fork PRs with a read-only
 token and no secrets.
 
-The maintainer commits directly to `main`; that is deliberate and documented in
-`CLAUDE.md`, not an oversight. `main` blocks force-pushes and deletion for everyone,
-including the maintainer.
+Changes reach `main` by pull request, maintainer included — a skill edit is a
+behaviour change and gets a readable diff and a green CI run before it lands. `main`
+also blocks force-pushes and deletion for everyone, with no bypass actors.
