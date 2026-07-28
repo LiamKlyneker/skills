@@ -452,7 +452,8 @@ New: [`docs/estate-inventory.md`](../estate-inventory.md).
 
 ## After the pass
 
-- PR #27 merged; `Closes` fired for the six children it carried. The PRD issue stays
-  **open** — #26 continues on this branch.
+- PR #27 merged; `Closes` fired for the six children it carried.
+- All nine children are now on this branch. Merging PR #28 fires the remaining three
+  `Closes` keywords and **closes PRD #16**. Nothing is left after it.
 - #21 steps 1–4 were the prerequisite for #24 and are done: the marketplace registers
   as `liamklyneker` and both plugins install from it.
