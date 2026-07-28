@@ -1,17 +1,23 @@
 # QA — PRD #16: plugins + marketplace
 
-Manual pass for [PR #27](https://github.com/LiamKlyneker/skills/pull/27), branch
+Manual pass for [PR #28](https://github.com/LiamKlyneker/skills/pull/28), branch
 `prd/16-publish-skills-repo-as-plugins`. Run it start to finish before merging.
 
-**PR #27 covered six of the PRD's nine children** — #18, #19, #20, #21, #22, #23 —
-and has merged. The remaining three land in a follow-up PR on the same branch; #24
-and #25 are below. **PRD #16 stays open until #26 deletes the shims.**
+**All nine children are covered here.** [PR #27](https://github.com/LiamKlyneker/skills/pull/27)
+merged six of them — #18, #19, #20, #21, #22, #23 — and their sections stay below as
+the record. PR #28 adds the last three on the same branch.
 
-| Issue | Status |
-|---|---|
-| #24 cutover | In this pass. Needed PR #27 merged first, because its committed project settings need a **GitHub** marketplace source and a GitHub source clones the **default branch**. |
-| #25 install guide | In this pass. Documents commands that only work once #24 has run. |
-| #26 contract | Deletes the compat shims, which must outlive the cutover. |
+| Issue | Landed in | Why the order |
+|---|---|---|
+| #24 cutover | #28 | Needed #27 merged first: its committed project settings need a **GitHub** marketplace source, and a GitHub source clones the **default branch**. |
+| #25 install guide | #28 | Documents commands that only work once #24 has run. |
+| #26 contract | #28 | Deletes the compat shims, which had to outlive the cutover. |
+
+**Merging PR #28 closes PRD #16.** The three `Closes` keywords in its body fire on
+merge, and #26 was the last slice the PRD was waiting on.
+
+The estate this pass verifies — which config holds which plain skill, which repo
+enables which plugin — is recorded in [`docs/estate-inventory.md`](../estate-inventory.md).
 
 Config dir throughout is `~/.claude` (personal) unless stated. Working directory is
 this repo unless stated.
