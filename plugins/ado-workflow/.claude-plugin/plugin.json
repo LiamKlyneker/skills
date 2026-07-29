@@ -1,0 +1,9 @@
+{
+  "name": "ado-workflow",
+  "description": "The PRD-to-merge workflow brought to Azure DevOps for Claude Code: publish a spec, slice it into tasks, pick the next one, and run the whole thing end-to-end with a per-task worker subagent",
+  "author": {
+    "name": "Liam Klyneker",
+    "url": "https://github.com/LiamKlyneker"
+  },
+  "homepage": "https://github.com/LiamKlyneker/skills"
+}

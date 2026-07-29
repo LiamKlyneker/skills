@@ -10,7 +10,7 @@ entries are not skills:
 | Directory | What's in it |
 |---|---|
 | `.claude-plugin/` | `marketplace.json` — the catalog, published as marketplace **`liamklyneker`** |
-| `plugins/` | The packaged plugins: `prd-workflow/` and `figma-tools/`. Their skills live one level down, in `<plugin>/skills/` |
+| `plugins/` | The packaged plugins: `prd-workflow/`, `figma-tools/`, and `ado-workflow/` (the PRD workflow's ADO counterpart). Their skills live one level down, in `<plugin>/skills/` |
 | `_shared/` | **Global reference** — docs several skills read that are true in every project. No templates, no project values. |
 | `install/` | **Templates a project fills in** — `adapter.template.md` and `gates/`, plus the layout guide. |
 
