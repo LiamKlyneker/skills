@@ -54,7 +54,7 @@ Requires the Azure DevOps MCP server (`mcp__ado__*` tools).
 The argument is a `[SPEC]` work-item URL or id — **mandatory**. Strip query strings. If no
 argument is passed, ask the user; do not guess.
 
-Fetch it with `mcp__ado__wit_get_work_item`, passing `expand: "relations"` and **no** `fields`
+Fetch it with `mcp__ado__wit_work_item` (`action: "get"`), passing `expand: "relations"` and **no** `fields`
 filter — the two are mutually exclusive, and a `fields` filter silently suppresses the
 relations the next step walks. Verify the work-item type matches the adapter's and the title
 starts with `[SPEC]`. If not, abort with a clear message.

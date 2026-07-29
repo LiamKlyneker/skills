@@ -340,7 +340,7 @@ just shipped are never checked by anybody. This is the one read in the whole loo
 not evidence — confirm you got criteria, not just a response.
 
 The parent is the work item Setup step 1 already resolved from the `[SPEC]`'s `Hierarchy-Reverse`
-relation; fetch it with `mcp__ado__wit_get_work_item`, `expand: "relations"` and **no `fields`
+relation; fetch it with `mcp__ado__wit_work_item` (`action: "get"`), `expand: "relations"` and **no `fields`
 filter** ([`../_shared/ado-workitem-authoring.md`](../_shared/ado-workitem-authoring.md) §4).
 Take each criterion **verbatim** — a paraphrased criterion is a different criterion, and the human
 ticking it is agreeing to something Product never wrote.
@@ -411,7 +411,7 @@ Apply the authoring invariants **at synthesis time, before the body is sent**
 
 - **§1, angle brackets.** This is the most bracket-dense body the plugin writes — QA steps are
   prose full of component names, elements and generic types, including the placeholders above.
-  Escape every one of them as `&lt;` / `&gt;` before sending. `wit_update_work_item` has no
+  Escape every one of them as `&lt;` / `&gt;` before sending. `wit_work_item_write` (`action: "update"`) has no
   `format` option and falls back to HTML, so an unescaped token survives creation and then
   vanishes the first time anything edits the item.
 - **§2, never a bare `#NNNN` for the pull request.** ADO autolinks it to the *work item* with that
@@ -421,12 +421,12 @@ Apply the authoring invariants **at synthesis time, before the body is sent**
 
 #### Create and link it
 
-- `mcp__ado__wit_create_work_item`:
+- `mcp__ado__wit_work_item_write` (`action: "create"`):
   - `project`: the adapter's **work-item project** (this is a work item, not a repo call)
   - `workItemType`: the adapter's **work-item type**
   - `title` / `description`: as above
   - `System.IterationPath`: inherit from the `[SPEC]`
-- **Parent link is a separate call** (§3) — `mcp__ado__wit_work_items_link`
+- **Parent link is a separate call** (§3) — `mcp__ado__wit_work_item_link_write` (`action: "link"`)
   `{ id: <qa-id>, linkToId: <parent-id>, type: "parent" }`. Child of the **parent work item**, so
   the `[QA]` is a **sibling** of the `[SPEC]` and the `[TASK]`s, placed exactly as `to-spec-tasks`
   places a `[TASK]`. Setting `System.Parent` in the create call is a silent no-op and leaves it
@@ -492,7 +492,7 @@ Board columns on this process map one-to-one onto work-item states, so a move is
 write** — one field, one value:
 
 ```
-wit_update_work_item  { project: <work-item project>,
+wit_work_item_write  { action: "update", project: <work-item project>,
                         updates: [{ id: <id>, op: "add",
                                     path: "/fields/System.State",
                                     value: "<the adapter's state name>" }] }

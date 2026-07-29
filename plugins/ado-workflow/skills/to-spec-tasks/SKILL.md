@@ -56,7 +56,7 @@ Requires the Azure DevOps MCP server (`mcp__ado__*` tools).
 The argument is a `[SPEC]` work-item URL or id — **mandatory**. Strip query strings. If no
 argument is passed, ask the user for one; never guess.
 
-Fetch it with `mcp__ado__wit_get_work_item`, passing `expand: "relations"` and **no** `fields`
+Fetch it with `mcp__ado__wit_work_item` (`action: "get"`), passing `expand: "relations"` and **no** `fields`
 filter — the two are mutually exclusive, and a `fields` filter silently suppresses the
 relations the next steps walk (see [`_shared/ado-workitem-authoring.md`](../_shared/ado-workitem-authoring.md)
 §4). Verify the work-item type matches the adapter's and the title starts with `[SPEC]`. If
@@ -130,7 +130,7 @@ components and generic types.
 
 Then, for each approved `[TASK]`, **in dependency order** (so blockers reference real ids):
 
-- `mcp__ado__wit_create_work_item`:
+- `mcp__ado__wit_work_item_write` (`action: "create"`):
   - `project`: the adapter's **work-item project** (same as the spec's)
   - `workItemType`: the adapter's **work-item type**
   - `title`: the `[TASK]` prefix followed by the slice title
@@ -138,7 +138,7 @@ Then, for each approved `[TASK]`, **in dependency order** (so blockers reference
   - `System.IterationPath`: inherit from the parent work item
 - **Parent link — a separate call, never `System.Parent` at creation** (§3). Link each `[TASK]`
   as a child of **the parent work item**, i.e. a **sibling of the `[SPEC]`, not a child of it**.
-  All parent links batch into one `wit_work_items_link` call.
+  All parent links batch into one `wit_work_item_link_write` (`action: "link"`) call.
 - Add a `Related` link from each new `[TASK]` back to the `[SPEC]` (`type: "related"`).
 - **Verify** each `[TASK]` appears as a `Hierarchy-Forward` child of the parent before
   reporting (§5).

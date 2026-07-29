@@ -17,14 +17,14 @@ and the board's state names come from the project adapter, never from this file.
 ## Read expansion: `fields` and `expand` are mutually exclusive
 
 Every read below passes `expand: "relations"` and **no** `fields` filter.
-`wit_get_work_item` rejects the two together, and a `fields` filter silently suppresses
+`wit_work_item` (`action: "get"`) rejects the two together, and a `fields` filter silently suppresses
 `relations` — the very graph this document walks, so the failure looks like a spec with no
 tasks rather than like an error. Full landmine list: `../_shared/ado-workitem-authoring.md`.
 
 ## 1. Resolve the `[SPEC]`
 
 The argument is a `[SPEC]` work-item URL or id — mandatory. Strip query strings; never guess
-one. Fetch it with `wit_get_work_item` (`expand: "relations"`) and verify both the work-item
+one. Fetch it with `wit_work_item` (`action: "get"`) (`expand: "relations"`) and verify both the work-item
 type and a title starting with `[SPEC]`. Anything else aborts with a clear message.
 
 ## 2. Walk to the siblings
