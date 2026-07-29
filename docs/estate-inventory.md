@@ -93,7 +93,7 @@ Every one of these is a symlink into `/Users/klyneker/liam-klyneker/skills/<name
 | `scoped-context` | ✔ | — | — | Enforces this repo's `CONTEXT.md` convention; not a client convention |
 | `qa-prd-log` | ✔ | — | — | Half of the PRD QA loop, which only runs in personal repos |
 | `triage-prd` | ✔ | — | — | Other half of the same loop |
-| `install-skills` | ✔ | — | — | Wires *this* repo's bundles into a project; nothing to wire at a client |
+| `install-skills` | ✔ | — | ✔ | Bootstraps a project's adapter. Linked under Schmiede once `ado-workflow` landed there — a bundle with no adapter is skills that cannot run. TeamSnap still has nothing to wire |
 | `figma-to-spec` | — | — | ✔ | Plugin-provided under `~/.claude`; symlinked under Schmiede — see below |
 
 Not linked into any config, and correct: `figma-component/`, `tokens-init/` — both
@@ -140,6 +140,13 @@ installed and the links still present, a live session listed each skill twice, o
 once as `ado-workflow:*`, and `doctor` named all three. After removal it names none while still
 reporting what it walked. Only the links went; the directories in `agent-skills` are untouched,
 and deleting them is that repo's decision, not this one's.
+
+**Installing the plugin is only half of it.** Every `ado-workflow` skill reads
+`<repo-root>/.claude/project/adapter.md`, and no install creates one — so `install-skills` is
+now linked into this config too. Without it the skills are present and unusable, which is the
+one failure mode that looks like a successful install. `~/schmiede-one/products` is the first
+repo bootstrapped; its adapter is excluded through that clone's `.git/info/exclude`, so it is
+machine-local and any other clone will read as `HOLE`.
 
 **What the plugin route buys that the symlink route could not: the agent.** `spec-worker` ships
 inside `ado-workflow`, so `ado-workflow:spec-worker` now resolves in a Schmiede session —
