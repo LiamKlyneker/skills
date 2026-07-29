@@ -4,8 +4,9 @@ The ADO half of the PRD workflow, packaged as a Claude Code plugin: `to-spec` �
 `to-spec-tasks` → `next-task-to-implement` → `work-on-spec`, plus the
 `spec-worker` agent that `work-on-spec` spawns per `[TASK]`.
 
-`to-spec` and `to-spec-tasks` have landed. The remaining slices of PRD #31 land
-the other two skills and the agent.
+All four skills and the agent have landed. What PRD #31 still owes `work-on-spec`
+is its **loop end** — the `[QA]` work item, the QA doc and the final summary; the
+skill says so at that section.
 
 ## Layout
 
@@ -16,8 +17,8 @@ plugins/ado-workflow/
     _shared -> ../../../_shared        # symlink, see below
     references/ado-mcp-setup.md        # plugin-wide, see below
     to-spec/  to-spec-tasks/
-    next-task-to-implement/  work-on-spec/  # land in later issues
-  agents/spec-worker.md                # lands in a later issue
+    next-task-to-implement/  work-on-spec/
+  agents/spec-worker.md                # spawned by work-on-spec, per [TASK]
 ```
 
 Nothing sits at the plugin root. A directory holding both a root `SKILL.md`
@@ -58,8 +59,9 @@ whole plugin directory is copied. The cross-skill route the client repo used
 
 A directory under `skills/` with no `SKILL.md` is not registered as a skill —
 `claude --plugin-dir plugins/ado-workflow plugin details ado-workflow` reports
-`Skills (2) to-spec, to-spec-tasks` with both `_shared` and `references`
-present, and `claude plugin validate` gains no second warning. (`--plugin-dir`
+`Skills (4) next-task-to-implement, to-spec, to-spec-tasks, work-on-spec`
+(plus `Agents (1) spec-worker`) with both `_shared` and `references` present,
+and `claude plugin validate` gains no second warning. (`--plugin-dir`
 is a global `claude` flag, so it precedes the `plugin` subcommand; it is what
 lets this plugin be inspected before it is installed anywhere.)
 
