@@ -2,7 +2,7 @@
 
 Normative home for the Azure DevOps API landmines hit when creating or updating work items. These are empirical quirks of the MCP tools and the ADO REST API, true of every Azure DevOps organisation — not style preferences, and do not soften them into intent statements.
 
-Cited by: `ado-workflow:to-spec`, `ado-workflow:to-spec-tasks`.
+Cited by: `ado-workflow:to-spec`, `ado-workflow:to-spec-tasks`, `ado-workflow:work-on-spec`.
 
 ## 1. Pre-escape angle brackets in any description body
 

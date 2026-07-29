@@ -42,7 +42,8 @@ Every project-specific value comes from the **project adapter** at
 `## Repo` → `### Azure DevOps`: the organisation, the **work-item project**, the **repo
 project**, the team, the repository, the work-item type, the **three board states**, the title
 prefixes and the **branch pattern**. From the rest of the adapter: the `## Commands` table, the
-verify ladder, the QA-doc convention and the `## Project gates` registry.
+verify ladder, the `## Project gates` registry, and the QA-doc convention — for the *shape* of a
+QA entry only; this loop writes no file at its path (see *Loop end*).
 
 **Abort** if the adapter is missing, or if its `Tracker:` line is anything other than
 `azure-devops` (an absent line means `github` — that project wants `work-on-prd`). Guessing an
@@ -104,9 +105,14 @@ Requires the Azure DevOps MCP server (`mcp__ado__*` tools).
   spec it moves to the claimed state; after that it is never written again — not advanced, not
   closed, not commented into a status feed. The human runs QA against it and may add `[TASK]`s
   afterwards, and a spec parked in the claimed state is what says "this is being run".
-- The **parent work item is never written, only read.** It is walked to find the spec's siblings
-  (per the eligibility mechanics) and nothing else. It belongs to Product.
-- **No `[QA]` work item and no spec-level summary in this slice** — see *Loop end*.
+- **No field of the parent work item is ever written.** It is read twice — walked to find the
+  spec's siblings (per the eligibility mechanics), and read at loop end for its acceptance
+  criteria. The only thing that touches it is the hierarchy relation the `[QA]` item creates from
+  its own side at loop end, the same way `to-spec-tasks` places a `[TASK]`. No field, no state, no
+  comment: it belongs to Product.
+- **No status feed.** The loop's only writes to work items are board-state moves on `[TASK]`s, the
+  single `[SPEC]` move above, escalation comments on failed `[TASK]`s, and the one `[QA]` item at
+  loop end.
 
 ## Setup (idempotent — cold start and resume are the same code path)
 
@@ -148,7 +154,7 @@ discarded by design.
 
    Linked work items close on PR completion — see the completion options, not a keyword line.
 
-   QA doc: (added at loop end)
+   QA: (added at loop end)
 
    🤖 Generated with [Claude Code](https://claude.com/claude-code)
    ```
@@ -274,13 +280,179 @@ transition anything.
 
 ## Loop end (no eligible `[TASK]`s left)
 
-**Specified in the next slice.** The terminal behaviour — the `[QA]` work item, the QA doc at the
-adapter's QA-doc path, the final PR body update and the run summary — is not implemented here.
+Three things, in order: the `[QA]` work item, the pull-request body, the final summary.
 
-Until it lands, on reaching this point: stop, tell the human which `[TASK]`s were done, skipped
-and failed, and leave the pull request **open and draft** for human QA (verify ladder L5). Do not
-complete the PR, do not close the `[SPEC]`, do not write the parent. Then release keep-awake —
-mirror of Setup step 0, no-op if never started:
+### 1. The `[QA]` work item — one per *run*
+
+**The deliberate divergence from `work-on-prd`.** That loop commits a QA document to the branch at
+the adapter's QA-doc path. This one **commits nothing to the repo** — it creates a `[QA]` work
+item and leaves the working tree alone. Do not port the committed-file behaviour and do not write
+to the adapter's QA-doc path; the adapter's `## QA doc convention` still supplies the *shape* of a
+QA entry (what shipped · how to exercise it in the running app · edge cases the worker flagged),
+and no longer supplies a destination.
+
+One per **run**, never one per `[SPEC]`. A run covers exactly the slice of `[TASK]`s that just
+landed, so a second run against the same `[SPEC]` creates a **second** `[QA]` item and never edits
+the first. That is the point of the divergence: a committed document accumulates and goes stale
+silently, while a per-run item describes one testable slice and is closed by the human once tested.
+
+#### What it is built from
+
+Three sources, and nothing else:
+
+1. Each worker's **refined QA notes** — item 4 of the report contract in
+   [`../../agents/spec-worker.md`](../../agents/spec-worker.md). These are the steps; the
+   `[TASK]`'s original `## QA notes` are what the worker refined, not a second source to merge.
+2. Each worker's **deviation log** (item 3) and the edge cases it flagged. These are the gotchas.
+3. The **parent work item's acceptance criteria** — the coverage checklist. Read on, this is the
+   one that bites.
+
+#### Where the acceptance criteria come from
+
+Parse them from the **parent work item's description**, under its `## Acceptance Criteria`
+heading. **Never** from the dedicated acceptance-criteria field
+(`Microsoft.VSTS.Common.AcceptanceCriteria`).
+
+That field is unpopulated on this process, and reading it **does not fail** — it succeeds and
+returns empty. So a `[QA]` item built from it has a well-formed coverage checklist with nothing in
+it, and looks exactly like a correct one. Nothing downstream catches that: the human works through
+the steps, ticks a checklist that lists no criteria, and the acceptance criteria of the thing that
+just shipped are never checked by anybody. This is the one read in the whole loop where success is
+not evidence — confirm you got criteria, not just a response.
+
+The parent is the work item Setup step 1 already resolved from the `[SPEC]`'s `Hierarchy-Reverse`
+relation; fetch it with `mcp__ado__wit_get_work_item`, `expand: "relations"` and **no `fields`
+filter** ([`../_shared/ado-workitem-authoring.md`](../_shared/ado-workitem-authoring.md) §4).
+Take each criterion **verbatim** — a paraphrased criterion is a different criterion, and the human
+ticking it is agreeing to something Product never wrote.
+
+Two failure modes to handle rather than paper over:
+
+- **No `## Acceptance Criteria` heading in the parent's description** → omit the coverage section
+  and say in the final summary that the parent carries none. Do not fall back to the dedicated
+  field, and do not substitute the `[TASK]`s' own `## Acceptance criteria` sections — those are
+  per-task, they are what the workers already verified, and promoting them produces a checklist
+  that only restates the run.
+- **A criterion no `[TASK]` in this run touched** → it still goes on the checklist, marked *not
+  covered by this run*. The checklist measures the parent, not the run.
+
+#### What contributes, and what doesn't
+
+A `[TASK]` contributes steps only if it produced something a human can exercise in the running
+app. Setup, dependency installs, config, pure refactors and internal-only changes contribute
+**nothing** — not a step, and **not** a "nothing to test here" line. Those lines are what turn a QA
+item into a document nobody reads to the end.
+
+If **no** `[TASK]` in the run produced anything testable, create **no `[QA]` work item at all**.
+An empty one is worse than none: it is a work item a human has to open, read and close in order to
+learn nothing. Say so explicitly in the final summary — "no `[QA]` item: nothing in this run is
+manually testable" plus the list of `[TASK]`s — and put the same sentence where the PR body's `QA:`
+line would have gone.
+
+#### The `[QA]` body
+
+<!-- String contract: this template is the NORMATIVE copy of the `[QA]` body. Its only consumer
+is the human running verify-ladder L5 against the branch — no skill parses it, and nothing reads
+a previous run's `[QA]` item — so "normative" here means the section order and the three sources
+are fixed, not that a parser depends on the wording. The final summary and the PR body reference
+this item by id and url; neither restates its contents. -->
+
+<qa-template>
+
+Run of [SPEC] #<spec-id> — <n> [TASK]s landed <date>
+PR: [<repo> PR NNNN](https://dev.azure.com/<org>/<repo-project>/_git/<repo>/pullrequest/NNNN)
+
+## Steps
+
+1. <action to take in the running app> — expected: <the observable result>  (#<task-id>)
+2. <next action> — expected: <result>  (#<task-id>)
+
+## Gotchas
+
+- <edge case or deviation the worker flagged, and what it means for the tester>  (#<task-id>)
+
+## Acceptance criteria coverage
+
+- [ ] <criterion, verbatim from the parent's description> — steps 1–3
+- [ ] <criterion> — **not covered by this run**
+
+</qa-template>
+
+Steps are numbered **continuously across the whole run**, in the order a human would sit down and
+work through them, each carrying the `[TASK]` id it came from so a failure routes straight back to
+the work item that caused it. Every step states its expected result; a step whose result is "it
+looks right" is not a step.
+
+Title: the adapter's `[QA]` prefix, the `[SPEC]` title, and the run's date. Two runs on the same
+day produce two items with the same title — that is fine and expected, they differ by id and
+creation time. Never reuse or edit an earlier one to avoid a duplicate.
+
+Apply the authoring invariants **at synthesis time, before the body is sent**
+([`../_shared/ado-workitem-authoring.md`](../_shared/ado-workitem-authoring.md)):
+
+- **§1, angle brackets.** This is the most bracket-dense body the plugin writes — QA steps are
+  prose full of component names, elements and generic types, including the placeholders above.
+  Escape every one of them as `&lt;` / `&gt;` before sending. `wit_update_work_item` has no
+  `format` option and falls back to HTML, so an unescaped token survives creation and then
+  vanishes the first time anything edits the item.
+- **§2, never a bare `#NNNN` for the pull request.** ADO autolinks it to the *work item* with that
+  id and sends the tester somewhere unrelated. Link the PR in full, with `<org>`, the **repo
+  project** and `<repo>` from the adapter. Bare `#<id>` is correct for the `[SPEC]` and `[TASK]`
+  ids, and only for those — they really are work items in this org.
+
+#### Create and link it
+
+- `mcp__ado__wit_create_work_item`:
+  - `project`: the adapter's **work-item project** (this is a work item, not a repo call)
+  - `workItemType`: the adapter's **work-item type**
+  - `title` / `description`: as above
+  - `System.IterationPath`: inherit from the `[SPEC]`
+- **Parent link is a separate call** (§3) — `mcp__ado__wit_work_items_link`
+  `{ id: <qa-id>, linkToId: <parent-id>, type: "parent" }`. Child of the **parent work item**, so
+  the `[QA]` is a **sibling** of the `[SPEC]` and the `[TASK]`s, placed exactly as `to-spec-tasks`
+  places a `[TASK]`. Setting `System.Parent` in the create call is a silent no-op and leaves it
+  unparented.
+- `Related` link back to the `[SPEC]`: `{ id: <qa-id>, linkToId: <spec-id>, type: "related" }`.
+- **Verify before reporting it** (§5): re-fetch the parent with `expand: "relations"` and confirm
+  the `[QA]` id is present as `Hierarchy-Forward`.
+- Assign to the current user (§6) — the QA is the human's to run.
+
+Adding a `[QA]` child to the parent does not disturb task discovery: the eligibility mechanics
+filter the parent's children by the `[TASK]` prefix, so a `[QA]` sibling is invisible to the pick
+path by construction.
+
+### 2. Pull-request body
+
+Replace the placeholder `QA:` line from Setup step 3 with a full link to the `[QA]` work item — or
+with the no-QA sentence if none was created — and bring the task checklist to its final state. Same
+call and same **repo project + repository** as every other PR-shaped call
+(`mcp__ado__repo_update_pull_request`). It stays `isDraft: true`.
+
+**Do not attach the `[QA]` item to the PR as a linked work item.** The PR's completion options
+transition every linked work item (*Pull-request wiring*), so a linked `[QA]` item would close
+itself the moment the human completes the PR — a QA pass that marks itself done is exactly the
+silent failure this whole section exists to avoid. `[TASK]`s are attached; the `[SPEC]` is
+attached; the `[QA]` item is not.
+
+### 3. Final summary to the human
+
+Printed to the session — the loop writes no status feed to the tracker. Report:
+
+- `[TASK]`s **done** (id, title) · **skipped** (id, and why: unmet `## External steps`, blocked by
+  something outside this spec) · **failed** (id, and the gist of the escalation comment).
+- **Deviations worth reading** — from the workers' deviation logs, the ones that change what a
+  reviewer or tester should expect. Not every line; the `[QA]` item carries the tester-facing ones.
+- **Escalations** — anything that paused the run, and anything still waiting on a human.
+- The **`[QA]` work item**, by id and url — or the explicit "no `[QA]` item created: nothing in
+  this run is manually testable", with the reason.
+- The **pull request, left open and still a draft**, with its url: it is completed by hand after
+  QA (verify ladder L5), and completing it is what transitions the `[TASK]`s.
+
+Everything in *What the loop must not write* still holds at the end: do not complete the pull
+request, do not close the `[SPEC]`, do not close the `[QA]` item you just created, and write no
+field of the parent.
+
+Then release keep-awake — mirror of Setup step 0, no-op if never started:
 
 ```bash
 [ -f /tmp/work-on-spec.caffeinate.pid ] && kill "$(cat /tmp/work-on-spec.caffeinate.pid)" 2>/dev/null; rm -f /tmp/work-on-spec.caffeinate.pid
