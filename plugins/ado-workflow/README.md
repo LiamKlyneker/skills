@@ -4,10 +4,8 @@ The ADO half of the PRD workflow, packaged as a Claude Code plugin: `to-spec` �
 `to-spec-tasks` → `next-task-to-implement` → `work-on-spec`, plus the
 `spec-worker` agent that `work-on-spec` spawns per `[TASK]`.
 
-This scaffold ships the plugin's shape — manifest, README, and the shared
-reference — with no skills yet. Subsequent slices of PRD #31 land the four
-skills and the agent; this issue exists so the plugin route can be exercised
-(namespacing, install, validation) before there is much to install.
+`to-spec` has landed. The remaining slices of PRD #31 land the other three
+skills and the agent.
 
 ## Layout
 
@@ -16,7 +14,9 @@ plugins/ado-workflow/
   .claude-plugin/plugin.json
   skills/
     _shared -> ../../../_shared        # symlink, see below
-    to-spec/  to-spec-tasks/  next-task-to-implement/  work-on-spec/  # land in later issues
+    references/ado-mcp-setup.md        # plugin-wide, see below
+    to-spec/
+    to-spec-tasks/  next-task-to-implement/  work-on-spec/  # land in later issues
   agents/spec-worker.md                # lands in a later issue
 ```
 
@@ -44,6 +44,25 @@ missing `version` is the *only* warning expected here.
 existing plugins. Every future skill's `../_shared/…` reference resolves with
 zero rewrites, in both delivery modes: live through the symlink in
 skills-dir mode, and inside the tree in marketplace mode.
+
+### Plugin-wide references live at `skills/references/`
+
+`ado-mcp-setup.md` is needed by all four skills — each one probes the ADO MCP
+server before its first call — so it belongs to the plugin, not to whichever
+skill happened to be written first. It sits beside `_shared` as a sibling of
+the skill directories, which makes the pointer `../references/ado-mcp-setup.md`
+from any skill: the same relative depth as `../_shared/…`, valid live through
+the skills-dir symlink and valid inside a marketplace install cache, where the
+whole plugin directory is copied. The cross-skill route the client repo used
+(`../<other-skill>/references/…`) is what packaging cannot carry.
+
+A directory under `skills/` with no `SKILL.md` is not registered as a skill —
+`claude plugin details` reports `Skills (1) to-spec` with both `_shared` and
+`references` present, and `claude plugin validate` gains no second warning.
+
+A skill's *own* references still belong inside that skill, as
+`figma-tools:figma-to-spec` does it. `skills/references/` is for what the
+plugin shares.
 
 ### Names carry no `-ado` suffix
 
