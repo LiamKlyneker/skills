@@ -72,7 +72,7 @@ Requires the Azure DevOps MCP server (`mcp__ado__*` tools).
 5. Update the trailing generation line to note the additional pass; leave assignment, state,
    iteration, and links untouched.
 6. Escaping still applies — see [`_shared/ado-workitem-authoring.md`](../_shared/ado-workitem-authoring.md)
-   §1. A `wit_update_work_item` body has no `format` flag, so an unescaped token that survived
+   §1. A `wit_work_item_write` (`action: "update"`) body has no `format` flag, so an unescaped token that survived
    CREATE gets stripped now.
 
 UPDATE mode stays useful after `to-spec-tasks` has run: a spec that keeps absorbing detail is
@@ -94,7 +94,7 @@ lead.
 
 Run in parallel with the MCP probe above:
 
-- **Fetch lead:** `mcp__ado__wit_get_work_item` with `expand: relations` and **no** `fields`
+- **Fetch lead:** `mcp__ado__wit_work_item` (`action: "get"`) with `expand: relations` and **no** `fields`
   filter — the two are mutually exclusive, and a `fields` filter silently suppresses the
   relations this step reads (see `_shared/ado-workitem-authoring.md` §4).
 - **Mode:** look at the lead's `Hierarchy-Forward` (Child) relations and fetch each child's
@@ -176,11 +176,11 @@ current code state rather than against a guess made at synthesis time.
 
 ### 5. Publish
 
-**UPDATE mode:** apply the merged body with `mcp__ado__wit_update_work_item` (`op: replace`,
+**UPDATE mode:** apply the merged body with `mcp__ado__wit_work_item_write` (`action: "update"`) (`op: replace`,
 `path: /fields/System.Description`), then skip to step 7 — parent, assignment, and follower
 links already exist.
 
-**CREATE mode:** call `mcp__ado__wit_create_work_item`:
+**CREATE mode:** call `mcp__ado__wit_work_item_write` (`action: "create"`):
 
 - `project`: the adapter's **work-item project**
 - `workItemType`: the adapter's **work-item type**
@@ -190,14 +190,14 @@ links already exist.
 
 Then, per [`_shared/ado-workitem-authoring.md`](../_shared/ado-workitem-authoring.md):
 
-- Link the new `[SPEC]` as a **child of the lead** (§3) — a separate `wit_work_items_link`
+- Link the new `[SPEC]` as a **child of the lead** (§3) — a separate `wit_work_item_link_write` (`action: "link"`)
   call, never `System.Parent` at creation.
 - Verify the child link landed before reporting (§5).
 - Assign to the current user (§6).
 
 ### 6. Link followers (group case only)
 
-For each follower, add a `Related` link to the `[SPEC]` via `mcp__ado__wit_work_items_link`.
+For each follower, add a `Related` link to the `[SPEC]` via `mcp__ado__wit_work_item_link_write` (`action: "link"`).
 This makes the spec discoverable from any work item in the group via the "Related Work"
 sidebar. Skip in UPDATE mode unless the grill introduced a new follower.
 
