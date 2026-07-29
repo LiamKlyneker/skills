@@ -188,15 +188,34 @@ PR at all times:
 
 - **Every `[TASK]` id and the `[SPEC]` id are attached to it** as linked work items. The `[SPEC]`
   is attached at creation; each `[TASK]` is attached on its success path, as it lands.
-- **Its completion options transition linked work items** (`transitionWorkItems: true`, alongside
+- **Its completion options transition linked work items** (`transitionWorkItems`, alongside
   whatever merge strategy the repo already uses). Armed this way, a human completing the PR by
   hand closes every attached `[TASK]`.
 
-Set both through the pull-request create/update call (`repo_create_pull_request` /
-`repo_update_pull_request`, **repo project + repository**), then **read the PR back and confirm**
-— attached ids present, flag set. Do not trust the write; an ignored field is the cheapest thing
-in this whole loop to get wrong and the most expensive to notice, because the loop keeps working
-perfectly and only the closure at the end silently doesn't happen.
+The ADO MCP server does **not** expose one tool per operation. Both halves go through
+`mcp__ado__repo_pull_request_write`, discriminated by an `action` argument, against the
+**repo project + repository**:
+
+| Operation | Call |
+|---|---|
+| Create the PR | `repo_pull_request_write`, `action: "create"` — takes `repositoryId`, `sourceRefName`, `targetRefName`, `title`, and optionally `isDraft`, `description`, `labels`, and **`workItems` (space-separated ids)** |
+| Arm / re-arm completion options | `repo_pull_request_write`, `action: "update"` — carries `transitionWorkItems`, `autoComplete`, `mergeStrategy`, `deleteSourceBranch`, and also flips `isDraft` and `status` |
+| Attach a work item after creation | `mcp__ado__wit_work_item_link_write`, `action: "link_to_pull_request"` — takes `workItemId`, `pullRequestId`, `repositoryId`, and `projectId` **as a GUID, not a name** |
+
+Two consequences worth planning around. `workItems` on `create` means the `[SPEC]` can be
+attached in the same call that opens the PR, with no second round trip. And each `[TASK]` landing
+later needs `wit_work_item_link_write`, which wants the project **GUID** — read it from the
+adapter rather than passing the project name, which fails.
+
+**`transitionWorkItems` defaults to `true`.** The risk is therefore not that you forget to arm
+it; it is armed unless you actively disarm it. That inverts the failure mode: anything you attach
+to this PR *will* be transitioned on completion, which is what makes the `[QA]` rule in *Loop end*
+load-bearing rather than cautionary.
+
+Then **read the PR back and confirm** — attached ids present, flag set. Do not trust the write; an
+ignored field is the cheapest thing in this whole loop to get wrong and the most expensive to
+notice, because the loop keeps working perfectly and only the closure at the end silently doesn't
+happen.
 
 If the server version exposes no field for one of them, that is the pause case from *Tool names
 come from the running server*: say which one, record it in the PR body as a step the human must
@@ -426,13 +445,16 @@ path by construction.
 Replace the placeholder `QA:` line from Setup step 3 with a full link to the `[QA]` work item — or
 with the no-QA sentence if none was created — and bring the task checklist to its final state. Same
 call and same **repo project + repository** as every other PR-shaped call
-(`mcp__ado__repo_update_pull_request`). It stays `isDraft: true`.
+(`mcp__ado__repo_pull_request_write`, `action: "update"`). It stays `isDraft: true`.
 
 **Do not attach the `[QA]` item to the PR as a linked work item.** The PR's completion options
-transition every linked work item (*Pull-request wiring*), so a linked `[QA]` item would close
-itself the moment the human completes the PR — a QA pass that marks itself done is exactly the
+transition every linked work item, and `transitionWorkItems` **defaults to `true`**
+(*Pull-request wiring*) — so this is not a risk you opt into by arming a flag, it is the default
+behaviour of any PR you have not deliberately disarmed. A linked `[QA]` item would close itself
+the moment the human completes the PR: a QA pass that marks itself done, which is exactly the
 silent failure this whole section exists to avoid. `[TASK]`s are attached; the `[SPEC]` is
-attached; the `[QA]` item is not.
+attached; the `[QA]` item is not — and it must not be passed in `workItems` on the create call
+either, which is the easiest way to attach one without noticing.
 
 ### 3. Final summary to the human
 
