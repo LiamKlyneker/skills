@@ -56,6 +56,7 @@ or tells you exactly what it couldn't finish.
 | Bundle | What it wires up |
 |---|---|
 | `prd-workflow` | The PRD → issues → implementation loop — the `prd-workflow` plugin, plus `deep-grill`, which stays a plain skill |
+| `ado-workflow` | The same loop against an Azure DevOps board — `[SPEC]` → `[TASK]`s → implementation, from the `ado-workflow` plugin, plus `deep-grill` |
 | `prd-qa` | The QA loop run against a PRD branch before merge — two plain skills, no plugin |
 | `figma-tools` | Figma → spec — the `figma-tools` plugin. Adapter-free |
 
