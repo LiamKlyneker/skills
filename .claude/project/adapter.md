@@ -28,7 +28,7 @@ runner. The only executable is `install-skills/scripts/doctor.sh`.
 |---|---|
 | Build | None — nothing compiles |
 | Test — **verify L2 floor** | `bash -n install-skills/scripts/doctor.sh && bash install-skills/scripts/doctor.sh --repo . --quiet` |
-| Manifest check — **also L2 floor** | `claude plugin validate plugins/prd-workflow && claude plugin validate plugins/figma-tools && claude plugin validate .` |
+| Manifest check — **also L2 floor** | `claude plugin validate plugins/prd-workflow && claude plugin validate plugins/figma-tools && claude plugin validate plugins/ado-workflow && claude plugin validate .` |
 | Boot the app (visual loop) | `claude plugin list` — the loaded-plugin inventory *is* this repo's running state |
 | App screenshot | None — terminal output is the evidence; paste it verbatim |
 | Install deps | None |

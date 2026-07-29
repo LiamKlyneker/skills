@@ -15,6 +15,11 @@
       "name": "figma-tools",
       "description": "Figma design-to-spec extraction for Claude Code: reads a Figma file region by region and produces implementation-ready page/gap specs, backed by the figma-region-extractor subagent",
       "source": "./plugins/figma-tools"
+    },
+    {
+      "name": "ado-workflow",
+      "description": "The PRD-to-merge workflow brought to Azure DevOps for Claude Code: publish a spec, slice it into tasks, pick the next one, and run the whole thing end-to-end with a per-task worker subagent",
+      "source": "./plugins/ado-workflow"
     }
   ]
 }

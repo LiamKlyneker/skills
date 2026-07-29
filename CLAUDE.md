@@ -4,7 +4,8 @@ Canonical source repo for Liam's personal Claude Code skills, and the marketplac
 that publishes them. Skills live in one of two places:
 
 - **Inside a plugin** — `plugins/<plugin>/skills/<skill>/`, with the plugin's agents
-  in `plugins/<plugin>/agents/`. Two plugins today, `prd-workflow` and `figma-tools`,
+  in `plugins/<plugin>/agents/`. Three plugins today, `prd-workflow`, `figma-tools`,
+  and `ado-workflow` (the PRD workflow's ADO counterpart, still growing its skills),
   catalogued in `.claude-plugin/marketplace.json` as marketplace `liamklyneker`.
 - **At the top level** — one directory per plain skill, for anything not packaged.
 
