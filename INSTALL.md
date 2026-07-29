@@ -464,4 +464,4 @@ What is actually installed, for orientation when something looks wrong.
 | `~/.claude` | `figma-tools@liamklyneker` | user | everywhere under the personal config |
 | `~/.claude` | `prd-workflow@skills-dir` | project | this repo, via `.claude/skills/prd-workflow` |
 | `~/.claude-teamsnap` | `prd-workflow@liamklyneker` | local | `teamsnap/organization-frontend-v2` — gitignored `settings.local.json` |
-| `~/.claude-schmiede` | none | — | marketplace registered only; deliberately out of scope |
+| `~/.claude-schmiede` | `ado-workflow@liamklyneker` | user | every Schmiede repo — user scope is the only one that works there ([trap 3](#trap-3-a-repo-whose-claude-is-itself-a-symlink-cannot-take-a-scoped-install)) |
