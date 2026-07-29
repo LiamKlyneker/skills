@@ -147,6 +147,40 @@ as `INFO`. It never reports a plugin-provided skill as missing, and a repo with 
 is the shadowing: a real directory sitting on top of a skill something else already
 provides.
 
+### The double-load scan
+
+Running both delivery routes for one skill in one place loads it twice. Doctor reports that
+as `INFO` — it is a wiring decision, not a broken install — in two places:
+
+- **Inside the repo**, for `.claude/skills/<name>` that a reachable plugin also provides.
+- **In each config directory**, for `~/.claude*/skills/<name>` that a plugin installed in
+  **that same config** also provides, and for a skills-dir plugin parked there whose plugin
+  is *also* installed from a marketplace into that config.
+
+The config-level half is scoped per config on purpose. The configs share no plugin state, so
+a plugin cached under one says nothing about a symlink under another — asked globally the
+check would flag `~/.claude/skills/grill-me` because an unrelated plugin in a *different*
+config happens to ship that name.
+
+A plugin root inside the canonical repo is **source, not a second install**, so a link
+pointing into a checkout is one copy and is never reported. That is what keeps this repo's
+own `.claude/skills/prd-workflow` self-hosting link quiet.
+
+**The scan announces what it walked**, one line per config directory, whether or not it
+found anything:
+
+```
+INFO      double-load scan: ~/.claude/skills — 13 entries, 13 checked (skills: 11, skills-dir plugin roots: 2)
+INFO      double-load scan: ~/.claude-schmiede/skills — 8 entries, 7 checked (skills: 7; skipped _shared)
+INFO      double-load scan: ~/.claude-foo has no skills/ — nothing hand-placed there
+```
+
+Read the counts. `entries` is what `ls` would show, so it cross-checks directly; a directory
+missing from the list, or a count that does not match, means the scan skipped input — and a
+checker that skipped its input reads exactly like a clean one. That is the whole reason the
+announcement exists. It runs before the layout section, so it still reports for a repo that
+has no `.claude/` at all. `--quiet` suppresses it along with every other `INFO`.
+
 Interpretation is yours, not the script's. In particular: a `FORK` is a decision, not a
 delete. Someone edited that copy for a reason and the diff against canonical may contain
 work worth back-porting. Report it, show the diff, and let the human decide — replacing a
