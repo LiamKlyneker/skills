@@ -4,8 +4,8 @@ The ADO half of the PRD workflow, packaged as a Claude Code plugin: `to-spec` �
 `to-spec-tasks` → `next-task-to-implement` → `work-on-spec`, plus the
 `spec-worker` agent that `work-on-spec` spawns per `[TASK]`.
 
-`to-spec` has landed. The remaining slices of PRD #31 land the other three
-skills and the agent.
+`to-spec` and `to-spec-tasks` have landed. The remaining slices of PRD #31 land
+the other two skills and the agent.
 
 ## Layout
 
@@ -15,8 +15,8 @@ plugins/ado-workflow/
   skills/
     _shared -> ../../../_shared        # symlink, see below
     references/ado-mcp-setup.md        # plugin-wide, see below
-    to-spec/
-    to-spec-tasks/  next-task-to-implement/  work-on-spec/  # land in later issues
+    to-spec/  to-spec-tasks/
+    next-task-to-implement/  work-on-spec/  # land in later issues
   agents/spec-worker.md                # lands in a later issue
 ```
 
@@ -57,8 +57,11 @@ whole plugin directory is copied. The cross-skill route the client repo used
 (`../<other-skill>/references/…`) is what packaging cannot carry.
 
 A directory under `skills/` with no `SKILL.md` is not registered as a skill —
-`claude plugin details` reports `Skills (1) to-spec` with both `_shared` and
-`references` present, and `claude plugin validate` gains no second warning.
+`claude --plugin-dir plugins/ado-workflow plugin details ado-workflow` reports
+`Skills (2) to-spec, to-spec-tasks` with both `_shared` and `references`
+present, and `claude plugin validate` gains no second warning. (`--plugin-dir`
+is a global `claude` flag, so it precedes the `plugin` subcommand; it is what
+lets this plugin be inspected before it is installed anywhere.)
 
 A skill's *own* references still belong inside that skill, as
 `figma-tools:figma-to-spec` does it. `skills/references/` is for what the
