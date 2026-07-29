@@ -135,9 +135,11 @@ a missing agent link, once from packaging renaming the type out from under the s
 
 ## 4. Live authoring: skills-dir mode
 
-An installed plugin is a **copy** in the config's cache, keyed by the **git commit SHA**. It
-pins to *committed* `HEAD`, so uncommitted edits in your clone are invisible to it. Correct
-behaviour, and it will surprise you once.
+An installed plugin is a **copy** in the config's cache, keyed by the **git commit SHA**. From
+a **`github`** source it pins to *committed* `HEAD`, so uncommitted edits in your clone are
+invisible to it. Correct behaviour, and it will surprise you once. (A **`directory`** source
+copies the *working tree* while still labelling the cache with `HEAD`'s SHA — see
+[§5](#5-local-directory-marketplace-the-dev-route-for-an-unmerged-plugin).)
 
 For authoring against this repo, use skills-dir mode instead — a symlink in `.claude/skills/`
 pointing at the plugin directory:
@@ -172,7 +174,125 @@ Plain skills (no `plugin.json`) use the same directory and load as ordinary skil
 ln -s /Users/klyneker/liam-klyneker/skills/deep-grill ~/.claude/skills/deep-grill
 ```
 
-## 5. Bootstrap the project's adapter
+## 5. Local-directory marketplace: the dev route for an unmerged plugin
+
+Skills-dir mode gets you live edits but exercises none of what makes a plugin a plugin — no
+install cache, no namespacing, no agent registration. The GitHub source exercises all of it but
+clones the **default branch**, so every iteration on a plugin still under construction would
+have to reach `main` first. The third route is a marketplace whose source is a **local
+directory**: a real install, real namespacing, real agents, no merge in the loop.
+
+**Give the dev clone a different marketplace name.** The registry key comes from
+`.claude-plugin/marketplace.json`'s `name` field, so a clone of *this* repo declares
+`liamklyneker` — the name already registered from GitHub. Edit the clone's `name` to something
+like `liamklyneker-dev` before registering it. Two entries offering the same plugin under one
+name is not a state worth discovering the behaviour of.
+
+```
+/plugin marketplace add /path/to/your/dev/clone
+```
+```console
+Successfully added marketplace: liamklyneker-dev
+```
+
+A directory source is recorded differently from a GitHub one, and **nothing is cloned** — the
+`installLocation` is the directory itself, where a GitHub source gets a copy under
+`~/.claude/plugins/marketplaces/<name>/`:
+
+```json
+"liamklyneker-dev": {
+  "source": { "source": "directory", "path": "/path/to/your/dev/clone" },
+  "installLocation": "/path/to/your/dev/clone"
+}
+```
+
+That is the absolute path [§1](#1-add-the-marketplace) warns about. It is fine here precisely
+because a dev marketplace is never shared or committed — but it does mean **moving the clone
+breaks the marketplace**. Re-run `marketplace add` against the new path: an existing name is
+updated in place (`✔ Successfully added marketplace: liamklyneker-dev`), so you never need
+`marketplace remove` merely to relocate a dev clone. Given what `remove` does to the registry,
+that distinction is worth knowing.
+
+Then install as usual — `/plugin install <plugin>@liamklyneker-dev`. Observed on a run of this:
+
+- **It did not prompt for scope.** It silently chose **project**, pinned to the cwd's repo.
+  Pass `--scope` on the CLI form if you want to be sure.
+- **The skills registered mid-session**, without the restart the success message asks for. The
+  **agent type** was only confirmed in a fresh session — whether it would have resolved in the
+  installing session was not tested, so assume it needs the restart.
+- `skills/_shared` was dereferenced into a real directory in the cache, and `agents/` carried
+  the agent, exactly as from a GitHub source. The packaging contract is unchanged by the route.
+
+### It copies the working tree — and mislabels it
+
+A directory source reads your **working tree**, not committed `HEAD`. Both halves were tested
+with uncommitted edits: a rename in `marketplace.json` was honoured at registration, and a
+marker line added to a `SKILL.md` appeared in the install cache.
+
+But the install record still labels that cache with `HEAD`'s SHA:
+
+```json
+{ "version": "256cfd9bfa0c", "gitCommitSha": "256cfd9bfa0cb2ec5805f32283543be177f74111" }
+```
+
+**The version string names a commit whose content is not what got copied.** Do not read a SHA
+in `claude plugin list` as evidence of what a dev install contains; the only authority is the
+cache directory itself.
+
+### Refreshing after an edit
+
+This is where [trap 2](#trap-2-omit-version-from-the-plugin-manifest) bites from an unexpected
+direction. The cache key is the commit SHA, and an *uncommitted* edit does not move it — so
+after the first install, nothing notices your changes:
+
+```console
+$ claude plugin install ado-workflow@liamklyneker-dev --scope project
+✔ Plugin "ado-workflow@liamklyneker-dev" is already installed (scope: project)
+
+$ claude plugin update ado-workflow@liamklyneker-dev --scope project
+✔ ado-workflow is already at the latest version (256cfd9bfa0c).
+```
+
+Both are no-ops, and the cache still holds the copy from the *first* install. Only the full
+cycle re-copies:
+
+```bash
+claude plugin uninstall <plugin>@liamklyneker-dev --scope project
+claude plugin install   <plugin>@liamklyneker-dev --scope project   # then restart
+```
+
+So the loop is: **edit → uninstall → install → restart**. Tighter than merging to `main`, not
+as tight as skills-dir mode. Uninstalling does **not** delete the versioned cache directory, so
+`cache/<marketplace>/<plugin>/` accumulates one directory per SHA you ever installed; only the
+one named in `installed_plugins.json` is live, and the rest are stale copies safe to delete. Note also that `update` defaults to **`--scope user`** and fails
+outright against a project-scoped install; pass the scope every time.
+
+The CLI form works here only because the dev route lands in `~/.claude`
+([trap 1](#trap-1-the-plugin-cli-ignores-claude_config_dir)). Installing a dev build into
+`~/.claude-teamsnap` or `~/.claude-schmiede` still needs the in-session `/plugin` command, and
+the local marketplace has to be registered separately in each config.
+
+### Graduating to the GitHub source
+
+Once the plugin is on `main`, the order matters:
+
+1. `claude plugin uninstall <plugin>@liamklyneker-dev --scope <scope>`
+2. `/plugin marketplace remove liamklyneker-dev`
+3. `/plugin install <plugin>@liamklyneker` — the GitHub source
+4. Restart
+
+Uninstall *before* removing the marketplace. **`/plugin marketplace remove <name>` drops every
+installed-plugin registry entry sourced from that marketplace**, not only the one you were
+working on — observed once against `liamklyneker`, which took out `figma-tools` and three
+`prd-workflow` entries in a single command. The `enabledPlugins` keys in each project's
+`settings.json` survive, so the damage reads as plugins that are enabled but no longer
+installed. Back up `~/.claude/plugins/installed_plugins.json` before you run it.
+
+**What a user runs never changes.** A marketplace source decides only where the copy came from;
+the plugin content, the skill names and the agent types are identical either way. And a dev
+install is scaffolding — it does not belong in [the estate table](#the-estate-today).
+
+## 6. Bootstrap the project's adapter
 
 Getting the skills is the platform's job. Filling in *your project's* facts is not, and no
 distribution mechanism can do it. From the target repo:
@@ -197,7 +317,7 @@ repo's single canonical `_shared/`; on install it is dereferenced into a real di
 the versioned cache. That is a build artifact of a regenerated cache, not an editable
 project-side fork, and it does not make a project-owned `_shared/` any less of a problem.
 
-## 6. Verify
+## 7. Verify
 
 ```bash
 bash install-skills/scripts/doctor.sh --repo <path>      # or: /install-skills doctor
@@ -298,6 +418,32 @@ Distinguish this from the shape that *does* work: a **real** `.claude/` director
 symlinked *inside* it writes without complaint. `neonplace` has `.claude/skills -> ../.agents/skills`
 and `.claude/agents -> ../.agents/agents` and takes a project-scope install fine. It is only a
 symlinked `.claude` itself that is refused.
+
+## Trap 4: a project-scope install writes into the repo, and the file is not gitignored
+
+Project scope is a settings key ([§3](#3-enable-it-for-a-single-project)), so installing at that
+scope **creates or edits `<repo>/.claude/settings.json`** — a tracked-by-default file appearing
+in `git status` as a side effect of a plugin command:
+
+```console
+$ git status --short
+?? .claude/settings.json
+```
+
+For a normal install that content is exactly what you want committed. For a **dev install it is
+not**: the id carries the dev marketplace name, which resolves to an absolute path on one
+machine and nowhere else.
+
+```jsonc
+{ "enabledPlugins": { "ado-workflow@liamklyneker-dev": true } }   // never commit this
+```
+
+`.gitignore` here covers `.claude/settings.local.json` but **not** `.claude/settings.json` —
+correctly, since the committed form is the sharing mechanism. So the guard has to be your eyes:
+after any dev install, check `git status` before staging, and never reach for `git add -A`.
+Prefer `--scope local` for dev installs where the repo allows it — that writes the gitignored
+file instead — but note [trap 3](#trap-3-a-repo-whose-claude-is-itself-a-symlink-cannot-take-a-scoped-install)
+rules local scope out wherever `.claude` is a symlink.
 
 ## Naming: `figma-tools`, never `figma`
 
