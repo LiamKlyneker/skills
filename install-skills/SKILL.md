@@ -54,9 +54,13 @@ If the target project *is* the canonical repo, stop: it bootstraps nothing into 
 
 ### 1. Resolve the ground truth
 
-Repo root (`git rev-parse --show-toplevel`), remote (`gh repo view --json nameWithOwner`),
-default branch (`gh repo view --json defaultBranchRef`). If the target is not a git repo,
-stop and say so — every bundle assumes `gh`.
+Repo root (`git rev-parse --show-toplevel`) and default branch. If the target is not a git
+repo, stop and say so — every workflow bundle assumes one.
+
+`gh repo view --json nameWithOwner,defaultBranchRef` answers both **on a GitHub-tracked
+project**. An Azure DevOps one has no `gh` remote and never will: take the default branch
+from git, and everything else from the interview. Which case you are in is the bundle's
+call, settled in step 3a — not a guess from whether `gh` happened to succeed.
 
 ### 2. Read the bundle
 
@@ -73,6 +77,60 @@ Otherwise copy `../install/adapter.template.md` → `<repo-root>/.claude/project
 never re-templated, never reordered. If one already exists, read it and treat the
 interview as a gap-fill for the bundle's required sections only.
 
+#### 3a. Settle the tracker
+
+The template is **tracker-parametric**: `## Repo` and `## One-time repo preconditions` each
+ship a `### GitHub` and an `### Azure DevOps` sub-section, and a filled adapter keeps
+exactly one of the two — two sub-sections means every skill gets two answers to the same
+question. Which one is not a question worth asking, because the bundle already decided it:
+read the *Which tracker a bundle implies* table in `../install/bundles.md`, the same way
+you read **Adapter sections**. Never hardcode the mapping here.
+
+**A fresh copy — the file did not exist and you created it this run:**
+
+1. Write the `Tracker:` line in `## Repo` to the bundle's tracker.
+2. **Delete the non-chosen tracker's `###` sub-section**, from both `## Repo` and `## One-time
+   repo preconditions`, along with the template's own instructions to make the choice: the
+   *Pick your tracker first* note near the top, and the "delete the other" sentence under
+   each of those two sections. The choice is made; instructions to make it are exactly what
+   keeps a filled adapter still reading like a template.
+3. Everything between those two sections is tracker-agnostic. It is not forked, not
+   duplicated, and not touched here.
+
+**An adapter that already exists — delete nothing.** Read its `Tracker:` line; **absent
+means `github`**, which is what every adapter written before that line existed is. Then:
+
+- Tracker matches the bundle → gap-fill the bundle's missing sections and nothing else.
+- Tracker contradicts the bundle → **stop and hand it back.** One project runs one tracker,
+  and reconciling that is a human decision, not a rewrite.
+- It carries both sub-sections, or neither → that is a gap-fill question to ask, never a
+  licence to delete.
+
+#### The never-delete boundary, stated because it looks like a contradiction
+
+Step 3's never-overwrite rule and step 3a's deletion are about two different files, and the
+deletion is the strictly narrower one. Never-delete governs **an existing adapter** — the
+project's own work, filled in by a human. That file is never overwritten, never
+re-templated, never reordered and never pruned, including sections the bundle does not
+require. What 3a removes is a section of a **fresh template copy this run made seconds
+ago**, which nobody has ever filled in.
+
+All three conditions must hold or you delete nothing:
+
+- the file did not exist when this run started, and you created it from the template;
+- nothing has been written into it yet beyond the `Tracker:` line;
+- what you remove is exactly the non-chosen tracker's `###` sub-sections plus the
+  scaffolding naming that choice.
+
+Miss any one of them and the rule is the plain one: **gap-fill only, delete nothing.** In
+particular, an install run against a repo that already has a filled adapter deletes
+nothing at all — not the other tracker's sub-section, not a stale row, nothing.
+
+The deletion earns its narrow exception because the alternative is permanent noise: an
+ADO-only repo that keeps the `### GitHub` sub-section keeps its `<owner>/<repo>`
+placeholder forever, and `doctor` reports it `UNFILLED` on every run from then on. A check
+that is always noisy is a check nobody reads.
+
 ### 4. Interview — infer first, ask for the rest
 
 Read `references/interview.md`. The rule: anything a file already states, read; only
@@ -81,6 +139,12 @@ in `package.json` is how an install earns a reputation for being tedious.
 
 Fill only the sections the bundle requires. That list is what keeps the interview finite
 and bundle-specific rather than asking every question every time.
+
+**Ask one tracker's questions, never both.** The tracker settled in 3a decides which
+branch of `## Repo` and `## One-time repo preconditions` the interview covers — GitHub's
+`owner/repo` and label vocabulary, or Azure DevOps' org, two projects, team, repository,
+work-item type and board states. The other branch is not asked, not inferred, and (on a
+fresh copy) no longer in the file.
 
 ### 5. Gates
 
@@ -198,7 +262,10 @@ fork with a symlink silently destroys whatever was in it.
   offer is the only thing left, and it is optional.
 - **`doctor` finds a fork** → do not resolve it as part of a bootstrap. Stop, show the
   diff, hand it back.
-- **No `gh` remote** → the workflow bundles are unusable without one. Say so rather than
-  filling `## Repo` with a guess.
+- **No `gh` remote** → the *GitHub* workflow bundles are unusable without one. Say so
+  rather than filling `## Repo` with a guess. On `ado-workflow` it is expected, not a
+  finding: that project's tracker facts come from the interview.
+- **Existing adapter, other tracker** → stop. Never rewrite the `Tracker:` line and never
+  delete a sub-section from a filled adapter; see step 3a.
 - **The project is the canonical repo** → refuse.
 - **Target has no `.claude/` at all** → normal; that is a fresh bootstrap.

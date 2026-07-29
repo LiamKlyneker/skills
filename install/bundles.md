@@ -22,6 +22,7 @@ assume otherwise:
 | Bundle | Distributed as | Same set? |
 |---|---|---|
 | `prd-workflow` | the `prd-workflow` plugin | **No** — the bundle also covers `deep-grill`, which stays a plain top-level skill, deliberately outside the plugin. Its `## Sources of truth` requirement is why that section is in this bundle's list at all |
+| `ado-workflow` | the `ado-workflow` plugin | **No**, for the same reason as `prd-workflow` — the plugin ships the four `[SPEC]`-loop skills and the `spec-worker` agent, and the bundle additionally covers `deep-grill`, the plain skill that puts `## Sources of truth` on the list |
 | `prd-qa` | two plain skills, no plugin | n/a — nothing is packaged |
 | `figma-tools` | the `figma-tools` plugin | Yes, today |
 
@@ -44,6 +45,26 @@ item, exactly these keys, in this order:
 
 Section headings are matched by **prefix**, so `## Sources of truth` matches the
 template's `## Sources of truth (deep-grill recon + hard gates)`.
+
+## Which tracker a bundle implies
+
+The adapter template is **tracker-parametric**: `## Repo` and `## One-time repo
+preconditions` each carry a `### GitHub` and an `### Azure DevOps` sub-section, and a
+filled adapter keeps exactly one of the two. Which one is not a question worth asking
+twice, because the bundle already answers it:
+
+| Bundle | Implies `Tracker:` |
+|---|---|
+| `prd-workflow`, `prd-qa` | `github` |
+| `ado-workflow` | `azure-devops` |
+| `figma-tools` | neither — adapter-free, so there is no `Tracker:` line to write |
+
+The installer reads this table rather than hardcoding the mapping, exactly as it reads
+**Adapter sections** rather than hardcoding a section list. A project runs one tracker, so
+a bundle whose implied tracker contradicts an **existing** adapter's `Tracker:` line is a
+conflict to surface and stop on — never something to resolve by rewriting the line or
+deleting a section. See `install-skills/SKILL.md` step 3a for the one narrow case in which
+a tracker sub-section is deleted at all.
 
 ---
 
@@ -73,6 +94,41 @@ is a plain top-level skill and stays one — it is recon, not the loop, and it i
 its own. So a project that installs the plugin and skips `deep-grill` genuinely does not
 need `## Sources of truth`, and one that runs `deep-grill` without the loop still does.
 Ask against this table, not against the plugin's inventory.
+
+## `ado-workflow`
+
+The same loop against an Azure DevOps board: `[SPEC]` → `[TASK]`s → implementation, run by
+`work-on-spec`. `prd-workflow`'s sibling, and it needs almost the same facts.
+
+- **Status:** ready
+- **Adapter sections:** `## Repo`, `## Commands`, `## App facts`, `## Verify ladder`, `## Sources of truth`, `## Project gates`, `## Repo discipline`, `## One-time repo preconditions`
+- **Gates:** none by default — `install/gates/gate.template.md` on request only
+
+Which skill drives which section:
+
+| Section | Wanted by |
+|---|---|
+| `## Repo` | all four workflow skills — and it carries far more here than on GitHub. The `### Azure DevOps` sub-section holds the org, the **two** projects (work items and repo, routinely different), the team, the repository, the work-item type, the three board states, the title prefixes and the branch pattern. None of it is discoverable from the tree, which is why every one of them is a question |
+| `## Commands`, `## Verify ladder` | `to-spec-tasks` (every `[TASK]` names its own verify command), `work-on-spec`, and `spec-worker` through the adapter `work-on-spec` pastes into each worker prompt |
+| `## App facts` | `work-on-spec` (pasted into every worker prompt) |
+| `## Sources of truth` | `deep-grill` only |
+| `## Project gates` | `to-spec`, `to-spec-tasks`, `deep-grill` |
+| `## Repo discipline` | `work-on-spec`, and `spec-worker` for the scoped `CONTEXT.md` rule |
+| `## One-time repo preconditions` | all four — its `### Azure DevOps` sub-section names the MCP server key and the exact spelling of the board states, and both fail *silently* when wrong: a server under the wrong key reads as unconfigured, and a near-miss state name is a no-op rather than an error |
+
+**`## QA doc convention` is deliberately absent** — the one section `prd-workflow` requires
+that this bundle does not. `work-on-spec` ends a run by creating a `[QA]` **work item**
+describing the slice that just landed, not by committing a QA document to the repo, so
+there is no path convention to agree on and asking for one would fill in a value nothing
+reads.
+
+The two rows that look like GitHub leftovers are real. `## Sources of truth` is here for
+the same reason as in `prd-workflow` — `deep-grill` is tracker-agnostic recon that runs
+*before* `to-spec`, and a project that skips it genuinely does not need the section.
+`## One-time repo preconditions` survives even though the ADO side has no analogue of
+GitHub's un-queryable auto-close setting (the pull request's completion options transition
+the linked work items instead): what is left there is the MCP server and the board-state
+spelling, both human-checked once.
 
 ## `prd-qa`
 

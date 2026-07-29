@@ -41,8 +41,16 @@ Run the `install-skills` skill from the target repo:
 It resolves the repo and its remote, copies the adapter template if there isn't one
 already, interviews you for the facts no file in your repo states, offers any gate the
 bundle declares, and finishes by running `doctor`. Bundles are defined in
-[`bundles.md`](bundles.md) — `prd-workflow`, `prd-qa`, `figma-tools` — and a bundle names
-adapter sections, not skills.
+[`bundles.md`](bundles.md) — `prd-workflow`, `ado-workflow`, `prd-qa`, `figma-tools` — and
+a bundle names adapter sections, not skills.
+
+The template is **tracker-parametric**: `## Repo` and `## One-time repo preconditions` each
+carry a `### GitHub` and an `### Azure DevOps` sub-section, and the bundle decides which
+one survives. On a fresh copy the installer writes the `Tracker:` line and deletes the
+other sub-section, so the adapter you end up filling only ever asks about your own tracker.
+That deletion is the single narrow exception to never-delete, and it applies to a fresh
+template copy only — an install against an adapter that already exists gap-fills and
+deletes nothing. See `install-skills/SKILL.md` step 3a.
 
 The other mode is **`doctor`**, the anti-rot check: a real directory shadowing a skill that
 canonical or a reachable plugin already provides, a leftover `_shared/`, an unfilled
@@ -57,6 +65,6 @@ skill that arrives from a plugin does not read as missing.
 
 The skill is the supported path; this is what it does, for when you're debugging it.
 
-1. Copy `install/adapter.template.md` → `.claude/project/adapter.md` and fill every `<placeholder>`.
+1. Copy `install/adapter.template.md` → `.claude/project/adapter.md`, set the `Tracker:` line, delete the sub-sections of the tracker you did not pick, and fill every remaining `<placeholder>`.
 2. Add gates only if this project has a silent-failure class the skills don't already cover. `install/gates/gate.template.md` is the shape; register each one in the adapter's `## Project gates`.
 3. Commit `.claude/project/`. It is the project's own facts, and it is the only thing here a project owns.

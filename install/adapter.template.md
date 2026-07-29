@@ -28,7 +28,7 @@ Tracker `github`, and what an adapter carrying no `Tracker:` line falls back to.
 
 Tracker `azure-devops`. Work items are reached through the Azure DevOps MCP server (`mcp__ado__*`). None of the facts below are discoverable from the repo, which is why every one of them is listed here rather than left for a skill to infer — a skill that hardcodes any of them is a bug.
 
-- Organisation: `<ado-org>` — the org segment of `https://dev.azure.com/<ado-org>`
+- Organisation: `<ado-org>` — the org segment of the `dev.azure.com` URL
 - **Work-item project**: `<ado-workitem-project>` — the ADO project the `[SPEC]` / `[TASK]` / `[QA]` work items live in
 - **Repo project**: `<ado-repo-project>` — the ADO project the git repo lives in
 
@@ -114,7 +114,7 @@ the other, exactly as in `## Repo`.
 
 ### Azure DevOps
 
-- The Azure DevOps MCP server (`mcp__ado__*`) must be configured and authenticated against `<ado-org>` in the config directory the session runs under. Without it every work-item read fails at the first call.
+- The Azure DevOps MCP server (`mcp__ado__*`) must be configured and authenticated against the organisation named in `## Repo`, in the config directory the session runs under. Without it every work-item read fails at the first call.
 - The three board states named in `## Repo` must exist on the team's board, spelled exactly as written there — ADO state names are per-process strings and a near-miss is a silent no-op, not an error.
 
 <!--
@@ -125,6 +125,10 @@ list them below so the check stays quiet about them and loud about everything el
 
 `<id>` and `<slug>` are branch-pattern notation: a filled `Branch pattern:` value is
 itself a pattern (`spec/<id>-<slug>`), so those two survive filling by design.
+
+**Delete this whole comment when you fill your copy.** doctor reads the exemption list
+from the template, never from your adapter, so a copy of it here does nothing except
+carry `<token>` into your file — where the placeholder check then reports it, forever.
 
 doctor:not-a-placeholder <repo-root> <n> <id> <slug>
 -->
