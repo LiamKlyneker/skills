@@ -6,7 +6,7 @@ Shared reference for the skill that **builds** these tables (`figma-component`) 
 
 This file is the **row schema** — statuses, columns, and the principles behind them — and stays stack-neutral. A project whose primitive homes, token files and traps need naming keeps its own flavored instance and registers it in its adapter's `## Project gates`; the schema below is unchanged by that, only the vocabulary the rows are filled with.
 
-The grill skills are **not** consumers. `grill-me` never was, and `deep-grill` deliberately isn't: the design side is already resolved in the spec by the time the interview starts, so a grill reads those rows as answers rather than rebuilding them. Two skills resolving the same manifest is two sources of truth.
+A grill is **not** a consumer of these tables: the design side is already resolved in the spec by the time the interview starts, so a grill reads those rows as answers rather than rebuilding them. Two skills resolving the same manifest is two sources of truth.
 
 ## UI Primitive Manifest
 
