@@ -4,30 +4,34 @@ A collection of my agent skills... more to come soon!
 
 ## Layout
 
-This repo is both a marketplace and a collection of plain skills. Four top-level
-entries are not skills:
+This repo is a **plugin marketplace**. Everything it publishes lives inside a plugin;
+five top-level directories carry all of it:
 
 | Directory | What's in it |
 |---|---|
 | `.claude-plugin/` | `marketplace.json` — the catalog, published as marketplace **`liamklyneker`** |
-| `plugins/` | The packaged plugins: `prd-workflow/`, `figma-tools/`, and `ado-workflow/` (the PRD workflow's ADO counterpart). Their skills live one level down, in `<plugin>/skills/` |
-| `_shared/` | **Global reference** — docs several skills read that are true in every project. No templates, no project values. |
-| `install/` | **Templates a project fills in** — `adapter.template.md` and `gates/`, plus the layout guide. |
+| `plugins/` | The five packaged plugins: `prd-workflow/`, `figma-tools/`, `ado-workflow/` (the PRD workflow's ADO counterpart), `lk/` (the personal skills) and `install-skills/` (the bootstrapper, its own plugin so reaching it needs nothing else). Their skills live one level down, in `<plugin>/skills/` |
+| `_shared/` | **Global reference** — docs several skills read that are true in every project. No templates, no project values. Each plugin reaches this one canonical copy through a `skills/_shared` symlink |
+| `install/` | **Templates a project fills in** — `adapter.template.md`, `bundles.md` and `gates/`, plus the layout guide. Also the directory the `install-skills` plugin symlinks in as `skills/install`, which is what keeps its packaged skill reading these files at an unchanged relative path |
+| `docs/` | `estate-inventory.md`, the [decision records](docs/adr/README.md), and the per-PRD QA logs. Documentation for humans — no session loads any of it |
 
-Every *other* top-level directory is one plain skill — `deep-grill`, `grill-me`,
-`install-skills`, `how-i-write`, `pinpoint`, `qa-prd-log`, `scoped-context`,
-`triage-prd` — plus `figma-component/` and `tokens-init/`, both deprecated and linked
-nowhere. The migration's compat shims (top-level symlinks into `plugins/`) are gone;
-nothing resolves through a pre-plugin path any more.
+**There are no plain skills left in this repo.** That is a change of shape, not a detail:
+every skill now arrives by installing or enabling its plugin, and every one of them
+invokes under that plugin's namespace. The only other top-level entries are
+`figma-component/` and `tokens-init/`, both deprecated and superseded by `figma-to-spec`,
+part of no plugin and linked nowhere. The migration's compat shims (top-level symlinks
+into `plugins/`) are gone; nothing resolves through a pre-plugin path any more.
 
-Which config directory and which repo actually has each of these is recorded in
-[`docs/estate-inventory.md`](docs/estate-inventory.md) — the plain skills are placed
-by hand, one symlink at a time, so the inventory is the only place that state exists.
+Which config directory has which plugin, and which repo enables it, is recorded in
+[`docs/estate-inventory.md`](docs/estate-inventory.md) — nothing derives that state, so
+the inventory is the only place it exists.
 
-Two delivery routes, on purpose: a plugin from the marketplace (a versioned copy,
-cache-keyed by git commit), or a symlink into a config's `skills/` directory (nothing
-copied, edits live — how this repo authors against itself). Full instructions,
-including which config directory and which scope: [`INSTALL.md`](INSTALL.md).
+Two delivery routes, on purpose: a plugin installed from the marketplace (a copy in the
+config's cache, keyed by the plugin's `version`), or a symlink into a config's `skills/`
+directory (nothing copied, edits live — how this repo authors against itself). The routes
+differ only in where the copy came from; the skill names, the namespacing and the agent
+types are identical either way. Full instructions, including which config directory and
+which scope: [`INSTALL.md`](INSTALL.md).
 
 A project never owns a `_shared/`, so `../_shared/…` from any skill can only mean this
 repo. Anything project-specific lives in `<repo-root>/.claude/project/`: `adapter.md`
@@ -38,37 +42,41 @@ cache. Layout: [`install/README.md`](install/README.md).
 ## Adopting a bundle
 
 Getting the skills is the platform's job — `/plugin marketplace add LiamKlyneker/skills`
-then `/plugin install <plugin>@liamklyneker`, or a symlink into a config's `skills/`
-directory for a plain skill and for editing in place. [`INSTALL.md`](INSTALL.md) walks
-both routes and the traps in each.
+then `/plugin install <plugin>@liamklyneker`. A symlink into a config's `skills/`
+directory is the other route, and the one to reach for when you want to edit a plugin in
+place. [`INSTALL.md`](INSTALL.md) walks both and the traps in each.
 
 What no distribution mechanism can do is fill in *your project's* facts. From the repo you
 want to wire up:
 
 ```
-/install-skills install prd-workflow
+/install-skills:install-skills install prd-workflow
 ```
 
-It copies the adapter template, interviews you only for the facts your repo doesn't
-already state, offers any gate the bundle declares, and ends with a clean bill of health —
-or tells you exactly what it couldn't finish.
+The name is doubled because the `install-skills` skill ships inside the `install-skills`
+plugin, and a plugin namespaces everything it provides. It copies the adapter template,
+interviews you only for the facts your repo doesn't already state, offers any gate the
+bundle declares, and ends with a clean bill of health — or tells you exactly what it
+couldn't finish.
 
 | Bundle | What it wires up |
 |---|---|
-| `prd-workflow` | The PRD → issues → implementation loop — the `prd-workflow` plugin, plus `deep-grill`, which stays a plain skill |
-| `ado-workflow` | The same loop against an Azure DevOps board — `[SPEC]` → `[TASK]`s → implementation, from the `ado-workflow` plugin, plus `deep-grill` |
-| `prd-qa` | The QA loop run against a PRD branch before merge — two plain skills, no plugin |
+| `prd-workflow` | The PRD → issues → implementation loop — exactly the five skills the `prd-workflow` plugin ships |
+| `ado-workflow` | The same loop against an Azure DevOps board — `[SPEC]` → `[TASK]`s → implementation, exactly the four skills the `ado-workflow` plugin ships |
+| `prd-qa` | The QA loop run against a PRD branch before merge — `triage-prd` + `qa-prd-log`, two of the seven skills the `lk` plugin ships |
+| `grill` | The interviews that run *before* either loop — `grill` inline on one thread, `deep-grill` with recon subagents and hard gates. Two more `lk` skills; only `deep-grill` reads the adapter, so `## Sources of truth` is the whole of this bundle's interview |
 | `figma-tools` | Figma → spec — the `figma-tools` plugin. Adapter-free |
 
 Definitions live in [`install/bundles.md`](install/bundles.md); a bundle names the adapter
 sections a set of skills needs filled, not the skills themselves. Bundle and plugin are
-separate namespaces and only sometimes the same set.
+separate namespaces and only sometimes the same set — `lk` alone maps to **two** bundles,
+`prd-qa` and `grill`, which is exactly why neither of them is named after it.
 
-`/install-skills doctor` is the other half, and the more important one. Forked copies,
-leftover `_shared/` directories, half-filled adapters and dead gate pointers all fail
-**silently** — that's how one project ends up with five drifted skills nobody notices
-until they're diffed by hand. Doctor makes each of those a line of output. Run it in any
-repo, any time; it changes nothing.
+`/install-skills:install-skills doctor` is the other half, and the more important one.
+Forked copies, leftover `_shared/` directories, half-filled adapters and dead gate
+pointers all fail **silently** — that's how one project ends up with five drifted skills
+nobody notices until they're diffed by hand. Doctor makes each of those a line of output.
+Run it in any repo, any time; it changes nothing.
 
 ## Agents
 

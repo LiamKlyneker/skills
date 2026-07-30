@@ -14,16 +14,24 @@ having before the plugin lands.
 
 | Plugin | Contains | Bundle it serves |
 |---|---|---|
-| `prd-workflow` | `to-prd`, `to-issues`, `next-prd-issue`, `work-on-prd`, `work-on-issue` + the `prd-worker` agent | `prd-workflow` (which also wants `deep-grill`, a plain skill) |
-| `figma-tools` | `figma-to-spec` + the `figma-region-extractor` agent | `figma-tools` |
+| `prd-workflow` | `to-prd`, `to-issues`, `next-prd-issue`, `work-on-prd`, `work-on-issue` + the `prd-worker` agent | `prd-workflow` — same set, today |
+| `ado-workflow` | `to-spec`, `to-spec-tasks`, `next-task-to-implement`, `work-on-spec` + the `spec-worker` agent | `ado-workflow` — same set, today |
+| `figma-tools` | `figma-to-spec` + the `figma-region-extractor` agent | `figma-tools`. Adapter-free |
+| `lk` | `grill`, `deep-grill`, `pinpoint`, `how-i-write`, `qa-prd-log`, `triage-prd`, `scoped-context` | **two** bundles, neither of them the whole plugin: `grill` (`grill` + `deep-grill`) and `prd-qa` (`triage-prd` + `qa-prd-log`) |
+| `install-skills` | `install-skills` — and `scripts/doctor.sh`, the only executable in the repo | none; it is what *writes* the adapter a bundle needs, so it must be reachable before any bundle is adopted |
 
-Both come from marketplace **`liamklyneker`**. Skills from a plugin are invoked namespaced:
-`/prd-workflow:work-on-prd`, `/figma-tools:figma-to-spec`.
+All five come from marketplace **`liamklyneker`**. Skills from a plugin are invoked
+namespaced: `/prd-workflow:work-on-prd`, `/ado-workflow:work-on-spec`,
+`/figma-tools:figma-to-spec`, `/lk:grill`, `/install-skills:install-skills`. That last one
+doubles because the skill and its plugin share a name — the prefix is the plugin, the
+suffix is the skill, and neither half is optional.
 
-Everything else in this repo — `deep-grill`, `grill-me`, `install-skills`, `how-i-write`,
-`pinpoint`, `qa-prd-log`, `scoped-context`, `triage-prd` — is a plain skill and reaches a
-machine by symlink into a config's `skills/` directory. Two delivery modes coexist on
-purpose; see [Live authoring](#4-live-authoring-skills-dir-mode).
+**Every skill in this repo is inside one of those five plugins.** There are no plain
+skills here any more, so no skill of this repo's needs a hand-placed symlink to reach a
+machine. The symlink route itself is very much alive as a *mechanism* — it is how this
+repo authors against itself, and it is the only way to get live edits at all; see
+[Live authoring](#4-live-authoring-skills-dir-mode). What changed is that nothing here
+*depends* on it for delivery.
 
 ## Before you start: which config directory
 
@@ -135,10 +143,14 @@ a missing agent link, once from packaging renaming the type out from under the s
 
 ## 4. Live authoring: skills-dir mode
 
-An installed plugin is a **copy** in the config's cache, keyed by the **git commit SHA**. From
-a **`github`** source it pins to *committed* `HEAD`, so uncommitted edits in your clone are
-invisible to it. Correct behaviour, and it will surprise you once. (A **`directory`** source
-copies the *working tree* while still labelling the cache with `HEAD`'s SHA — see
+An installed plugin is a **copy** in the config's cache, keyed by the plugin's
+**`version`**. From a **`github`** source it pins to *committed* `HEAD`, so uncommitted
+edits in your clone are invisible to it — and, because the key is the version rather than
+the commit, a *committed and pushed* edit is invisible too until the version moves. Correct
+behaviour, and it will surprise you once; see
+[trap 2](#trap-2-version-is-the-install-cache-key-and-a-forgotten-bump-is-silent). (A
+**`directory`** source copies the *working tree* while still labelling the install record
+with `HEAD`'s SHA — see
 [§5](#5-local-directory-marketplace-the-dev-route-for-an-unmerged-plugin).)
 
 For authoring against this repo, use skills-dir mode instead — a symlink in `.claude/skills/`
@@ -155,7 +167,7 @@ launch with no reinstall. `claude plugin list` reports it under **Skills-directo
 
 ```
   ❯ prd-workflow@skills-dir
-    Version: unknown
+    Version: 1.0.0
     Scope: project
     Path: ./.claude/skills/prd-workflow
     Status: ✔ loaded
@@ -164,15 +176,28 @@ launch with no reinstall. `claude plugin list` reports it under **Skills-directo
 That is how this repo self-hosts: one symlink, not one per skill. The same trick works at
 config level (`~/.claude/skills/<name>`), which is what `claude plugin init` scaffolds.
 
+**The two routes report different versions for the same repo, and both are right.** The
+line above reads `1.0.0` off this working tree, while `prd-workflow@liamklyneker` in the
+same `claude plugin list` still reports `81af34d0d5e1` — a pinned cache copy installed
+before the versions existed, and not refreshed since. Reading a version out of
+`plugin list` tells you what *that install* holds, never what the repo holds.
+
 **Do not run both modes for the same plugin in the same place.** Every skill loads twice.
 `doctor` reports it as `INFO … loads twice` — which is suppressed by `--quiet`, so run
 without it when checking cutover state.
 
-Plain skills (no `plugin.json`) use the same directory and load as ordinary skills:
+A directory with **no** `plugin.json` loads as an ordinary, un-namespaced skill from the
+same place:
 
 ```bash
-ln -s /Users/klyneker/liam-klyneker/skills/deep-grill ~/.claude/skills/deep-grill
+ln -s /path/to/some/repo/<skill> ~/.claude/skills/<skill>
 ```
+
+Nothing in *this* repo is delivered that way any more — every skill here is inside a
+plugin — but the mechanism is unchanged, and it is still what a one-off skill from
+anywhere else uses. Note the direction of the dependency: a symlink points at a
+working-tree path, so moving or renaming the target silently dangles the link rather than
+erroring.
 
 ## 5. Local-directory marketplace: the dev route for an unmerged plugin
 
@@ -241,9 +266,12 @@ cache directory itself.
 
 ### Refreshing after an edit
 
-This is where [trap 2](#trap-2-omit-version-from-the-plugin-manifest) bites from an unexpected
-direction. The cache key is the commit SHA, and an *uncommitted* edit does not move it — so
-after the first install, nothing notices your changes:
+This is where
+[trap 2](#trap-2-version-is-the-install-cache-key-and-a-forgotten-bump-is-silent) bites from
+an unexpected direction. The cache key does not move when your *files* move, so after the
+first install nothing notices your changes. The observation below was captured before the
+manifests carried versions, when the key was still the commit SHA and an uncommitted edit
+could not shift it:
 
 ```console
 $ claude plugin install ado-workflow@liamklyneker-dev --scope project
@@ -253,8 +281,14 @@ $ claude plugin update ado-workflow@liamklyneker-dev --scope project
 ✔ ado-workflow is already at the latest version (256cfd9bfa0c).
 ```
 
-Both are no-ops, and the cache still holds the copy from the *first* install. Only the full
-cycle re-copies:
+**Setting a version made this worse, not better.** The key is now the manifest's `version`,
+so on a dev loop it does not move until you bump it by hand — the same `already installed`
+no-op, but reachable by committing, pushing and merging as well as by editing in place.
+That trade, and why it was still worth making, is
+[ADR 0001](docs/adr/0001-version-the-plugins-and-enforce-the-bump.md).
+
+Both commands are no-ops, and the cache still holds the copy from the *first* install. Only
+the full cycle re-copies:
 
 ```bash
 claude plugin uninstall <plugin>@liamklyneker-dev --scope project
@@ -262,10 +296,15 @@ claude plugin install   <plugin>@liamklyneker-dev --scope project   # then resta
 ```
 
 So the loop is: **edit → uninstall → install → restart**. Tighter than merging to `main`, not
-as tight as skills-dir mode. Uninstalling does **not** delete the versioned cache directory, so
-`cache/<marketplace>/<plugin>/` accumulates one directory per SHA you ever installed; only the
-one named in `installed_plugins.json` is live, and the rest are stale copies safe to delete. Note also that `update` defaults to **`--scope user`** and fails
-outright against a project-scoped install; pass the scope every time.
+as tight as skills-dir mode. Uninstalling does **not** delete the cache directory, so
+`cache/<marketplace>/<plugin>/` accumulates one directory per cache key you ever installed;
+only the one named in `installed_plugins.json` is live, and the rest are stale copies safe
+to delete. Both shapes of key are visible in that tree today —
+`cache/liamklyneker-dev/lk/1.0.0/` from a versioned manifest, and
+`cache/liamklyneker/prd-workflow/81af34d0d5e1/` from an install that predates the versions.
+Note also that `uninstall` and `update` both default to **`--scope user`** and fail outright
+against an install at any other scope (`✘ Failed to uninstall … is not installed in user
+scope. Use --scope to specify`); pass the scope every time.
 
 The CLI form works here only because the dev route lands in `~/.claude`
 ([trap 1](#trap-1-the-plugin-cli-ignores-claude_config_dir)). Installing a dev build into
@@ -290,7 +329,7 @@ installed. Back up `~/.claude/plugins/installed_plugins.json` before you run it.
 
 **What a user runs never changes.** A marketplace source decides only where the copy came from;
 the plugin content, the skill names and the agent types are identical either way. And a dev
-install is scaffolding — it does not belong in [the estate table](#the-estate-today).
+install is scaffolding — it does not belong in [the estate record](#the-estate-today).
 
 ## 6. Bootstrap the project's adapter
 
@@ -298,8 +337,11 @@ Getting the skills is the platform's job. Filling in *your project's* facts is n
 distribution mechanism can do it. From the target repo:
 
 ```
-/install-skills install prd-workflow
+/install-skills:install-skills install prd-workflow
 ```
+
+The doubled name is the plugin prefix plus the skill name; `install-skills` is its own
+plugin precisely so that reaching it never requires adopting anything else.
 
 It copies `install/adapter.template.md` → `.claude/project/adapter.md`, interviews you only
 for the facts your repo does not already state, offers any gate the bundle declares, and
@@ -320,7 +362,8 @@ project-side fork, and it does not make a project-owned `_shared/` any less of a
 ## 7. Verify
 
 ```bash
-bash install-skills/scripts/doctor.sh --repo <path>      # or: /install-skills doctor
+bash plugins/install-skills/skills/install-skills/scripts/doctor.sh --repo <path>
+# or, from any session that has the plugin: /install-skills:install-skills doctor
 claude plugin list
 ```
 
@@ -372,33 +415,73 @@ Two consequences:
   |---|---|
   | `<config>/settings.json` | `enabledPlugins`, `extraKnownMarketplaces` |
   | `<config>/plugins/installed_plugins.json` | scope, `projectPath`, `gitCommitSha` |
-  | `<config>/plugins/cache/<marketplace>/<plugin>/<sha>/` | what actually got copied |
+  | `<config>/plugins/cache/<marketplace>/<plugin>/<version-or-sha>/` | what actually got copied |
 
-## Trap 2: omit `version` from the plugin manifest
+## Trap 2: `version` is the install cache key, and a forgotten bump is silent
 
-The single most-reported plugin footgun. **Set a `version` and it becomes the install cache
-key.** Forget to bump it and every install silently keeps serving the old copy — no error, no
+The single most-reported plugin footgun, and the reason every manifest in this repo went
+without a version number for as long as it did. **Set a `version` and it becomes the install
+cache key.** Forget to bump it and every install keeps serving the old copy — no error, no
 warning, just changes that never arrive.
 
-Omit the field and the cache key is the **git commit SHA** instead, which cannot be forgotten:
-
-```
-~/.claude/plugins/cache/liamklyneker/prd-workflow/ac7a89ab018a/
-```
-
-Both manifests here omit it deliberately. The cost is a warning:
+The mechanism is real and measured, not folklore. Reinstalling at an unchanged version
+re-copies nothing and says so cheerfully:
 
 ```console
-$ claude plugin validate plugins/prd-workflow
-⚠ Found 1 warning:
-  ❯ version: No version specified. Consider adding a version following semver (e.g., "1.0.0")
-✔ Validation passed with warnings
+✔ Plugin "install-skills@liamklyneker-dev" is already installed
 ```
 
-So the structural check here is plain `validate`, **never `--strict`** — `--strict` treats
-warnings as errors, and the two decisions cannot both hold. The missing-`version` warning must
-be the *only* warning; a second one is a real failure and does not get waved through. The
-marketplace manifest reports one such warning per plugin it lists (two today).
+Only `uninstall --scope <scope>` followed by a fresh `install` refreshes the cache. So a
+missed bump does not *delay* an update; it strands that consumer on stale files until they
+uninstall by hand.
+
+Omit the field and the cache key is the **git commit SHA** instead, which cannot be
+forgotten. Both key shapes exist in the cache right now — the version directory from a
+manifest that has one, the SHA directory from an install that predates them:
+
+```
+~/.claude/plugins/cache/liamklyneker-dev/lk/1.0.0/
+~/.claude/plugins/cache/liamklyneker/prd-workflow/81af34d0d5e1/
+```
+
+**Every manifest here omitted `version` deliberately, and none of them does now.** All five
+plugins carry `1.0.0`, mirrored in `.claude-plugin/marketplace.json`. Nothing above stopped
+being true — the reversal replaced *abstinence* with *enforcement*:
+
+- **The bump is checked, not remembered.** `check_version_bumps()` in
+  `.github/scripts/validate_skills.py` fails any plugin whose files changed against the fork
+  point without its `version` moving, and fails a manifest whose version and catalog entry
+  disagree. It needs a base ref (`--base <ref>` or `VALIDATE_BASE_REF`); given none, that one
+  check reports itself skipped rather than passing quietly, and every other check still runs.
+- **`--strict` is now the bar, where it used to be ruled out.** The missing-`version` warning
+  was the one warning the old scheme had to tolerate, and tolerating a warning is
+  incompatible with a flag that treats warnings as errors. With the field set there is
+  nothing left to wave through:
+
+  ```console
+  $ claude plugin validate --strict plugins/prd-workflow
+  Validating plugin manifest: /Users/klyneker/liam-klyneker/skills/plugins/prd-workflow/.claude-plugin/plugin.json
+
+  ✔ Validation passed
+  ```
+
+  All five plugins and the marketplace catalog pass `--strict` with zero warnings.
+- **A change under `_shared/` or `install/` changes every plugin that symlinks it**, because
+  install dereferences the link into each cache copy. One shared-doc edit therefore costs
+  several bumps. That is real tedium, and it is the accepted price: tedium is recoverable and
+  silent staleness is not.
+
+Why the reversal was worth making at all — a SHA is not something a consumer can read, pin
+to, or roll back along, and this is a public catalog of executable prose — is
+[ADR 0001](docs/adr/0001-version-the-plugins-and-enforce-the-bump.md). **Read it before
+restoring the old rule from history.** The reasoning that once recommended omitting `version`
+was never wrong; it is now the justification for the gate rather than for abstinence, and
+dropping the version would drop the check along with it.
+
+**Setting a version is not releasing one.** `claude plugin tag` creates a `{name}--v{version}`
+git tag and validates that `plugin.json` and the enclosing marketplace entry agree — but
+nothing here is tagged, and `git tag` is empty. Tagging a release is a deliberate act, not a
+side effect of carrying a version.
 
 ## Trap 3: a repo whose `.claude` is *itself* a symlink cannot take a scoped install
 
@@ -456,12 +539,18 @@ follow the plugin.
 
 ## The estate today
 
-What is actually installed, for orientation when something looks wrong.
+**[`docs/estate-inventory.md`](docs/estate-inventory.md)** — which config directory holds
+which install, at which scope, and which repo enables it.
 
-| Config | Plugin | Scope | Where |
-|---|---|---|---|
-| `~/.claude` | `prd-workflow@liamklyneker` | project | `liam-klyneker/liamklyneker`, `creative-ghost/neonplace`, `creative-ghost/neonplace-ios` — committed `.claude/settings.json` in each |
-| `~/.claude` | `figma-tools@liamklyneker` | user | everywhere under the personal config |
-| `~/.claude` | `prd-workflow@skills-dir` | project | this repo, via `.claude/skills/prd-workflow` |
-| `~/.claude-teamsnap` | `prd-workflow@liamklyneker` | local | `teamsnap/organization-frontend-v2` — gitignored `settings.local.json` |
-| `~/.claude-schmiede` | `ado-workflow@liamklyneker` | user | every Schmiede repo — user scope is the only one that works there ([trap 3](#trap-3-a-repo-whose-claude-is-itself-a-symlink-cannot-take-a-scoped-install)) |
+That state is not derived from anything and nothing validates it, so it lives in exactly one
+file on purpose. This page used to carry a second copy of the table for orientation; a
+duplicate of a hand-maintained record is a duplicate that goes stale without a symptom, and
+the inventory already says everything the copy said. `doctor` can confirm the links and
+installs it names resolve; only the inventory says whether they are *supposed* to exist.
+
+What belongs here rather than there is the mechanism, and it is all above: which scope suits
+which tenancy ([§3](#3-enable-it-for-a-single-project)), and the traps that make a given
+choice the only workable one — [trap 3](#trap-3-a-repo-whose-claude-is-itself-a-symlink-cannot-take-a-scoped-install)
+in particular, which is why a Schmiede repo takes a user-scope install and nothing else.
+
+A dev install from a local-directory marketplace is scaffolding and belongs in neither.
