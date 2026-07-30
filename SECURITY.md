@@ -44,8 +44,8 @@ maintained in spare time, not a staffed product; there is no bounty.
 - A skill that would run **destructive or irreversible commands** outside what the
   user asked for: force-pushing, deleting branches or files, rewriting history,
   pushing to remotes, or publishing.
-- Anything in `install-skills/scripts/doctor.sh` — command injection, unsafe path
-  handling, writing outside the target project.
+- Anything in `plugins/install-skills/skills/install-skills/scripts/doctor.sh` — command
+  injection, unsafe path handling, writing outside the target project.
 - A `marketplace.json` or `plugin.json` whose `source` resolves somewhere other than
   where its name implies.
 - Credentials, tokens, or private data committed to this repository.

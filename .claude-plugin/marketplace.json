@@ -25,6 +25,11 @@
       "name": "lk",
       "description": "Liam Klyneker's personal Claude Code skills: the grills that interview a plan until every branch is resolved, the QA loop that logs and triages findings, plus pinpoint, scoped-context and his writing voice — the ones that talk to the user and the codebase rather than to a tracker",
       "source": "./plugins/lk"
+    },
+    {
+      "name": "install-skills",
+      "description": "Bootstrap a project's `.claude/project/adapter.md` for a skill bundle, and diagnose an install that has rotted — the two jobs no distribution mechanism can do for you. Start here: the PRD and ADO workflows cannot run without the adapter it writes",
+      "source": "./plugins/install-skills"
     }
   ]
 }
