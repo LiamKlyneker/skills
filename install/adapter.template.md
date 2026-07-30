@@ -1,6 +1,6 @@
 # Project Adapter — TEMPLATE
 
-Single home for every project-specific fact the skills need. Workflow skills (`work-on-prd`, `to-issues`, `next-prd-issue`, `work-on-issue`) and `deep-grill` reference this file and never hardcode these values. (`grill-me` deliberately does **not** — it is the lightweight inline grill and reads nothing from here.) Porting the workflow to another repo = install the plugin + fill in this file, nothing else.
+Single home for every project-specific fact the skills need. Workflow skills (`work-on-prd`, `to-issues`, `next-prd-issue`, `work-on-issue`) reference this file and never hardcode these values, and so does every other skill that needs a project fact — each reading only the sections its own bundle declares, never the whole file. Porting the workflow to another repo = install the plugin + fill in this file, nothing else.
 
 > **This is a template.** Copy it to `<repo-root>/.claude/project/adapter.md` and fill every `<placeholder>` with your project's real values before running `work-on-prd`. Delete rows that don't apply; add rows the workflow needs. Nothing else in the skills should mention a tool, path, or command by name — if it does, lift it into this file.
 
@@ -75,7 +75,7 @@ Every command a worker or the orchestrator runs. Keep the **Purpose** column sta
 - Per issue: what shipped · how to test in the running app (from the issue's `## QA notes`, refined by the worker) · edge cases the worker flagged.
 - The human runs it start-to-finish before merging the PR.
 
-## Sources of truth (`deep-grill` recon + hard gates)
+## Sources of truth (recon + hard gates)
 
 - **Project explorer agent**: `<subagent_type>` — read-only, one feature/package area per spawn. Or "None — use `Explore`".
 - **Contract-boundary explorer agent**: `<subagent_type>` — owns the related repo/service above (API handlers, contract spec, data layer). Or "None — no contract boundary".

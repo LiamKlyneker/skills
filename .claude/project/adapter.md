@@ -68,7 +68,7 @@ warning; a second warning is a real failure and does not get waved through.
 - Per issue: what shipped · how to exercise it in a real session (which config dir, which command, what to look for) · edge cases the worker flagged.
 - The human runs it start-to-finish before merging.
 
-## Sources of truth (`deep-grill` recon + hard gates)
+## Sources of truth (recon + hard gates)
 
 - **Project explorer agent**: None — use `Explore`. This repo is small and entirely prose; a custom explorer would be dead config.
 - **Contract-boundary explorer agent**: None — no contract boundary.
