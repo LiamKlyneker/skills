@@ -1,0 +1,10 @@
+{
+  "name": "install-skills",
+  "description": "Bootstrap a project's `.claude/project/adapter.md` for a skill bundle, and diagnose an install that has rotted — the two jobs no distribution mechanism can do for you. The one plugin here a stranger needs: the PRD and ADO workflows cannot run without the adapter it writes",
+  "version": "1.0.0",
+  "author": {
+    "name": "Liam Klyneker",
+    "url": "https://github.com/LiamKlyneker"
+  },
+  "homepage": "https://github.com/LiamKlyneker/skills"
+}

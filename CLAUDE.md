@@ -19,7 +19,8 @@ Four top-level entries are not skills:
   `ui-manifests.md`, `ui-standard.md`. No templates, no project values, ever.
 - `install/` — what a project gets wired with: `bundles.md` (the manifest the
   `install-skills` skill reads), `adapter.template.md`, and `gates/`. See
-  `install/README.md` for the layout a wired project ends up with.
+  `install/README.md` for the layout a wired project ends up with. Canonical copy,
+  reached from inside the plugin by a symlink — see below.
 
 The migration's compat shims — top-level names that were **symlinks into
 `plugins/`** — are **gone** (#26), along with the nested
@@ -36,10 +37,14 @@ and the bare names only exist on the plain-skill symlink route. Getting an agent
 wrong does **not** error — it degrades silently to `general-purpose` — so any doc or
 skill naming a subagent type has to say which route it means.
 
-`install-skills` *is* a plain skill and lives at the top level like any other. It is
-the only one that ships an executable (`scripts/doctor.sh`) — the mechanical checks
-have to be deterministic, and a check that gets paraphrased differently on each run
-isn't one. Everything else here stays prose.
+`install-skills` is **its own plugin**, at `plugins/install-skills/` — not a plain
+skill and not part of a personal bundle. It is the one thing here a stranger needs,
+because `prd-workflow` and `ado-workflow` cannot run without the adapter it writes, so
+reaching it must not require installing anything else. It is also the only skill in the
+repo that ships an executable
+(`plugins/install-skills/skills/install-skills/scripts/doctor.sh`) — the mechanical
+checks have to be deterministic, and a check that gets paraphrased differently on each
+run isn't one. Everything else here stays prose.
 
 `INSTALL.md` is the guide for getting any of it onto a machine — marketplace, config
 directories, scopes, live authoring, and the traps. Keep it accurate; it is written
@@ -113,6 +118,13 @@ Rules that hold regardless of route:
   install cache; that copy is a regenerated build artifact, not a fork. Don't
   reintroduce a project-side `_shared/`, and don't add "you may have resolved the
   wrong file" warnings back to the skills; the layout is what makes them unnecessary.
+- **A directory a packaged skill reaches by relative path gets a symlink under
+  `skills/`, never a rewritten path.** `install-skills` reads its templates as
+  `../install/bundles.md`, so `plugins/install-skills/skills/install ->
+  ../../../install` is what keeps every one of those references byte-identical — live
+  through the link in skills-dir mode, and dereferenced into the cache on install.
+  Rewriting the paths instead would have worked in the working tree and broken every
+  installed copy, since a cache copy has no repo root above it to reach back into.
 - Skills address exactly three things: global reference as `../_shared/x.md`, the
   project as `<repo-root>/.claude/project/adapter.md`, and project-specific gates
   **never by name** — the adapter's `## Project gates` registry names them and

@@ -179,8 +179,13 @@ Always. A bootstrap that does not end in a clean doctor run is not finished.
 ## `doctor`
 
 ```bash
-<canonical>/install-skills/scripts/doctor.sh [--repo <path>] [--bundle <slug>] [--quiet]
+<this-skill-dir>/scripts/doctor.sh [--repo <path>] [--bundle <slug>] [--quiet]
 ```
+
+`<this-skill-dir>` is wherever this `SKILL.md` was loaded from — an install cache copy
+or, in the canonical repo, `plugins/install-skills/skills/install-skills/`. The script
+sits beside this file in both, and infers everything else it needs from its own
+location, so never reconstruct the path from a repo root.
 
 Deterministic on purpose — every check here is mechanical, and a check that is
 paraphrased differently on each run is not a check. Run the script; do not re-implement
@@ -223,8 +228,8 @@ as `INFO` — it is a wiring decision, not a broken install — in two places:
 
 The config-level half is scoped per config on purpose. The configs share no plugin state, so
 a plugin cached under one says nothing about a symlink under another — asked globally the
-check would flag `~/.claude/skills/grill-me` because an unrelated plugin in a *different*
-config happens to ship that name.
+check would flag a hand-placed `~/.claude/skills/<name>` because an unrelated plugin in a
+*different* config happens to ship a skill of that name.
 
 A plugin root inside the canonical repo is **source, not a second install**, so a link
 pointing into a checkout is one copy and is never reported. That is what keeps this repo's

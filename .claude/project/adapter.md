@@ -22,12 +22,13 @@ repo. That is self-hosting, not a broken install — expect `doctor` to say so.
 ## Commands
 
 This is a **prose repo**. There is no build, no package manager, and no test
-runner. The only executable is `install-skills/scripts/doctor.sh`.
+runner. The only executable is
+`plugins/install-skills/skills/install-skills/scripts/doctor.sh`.
 
 | Purpose | Command |
 |---|---|
 | Build | None — nothing compiles |
-| Test — **verify L2 floor** | `bash -n install-skills/scripts/doctor.sh && bash install-skills/scripts/doctor.sh --repo . --quiet` |
+| Test — **verify L2 floor** | `bash -n plugins/install-skills/skills/install-skills/scripts/doctor.sh && bash plugins/install-skills/skills/install-skills/scripts/doctor.sh --repo . --quiet` |
 | Manifest check — **also L2 floor** | `claude plugin validate plugins/prd-workflow && claude plugin validate plugins/figma-tools && claude plugin validate plugins/ado-workflow && claude plugin validate .` |
 | Boot the app (visual loop) | `claude plugin list` — the loaded-plugin inventory *is* this repo's running state |
 | App screenshot | None — terminal output is the evidence; paste it verbatim |
@@ -45,7 +46,7 @@ warning; a second warning is a real failure and does not get waved through.
 
 ## App facts
 
-- Markdown/prose skills repo · one Bash script (`install-skills/scripts/doctor.sh`) · no runtime, no dependencies.
+- Markdown/prose skills repo · one Bash script (`plugins/install-skills/skills/install-skills/scripts/doctor.sh`) · no runtime, no dependencies.
 - **Also a plugin marketplace.** `.claude-plugin/marketplace.json` publishes marketplace `liamklyneker` with three plugins, `plugins/prd-workflow/`, `plugins/figma-tools/` and `plugins/ado-workflow/`. A plugin's skills live in `<plugin>/skills/<skill>/` and its agents in `<plugin>/agents/`; both inventories are discovered from the directory, not listed in the manifest.
 - Every *other* top-level directory is one plain skill, except `.claude-plugin/`, `plugins/`, `_shared/` (global reference read by several skills) and `install/` (what a consuming project gets wired with). The migration's compat shims (top-level symlinks into `plugins/`) were deleted by #26 — do not reintroduce the shape.
 - **A plugin namespaces every component it provides.** Skills invoke as `prd-workflow:<skill>`, and agents resolve as `subagent_type: prd-workflow:prd-worker` / `figma-tools:figma-region-extractor`. Bare names exist only on the plain-skill symlink route. An unresolvable `subagent_type` does not error — it silently becomes `general-purpose` — so a wrong type name produces a run that looks entirely normal.
