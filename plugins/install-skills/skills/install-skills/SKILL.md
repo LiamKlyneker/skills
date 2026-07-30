@@ -97,6 +97,15 @@ you read **Adapter sections**. Never hardcode the mapping here.
 3. Everything between those two sections is tracker-agnostic. It is not forked, not
    duplicated, and not touched here.
 
+**A bundle the table says implies neither tracker settles nothing here.** Write **no**
+`Tracker:` line, delete **neither** sub-section, and leave the *Pick your tracker first* note
+where it is. An adapter-free bundle never reaches this step at all; one that needs a section
+but no tracker — `grill` — does, and picking a tracker for it would invent a fact no skill in
+it reads. When a tracker-bound bundle is installed against that adapter later, it finds no
+`Tracker:` line and **both** sub-sections present: that combination is the "carries both, or
+neither" gap-fill case below, not the absent-means-`github` fallback and not a contradiction
+to stop on.
+
 **An adapter that already exists — delete nothing.** Read its `Tracker:` line; **absent
 means `github`**, which is what every adapter written before that line existed is. Then:
 
