@@ -1,6 +1,7 @@
 ---
 name: install-skills
-description: Bootstrap a project's adapter (`.claude/project/adapter.md`) for a skill bundle, and diagnose an install that has rotted. Use when adopting the PRD workflow (or another bundle) in a new repo, when the adapter is missing or half-filled, when skills look forked or a gate pointer is dead, or when the user asks to diagnose or repair the skills wiring in a project. It does not place skills — plugins come from the marketplace.
+description: Bootstrap a project's adapter (`.claude/project/adapter.md`) for a skill bundle, and diagnose an install that has rotted — a missing or half-filled adapter, a forked skill, a dead gate pointer. It does not place skills — plugins come from the marketplace. Invoke /install-skills:install-skills to bootstrap or repair a project's skills wiring.
+disable-model-invocation: true
 ---
 
 # Install Skills

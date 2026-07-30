@@ -1,6 +1,7 @@
 ---
 name: qa-prd-log
-description: Capture manual-QA findings for a specific PRD/PR one at a time during a testing pass — confirm, classify, route, and post each as a self-contained comment on the PRD's PR. Capture only, no fixing. Use when the user is manually testing a PRD's build and says "qa-prd-log", "log this bug", "found a bug", or reports findings one-by-one against an open PR.
+description: Capture manual-QA findings for a specific PRD/PR one at a time during a testing pass — confirm, classify, route, and post each as a self-contained comment on the PRD's PR. Capture only, no fixing. Invoke /lk:qa-prd-log while manually testing a PRD's build to log findings one-by-one against its open PR.
+disable-model-invocation: true
 ---
 
 # qa-prd-log
