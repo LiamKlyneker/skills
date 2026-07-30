@@ -1,6 +1,7 @@
 ---
 name: triage-prd
-description: PRD-scoped triage — take the QA-finding comments logged on a PRD's PR (qa-prd-log output), confirm each against the PRD/issues/decision-lock and the code, pinpoint root cause via a cheap subagent, then file cold-runnable GitHub issues (in this repo, or in the related repo that owns the contract boundary) that work-on-prd/work-on-issue can execute with no plan mode. Use when the user says "triage-prd", passes a PRD/PR to triage, or wants a PR's QA findings promoted to executable issues.
+description: PRD-scoped triage — take the QA-finding comments logged on a PRD's PR (qa-prd-log output), confirm each against the PRD/issues/decision-lock and the code, pinpoint root cause via a cheap subagent, then file cold-runnable GitHub issues (in this repo, or in the related repo that owns the contract boundary) that work-on-prd/work-on-issue can execute with no plan mode. Invoke /lk:triage-prd to promote a PRD's PR QA findings into executable issues.
+disable-model-invocation: true
 ---
 
 # triage-prd
