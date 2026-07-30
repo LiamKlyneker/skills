@@ -35,14 +35,17 @@ bootstrapping problem, which is why `install-skills` kept that half and dropped 
 Run the `install-skills` skill from the target repo:
 
 ```
-/install-skills install prd-workflow
+/install-skills:install-skills install prd-workflow
 ```
+
+The name doubles because the skill ships inside a plugin of the same name, and a plugin
+namespaces everything it provides.
 
 It resolves the repo and its remote, copies the adapter template if there isn't one
 already, interviews you for the facts no file in your repo states, offers any gate the
 bundle declares, and finishes by running `doctor`. Bundles are defined in
-[`bundles.md`](bundles.md) — `prd-workflow`, `ado-workflow`, `prd-qa`, `figma-tools` — and
-a bundle names adapter sections, not skills.
+[`bundles.md`](bundles.md) — `prd-workflow`, `ado-workflow`, `prd-qa`, `grill`,
+`figma-tools` — and a bundle names adapter sections, not skills.
 
 The template is **tracker-parametric**: `## Repo` and `## One-time repo preconditions` each
 carry a `### GitHub` and an `### Azure DevOps` sub-section, and the bundle decides which
@@ -50,7 +53,9 @@ one survives. On a fresh copy the installer writes the `Tracker:` line and delet
 other sub-section, so the adapter you end up filling only ever asks about your own tracker.
 That deletion is the single narrow exception to never-delete, and it applies to a fresh
 template copy only — an install against an adapter that already exists gap-fills and
-deletes nothing. See `install-skills/SKILL.md` step 3a.
+deletes nothing. See
+[`plugins/install-skills/skills/install-skills/SKILL.md`](../plugins/install-skills/skills/install-skills/SKILL.md)
+step 3a.
 
 The other mode is **`doctor`**, the anti-rot check: a real directory shadowing a skill that
 canonical or a reachable plugin already provides, a leftover `_shared/`, an unfilled

@@ -1,18 +1,21 @@
 # CLAUDE.md
 
 Canonical source repo for Liam's personal Claude Code skills, and the marketplace
-that publishes them. Skills live in one of two places:
+that publishes them. **Every skill lives inside a plugin**, at
+`plugins/<plugin>/skills/<skill>/`, with that plugin's agents in
+`plugins/<plugin>/agents/`. Five plugins today — `prd-workflow`, `figma-tools`,
+`ado-workflow` (the PRD workflow's ADO counterpart), `lk` (the personal skills) and
+`install-skills` — all catalogued in `.claude-plugin/marketplace.json` as marketplace
+`liamklyneker`.
 
-- **Inside a plugin** — `plugins/<plugin>/skills/<skill>/`, with the plugin's agents
-  in `plugins/<plugin>/agents/`. Three plugins today, `prd-workflow`, `figma-tools`,
-  and `ado-workflow` (the PRD workflow's ADO counterpart, still growing its skills),
-  catalogued in `.claude-plugin/marketplace.json` as marketplace `liamklyneker`.
-- **At the top level** — one directory per plain skill, for anything not packaged.
-
-Four top-level entries are not skills:
+**There are no plain skills at the top level any more.** There used to be a second
+route — one top-level directory per unpackaged skill — and it is gone, not deprecated:
+adding a skill here means adding it to a plugin. The rest of the top level:
 
 - `.claude-plugin/` — `marketplace.json`, the published catalog.
 - `plugins/` — the packaged plugins.
+- `docs/` — `estate-inventory.md`, `adr/` and the per-PRD QA logs. Documentation for
+  humans; no session loads any of it.
 - `_shared/` — **global reference only.** Docs several skills read, true in every
   project: `model-effort-heuristics.md`, `eligibility-policy.md`, `prd-eligibility.md`,
   `ado-eligibility.md`, `ado-workitem-authoring.md`, `spec-splitting-seams.md`,
@@ -24,8 +27,8 @@ Four top-level entries are not skills:
 
 The migration's compat shims — top-level names that were **symlinks into
 `plugins/`** — are **gone** (#26), along with the nested
-`work-on-prd/agents/prd-worker.md` link. Every top-level entry is now either a plain
-skill or one of the four above. Don't reintroduce the shape: a top-level symlink into
+`work-on-prd/agents/prd-worker.md` link. Every top-level entry is now one of the ones
+listed above. Don't reintroduce the shape: a top-level symlink into
 `plugins/` makes the same skill discoverable under two names, which is what the
 migration existed to end. The estate that consumes all of this — which config has
 which plain skill, which repo enables which plugin — is recorded in
@@ -99,12 +102,15 @@ are settings, not conventions:
 ## Two delivery routes, and what each means for editing
 
 A skill reaches a machine either as part of an **installed plugin** — a copy in the
-config's cache, keyed by the git commit SHA — or as a **symlink** into a config's
-`skills/` directory, where nothing is copied. Full instructions: `INSTALL.md`.
+config's cache, keyed by the plugin's `version` (the git commit SHA is only the
+fallback key an *unversioned* plugin gets, and nothing here is unversioned any more) —
+or as a **symlink** into a config's `skills/` directory, where nothing is copied. Full
+instructions: `INSTALL.md`.
 
-The consequence that bites: **an installed plugin pins to committed `HEAD`.** Edits in
-this working tree are invisible to it until they are committed and it is reinstalled.
-Live authoring therefore runs through skills-dir mode — this repo self-hosts via one
+The consequence that bites: **an installed plugin pins to its cached version.** Edits in
+this working tree are invisible to it, and so are committed and pushed ones — a reinstall
+at an unchanged version is a silent no-op that re-copies nothing, so the copy only moves
+when the `version` does. Live authoring therefore runs through skills-dir mode — this repo self-hosts via one
 symlink, `.claude/skills/prd-workflow -> ../../plugins/prd-workflow`, and edits there
 are live on the next session launch. Never run both routes for the same plugin in one
 place; every skill loads twice.
