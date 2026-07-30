@@ -101,7 +101,7 @@ Or "None — all schema/RPC changes can land atomically in a single deploy" if n
 
 ## Data & Access
 
-The Data & Access Manifest agreed during the grill (`deep-grill`'s hard gate) — one row **per operation** the implementation actually exercises on each store, so `to-issues` can spin the access-control work into the right slices. This is orthogonal to `## Migration risk`: that section asks "can this deploy atomically?"; this one asks "is every operation permitted, correctly scoped, and its error surfaced?". The trap it exists to catch is a **new operation on an already-used store** (e.g. a first update or delete on something only ever read from and appended to) whose missing access policy silently blocks the write.
+The Data & Access Manifest agreed during the grill — one row **per operation** the implementation actually exercises on each store, so `to-issues` can spin the access-control work into the right slices. This is orthogonal to `## Migration risk`: that section asks "can this deploy atomically?"; this one asks "is every operation permitted, correctly scoped, and its error surfaced?". The trap it exists to catch is a **new operation on an already-used store** (e.g. a first update or delete on something only ever read from and appended to) whose missing access policy silently blocks the write.
 
 | Store | Operation | Client | Access policy exists? | Status |
 |-------|-----------|--------|-----------------------|--------|

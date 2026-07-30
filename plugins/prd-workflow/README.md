@@ -4,9 +4,6 @@ The PRD-to-merge workflow, packaged as a Claude Code plugin: `to-prd` →
 `to-issues` → `next-prd-issue` → `work-on-prd` / `work-on-issue`, plus the
 `prd-worker` agent that `work-on-prd` spawns per child issue.
 
-`deep-grill` is deliberately **not** in this plugin — it is a plain top-level
-skill in this repo and stays one.
-
 ## Layout
 
 ```

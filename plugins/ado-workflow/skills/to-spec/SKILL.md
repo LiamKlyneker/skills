@@ -10,7 +10,8 @@ item on Azure DevOps, as a child of the work item being grilled. Do NOT intervie
 synthesize what you already know.
 
 If no grill discussion is detected in conversation context, abort with: `No grill discussion
-detected. Run a grill first (/grill-me <work-item-url>).`
+detected. This skill publishes a grill that already happened — it does not run one. Have the
+design/engineering interview for the work item first, then invoke this skill again.`
 
 The `[SPEC]` is **engineering-only**. Product owns the parent work item; never restate product
 scope here.
@@ -19,8 +20,7 @@ scope here.
 skills-dir link) every skill in this plugin is namespaced: `/ado-workflow:to-spec`,
 `/ado-workflow:to-spec-tasks`, and so on. Only a bare symlink into a config's `skills/`
 directory — the pre-plugin route — gives the unprefixed `/to-spec`. Unprefixed names below are
-shorthand for whichever form your route provides. The grill skills are not part of this plugin
-and invoke bare on either route.
+shorthand for whichever form your route provides.
 
 ## Project facts
 
