@@ -20,6 +20,11 @@
       "name": "ado-workflow",
       "description": "The PRD-to-merge workflow brought to Azure DevOps for Claude Code: publish a spec, slice it into tasks, pick the next one, and run the whole thing end-to-end with a per-task worker subagent",
       "source": "./plugins/ado-workflow"
+    },
+    {
+      "name": "lk",
+      "description": "Liam Klyneker's personal Claude Code skills: the grills that interview a plan until every branch is resolved, the QA loop that logs and triages findings, plus pinpoint, scoped-context and his writing voice — the ones that talk to the user and the codebase rather than to a tracker",
+      "source": "./plugins/lk"
     }
   ]
 }
