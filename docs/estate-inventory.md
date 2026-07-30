@@ -113,11 +113,20 @@ this config were removed. Its own `_shared` symlink stays (see Schmiede below).
 It is in the `prd-workflow` **bundle** (`install/bundles.md`) but deliberately **not** in the
 `prd-workflow` **plugin**. Those are different things and the overlap is exactly what makes it
 easy to misread: its three config links look like migration leftovers and are not. `deep-grill`
-is recon, useful on its own without the PRD loop, so it stays independently linkable — which
-is also why it keeps its own symlink in *this* repo's `.claude/skills/`.
+is recon, useful on its own without the PRD loop, so it stays independently linkable.
 
 Promoting it — or any other plain skill — into a plugin is a **separate, one-at-a-time
 decision**, explicitly out of scope for PRD #16.
+
+**Superseded by PRD #52, in progress.** `deep-grill` is now a skill of the `lk` plugin
+(`plugins/lk/skills/deep-grill`), along with `grill` (renamed from `grill-me`),
+`how-i-write`, `pinpoint`, `qa-prd-log`, `scoped-context` and `triage-prd`. This repo's own
+`.claude/skills/deep-grill -> ../../deep-grill` link died with the move and was removed in
+the same commit; it is replaced by `.claude/skills/lk -> ../../plugins/lk` in #61, which
+also retires the config-level links to all seven. **Until #61 lands, every row below for
+those seven names is dangling on this branch** — a broken link in a config's `skills/` means
+the skill silently does not load, and checking out `main` restores it. That is the cutover
+window the PRD names, not a defect.
 
 ---
 

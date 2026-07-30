@@ -1,6 +1,6 @@
 ---
-name: grill-me
-description: Interview the user relentlessly about a plan or design until reaching shared understanding, resolving each branch of the decision tree. Invoke /grill-me to stress-test a plan or get grilled on a design.
+name: grill
+description: Interview the user relentlessly about a plan or design until reaching shared understanding, resolving each branch of the decision tree. Invoke /lk:grill to stress-test a plan or get grilled on a design.
 disable-model-invocation: true
 ---
 

@@ -30,7 +30,7 @@ Establish PRD scope before the first finding, and hold it for the whole session:
 
 The `### <emoji> QA finding:` comments on the PRD's PR (qa-prd-log output). Take **one per turn**; if the user pastes several, queue the rest. Ad-hoc paste (a finding not yet on the PR) is allowed — treat it identically.
 
-## Cadence (one finding per turn — clone of grill-me / qa-prd-log)
+## Cadence (one finding per turn — clone of grill / qa-prd-log)
 
 For each finding: **capture → validate (gap classification) → investigate (subagent) → dispose → show card → user confirm/correct → next.** Loop until the user says done, then **board → publish**. Never batch.
 
