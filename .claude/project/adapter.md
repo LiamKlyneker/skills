@@ -29,7 +29,8 @@ runner. The only executable is
 |---|---|
 | Build | None — nothing compiles |
 | Test — **verify L2 floor** | `bash -n plugins/install-skills/skills/install-skills/scripts/doctor.sh && bash plugins/install-skills/skills/install-skills/scripts/doctor.sh --repo . --quiet` |
-| Manifest check — **also L2 floor** | `claude plugin validate plugins/prd-workflow && claude plugin validate plugins/figma-tools && claude plugin validate plugins/ado-workflow && claude plugin validate .` |
+| Manifest check — **also L2 floor** | `claude plugin validate --strict plugins/prd-workflow && claude plugin validate --strict plugins/figma-tools && claude plugin validate --strict plugins/ado-workflow && claude plugin validate --strict plugins/lk && claude plugin validate --strict plugins/install-skills && claude plugin validate --strict .` |
+| Catalog + version gate — **also L2 floor** | `python3 .github/scripts/validate_skills.py --base origin/main` |
 | Boot the app (visual loop) | `claude plugin list` — the loaded-plugin inventory *is* this repo's running state |
 | App screenshot | None — terminal output is the evidence; paste it verbatim |
 | Install deps | None |
@@ -37,12 +38,23 @@ runner. The only executable is
 The manifest check covers both plugin manifests and the marketplace catalog (`.`).
 Any new directory carrying a `.claude-plugin/plugin.json` joins that line.
 
-**Not `--strict`**, deliberately. Plugin manifests here omit `version` on purpose —
-with a version set it becomes the install cache key, and a forgotten bump means
-installs silently never see changes. The CLI emits a warning for the missing field,
-and `--strict` is defined as treating warnings as errors, so the two decisions cannot
-both hold. Plain `validate` must pass with the missing-`version` warning as the *only*
-warning; a second warning is a real failure and does not get waved through.
+**`--strict`, and zero warnings is the bar.** That row was plain `validate` on purpose
+until #57: manifests carried no `version`, the CLI warned about the missing field, and
+`--strict` is defined as treating warnings as errors, so the two decisions could not
+both hold. All five plugins now carry a `version`, mirrored in
+`.claude-plugin/marketplace.json`, which removes the only warning there was and lets
+`--strict` in. The convention that came with the old row — the missing-`version`
+warning is allowed as the *only* warning — is **gone**; under `--strict` any warning
+fails the check and there is nothing left to wave through. Why omitting `version` was
+ever the safe choice, and what enforces that discipline now instead, is the
+`version` bullet in `## Repo discipline`.
+
+The catalog gate is the only thing CI runs, and the only check this repo owns rather
+than borrows from the CLI: marketplace, plugin manifests, skill and agent frontmatter,
+symlink integrity, `_shared` references, and the version-bump rule. `--base <ref>` is what switches the bump rule on; **without it that
+one check reports itself skipped** and the rest still run. CI passes the pull request's
+base SHA and gets nothing on `push: [main]` or `workflow_dispatch`, where no base
+branch exists. Locally, `--base origin/main` is the equivalent.
 
 ## App facts
 
@@ -92,7 +104,7 @@ None — no gates beyond the ones the skills carry.
 - Skills address exactly three things: global reference via a relative path into `_shared/`, the project as `<repo-root>/.claude/project/adapter.md`, and project-specific gates **never by name** — the adapter's `## Project gates` registry names them and skills follow the pointer.
 - Prose over scripts. `install-skills` ships the only executable, because mechanical checks must be deterministic. Everything else stays prose.
 - Adding a skill to a plugin is just the directory under `plugins/<plugin>/skills/` — the inventory is discovered. Adding a **plain** skill means adding a symlink into each config that should see it; creating the directory here does not make it discoverable.
-- **Plugin manifests omit `version` deliberately** (see `## Commands`). Do not add one: with a version set it becomes the install cache key, and a forgotten bump means installs silently never see changes.
+- **Plugin manifests carry a `version`, and changing a plugin means bumping it** — in `plugins/<name>/.claude-plugin/plugin.json` *and* in `.claude-plugin/marketplace.json`, which must agree; the catalog gate fails if they drift. This bullet used to say the opposite (*omit `version` deliberately*), for a reason that has not stopped being true: `version` is the install cache key, and a forgotten bump means installs silently never see the change. Observed, not assumed — `claude plugin install` at an already-cached version prints `already installed` and re-copies nothing, so a missed bump does not merely delay an update, it strands that consumer until they `uninstall --scope local` by hand. The routes visibly disagree today: `claude plugin list` shows `prd-workflow@skills-dir` at `1.0.0` while `prd-workflow@liamklyneker` still reports `81af34d0d5e1` from its pinned cache copy. Abstaining from versions was the old way to be safe from that; the bump rule in `validate_skills.py` is the new one, so **do not go back to omitting `version`** — dropping the version drops the check with it. A change under `_shared/` or `install/` counts as changing **every** plugin whose `skills/` symlinks it, because install dereferences the link into each cache copy.
 - Distribution claims get **verified against the binary and the live config dirs**, never written from memory or from the platform docs. `INSTALL.md` is written from observed behaviour and is the place a corrected observation lands.
 
 ## One-time repo preconditions (human)

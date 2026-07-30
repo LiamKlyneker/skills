@@ -18,7 +18,16 @@ jobs:
       # Pinned to a commit SHA, not a tag — a tag can be moved to point at new code.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          # The version-bump check diffs each plugin against this branch's fork point
+          # with the base branch, and the default depth-1 clone contains no such commit.
+          # Full history of a prose repo costs a second or two.
+          fetch-depth: 0
           persist-credentials: false
 
       - name: Validate marketplace, plugins, skills and agents
+        # Empty on `push: [main]` and `workflow_dispatch`, which have no base branch —
+        # the validator then prints the version-bump check as skipped instead of passing
+        # it silently. Every other check still runs on those triggers.
+        env:
+          VALIDATE_BASE_REF: ${{ github.event.pull_request.base.sha }}
         run: python3 .github/scripts/validate_skills.py
