@@ -19,7 +19,7 @@ adding a skill here means adding it to a plugin. The rest of the top level:
   humans; no session loads any of it.
 - `_shared/` — **global reference only.** Docs several skills read, true in every
   project: `model-effort-heuristics.md`, `eligibility-policy.md`, `prd-eligibility.md`,
-  `ado-eligibility.md`, `ado-workitem-authoring.md`, `qa-item.md`,
+  `ado-eligibility.md`, `ado-workitem-authoring.md`,
   `spec-splitting-seams.md`, `ui-manifests.md`, `ui-standard.md`. No templates, no project
   values, ever.
 - `install/` — what a project gets wired with: `bundles.md` (the manifest the
@@ -60,7 +60,10 @@ own docs.
 
 Both orchestrators end a run by filing a **per-run QA item** — a `[QA]` issue on GitHub, a
 `[QA]` work item on ADO — and **commit nothing**. The adapter has no QA-path convention on
-either tracker any more, and `_shared/qa-item.md` owns what the two share. The reasoning,
+either tracker any more, and each loop owns the whole shape of its own item: `work-on-prd`'s
+`## Loop end` for GitHub, `plugins/ado-workflow/skills/references/qa-item.md` for ADO. There
+was a shared `_shared/qa-item.md`; it was dissolved into those two, and the rules read the same
+on both sides on purpose — a divergence there is a bug, not a tracker difference. The reasoning,
 including why the two 440-line documents in `docs/qa/` are kept rather than deleted, is ADR
 [0005](docs/adr/0005-qa-is-an-issue-not-a-committed-document.md).
 

@@ -84,7 +84,8 @@ and conflating them is easy because the rows sit in one table:
 - **The one `ado-workflow` install** never committed a QA document — `work-on-spec` already
   filed a per-run `[QA]` work item, which is precisely why GitHub converged onto it rather
   than the other way round. Its staleness is different: it still builds an acceptance-criteria
-  coverage checklist from the parent work item, and reads no `_shared/qa-item.md`.
+  coverage checklist from the parent work item, and predates the `[QA]` item shape this repo
+  now ships at `plugins/ado-workflow/skills/references/qa-item.md`.
 
 Nothing errors in either direction, and the working tree here looks fully converged. Update
 them whenever it next suits; until then, a QA document appearing in one of those four repos is
