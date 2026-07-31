@@ -123,9 +123,61 @@ When the user says done:
 
 1. **Board** — every finding with verdict / owning slice / disposition / target repo. Get approval before publishing.
 2. **Publish** with `gh` (let it resolve the repo; use `--repo` for related-repo issues). Open issues for bugs/follow-ups; file-then-close for rejects. Follow-ups only if the user already said yes in step 2 of that finding.
+
+   Every `[BUG]` filed **in this repo against a PRD** is then linked to that PRD as a **native
+   GitHub sub-issue** — see *Linking a bug to its PRD* below. This applies to
+   merge-blockers and deferred follow-ups alike (both are real children), and **not** to
+   related-repo issues: an issue in another repo is not a sub-issue of a PRD here, and not to
+   rejects, which are closed rather than parented.
 3. **Report** created issue numbers grouped by disposition + repo, e.g.
    `ready-to-start: #61 #62 · deferred: #63 · <related repo>#NNN · closed: —`
 4. **Remind** the human of the external steps triage-prd can't do: (a) close resolved qa-prd-log PR comments / mark them triaged, (b) the related-repo issue is tracked but **not** auto-closed by this repo's PR.
+
+### Linking a bug to its PRD
+
+Right after filing a `[BUG]` in this repo whose `## Parent` is a PRD, link it to that PRD as a
+native sub-issue, and confirm the link landed before you file the next bug. Three calls per bug:
+
+```bash
+# 1. Resolve the bug's INTERNAL numeric id — not its issue number
+id=$(gh api repos/<owner>/<repo>/issues/<bug-number> --jq .id)
+
+# 2. Write the link
+gh api repos/<owner>/<repo>/issues/<prd-number>/sub_issues -X POST -F sub_issue_id="$id"
+
+# 3. Read the PRD's sub-issues back and confirm <bug-number> is in the list
+gh api repos/<owner>/<repo>/issues/<prd-number>/sub_issues --jq '.[].number'
+```
+
+**`sub_issue_id` takes the internal numeric issue `id`, never the issue number.** There are
+three plausible-looking values for one issue and only one of them works:
+
+| Value | Where it comes from | What happens |
+|---|---|---|
+| **Internal numeric `id`** | `gh api repos/<owner>/<repo>/issues/<n> --jq .id` | correct — the only one the endpoint accepts |
+| Issue number (`<n>`) | the thing you have in hand | bare `404 Not Found` — **indistinguishable from "that issue does not exist"** |
+| GraphQL `node_id` | `gh issue view <n> --json id` | wrong value; the `id` field there is the base64 node id, not the REST `id` |
+
+So when a link call 404s, suspect this before you suspect a missing issue.
+
+Two rules, both non-negotiable:
+
+- **Verify every link after writing it** (step 3 above) and report it — one line per bug naming
+  the bug and that it now appears under the PRD. `POST` succeeding is not evidence the bug is
+  parented; reading the PRD's sub-issue list back is. `## Parent` in the body is still written
+  and is still what discovery reads today, but once discovery moves to the links there is no
+  text-search safety net, and a silently failed link is an invisible child.
+- **Write links one at a time — never fan them out.** File → link → verify one bug, then start
+  the next. GitHub warns that creating or removing sub-issues "too quickly" trips secondary rate
+  limiting, and publishes no threshold to aim under.
+
+Use `gh api` for this. Do **not** use `gh issue create --parent`: that flag needs
+`gh >= 2.94.0`, this machine runs `2.89.0`, and `gh api` works on both.
+
+**Scope: this repo's PRD children only.** A contract-boundary issue filed in a related repo is
+not a sub-issue of a PRD here — skip the link entirely and leave the `blocked-external` pointer
+issue as the only local trace. A reject is filed-then-closed, not parented, so it gets no link
+either.
 
 ## Issue template (mirror the `to-issues` child so work-on-prd eats it identically)
 
