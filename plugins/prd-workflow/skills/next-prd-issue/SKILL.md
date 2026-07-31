@@ -9,8 +9,6 @@ Recommend the next child issue to implement from a PRD. Reasons over the open ch
 
 This skill **does not** implement, close issues, or toggle plan mode. It ends at a recommendation — no plan mode, no edits, no closing. The user decides what to do with it.
 
-`[TASK]`, `[BUG]` and `[QA]` below are **shorthand for the adapter's *Title prefixes* row** at `<repo-root>/.claude/project/adapter.md`, written out for readability. If that row names different prefixes, they win — here, and in every title filter this skill applies.
-
 ## Process
 
 ### 1. Resolve the PRD
@@ -25,9 +23,9 @@ Validate the issue exists and is an issue (not a PR). If it's a PR, stop and tel
 
 ### 2–4. Fetch, parse, compute eligibility
 
-Follow `../_shared/prd-eligibility.md` — the source of truth for the `gh` fetch calls, the two child filters (`## Parent`, then the `[TASK]`/`[BUG]` title prefix, each with its own set-level legacy fallback), the `## External steps` / `## Blocked by` parsing rules (incl. the `needs-backfill` flag for pre-template issues), eligibility (`open` ∧ all blockers closed), and cycle detection (report the cycle and stop).
+Follow `../_shared/prd-eligibility.md` — the source of truth for the `gh` fetch calls (the children are the PRD's **native sub-issues**, read back in one `gh api …/sub_issues` call), the `## External steps` / `## Blocked by` parsing rules (incl. the `needs-backfill` flag for pre-template issues), eligibility (`open` ∧ all blockers closed), and cycle detection (report the cycle and stop).
 
-Report what each filter dropped. A PRD whose children were all dropped by the title filter looks identical to a PRD that was never sliced.
+Everything that call returns is a child by construction. There are no filters, so nothing is dropped and there is nothing to report as dropped — the sub-issue list *is* the child set.
 
 ### 5. Recommend an issue
 
@@ -81,7 +79,7 @@ Suggested next step:
 ## Edge cases
 
 - **PRD has no open children** → "All children closed. Consider a wrap-up comment on the PRD summarizing what shipped."
-- **PRD has zero children at all** → tell the user to run `/to-issues` first. Say which filter emptied the set before you say this: if the search returned issues and the title filter dropped them, the PRD *was* sliced and its children are unprefixed — recommend prefixing them, not re-slicing. Re-running `/to-issues` on a PRD that already has children is the expensive wrong move this sentence can cause.
+- **PRD has zero children at all** → **nothing is linked to this PRD.** Tell the user to link its children as native sub-issues, and say explicitly **not** to re-run `/to-issues`. Zero children no longer means "never sliced" — a PRD that was sliced but whose links were never written looks exactly the same from here — and re-running `/to-issues` on a PRD that already has children doubles every one of them. That is the expensive wrong move this branch exists to prevent.
 - **`## External steps` missing on a child** → flag `needs-backfill` in the output; the user can backfill manually if it matters.
 - **Argument is a PR URL, not an issue** → stop and ask for an issue.
 - **Multiple PRDs at once** → not supported; one PRD per invocation.
