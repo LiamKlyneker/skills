@@ -47,7 +47,7 @@ State lives in git + GitHub only (branch commits, issue labels, PR body). Zero s
    command -v caffeinate >/dev/null && ! pgrep -F /tmp/work-on-prd.caffeinate.pid >/dev/null 2>&1 && { caffeinate -dimsu & echo $! > /tmp/work-on-prd.caffeinate.pid; }
    ```
 
-1. **Fetch state**: PRD + children per `../_shared/prd-eligibility.md`. Zero children → tell the user to run `/to-issues` first, stop. Cycle in `Blocked by` → report it, stop.
+1. **Fetch state**: PRD + children per `../_shared/prd-eligibility.md` — two filters, `## Parent` then the `[TASK]`/`[BUG]` title prefix, each with its own set-level legacy fallback. Report what each one dropped. Zero children → tell the user to run `/to-issues` first, stop — but say **which filter emptied the set** before you say that. A PRD whose children exist and were all dropped by the title filter has been sliced already and needs its children prefixed, not re-sliced; "run `/to-issues` first" is a plausible-sounding message that would double every child. Cycle in `Blocked by` → report it, stop.
 2. **Branch** `prd/<n>-<slug>`: check out if it exists (local or remote), else create from up-to-date `main`.
 
    The slug comes from the PRD title **with the `[PRD]` prefix stripped first** — slug

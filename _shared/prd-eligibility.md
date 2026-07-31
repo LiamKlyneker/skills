@@ -40,8 +40,47 @@ use it, and flag `needs-backfill` on the result so the gap is visible. Do not ap
 fallback per-issue: one issue in the set carrying `## Parent` proves the convention was
 in force when these issues were written, so an issue lacking it is a mention, not a child.
 
-Report the issues you dropped and why. A silently-dropped child looks identical to a PRD
-with fewer slices than it has.
+## Then filter by title prefix
+
+`[TASK]`, `[BUG]`, `[QA]` and `[PRD]` here are **shorthand for the adapter's *Title
+prefixes* row** at `<repo-root>/.claude/project/adapter.md`. If that row names different
+prefixes, they win.
+
+Of the issues that survived the `## Parent` filter, keep the ones that are *implementable
+work*:
+
+- Title starts with `[TASK]` (a planned child) or `[BUG]` (a triaged finding) → **keep**.
+- Title starts with `[QA]` → **drop, always**, fallback or not. A `[QA]` issue is one run's
+  human QA pass, not work: it carries no `## Parent` and no `ready-to-start`, and picking one
+  means handing a worker a checklist to implement. It is the only prefix excluded
+  unconditionally, and it is excluded because the *cost of getting it wrong is asymmetric* —
+  a dropped `[QA]` costs nothing, a picked one costs a whole worker run.
+- Any other prefix, or none → subject to the fallback below.
+
+**Legacy fallback, and read the keying carefully.** If **no** returned issue's title starts
+with `[TASK]` or `[BUG]`, the prefixes were not in force when this PRD's children were
+written. Skip this filter entirely — keep everything the `## Parent` step kept — and flag
+`needs-backfill` so the gap is visible.
+
+Two things about that condition are load-bearing:
+
+- It is keyed on **`[TASK]`/`[BUG]` presence specifically**, never on "some issue has a
+  bracket prefix". A legacy PRD that gains one `[QA]` issue from a run still has zero
+  implementable prefixes in the set, so the fallback stays on and its real children stay
+  visible. Keying it on any prefix would let that single `[QA]` issue switch the filter on and
+  drop every genuine child at once.
+- It is **set-level**, like the `## Parent` one above, and for the same reason: one prefixed
+  issue proves the convention was in force, so an unprefixed sibling is an oversight to report
+  rather than a child to keep. Never apply it per-issue.
+
+The `[QA]` exclusion survives the fallback because it is not part of it — the fallback
+answers "were prefixes in force here?", and a `[QA]` issue is evidence about *this run*, not
+about the era the children were written in.
+
+Report the issues you dropped and why, at both steps. A silently-dropped child looks
+identical to a PRD with fewer slices than it has — and a whole PRD reporting zero children
+right after this filter landed reads exactly like "run `/to-issues` first", which is the one
+wrong conclusion available here.
 
 ## Parse each child body
 
