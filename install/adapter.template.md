@@ -22,7 +22,7 @@ Tracker `github`, and what an adapter carrying no `Tracker:` line falls back to.
 
 - Issue tracker / PRs: `<owner>/<repo>` (GitHub, via `gh`)
 - PRs must target the default branch — `Closes` keywords only fire against it.
-- Title prefixes: `[PRD]` · `[TASK]` · `[BUG]` · `[QA]` — literal, at the start of the title, and what the skills filter a PRD's children on. `[TASK]` is a planned child, `[BUG]` a triaged finding; both are implementable, and the child filter keeps exactly those two. `[QA]` is a run's human QA pass and `[PRD]` the parent — neither is pickable work. Change them here if this repo uses different ones; never in a skill.
+- Title prefixes: `[PRD]` · `[TASK]` · `[BUG]` — literal, at the start of the title. A **human scanning convention, not a filter**: `[PRD]` is a parent, `[TASK]` a planned child, `[BUG]` a triaged finding. A PRD's children are its **native sub-issues**, so nothing keys on a title. There is no `[QA]` prefix on GitHub — `work-on-prd` posts the run's QA steps as a comment on the PRD and labels it `needs-qa`. Change them here if this repo uses different ones; never in a skill.
 - Triage labels: `needs-triage` → `ready-to-start` → `state:in-progress` → `state:done-on-branch`. All four must exist in the repo. The vocabulary is normative in `work-on-prd`'s `## Label vocabulary`; it is restated here so a cold session holding only this adapter knows which tracker and which labels to use without asking. Rename them if this repo already uses different words — keep the four roles.
 
 ### Azure DevOps

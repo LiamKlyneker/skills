@@ -13,9 +13,9 @@ The PRD's title starts with the `[PRD]` prefix: `[PRD] <the title>`.
 
 `[PRD]` here is **shorthand for the adapter's *Title prefixes* row** at
 `<repo-root>/.claude/project/adapter.md`, written out for readability. If that row names a
-different prefix, it wins. The prefix is not decoration: `../_shared/prd-eligibility.md`
-filters a PRD's children by title, so a parent and its children have to be told apart by
-something, and this is it.
+different prefix, it wins. Nothing filters on it — a PRD's children are its native sub-issues,
+not a title match — so the prefix is a human scanning convention: it tells a parent from its
+children at a glance in the issues tab.
 
 ## Mode: CREATE vs UPDATE
 

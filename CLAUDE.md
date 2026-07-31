@@ -56,23 +56,29 @@ directories, scopes, live authoring, and the traps. Keep it accurate; it is writ
 from observed platform behaviour, and the platform has repeatedly differed from its
 own docs.
 
-## QA is an issue, and titles carry prefixes
+## QA lands differently per tracker, and titles are only a scanning convention
 
-Both orchestrators end a run by filing a **per-run QA item** — a `[QA]` issue on GitHub, a
-`[QA]` work item on ADO — and **commit nothing**. The adapter has no QA-path convention on
-either tracker any more, and each loop owns the whole shape of its own item: `work-on-prd`'s
-`## Loop end` for GitHub, `plugins/ado-workflow/skills/references/qa-item.md` for ADO. There
-was a shared `_shared/qa-item.md`; it was dissolved into those two, and the rules read the same
-on both sides on purpose — a divergence there is a bug, not a tracker difference. The reasoning,
-including why the two 440-line documents in `docs/qa/` are kept rather than deleted, is ADR
+Both orchestrators still **commit nothing** for QA, and the adapter names no QA path on either
+tracker — but the artifact itself has diverged, deliberately. `work-on-prd` posts the run's QA
+steps as a **comment on the PRD issue** and labels the PRD **`needs-qa`**; the human works the
+comment and removes the label when the pass is done. **No `[QA]` issue is created on GitHub.**
+`work-on-spec` still files a per-run **`[QA]` work item** on Azure DevOps. Each loop owns the
+whole shape of its own artifact — `work-on-prd`'s `## Loop end` for GitHub,
+`plugins/ado-workflow/skills/references/qa-item.md` for ADO. There was a shared
+`_shared/qa-item.md`; it was dissolved into those two, and they are now free to differ. The
+reasoning for moving QA out of the repo at all, including why the two 440-line documents in
+`docs/qa/` are kept rather than deleted, is ADR
 [0005](docs/adr/0005-qa-is-an-issue-not-a-committed-document.md).
 
-GitHub titles carry `[PRD]` · `[TASK]` · `[BUG]` · `[QA]`, registered in the adapter's
-`## Repo` → *Title prefixes* row, never hardcoded in a skill. They are load-bearing:
-`_shared/prd-eligibility.md` keeps a PRD's child only when its title is `[TASK]` or `[BUG]`,
-and drops `[QA]` unconditionally so a run's QA pass can never be picked as work. Legacy
-children carry no prefix, which a set-level fallback handles — do not "simplify" that fallback
-to key on any bracket prefix, or one `[QA]` issue will hide every real child of a legacy PRD.
+GitHub titles carry `[PRD]` · `[TASK]` · `[BUG]`, registered in the adapter's `## Repo` →
+*Title prefixes* row, never hardcoded in a skill. **They are a human scanning convention and
+nothing more — no skill filters on them.** A PRD's children are its **native GitHub
+sub-issues**, read back from the sub-issues API (`_shared/prd-eligibility.md`), so an unprefixed
+issue linked to a PRD is a full child while a perfectly prefixed one that was never linked is
+invisible. The one place a prefix is still mechanical is `work-on-prd` stripping a leading
+`[…]` group before slugging the branch. Don't reintroduce a title filter, and don't write a body
+`## Parent` section to stand alongside the link — two sources of truth that can disagree is
+exactly what the links removed.
 
 ## Git workflow
 

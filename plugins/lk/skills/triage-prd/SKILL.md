@@ -91,16 +91,17 @@ Both repos work in synergy; the issue just lands where the fix lands.
 <dispositions>
 | Kind | Title | Where | Labels | Picked by work-on-prd? |
 |---|---|---|---|---|
-| **Merge-blocker** | `[BUG] …` | this repo, `## Parent` → PRD `#N` | `bug` + `ready-to-start` | yes — on the PRD branch, before merge |
-| **Deferred / follow-up** *(after user OK)* | `[BUG] …` | this repo, `## Parent` → PRD `#N` | `bug`/`enhancement` + `deferred` | no (not `ready-to-start`) — a known follow-up |
+| **Merge-blocker** | `[BUG] …` | this repo, linked as a sub-issue of PRD `#N` | `bug` + `ready-to-start` | yes — on the PRD branch, before merge |
+| **Deferred / follow-up** *(after user OK)* | `[BUG] …` | this repo, linked as a sub-issue of PRD `#N` | `bug`/`enhancement` + `deferred` | no (not `ready-to-start`) — a known follow-up |
 | **Contract boundary** | their style | **related repo**, "Discovered via …#PR" | `bug` (their style); local `blocked-external` pointer under the affected child's `## Blocked by` | n/a — no cross-repo auto-close; closed by hand |
 | **Reject** (WAD / dup / invalid) | `[BUG] …` | this repo | file-then-close `duplicate`/`wontfix`/`invalid` + one-line rationale (cite the decision) | — |
 </dispositions>
 
-Two things make a this-repo issue pickable, and both are required: the `[BUG]` title prefix
-(the child filter) and the `ready-to-start` label (eligibility). A deferred follow-up still
-gets the prefix — it is a real child, just not yet pickable, and dropping the prefix would
-hide it from the promotion path as well. A related-repo issue takes **that** repo's title
+Two things make a this-repo issue pickable, and both are required: the **sub-issue link** to
+the PRD (what makes it a child at all) and the `ready-to-start` label (eligibility). A deferred
+follow-up still gets the link — it is a real child, just not yet pickable, and an unlinked bug
+is invisible to the promotion path however it is titled. The `[BUG]` prefix is a scanning
+convention on top of that, not a filter. A related-repo issue takes **that** repo's title
 convention, not this one's; the prefixes are a per-adapter fact and the other side has its
 own.
 
@@ -112,7 +113,7 @@ Finding: <one-line symptom>
 Owning slice: #<child> (<what that slice built>)
 Root cause: CONFIRMED — <cause>; <path>:<lines>
 Commit: <sha — only if a regression; else "n/a (introduced by the feature slice)">
-Disposition: <repo + parent ref + title prefix>
+Disposition: <repo + the PRD it links under + title prefix>
 ```
 
 Print the card + recommended disposition, get confirm/correct, ask for the next finding.
@@ -135,8 +136,8 @@ When the user says done:
 
 ### Linking a bug to its PRD
 
-Right after filing a `[BUG]` in this repo whose `## Parent` is a PRD, link it to that PRD as a
-native sub-issue, and confirm the link landed before you file the next bug. Three calls per bug:
+Right after filing a `[BUG]` in this repo against a PRD, link it to that PRD as a native
+sub-issue, and confirm the link landed before you file the next bug. Three calls per bug:
 
 ```bash
 # 1. Resolve the bug's INTERNAL numeric id — not its issue number
@@ -165,9 +166,8 @@ Two rules, both non-negotiable:
 - **Verify every link after writing it** (step 3 above) and report it — one line per bug naming
   the bug and that it now appears under the PRD. `POST` succeeding is not evidence the bug is
   parented; reading the PRD's sub-issue list back is. **The link is the only thing discovery
-  reads** (`../_shared/prd-eligibility.md`): `## Parent` is still written into the body, but
-  nothing searches on it any more, so there is no text-search safety net and a silently failed
-  link is an invisible child.
+  reads** (`../_shared/prd-eligibility.md`), and the body carries no `## Parent` section to fall
+  back on — there is no text-search safety net, so a silently failed link is an invisible child.
 - **Write links one at a time — never fan them out.** File → link → verify one bug, then start
   the next. GitHub warns that creating or removing sub-issues "too quickly" trips secondary rate
   limiting, and publishes no threshold to aim under.
@@ -183,10 +183,6 @@ either.
 ## Issue template (mirror the `to-issues` child so work-on-prd eats it identically)
 
 ```
-## Parent
-
-<owner>/<repo>#<PRD-number>
-
 ## Blocked by
 
 None — can start immediately.   (or #NNN for a real blocker, e.g. a contract-boundary dep)
@@ -227,17 +223,15 @@ Title: **`[BUG] <one-line symptom>`**.
 
 `[BUG]` is **shorthand for the adapter's *Title prefixes* row** at
 `<repo-root>/.claude/project/adapter.md`, written out for readability; if that row names a
-different prefix, it wins. The prefix is **load-bearing, not cosmetic**:
-`../_shared/prd-eligibility.md` keeps a PRD's child only when its title starts with `[TASK]`
-or `[BUG]`, so an unprefixed bug is invisible to `work-on-prd` and `next-prd-issue` — filed,
-parented, labelled `ready-to-start`, and never picked. It used to be `[QA]`, which now means
-something else entirely: a run's human QA pass, and deliberately *not* pickable.
+different prefix, it wins. Nothing filters on it — the sub-issue link is what makes a bug a
+child — so the prefix is a human scanning convention: a triaged finding reads as one in the
+issues tab, next to the `[TASK]`s it sits among.
 
 Severity = technical impact, independent of priority; both live in the issue body (no GitHub
 labels for them).
 
 ## Boundary / handoff
 
-- triage-prd = **investigate + decide + file**. It does **not** fix, and it does **not** need a separate "fix the bugs" skill: a bug filed in this repo titled `[BUG] …` with `## Parent → #N` in its body, **linked to that PRD as a native sub-issue**, and labelled `ready-to-start` **is a PRD child** — `work-on-prd` (re-entrant, cold-start) discovers it from the PRD's sub-issue list and works it on the PRD branch with no new machinery. The link is what makes it a child at all: a bug filed but never linked is invisible before eligibility ever runs. See `../_shared/prd-eligibility.md`.
+- triage-prd = **investigate + decide + file**. It does **not** fix, and it does **not** need a separate "fix the bugs" skill: a bug filed in this repo, **linked to that PRD as a native sub-issue** and labelled `ready-to-start`, **is a PRD child** — `work-on-prd` (re-entrant, cold-start) discovers it from the PRD's sub-issue list and works it on the PRD branch with no new machinery. Those two are the whole requirement; the `[BUG]` title prefix is a scanning convention and changes nothing about discovery. The link is what makes it a child at all: a bug filed but never linked is invisible before eligibility ever runs. See `../_shared/prd-eligibility.md`.
 - Deferred (`deferred` label) issues sit as known follow-ups until promoted (relabel `ready-to-start`).
 - Related-repo issues are executed by that repo's own `work-on-issue`.

@@ -15,10 +15,10 @@ Every child issue is titled `[TASK] <the title>`.
 
 `[TASK]` is **shorthand for the adapter's *Title prefixes* row** at
 `<repo-root>/.claude/project/adapter.md`, written out for readability. If that row names a
-different prefix, it wins. It is load-bearing, not decoration: `../_shared/prd-eligibility.md`
-keeps a child only when its title carries `[TASK]` or `[BUG]`, so an unprefixed child is
-invisible to `work-on-prd` and `next-prd-issue` the same way a missing `## Parent` makes it
-invisible. Prefix every issue you publish, including one you add to a PRD later.
+different prefix, it wins. Nothing filters on it — the sub-issue link is what makes a child a
+child — so the prefix is a human scanning convention: it tells a planned slice from a triaged
+bug at a glance in the issues tab. Prefix every issue you publish, including one you add to a
+PRD later.
 
 ## Process
 
@@ -121,9 +121,9 @@ Two rules, both non-negotiable:
 - **Verify every link after writing it** (step 3 above) and say so out loud — print a line per
   child naming the child and that it now appears under the PRD. `POST` succeeding is not
   evidence the child is parented; reading the PRD's sub-issue list back is. **The link is the
-  only thing discovery reads** (`../_shared/prd-eligibility.md`): `## Parent` is still written
-  into the body, but nothing searches on it any more, so there is no text-search safety net and
-  a silently failed link is an invisible child.
+  only thing discovery reads** (`../_shared/prd-eligibility.md`), and the body carries no
+  `## Parent` section to fall back on — there is no text-search safety net, so a silently failed
+  link is an invisible child.
 - **Write links one at a time — never fan them out.** Create → link → verify one child, then
   start the next. GitHub warns that creating or removing sub-issues "too quickly" trips
   secondary rate limiting, and publishes no threshold to aim under.
@@ -131,18 +131,9 @@ Two rules, both non-negotiable:
 Use `gh api` for this. Do **not** use `gh issue create --parent`: that flag needs
 `gh >= 2.94.0`, this machine runs `2.89.0`, and `gh api` works on both.
 
-<!-- String contract: this template is the normative writer for the `## Parent`, `## External steps`, `## Blocked by`, `## Worker context`, `## Design reference` and `## QA notes` headings and for the two "None…" sentinel phrases below. `../_shared/prd-eligibility.md` and `next-prd-issue` parse them; `work-on-prd` consumes `## Worker context`. Change a heading or sentinel here and you must change them there. -->
+<!-- String contract: this template is the normative writer for the `## External steps`, `## Blocked by`, `## Worker context`, `## Design reference` and `## QA notes` headings and for the two "None…" sentinel phrases below. `../_shared/prd-eligibility.md` and `next-prd-issue` parse them; `work-on-prd` consumes `## Worker context`. Change a heading or sentinel here and you must change them there. There is deliberately no `## Parent` heading: the parent is the native sub-issue link, and a hand-written section beside it would be a second source of truth that can disagree. -->
 
 <issue-template>
-## Parent
-
-A reference to the parent issue on the issue tracker — `#N`, on its own line.
-
-**Required when the source was a PRD**, and not decorative: `../_shared/prd-eligibility.md`
-uses this section to tell a real child from an issue that merely mentions the PRD in prose.
-Omit it and the child is invisible to `work-on-prd` and `next-prd-issue`. Omit it only when
-there is no parent issue at all.
-
 ## External steps
 
 A checklist of in-session manual actions Claude cannot perform — anything you'll need to do yourself during the implementation session (dashboard config, RPC/policy tweaks, env var changes, copy approval, manual prod verification, feature-flag toggles, webhook setup, etc.).
@@ -176,7 +167,7 @@ Everything a cold, isolated worker session needs to implement this slice without
 
 ## QA notes
 
-2–3 lines for the human QA pass: what to do in the running app, what they should see, edge cases worth poking. The worker refines these into the steps of the run's `[QA]` issue, so write them as something a person could actually do — and where this slice is a refactor, a bump or config that nobody can exercise by hand, say that instead of inventing a step.
+2–3 lines for the human QA pass: what to do in the running app, what they should see, edge cases worth poking. The worker refines these into the steps of the run's QA comment on the PRD, so write them as something a person could actually do — and where this slice is a refactor, a bump or config that nobody can exercise by hand, say that instead of inventing a step.
 
 ## Acceptance criteria
 
