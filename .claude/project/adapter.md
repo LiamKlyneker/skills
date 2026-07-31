@@ -73,7 +73,7 @@ branch exists. Locally, `--base origin/main` is the equivalent.
 - **L2 — floor, every issue, non-negotiable**: `bash -n` on any changed shell script passes, and `doctor.sh` runs clean against at least one wired consumer repo. For a docs-only change, L2 is that every relative path the change introduces or moves actually resolves (`ls` the target).
 - **L3 — user-visible issues**: L2 + the change is *loaded* by a real Claude Code config and shown to be there — `claude plugin list` for a plugin, or the skill appearing in a fresh session for a skill. Paste the command output as evidence. "User-visible" here means anything that changes what a session discovers or how a skill behaves.
 - **L4** (agent-driven interaction): out of scope.
-- **L5 — human**: once per orchestrated run, against the branch, before merge. The run files a `[QA]` issue and the human works it start-to-finish. For this repo, exercising a change means **running the affected skill end-to-end in a live session** — so every QA step names which config dir, which command, and what to look for. A step that cannot name those three is not a step this repo can test.
+- **L5 — human**: once per orchestrated run, against the branch, before merge. The run posts the QA steps as a **comment on the PRD issue** and labels the PRD **`needs-qa`**; the human works the comment start-to-finish and removes the label when the pass is done. No `[QA]` issue is created. For this repo, exercising a change means **running the affected skill end-to-end in a live session** — so every QA step names which config dir, which command, and what to look for. A step that cannot name those three is not a step this repo can test.
 
 ## Sources of truth (recon + hard gates)
 
@@ -106,3 +106,4 @@ None — no gates beyond the ones the skills carry.
 
 - GitHub Settings → General → "Auto-close issues with merged linked pull requests" must be **on** (not API-queryable — check in the web UI once). If off, `Closes #N` silently does nothing.
 - The `needs-triage` label must exist in `LiamKlyneker/skills` — `to-prd` applies it on CREATE.
+- The `needs-qa` label must exist in `LiamKlyneker/skills` — `work-on-prd` applies it to the PRD at loop end and cannot create it. Created once with `gh label create needs-qa --description "PRD awaiting a manual QA pass"`.
