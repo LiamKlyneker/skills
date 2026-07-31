@@ -4,9 +4,12 @@ The ADO half of the PRD workflow, packaged as a Claude Code plugin: `to-spec` �
 `to-spec-tasks` → `next-task-to-implement` → `work-on-spec`, plus the
 `spec-worker` agent that `work-on-spec` spawns per `[TASK]`.
 
-All four skills and the agent have landed. What PRD #31 still owes `work-on-spec`
-is its **loop end** — the `[QA]` work item, the QA doc and the final summary; the
-skill says so at that section.
+All four skills and the agent have landed, loop end included: `work-on-spec`
+ends a run by creating a per-run `[QA]` work item and printing a final summary.
+It commits **no** QA document — neither does `work-on-prd` any more, which is
+the convergence that removed the adapter's QA-path convention from both
+trackers. The shape of a QA item is `_shared/qa-item.md`'s, shared by both
+loops; this plugin owns only the Azure DevOps mechanics.
 
 ## Layout
 
