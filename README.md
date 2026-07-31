@@ -11,9 +11,9 @@ five top-level directories carry all of it:
 |---|---|
 | `.claude-plugin/` | `marketplace.json` — the catalog, published as marketplace **`liamklyneker`** |
 | `plugins/` | The five packaged plugins: `prd-workflow/`, `figma-tools/`, `ado-workflow/` (the PRD workflow's ADO counterpart), `lk/` (the personal skills) and `install-skills/` (the bootstrapper, its own plugin so reaching it needs nothing else). Their skills live one level down, in `<plugin>/skills/` |
-| `_shared/` | **Global reference** — docs several skills read that are true in every project. No templates, no project values. Each plugin reaches this one canonical copy through a `skills/_shared` symlink |
+| `_shared/` | **Global reference** — nine docs several skills read that are true in every project, from the eligibility rules to the shape of a QA item. No templates, no project values. Each plugin reaches this one canonical copy through a `skills/_shared` symlink |
 | `install/` | **Templates a project fills in** — `adapter.template.md`, `bundles.md` and `gates/`, plus the layout guide. Also the directory the `install-skills` plugin symlinks in as `skills/install`, which is what keeps its packaged skill reading these files at an unchanged relative path |
-| `docs/` | `estate-inventory.md`, the [decision records](docs/adr/README.md), and the per-PRD QA logs. Documentation for humans — no session loads any of it |
+| `docs/` | `estate-inventory.md`, the [decision records](docs/adr/README.md), and `qa/` — two committed QA documents the loops no longer produce, kept as [ADR 0005](docs/adr/0005-qa-is-an-issue-not-a-committed-document.md)'s evidence. Documentation for humans — no session loads any of it |
 
 **There are no plain skills left in this repo.** That is a change of shape, not a detail:
 every skill now arrives by installing or enabling its plugin, and every one of them

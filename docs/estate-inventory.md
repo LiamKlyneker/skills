@@ -73,6 +73,23 @@ Three installs still sit on the old SHA key, and this is **deliberate, not lefto
 | `prd-workflow@liamklyneker` under `~/.claude-teamsnap` | `6ac8dfa62316` | Client config, CLI cannot reach it |
 | `ado-workflow@liamklyneker` under `~/.claude-schmiede` | `6ac8dfa62316` | Same |
 
+**All five installs above predate the QA convergence** (ADR
+[0005](adr/0005-qa-is-an-issue-not-a-committed-document.md)), and a cache copy pins to its
+version — so each keeps running its old loop end. They are stale in **two different ways**,
+and conflating them is easy because the rows sit in one table:
+
+- **The four `prd-workflow` installs** keep writing `docs/qa/prd-<n>.md` to their branches,
+  against an adapter section their copy still has and this repo no longer ships. They also
+  predate the title prefixes, so they neither write nor filter on one.
+- **The one `ado-workflow` install** never committed a QA document — `work-on-spec` already
+  filed a per-run `[QA]` work item, which is precisely why GitHub converged onto it rather
+  than the other way round. Its staleness is different: it still builds an acceptance-criteria
+  coverage checklist from the parent work item, and reads no `_shared/qa-item.md`.
+
+Nothing errors in either direction, and the working tree here looks fully converged. Update
+them whenever it next suits; until then, a QA document appearing in one of those four repos is
+a stale install, not a regression.
+
 Consequence: `~/.claude/plugins/cache/liamklyneker/prd-workflow/81af34d0d5e1` **cannot be
 cleaned** while those three project installs reference it. Every other stale SHA directory was
 removed in #61 (`figma-tools/81af34d0d5e1`, `figma-tools/ac7a89ab018a`,
