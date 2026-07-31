@@ -9,7 +9,7 @@ Run a whole PRD in one session: orchestrator (this session's model) + one fresh 
 
 Project facts (repo, title prefixes, commands, verify ladder) come from the **project adapter** at `<repo-root>/.claude/project/adapter.md` — read it first; never hardcode project specifics in this skill.
 
-`[PRD]`, `[TASK]` and `[BUG]` below are **shorthand for the adapter's *Title prefixes* row**, written out for readability. If that row names different prefixes, they win — here, in every title filter this skill applies, and in the prefix it strips before slugging the branch. This loop creates no titled QA issue, so the row's QA prefix is not one of the names it uses.
+`[PRD]`, `[TASK]` and `[BUG]` below are **shorthand for the adapter's *Title prefixes* row**, written out for readability. If that row names different prefixes, they win. This skill applies **no title filter** — the PRD's children are its native sub-issues — so the one place the row is mechanically load-bearing is the prefix stripped before slugging the branch (Setup step 2). Everywhere else the prefixes are a human scanning convention.
 
 ## Invocation
 

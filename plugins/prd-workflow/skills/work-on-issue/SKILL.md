@@ -38,9 +38,9 @@ Mark the issue **NOT ready** if any of these hold:
 - **Blocked** — has a `## Blocked by` section with any open `#NNN`. Check their state with `gh`.
 - **Unmet external steps** — has a `## External steps` section with `- [ ]` items the user must do in-session first (e.g. a Supabase migration, an env var). Surface them; these block an autonomous start.
 - **Open questions** — the issue text raises a decision you can't resolve from the issue + codebase.
-- **Not implementable work** — the title starts with the adapter's `[QA]` prefix (`## Repo` → *Title prefixes*). A `[QA]` issue is one `work-on-prd` run's human QA pass: a checklist for a person to walk through against a branch, not a slice to build. Handed one by number, say so and stop — do not plan-mode it. `[PRD]` is the same refusal for the same reason: it is the parent, and `/work-on-prd` runs it. `[TASK]` and `[BUG]` are both normal work here.
+- **Not implementable work** — the title starts with the adapter's `[PRD]` prefix (`## Repo` → *Title prefixes*). A PRD is the parent, not a slice to build, and `/work-on-prd` is what runs it. Handed one by number, say so and stop — do not plan-mode it. `[TASK]` and `[BUG]` are both normal work here.
 
-`## Blocked by` / `## External steps` are optional — most standalone issues won't have them. Absence is fine, not a blocker. So is a missing prefix: an issue that predates the convention is ordinary work, and only `[QA]` and `[PRD]` are refusals.
+`## Blocked by` / `## External steps` are optional — most standalone issues won't have them. Absence is fine, not a blocker. So is a missing prefix: nothing filters on titles, an unprefixed issue is ordinary work, and `[PRD]` is the only refusal.
 
 ### 4a. If NOT ready
 

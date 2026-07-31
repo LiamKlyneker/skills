@@ -65,7 +65,7 @@ Report exactly these, in this order:
 2. **Verify evidence** — the actual test/build output (plus the screenshot for L3).
 3. **Deviation log** — every place the implementation diverged from the issue spec, and why.
    Empty is a valid answer; silence is not.
-4. **Refined QA notes** — concrete steps for the run's `[QA]` issue, refining the issue's
+4. **Refined QA notes** — concrete steps for the run's QA comment on the PRD, refining the issue's
    `## QA notes`. Each one is an action a human takes in the running app plus the observable
    result they should get; "it looks right" is not a result.
 
