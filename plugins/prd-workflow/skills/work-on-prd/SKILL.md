@@ -9,7 +9,7 @@ Run a whole PRD in one session: orchestrator (this session's model) + one fresh 
 
 Project facts (repo, title prefixes, commands, verify ladder) come from the **project adapter** at `<repo-root>/.claude/project/adapter.md` — read it first; never hardcode project specifics in this skill.
 
-`[PRD]`, `[TASK]`, `[BUG]` and `[QA]` below are **shorthand for the adapter's *Title prefixes* row**, written out for readability. If that row names different prefixes, they win — here, in every title filter this skill applies, and in the prefix it strips before slugging the branch.
+`[PRD]`, `[TASK]` and `[BUG]` below are **shorthand for the adapter's *Title prefixes* row**, written out for readability. If that row names different prefixes, they win — here, in every title filter this skill applies, and in the prefix it strips before slugging the branch. This loop creates no titled QA issue, so the row's QA prefix is not one of the names it uses.
 
 ## Invocation
 
@@ -98,28 +98,37 @@ State lives in git + GitHub only (branch commits, issue labels, PR body). Zero s
 
 ## Loop end (no eligible children left)
 
-Three things, in order: the `[QA]` issue, the PR body, the final summary.
+Three things, in order: the QA comment, the PR body, the final summary.
 
-### 1. The `[QA]` issue — one per *run*
+### 1. The QA comment — one per *run*
 
-**Commit nothing.** This loop used to write a markdown document to a path in the adapter and commit it to the branch; it no longer does, and the adapter no longer names a path. Everything below is normative and is this skill's own — the shape of the issue and the GitHub mechanics both. `work-on-spec` states the same shape against Azure DevOps in `ado-workflow`'s `skills/references/qa-item.md`; the two are siblings, not a shared file and two call sites. The only consumer is the person running QA: **no skill parses this issue**, and nothing ever reads a previous run's, so "normative" means the section order, the sources and the earning rule are fixed — not that a parser depends on the wording.
+**Commit nothing, and create no issue.** The QA artifact is a **comment on the PRD issue**, plus the **`needs-qa` label on the PRD**. This loop has moved twice: it once wrote a markdown document to a path in the adapter and committed it to the branch, then it filed a standalone `[QA]` issue. It does neither now — the adapter names no path, and **no `[QA]` issue is created on GitHub any more**. Everything below is normative and is this skill's own — the shape of the comment and the GitHub mechanics both. `work-on-spec` files a `[QA]` **work item** against Azure DevOps (`ado-workflow`'s `skills/references/qa-item.md`); the two loops are siblings, not a shared file and two call sites, and they have deliberately diverged here — this change is GitHub's alone and none of it carries across. The only consumer is the person running QA: **no skill parses this comment**, and nothing reads a previous run's except the second-run link below, so "normative" means the section order, the sources and the earning rule are fixed — not that a parser depends on the wording.
 
-**One per run, never one per PRD.** A run covers exactly the slice of children that just landed. A second run against the same PRD creates a **second** `[QA]` issue and **never edits the first**. That is the whole point of an issue rather than a committed document: a document at a fixed path accumulates every run's output, goes stale silently, and gives the human no way to tell which half they already tested. A per-run issue describes one testable slice, and the human closes it once tested.
+**Why a comment, and what it costs.** The operator filters the issue list on `needs-qa` and gets one queue: every PRD awaiting a manual pass. They open the PRD, and the steps sit directly beneath the natively-rendered sub-issue list — next to the children they describe, in the one place a reader of the PRD already is. What that costs is the **closable receipt**. A closed `[QA]` issue was proof the pass had been run; a comment has no closable state, so nothing in the tracker records completion. That loss is accepted deliberately, not overlooked: **removing `needs-qa` is what "done" looks like**, a human action nothing enforces, and the operator may reply to the comment to record the pass — convention, not machinery, and no skill checks for it. Do not add anything to simulate the receipt.
 
-**What earns a step.** A landed child earns a step **only if a human can exercise it in the running app**. Dependency bumps, config changes, pure refactors, internal-only work and setup contribute **nothing**: no step, and **no standalone "nothing to test here" line, paragraph or section**. Those lines are the entire reason the committed documents this replaces reached 440 lines — every landed issue earned a section whether or not anybody could act on it, so the sections that mattered were buried among the ones that didn't. Such a child still gets its **one line in `## What landed`**, so a reader can see it shipped and does not go hunting for the step it never had; that line may carry a short parenthetical — `(nothing to test by hand)`, a few words, inline — and that is the *only* form the idea is allowed to take. The moment it becomes its own line or section, the rule has been broken. Applied honestly, most runs produce a `[QA]` issue far shorter than the list of things they landed. That is the intended shape, not a sign something was missed.
+**One per run, never one per PRD.** A run covers exactly the slice of children that just landed. A second run against the same PRD posts a **second comment** and **never edits the first**. That is the whole point of a per-run artifact rather than a committed document: a document at a fixed path accumulates every run's output, goes stale silently, and gives the human no way to tell which half they already tested. A per-run comment describes one testable slice.
 
-**Nothing testable in the whole run → create no issue at all.** If **no** child in the run produced anything a human can exercise, create **nothing** — an empty `[QA]` issue is worse than none, being a thing a person has to open, read and close in order to learn nothing. Say so explicitly, in both places the issue would otherwise have been named: the **final summary** ("no `[QA]` issue: nothing in this run is manually testable", plus the list of children the run landed), and the **pull request body**, where the `QA:` line would have gone — the same sentence. Silence in either place reads as a forgotten step rather than a decision.
+**Posting while `needs-qa` is still applied → link back first.** The label already being on the PRD means an earlier pass is **outstanding** — nobody has worked it yet. The new comment's **first line is a permalink to that earlier comment**, so an outstanding pass is never silently buried under a fresher one. Still one comment per run, still never edit or delete the earlier one, and leave the label where it is (re-applying it is a no-op). Find the earlier one with the newest comment carrying the template's `## Steps` heading, which is present in every QA comment by construction:
+
+```bash
+gh api repos/<owner>/<repo>/issues/<n>/comments --jq '[.[] | select(.body | contains("## Steps"))] | last | .html_url'
+```
+
+**What earns a step.** A landed child earns a step **only if a human can exercise it in the running app**. Dependency bumps, config changes, pure refactors, internal-only work and setup contribute **nothing**: no step, and **no standalone "nothing to test here" line, paragraph or section**. Those lines are the entire reason the committed documents this replaces reached 440 lines — every landed issue earned a section whether or not anybody could act on it, so the sections that mattered were buried among the ones that didn't. Such a child gets its **one line in `## What landed`** and nothing more; that line may carry a short parenthetical — `(nothing to test by hand)`, a few words, inline — and that is the *only* form the idea is allowed to take. The moment it becomes its own line or section, the rule has been broken. Applied honestly, most runs produce a comment far shorter than the list of things they landed. That is the intended shape, not a sign something was missed.
+
+**Nothing testable in the whole run → post nothing and label nothing.** If **no** child in the run produced anything a human can exercise, there is no comment and no `needs-qa` — an empty QA comment is worse than none, being a thing a person has to open and read in order to learn nothing, and a label pointing at it puts a PRD in the queue that has no pass to run. Say so explicitly, in both places the comment would otherwise have been linked: the **final summary** ("no QA comment: nothing in this run is manually testable", plus the list of children the run landed), and the **pull request body**, where the `QA:` line would have gone — the same sentence. Silence in either place reads as a forgotten step rather than a decision.
 
 **The body:**
 
 <qa-template>
 
+<first line only when `needs-qa` is already applied: Earlier QA pass still outstanding: <permalink to it>>
+
 <one line of run context: the branch, the pull request, how many children landed>
 
 ## What landed
 
-- <id> — <one line on what shipped>
-- <id> — <one line>  (nothing to test by hand)
+- <id> — <one line on what shipped>  (nothing to test by hand)
 
 ## Before you start
 
@@ -136,33 +145,34 @@ Three things, in order: the `[QA]` issue, the PR body, the final summary.
 
 </qa-template>
 
-The rules governing that template are deliberately written **outside** the fence. Copy the fence, not this prose — instructions pasted inside a body template ship to the reader as issue text.
+The rules governing that template are deliberately written **outside** the fence. Copy the fence, not this prose — instructions pasted inside a body template ship to the reader as comment text.
 
 - **`## Before you start` is conditional.** Include it only when something will look broken and is not — a dangling symlink a later child repairs, a migration the tester has to run first, a feature flag that is off. **Omit the heading entirely** otherwise. A "None" under it is the 440-line habit in miniature.
 - **`## Gotchas` is conditional** the same way. No deviations and no flagged edge cases means no heading.
-- **`## What landed` and `## Steps` are always present** — a `[QA]` issue exists because at least one child earned a step, so both always have content by construction.
+- **`## Steps` is always present** — a QA comment exists because at least one child earned a step, so it always has content by construction.
+- **`## What landed` lists only the children that earned no step**, one line each with the inline parenthetical, and is **conditional**: every child earned a step → omit the heading entirely. It is not a manifest of the run. The section existed so a reader could see something shipped and not go hunting for a step it never had, and the PRD's native sub-issue list — rendered directly above this comment, completion state and all — now does that job for everything else.
 - **Steps are numbered continuously across the whole run**, in the order a human would sit down and work through them, not grouped by child and not restarted per section.
 - **Every step carries the id of the child it came from**, so a failure routes straight back to the issue that caused it.
 - **Every step states an expected observable result.** A step whose expected result is "it looks right" is not a step — either name what the tester should see, or the change did not earn a step in the first place.
 
-**Built from two sources, and only two:** each worker's **refined QA notes** (item 4 of the report contract — these are the steps; the child's own `## QA notes` are what the worker refined, not a second source to merge back in), and each worker's **deviation log** (item 3) with the edge cases it flagged — these are the gotchas, and they are what `## Before you start` is built from when it appears at all. Nothing else: not the PRD's body, not the children's acceptance criteria, not the diff. A `[QA]` issue assembled from the artifacts instead of the reports describes what was *planned*; the reports are the only record of what was actually built.
+**Built from two sources, and only two:** each worker's **refined QA notes** (item 4 of the report contract — these are the steps; the child's own `## QA notes` are what the worker refined, not a second source to merge back in), and each worker's **deviation log** (item 3) with the edge cases it flagged — these are the gotchas, and they are what `## Before you start` is built from when it appears at all. Nothing else: not the PRD's body, not the children's acceptance criteria, not the diff. A QA comment assembled from the artifacts instead of the reports describes what was *planned*; the reports are the only record of what was actually built.
 
 Then the GitHub mechanics:
 
-- **Create** with `gh issue create` against the adapter's issue-tracker repo.
-- **Title**: `[QA] PRD #<n> — <the PRD title, prefix stripped>`. Two runs on the same PRD produce two issues with the same title; that is fine and expected, they differ by number and creation time. Never edit or reuse an earlier one to avoid a duplicate.
+- **Post** with `gh issue comment <prd-number> --body-file <path>` against the adapter's issue-tracker repo. Write the body to a file first — `--body` on a shell line mangles a multi-line markdown body, and this one is all headings and lists.
+- **Capture the permalink it prints.** `gh issue comment` writes the new comment's url to stdout; that url is what §2 puts in the PR body and §3 reports, and what a later run links back to.
+- **Then label the PRD** `needs-qa` — `gh issue edit <prd-number> --add-label needs-qa`. Comment first, label second, always: the label is the queue signal, and a PRD in the queue with no comment under it sends the operator looking for steps that do not exist. Applying a label the PRD already carries is a no-op, which is what makes the second-run path above safe.
+- **The label must already exist in the repo.** The loop applies it and cannot create it; `gh issue edit --add-label` against a missing label fails loudly, but a run that swallows that failure leaves a comment nobody is queued to find. It is a one-time human precondition — see the adapter.
 - **Run context line**: the branch, the PR, and how many issues landed — e.g. ``Branch `prd/52-extract-lk-plugin` · PR #63 · 9 issues landed``.
 - **Ids in the body** are bare `#N` — GitHub autolinks them to issues in this repo, which is exactly where a tester needs to land.
-- **Never linked to the PRD as a sub-issue**, and no `## Parent` section, no `ready-to-start`, no `state:*` label. The sub-issue link is the *only* thing child discovery reads (`../_shared/prd-eligibility.md`), so simply not writing one is what keeps the QA issue off the pick path — permanently and by construction, since `gh issue create` links nothing on its own. The three omissions are the second layer, for anything reading the issue by hand.
-- **It never appears in the PR's `Closes` line.** The `[QA]` issue is the gate the merge passes **through**, so nothing about completing the pull request may close it — **the issue is closed by the human who ran it, and by nothing else.** A QA pass that marks itself done the moment the branch lands is indistinguishable from one a human ran, and it is silent: the failure surfaces only as nobody ever having tested the release. On GitHub the lever is that one line: a `Closes #N` naming the QA issue auto-closes the QA pass the moment the branch merges, before anybody runs it. The step below writes a `#N` into the PR body a few characters from a keyword that would do exactly that — link it under `QA:`, never after a closing keyword, and never let the QA number join the accumulated `Closes` list.
 
 ### 2. PR body
 
-Replace the placeholder `QA:` line from Setup step 3 with a link to the `[QA]` issue — or with the no-QA sentence if none was created — and bring the children checklist to its final state. The PR stays a draft.
+Replace the placeholder `QA:` line from Setup step 3 with the **permalink to the QA comment** — the url §1 captured, not an issue number — or with the no-QA sentence if no comment was posted, and bring the children checklist to its final state. The PR stays a draft.
 
 ### 3. Final summary
 
-To the human: issues done / skipped / failed · deviations worth reading · escalations · the `[QA]` issue by number and url, or the explicit "no `[QA]` issue created: nothing in this run is manually testable" with the reason. Leave the PR open (still draft) for human QA (verify ladder L5: run the `[QA]` issue start-to-finish against the branch, then merge manually). The PRD issue is **not** closed by the loop — `Closes` keywords fire on merge. Do not close the `[QA]` issue you just created; the human who runs it closes it.
+To the human: issues done / skipped / failed · deviations worth reading · escalations · the **QA comment permalink** and the note that the PRD now carries `needs-qa`, or the explicit "no QA comment: nothing in this run is manually testable" with the reason. Leave the PR open (still draft) for human QA (verify ladder L5: work the QA comment start-to-finish against the branch, then merge manually). The PRD issue is **not** closed by the loop — `Closes` keywords fire on merge. Do not remove `needs-qa` and do not reply to your own comment marking the pass done: the human who runs it owns both, and those are the only signals that it was ever run.
 
 Then release keep-awake — mirror of Setup step 0, no-op if never started:
 
@@ -175,3 +185,5 @@ Then release keep-awake — mirror of Setup step 0, no-op if never started:
 Normative home for the label vocabulary — `to-issues` and `next-prd-issue` apply/read these; change them here first.
 
 `ready-to-start` (pickable) → `state:in-progress` (claimed) → `state:done-on-branch` (committed, awaiting merge). Merge auto-closes via the PR's Closes line. One state per axis; always remove-before-add. Precondition (one-time, human): the repo setting "auto-close issues with merged linked pull requests" must be on — see the adapter.
+
+Two families, and the difference is who clears the label. **`state:*` is machine state**: the loop applies it, the loop removes it, and a human touching one only confuses the reconstruction in Setup step 4. **`needs-*` means a human owes something** and only a human clears it — `needs-triage` on an untriaged issue, and **`needs-qa` on a PRD whose run has posted a QA comment** (Loop end §1). That is why `needs-qa` is not `state:qa-pending`: the loop applies it and then has no further business with it, and the operator's queue is exactly the set of PRDs carrying it. The loop never removes `needs-qa`, on this run or any later one.
