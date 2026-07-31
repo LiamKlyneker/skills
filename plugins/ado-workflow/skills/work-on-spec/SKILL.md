@@ -139,6 +139,13 @@ discarded by design.
    a slug from its title (e.g. `spec/<id>-<slug>`). Check it out if it exists (local or remote),
    else create it from an up-to-date default branch. One branch per spec, on both a cold start
    and a resume — the pattern is what makes the resume find the same branch.
+
+   **Strip the title's prefix before slugging** — slug `dark-mode`, never `spec-dark-mode`. A
+   `[SPEC]` title always carries one here, so this is not an edge case; and a run whose computed
+   name stops matching the branch its work is on opens a *second* branch and a *second* pull
+   request, reconstructs zero commits, and re-runs every landed `[TASK]` without erroring. Strip
+   any leading `[…]` bracket group rather than the literal string, so an adapter naming a
+   different prefix is handled too.
 3. **Pull request** (one per spec): list the repository's open pull requests for this source
    branch — **repo project + repository, not the work-item project**. If one exists, adopt it;
    **never open a second**. If none exists, push (empty commit `spec AB#<id>: loop start` if the

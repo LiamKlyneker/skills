@@ -7,7 +7,9 @@ description: Orchestrate a whole PRD end-to-end — pick each child issue, spawn
 
 Run a whole PRD in one session: orchestrator (this session's model) + one fresh worker subagent per child issue. The human stays in the creative loop (grill / PRD / issues) and the QA gate.
 
-Project facts (repo, commands, verify ladder, QA-doc convention) come from the **project adapter** at `<repo-root>/.claude/project/adapter.md` — read it first; never hardcode project specifics in this skill.
+Project facts (repo, title prefixes, commands, verify ladder) come from the **project adapter** at `<repo-root>/.claude/project/adapter.md` — read it first; never hardcode project specifics in this skill.
+
+`[PRD]`, `[TASK]`, `[BUG]` and `[QA]` below are **shorthand for the adapter's *Title prefixes* row**, written out for readability. If that row names different prefixes, they win — here, in every title filter this skill applies, and in the prefix it strips before slugging the branch.
 
 ## Invocation
 
@@ -46,7 +48,15 @@ State lives in git + GitHub only (branch commits, issue labels, PR body). Zero s
    ```
 
 1. **Fetch state**: PRD + children per `../_shared/prd-eligibility.md`. Zero children → tell the user to run `/to-issues` first, stop. Cycle in `Blocked by` → report it, stop.
-2. **Branch** `prd/<n>-<slug>` (slug from the PRD title): check out if it exists (local or remote), else create from up-to-date `main`.
+2. **Branch** `prd/<n>-<slug>`: check out if it exists (local or remote), else create from up-to-date `main`.
+
+   The slug comes from the PRD title **with the `[PRD]` prefix stripped first** — slug
+   `extract-lk-plugin`, never `prd-extract-lk-plugin`. This is the whole reason the strip is
+   specced rather than assumed: a PRD that gains the prefix while a run is in flight computes a
+   *different* branch name than the one its work is on, so the resume opens a second branch and
+   a second PR, Setup step 4 finds zero commits on it, and every landed issue is re-run from
+   scratch. Nothing errors. Strip any leading `[…]` bracket group, not the literal string
+   `[PRD]`, so an adapter that names a different prefix is handled too.
 3. **PR** (one per PRD, targets `main` — required for `Closes` to fire): if none exists for the branch, push (empty commit `prd #N: loop start` if the branch has no commits ahead) and open a **draft PR**. Body skeleton:
 
    ```

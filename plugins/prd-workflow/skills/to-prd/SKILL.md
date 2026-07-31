@@ -7,9 +7,19 @@ This skill takes the current conversation context and codebase understanding and
 
 The issue tracker and triage label vocabulary should have been provided in context — ask the user to share them if not.
 
+## Title
+
+The PRD's title starts with the `[PRD]` prefix: `[PRD] <the title>`.
+
+`[PRD]` here is **shorthand for the adapter's *Title prefixes* row** at
+`<repo-root>/.claude/project/adapter.md`, written out for readability. If that row names a
+different prefix, it wins. The prefix is not decoration: `../_shared/prd-eligibility.md`
+filters a PRD's children by title, so a parent and its children have to be told apart by
+something, and this is it.
+
 ## Mode: CREATE vs UPDATE
 
-- **CREATE (default):** invoked with no issue reference → publish a brand-new PRD via the Process below and apply the `needs-triage` triage label.
+- **CREATE (default):** invoked with no issue reference → publish a brand-new PRD via the Process below, titled `[PRD] …`, and apply the `needs-triage` triage label.
 - **UPDATE:** invoked with an existing issue reference (number/URL/path) as an argument → **enrich that PRD in place** instead of creating a new one. This lets a fidelity PRD accrue detail across multiple grills — a later grill on the same feature appends to the existing PRD rather than spawning a fresh one.
 
 ### UPDATE mode rules
@@ -25,6 +35,7 @@ The issue tracker and triage label vocabulary should have been provided in conte
    When you update one, replace its **body in place under the exact heading text** — never rename, remove, duplicate, or change the level of these headings. If a contract heading doesn't exist yet and this grill produced content for it, insert it in template order.
 4. Sections are **append/replace by ownership**: tables like `## UI Primitives` and `## Design reference` accumulate **rows** (merge new rows in, don't drop existing ones unless this grill supersedes a specific row); narrative sections this grill owns are replaced wholesale. Anything outside this grill's scope is untouched.
 5. **Do not re-apply triage labels** in UPDATE mode — leave the issue's labels exactly as they are. (Only CREATE applies `needs-triage`.)
+6. **Never re-prefix an already-prefixed title.** UPDATE enriches a PRD that already exists, so its title normally already starts with `[PRD]` and must be left alone. Add the prefix here only when the title genuinely lacks one — a PRD that predates the convention. `[PRD] [PRD] …` is the failure to avoid, and it is silent: nothing rejects the title, and `work-on-prd` slugs the branch from it.
 
 ## Process
 
