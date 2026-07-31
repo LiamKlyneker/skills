@@ -131,7 +131,7 @@ named. Both loops file a per-run item now, so that row was removed from the temp
 from both lists rather than added to this one — do not restore it to either. The shape of a
 QA item ships with the plugins — `work-on-prd`'s `## Loop end` for GitHub,
 `plugins/ado-workflow/skills/references/qa-item.md` for ADO — and is not something an
-installer can ask a human for; the argument is ADR 0005.
+installer can ask a human for; the argument is ADR 0006.
 
 The row that looks like a GitHub leftover is real. `## One-time repo preconditions` survives
 even though the ADO side has no analogue of GitHub's un-queryable auto-close setting (the pull request's completion options transition

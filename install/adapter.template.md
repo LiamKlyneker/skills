@@ -68,7 +68,7 @@ Every command a worker or the orchestrator runs. Keep the **Purpose** column sta
 - **L2 — floor, every issue, non-negotiable**: `<test command>` passes.
 - **L3 — user-visible issues**: L2 + `<boot command>` boots the app + a screenshot as evidence (`<screenshot command>`).
 - **L4** (agent-driven interaction): out of scope v1.
-- **L5 — human**: once per orchestrated run, against the branch, before merge. The run files a `[QA]` issue/work item and the human works it start-to-finish. Say here what exercising this app actually means — `<which entry point, which command, what to look for>` — because the run's steps are written against it and a worker only knows what this line says.
+- **L5 — human**: once per orchestrated run, against the branch, before merge. On GitHub the run posts the QA steps as a comment on the PRD issue and labels it `needs-qa`; the human works the comment start-to-finish and removes the label when done. On Azure DevOps the run files a `[QA]` work item and the human works it start-to-finish. Say here what exercising this app actually means — `<which entry point, which command, what to look for>` — because the run's steps are written against it and a worker only knows what this line says.
 
 ## Sources of truth (recon + hard gates)
 
@@ -106,6 +106,7 @@ the other, exactly as in `## Repo`.
 
 - GitHub Settings → General → "Auto-close issues with merged linked pull requests" must be **on** (not API-queryable — check in the web UI once). If off, `Closes #N` silently does nothing.
 - The `needs-triage` label must exist in the repo — `to-prd` applies it on CREATE.
+- The `needs-qa` label must exist in the repo — `work-on-prd` applies it to the PRD at loop end and cannot create it.
 
 ### Azure DevOps
 

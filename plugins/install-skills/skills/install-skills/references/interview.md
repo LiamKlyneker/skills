@@ -69,7 +69,8 @@ here, because every one of them fails *silently*:
    its L3 evidence, and the deliberate-looking-wrong conventions.
 
 Do not ask which tracker — the bundle already said. There is no QA path to ask for on
-either tracker: both loops file a per-run `[QA]` item and neither writes a file.
+either tracker: GitHub posts a per-run QA comment on the PRD and labels it `needs-qa`,
+Azure DevOps files a per-run `[QA]` work item, and neither writes a file.
 
 **`prd-qa`** — a subset of `prd-workflow`'s sections, so if the repo already ran that
 install every one is filled: confirm, don't re-ask. On a standalone install the one worth a
