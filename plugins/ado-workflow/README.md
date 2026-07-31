@@ -4,9 +4,12 @@ The ADO half of the PRD workflow, packaged as a Claude Code plugin: `to-spec` �
 `to-spec-tasks` → `next-task-to-implement` → `work-on-spec`, plus the
 `spec-worker` agent that `work-on-spec` spawns per `[TASK]`.
 
-All four skills and the agent have landed. What PRD #31 still owes `work-on-spec`
-is its **loop end** — the `[QA]` work item, the QA doc and the final summary; the
-skill says so at that section.
+All four skills and the agent have landed, loop end included: `work-on-spec`
+ends a run by creating a per-run `[QA]` work item and printing a final summary.
+It commits **no** QA document — neither does `work-on-prd` any more, which is
+the convergence that removed the adapter's QA-path convention from both
+trackers. The shape of a QA item is `_shared/qa-item.md`'s, shared by both
+loops; this plugin owns only the Azure DevOps mechanics.
 
 ## Layout
 
@@ -27,16 +30,23 @@ as a plugin skill — and pays always-on token cost for both.
 
 ## Decisions
 
-### No `version` in `plugin.json`
+### ~~No `version` in `plugin.json`~~ — reversed
 
-With a `version` set it becomes the install cache key, and a forgotten bump
-means installs silently never see changes. Omitting it means every install
-resolves fresh — exactly as `prd-workflow` and `figma-tools` already do.
+This plugin shipped without a `version` on purpose: `version` is the install
+cache key, so a forgotten bump means installs silently never see changes, and
+omitting it made every install resolve fresh. The cost was that
+`claude plugin validate --strict` could not pass, a missing `version` being a
+warning and `--strict` turning warnings into errors.
 
-The cost is that `claude plugin validate --strict` cannot pass: a missing
-`version` is a warning, and `--strict` turns warnings into errors. Plain
-`claude plugin validate` passes ("Validation passed with warnings"), and the
-missing `version` is the *only* warning expected here.
+**That was reversed in #57/#58**, and the reasoning against it has not stopped
+being true — it was answered instead. All five plugins carry a `version`
+mirrored in the marketplace catalog, and `validate_skills.py` fails a plugin
+change that does not bump it, which is what the abstention used to buy by hand.
+`--strict` passes now, with zero warnings as the bar. The argument is
+ADR [0001](../../docs/adr/0001-version-the-plugins-and-enforce-the-bump.md).
+
+A change under `_shared/` counts as a change to **every** plugin that symlinks
+it, this one included — install dereferences the link into each cache copy.
 
 ### The shared reference lives at `skills/_shared`
 

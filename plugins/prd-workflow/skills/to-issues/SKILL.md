@@ -9,6 +9,17 @@ Break a plan into independently-grabbable issues using vertical slices (tracer b
 
 The issue tracker and triage label vocabulary should have been provided in context — ask the user to share them if not.
 
+## Titles
+
+Every child issue is titled `[TASK] <the title>`.
+
+`[TASK]` is **shorthand for the adapter's *Title prefixes* row** at
+`<repo-root>/.claude/project/adapter.md`, written out for readability. If that row names a
+different prefix, it wins. It is load-bearing, not decoration: `../_shared/prd-eligibility.md`
+keeps a child only when its title carries `[TASK]` or `[BUG]`, so an unprefixed child is
+invisible to `work-on-prd` and `next-prd-issue` the same way a missing `## Parent` makes it
+invisible. Prefix every issue you publish, including one you add to a PRD later.
+
 ## Process
 
 ### 1. Gather context
@@ -73,7 +84,7 @@ Iterate until the user approves the breakdown.
 
 ### 5. Publish the issues to the issue tracker
 
-For each approved slice, publish a new issue to the issue tracker. Use the issue body template below. Apply the `ready-to-start` triage label so each issue is immediately pickable (label vocabulary is normative in `work-on-prd`'s `## Label vocabulary`).
+For each approved slice, publish a new issue to the issue tracker, titled `[TASK] …` per `## Titles` above. Use the issue body template below. Apply the `ready-to-start` triage label so each issue is immediately pickable (label vocabulary is normative in `work-on-prd`'s `## Label vocabulary`).
 
 Publish issues in dependency order (blockers first) so you can reference real issue identifiers in the "Blocked by" field.
 
@@ -122,7 +133,7 @@ Everything a cold, isolated worker session needs to implement this slice without
 
 ## QA notes
 
-2–3 lines for the human QA pass (these seed the PRD's QA doc): what to do in the running app, what they should see, edge cases worth poking.
+2–3 lines for the human QA pass: what to do in the running app, what they should see, edge cases worth poking. The worker refines these into the steps of the run's `[QA]` issue, so write them as something a person could actually do — and where this slice is a refactor, a bump or config that nobody can exercise by hand, say that instead of inventing a step.
 
 ## Acceptance criteria
 

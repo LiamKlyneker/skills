@@ -9,7 +9,7 @@
 references outright. This repo depends on them deliberately. Both rules are right, for
 different repos, and this record exists so that neither gets "fixed" into the other.
 
-`_shared/` holds eight documents. All five plugins carry a `skills/_shared` symlink to it;
+`_shared/` holds nine documents. All five plugins carry a `skills/_shared` symlink to it;
 four of them actually read documents from it today (`figma-tools` reads none, and keeps the
 link for uniformity):
 
@@ -19,7 +19,14 @@ link for uniformity):
 | `_shared/eligibility-policy.md` | `ado-workflow` directly, and transitively by `prd-workflow` and `lk` via the two dialect docs below |
 | `_shared/prd-eligibility.md` | `prd-workflow` (3 skills) and `lk`'s `triage-prd` |
 | `_shared/ado-eligibility.md` | `ado-workflow` (3 skills) |
+| `_shared/qa-item.md` | both orchestrators — `prd-workflow`'s `work-on-prd` and `ado-workflow`'s `work-on-spec` |
 | `_shared/ui-manifests.md` | the stack-neutral row schema, read by the skills that build those tables |
+
+`qa-item.md` (ADR [0005](0005-qa-is-an-issue-not-a-committed-document.md)) is the clearest
+case this record's rule was written for. The two loops file a QA item into two different
+trackers by two different sets of calls, but *what earns a step* and *what the item is built
+from* are one argument. Three copies of it would have been three copies of the reasoning that
+produced a 440-line document, drifting apart with no test to catch them.
 
 `eligibility-policy.md` is the tracker-neutral core; `prd-eligibility.md` and
 `ado-eligibility.md` are its two tracker dialects. So three of five plugins depend on that

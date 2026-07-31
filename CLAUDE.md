@@ -14,12 +14,14 @@ adding a skill here means adding it to a plugin. The rest of the top level:
 
 - `.claude-plugin/` — `marketplace.json`, the published catalog.
 - `plugins/` — the packaged plugins.
-- `docs/` — `estate-inventory.md`, `adr/` and the per-PRD QA logs. Documentation for
+- `docs/` — `estate-inventory.md`, `adr/`, and `qa/`, the two committed QA documents the
+  loops no longer produce (kept as ADR 0005's evidence — see below). Documentation for
   humans; no session loads any of it.
 - `_shared/` — **global reference only.** Docs several skills read, true in every
   project: `model-effort-heuristics.md`, `eligibility-policy.md`, `prd-eligibility.md`,
-  `ado-eligibility.md`, `ado-workitem-authoring.md`, `spec-splitting-seams.md`,
-  `ui-manifests.md`, `ui-standard.md`. No templates, no project values, ever.
+  `ado-eligibility.md`, `ado-workitem-authoring.md`, `qa-item.md`,
+  `spec-splitting-seams.md`, `ui-manifests.md`, `ui-standard.md`. No templates, no project
+  values, ever.
 - `install/` — what a project gets wired with: `bundles.md` (the manifest the
   `install-skills` skill reads), `adapter.template.md`, and `gates/`. See
   `install/README.md` for the layout a wired project ends up with. Canonical copy,
@@ -53,6 +55,21 @@ run isn't one. Everything else here stays prose.
 directories, scopes, live authoring, and the traps. Keep it accurate; it is written
 from observed platform behaviour, and the platform has repeatedly differed from its
 own docs.
+
+## QA is an issue, and titles carry prefixes
+
+Both orchestrators end a run by filing a **per-run QA item** — a `[QA]` issue on GitHub, a
+`[QA]` work item on ADO — and **commit nothing**. The adapter has no QA-path convention on
+either tracker any more, and `_shared/qa-item.md` owns what the two share. The reasoning,
+including why the two 440-line documents in `docs/qa/` are kept rather than deleted, is ADR
+[0005](docs/adr/0005-qa-is-an-issue-not-a-committed-document.md).
+
+GitHub titles carry `[PRD]` · `[TASK]` · `[BUG]` · `[QA]`, registered in the adapter's
+`## Repo` → *Title prefixes* row, never hardcoded in a skill. They are load-bearing:
+`_shared/prd-eligibility.md` keeps a PRD's child only when its title is `[TASK]` or `[BUG]`,
+and drops `[QA]` unconditionally so a run's QA pass can never be picked as work. Legacy
+children carry no prefix, which a set-level fallback handles — do not "simplify" that fallback
+to key on any bracket prefix, or one `[QA]` issue will hide every real child of a legacy PRD.
 
 ## Git workflow
 

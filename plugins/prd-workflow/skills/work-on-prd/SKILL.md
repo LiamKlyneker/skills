@@ -7,7 +7,9 @@ description: Orchestrate a whole PRD end-to-end — pick each child issue, spawn
 
 Run a whole PRD in one session: orchestrator (this session's model) + one fresh worker subagent per child issue. The human stays in the creative loop (grill / PRD / issues) and the QA gate.
 
-Project facts (repo, commands, verify ladder, QA-doc convention) come from the **project adapter** at `<repo-root>/.claude/project/adapter.md` — read it first; never hardcode project specifics in this skill.
+Project facts (repo, title prefixes, commands, verify ladder) come from the **project adapter** at `<repo-root>/.claude/project/adapter.md` — read it first; never hardcode project specifics in this skill.
+
+`[PRD]`, `[TASK]`, `[BUG]` and `[QA]` below are **shorthand for the adapter's *Title prefixes* row**, written out for readability. If that row names different prefixes, they win — here, in every title filter this skill applies, and in the prefix it strips before slugging the branch.
 
 ## Invocation
 
@@ -45,8 +47,16 @@ State lives in git + GitHub only (branch commits, issue labels, PR body). Zero s
    command -v caffeinate >/dev/null && ! pgrep -F /tmp/work-on-prd.caffeinate.pid >/dev/null 2>&1 && { caffeinate -dimsu & echo $! > /tmp/work-on-prd.caffeinate.pid; }
    ```
 
-1. **Fetch state**: PRD + children per `../_shared/prd-eligibility.md`. Zero children → tell the user to run `/to-issues` first, stop. Cycle in `Blocked by` → report it, stop.
-2. **Branch** `prd/<n>-<slug>` (slug from the PRD title): check out if it exists (local or remote), else create from up-to-date `main`.
+1. **Fetch state**: PRD + children per `../_shared/prd-eligibility.md` — two filters, `## Parent` then the `[TASK]`/`[BUG]` title prefix, each with its own set-level legacy fallback. Report what each one dropped. Zero children → tell the user to run `/to-issues` first, stop — but say **which filter emptied the set** before you say that. A PRD whose children exist and were all dropped by the title filter has been sliced already and needs its children prefixed, not re-sliced; "run `/to-issues` first" is a plausible-sounding message that would double every child. Cycle in `Blocked by` → report it, stop.
+2. **Branch** `prd/<n>-<slug>`: check out if it exists (local or remote), else create from up-to-date `main`.
+
+   The slug comes from the PRD title **with the `[PRD]` prefix stripped first** — slug
+   `extract-lk-plugin`, never `prd-extract-lk-plugin`. This is the whole reason the strip is
+   specced rather than assumed: a PRD that gains the prefix while a run is in flight computes a
+   *different* branch name than the one its work is on, so the resume opens a second branch and
+   a second PR, Setup step 4 finds zero commits on it, and every landed issue is re-run from
+   scratch. Nothing errors. Strip any leading `[…]` bracket group, not the literal string
+   `[PRD]`, so an adapter that names a different prefix is handled too.
 3. **PR** (one per PRD, targets `main` — required for `Closes` to fire): if none exists for the branch, push (empty commit `prd #N: loop start` if the branch has no commits ahead) and open a **draft PR**. Body skeleton:
 
    ```
@@ -58,7 +68,7 @@ State lives in git + GitHub only (branch commits, issue labels, PR body). Zero s
 
    Closes line: (accumulated as issues land)
 
-   QA doc: (added at loop end)
+   QA: (added at loop end)
 
    🤖 Generated with [Claude Code](https://claude.com/claude-code)
    ```
@@ -88,14 +98,32 @@ State lives in git + GitHub only (branch commits, issue labels, PR body). Zero s
 
 ## Loop end (no eligible children left)
 
-1. **QA doc** at the adapter's QA-doc path: one section per completed issue — what shipped · how to test in the running app (issue `## QA notes` refined by the worker's report) · edge cases the worker flagged. Commit it to the branch, push.
-2. **PR body**: link the QA doc, final checklist state.
-3. **Final summary** to the human: issues done / skipped / failed · deviations worth reading · escalations. Leave the PR open (still draft) for human QA (verify ladder L5: run the QA doc start-to-finish on the branch, then merge manually). The PRD issue is **not** closed by the loop — `Closes` keywords fire on merge.
-4. **Release keep-awake** (mirror of Setup step 0; no-op if never started): let the machine sleep again.
+Three things, in order: the `[QA]` issue, the PR body, the final summary.
 
-   ```bash
-   [ -f /tmp/work-on-prd.caffeinate.pid ] && kill "$(cat /tmp/work-on-prd.caffeinate.pid)" 2>/dev/null; rm -f /tmp/work-on-prd.caffeinate.pid
-   ```
+### 1. The `[QA]` issue — one per *run*
+
+**Commit nothing.** This loop used to write a markdown document to a path in the adapter and commit it to the branch; it no longer does, and the adapter no longer names a path. Read `../_shared/qa-item.md` — it is normative for one-per-run, what earns a step, the nothing-testable rule, the body, step numbering and the two sources it is built from. Everything below is the GitHub mechanics that document deliberately leaves to this skill.
+
+- **Create** with `gh issue create` against the adapter's issue-tracker repo.
+- **Title**: `[QA] PRD #<n> — <the PRD title, prefix stripped>`. Two runs on the same PRD produce two issues with the same title; that is fine and expected, they differ by number and creation time. Never edit or reuse an earlier one to avoid a duplicate.
+- **Run context line**: the branch, the PR, and how many issues landed — e.g. ``Branch `prd/52-extract-lk-plugin` · PR #63 · 9 issues landed``.
+- **Ids in the body** are bare `#N` — GitHub autolinks them to issues in this repo, which is exactly where a tester needs to land.
+- **No `## Parent` section, no `ready-to-start`, no `state:*` label.** All three would make it look like work. `../_shared/prd-eligibility.md` drops `[QA]` titles unconditionally, so the prefix alone already keeps it off the pick path — the omissions are the second layer, for anything reading the issue by hand.
+- **It never appears in the PR's `Closes` line.** This is the merge-survival invariant in `../_shared/qa-item.md`, and on GitHub the lever is that one line: a `Closes #N` naming the QA issue auto-closes the QA pass the moment the branch merges, before anybody runs it. The step below writes a `#N` into the PR body a few characters from a keyword that would do exactly that — link it under `QA:`, never after a closing keyword, and never let the QA number join the accumulated `Closes` list.
+
+### 2. PR body
+
+Replace the placeholder `QA:` line from Setup step 3 with a link to the `[QA]` issue — or with the no-QA sentence if none was created — and bring the children checklist to its final state. The PR stays a draft.
+
+### 3. Final summary
+
+To the human: issues done / skipped / failed · deviations worth reading · escalations · the `[QA]` issue by number and url, or the explicit "no `[QA]` issue created: nothing in this run is manually testable" with the reason. Leave the PR open (still draft) for human QA (verify ladder L5: run the `[QA]` issue start-to-finish against the branch, then merge manually). The PRD issue is **not** closed by the loop — `Closes` keywords fire on merge. Do not close the `[QA]` issue you just created; the human who runs it closes it.
+
+Then release keep-awake — mirror of Setup step 0, no-op if never started:
+
+```bash
+[ -f /tmp/work-on-prd.caffeinate.pid ] && kill "$(cat /tmp/work-on-prd.caffeinate.pid)" 2>/dev/null; rm -f /tmp/work-on-prd.caffeinate.pid
+```
 
 ## Label vocabulary
 

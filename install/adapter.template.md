@@ -22,6 +22,7 @@ Tracker `github`, and what an adapter carrying no `Tracker:` line falls back to.
 
 - Issue tracker / PRs: `<owner>/<repo>` (GitHub, via `gh`)
 - PRs must target the default branch — `Closes` keywords only fire against it.
+- Title prefixes: `[PRD]` · `[TASK]` · `[BUG]` · `[QA]` — literal, at the start of the title, and what the skills filter a PRD's children on. `[TASK]` is a planned child, `[BUG]` a triaged finding; both are implementable, and the child filter keeps exactly those two. `[QA]` is a run's human QA pass and `[PRD]` the parent — neither is pickable work. Change them here if this repo uses different ones; never in a skill.
 - Triage labels: `needs-triage` → `ready-to-start` → `state:in-progress` → `state:done-on-branch`. All four must exist in the repo. The vocabulary is normative in `work-on-prd`'s `## Label vocabulary`; it is restated here so a cold session holding only this adapter knows which tracker and which labels to use without asking. Rename them if this repo already uses different words — keep the four roles.
 
 ### Azure DevOps
@@ -67,13 +68,7 @@ Every command a worker or the orchestrator runs. Keep the **Purpose** column sta
 - **L2 — floor, every issue, non-negotiable**: `<test command>` passes.
 - **L3 — user-visible issues**: L2 + `<boot command>` boots the app + a screenshot as evidence (`<screenshot command>`).
 - **L4** (agent-driven interaction): out of scope v1.
-- **L5 — human**: once per PRD, via the QA doc, on the branch, before merge.
-
-## QA doc convention
-
-- Path: `<docs/qa/prd-<n>.md>` (`<n>` = PRD issue number), committed on the PRD branch, linked from the PR body.
-- Per issue: what shipped · how to test in the running app (from the issue's `## QA notes`, refined by the worker) · edge cases the worker flagged.
-- The human runs it start-to-finish before merging the PR.
+- **L5 — human**: once per orchestrated run, against the branch, before merge. The run files a `[QA]` issue/work item and the human works it start-to-finish. Say here what exercising this app actually means — `<which entry point, which command, what to look for>` — because the run's steps are written against it and a worker only knows what this line says.
 
 ## Sources of truth (recon + hard gates)
 

@@ -33,11 +33,10 @@ way.
 
 | Adapter section | Read this | Ask only for |
 |---|---|---|
-| `## Repo` | **GitHub**: `gh repo view --json nameWithOwner,defaultBranchRef`. **Azure DevOps**: the default branch from git and nothing else — the tree states none of the rest | related repos / contract boundaries on either tracker — nothing states these reliably. On Azure DevOps, the whole `### Azure DevOps` block as well: org, the **two** projects (work items and repo — ask for both even when they are the same, since querying the wrong one returns empty rather than an error), team, repository, work-item type, the three board states, and the branch pattern |
+| `## Repo` | **GitHub**: `gh repo view --json nameWithOwner,defaultBranchRef`. **Azure DevOps**: the default branch from git and nothing else — the tree states none of the rest | related repos / contract boundaries on either tracker — nothing states these reliably. **Title prefixes on either tracker**: offer the defaults (`[PRD]`·`[TASK]`·`[BUG]`·`[QA]` on GitHub, `[SPEC]`·`[TASK]`·`[QA]` on ADO) and only ask whether this repo already uses different words — one confirmation, not four questions. On Azure DevOps, the whole `### Azure DevOps` block as well: org, the **two** projects (work items and repo — ask for both even when they are the same, since querying the wrong one returns empty rather than an error), team, repository, work-item type, the three board states, and the branch pattern |
 | `## Commands` | `package.json` scripts · `Makefile` targets · `Package.swift` + schemes · `Cargo.toml` · `pyproject.toml`. Package manager from the lockfile (`pnpm-lock.yaml` → pnpm, `bun.lockb` → bun, …) | the screenshot command — it is usually unscripted, and "none, use the browser tools interactively" is a real answer |
 | `## App facts` | language + version, framework + version, path aliases, generated-vs-source files, strict flags — all from the manifests and config files | **the fragile part.** The subsystem that breaks silently and that no linter catches. This is the highest-value line in the adapter and it is never in a file |
 | `## Verify ladder` | candidate L2 from the test/build scripts | confirmation that L2 is the real floor, and what L3 evidence looks like. A repo with no test suite is a legitimate answer — record *why*, so no worker treats it as a gap to fill on the side |
-| `## QA doc convention` | existing `docs/qa/` or similar, if present | the path convention. Offer `docs/qa/prd-N.md` as the default |
 | `## Sources of truth` | agents available in `.claude/agents/` and `~/.claude/agents/` | the access-policy source — where per-operation policies actually live (migrations, IaC, a console, an MCP). "None — no data layer" is a real answer and closes the question |
 | `## Project gates` | — | one question: *is there a class of breakage here that ships silently and no test catches?* Default is **None**. A gate invented at install time to look thorough will never be run |
 | `## Repo discipline` | root `CLAUDE.md` · presence of scoped `CONTEXT.md` files · barrel-file layout | the conventions that read as smells but are deliberate. Ask directly: *what would a new contributor "clean up" that they shouldn't?* |
@@ -59,8 +58,7 @@ Ask only for the sections the bundle declares in `../../install/bundles.md`.
 2. The verify floor, and what L3 evidence is when there's no screenshot command.
 3. The deliberate-looking-wrong conventions (`## Repo discipline`).
 
-**`ado-workflow`** — the same set minus `## QA doc convention` (the loop writes a `[QA]`
-work item, not a committed document), and it is the one bundle where `## Repo` is a real
+**`ado-workflow`** — the same set, and it is the one bundle where `## Repo` is a real
 interview rather than a `gh` call. Its board facts are worth more care than anything else
 here, because every one of them fails *silently*:
 
@@ -70,13 +68,13 @@ here, because every one of them fails *silently*:
 2. Then the same top three as `prd-workflow`: the fragile subsystem, the verify floor and
    its L3 evidence, and the deliberate-looking-wrong conventions.
 
-Do not ask for a QA doc path, and do not ask which tracker — the bundle already said.
+Do not ask which tracker — the bundle already said. There is no QA path to ask for on
+either tracker: both loops file a per-run `[QA]` item and neither writes a file.
 
 **`prd-qa`** — a subset of `prd-workflow`'s sections, so if the repo already ran that
-install every one is filled: confirm, don't re-ask. On a standalone install the two worth
-real questions are `## QA doc convention` (where the human-run QA doc lives) and
-`## Sources of truth` — specifically whether a **contract-boundary** repo and explorer
-agent exist. `triage-prd` routes cross-repo findings through them, and "None" is a fine
+install every one is filled: confirm, don't re-ask. On a standalone install the one worth a
+real question is `## Sources of truth` — specifically whether a **contract-boundary** repo
+and explorer agent exist. `triage-prd` routes cross-repo findings through them, and "None" is a fine
 answer that makes every finding a this-repo finding; a *guessed* answer sends issues to
 the wrong tracker.
 

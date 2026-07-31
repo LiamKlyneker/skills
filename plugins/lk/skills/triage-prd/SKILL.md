@@ -25,7 +25,9 @@ Establish PRD scope before the first finding, and hold it for the whole session:
 - **PRD issue** (`gh issue view <n>`) — especially its cross-repo dependencies, deferred / out-of-scope notes, and explicit locked decisions.
 - **Child issues** + the PR's **Closes map** (#c1…#cN → their file areas) — this is the *owning-slice* attribution map, near-free.
 - **Touched `CONTEXT.md`** for the feature dir(s) under test (use the `scoped-context` skill if available).
-- **QA doc** at the path the adapter's `## QA doc convention` defines, plus code comments in the touched files marked "deferred", "later slice", "no resolver yet", placeholder. This is what powers the gap classification below.
+- **The PRD's `[QA]` issues** — `work-on-prd` files one per run, titled `[QA] PRD #<n> — …`; find them with `gh issue list --search "in:title \"[QA] PRD #<n>\""`. Read **all** of them, newest last: each covers only the slice its run landed, so the current state of the branch is the union, and an earlier one's `## Before you start` may name something a later run has since fixed. Plus code comments in the touched files marked "deferred", "later slice", "no resolver yet", placeholder. This is what powers the gap classification below.
+
+  A PRD with no `[QA]` issue at all is normal, not a gap: a run whose children were all refactors or bumps creates none by design. And a `[QA]` issue is *never* a finding — it is the checklist the findings came from.
 
 ## Input
 
@@ -87,13 +89,20 @@ Both repos work in synergy; the issue just lands where the fix lands.
 - **Route** per the table below.
 
 <dispositions>
-| Kind | Where | Labels | Picked by work-on-prd? |
-|---|---|---|---|
-| **Merge-blocker** | this repo, `## Parent` → PRD `#N` | `bug` + `ready-to-start` | yes — on the PRD branch, before merge |
-| **Deferred / follow-up** *(after user OK)* | this repo, `## Parent` → PRD `#N` | `bug`/`enhancement` + `deferred` | no (not `ready-to-start`) — a known follow-up |
-| **Contract boundary** | **related repo**, "Discovered via …#PR" | `bug` (their style); local `blocked-external` pointer under the affected child's `## Blocked by` | n/a — no cross-repo auto-close; closed by hand |
-| **Reject** (WAD / dup / invalid) | this repo | file-then-close `duplicate`/`wontfix`/`invalid` + one-line rationale (cite the decision) | — |
+| Kind | Title | Where | Labels | Picked by work-on-prd? |
+|---|---|---|---|---|
+| **Merge-blocker** | `[BUG] …` | this repo, `## Parent` → PRD `#N` | `bug` + `ready-to-start` | yes — on the PRD branch, before merge |
+| **Deferred / follow-up** *(after user OK)* | `[BUG] …` | this repo, `## Parent` → PRD `#N` | `bug`/`enhancement` + `deferred` | no (not `ready-to-start`) — a known follow-up |
+| **Contract boundary** | their style | **related repo**, "Discovered via …#PR" | `bug` (their style); local `blocked-external` pointer under the affected child's `## Blocked by` | n/a — no cross-repo auto-close; closed by hand |
+| **Reject** (WAD / dup / invalid) | `[BUG] …` | this repo | file-then-close `duplicate`/`wontfix`/`invalid` + one-line rationale (cite the decision) | — |
 </dispositions>
+
+Two things make a this-repo issue pickable, and both are required: the `[BUG]` title prefix
+(the child filter) and the `ready-to-start` label (eligibility). A deferred follow-up still
+gets the prefix — it is a real child, just not yet pickable, and dropping the prefix would
+hide it from the promotion path as well. A related-repo issue takes **that** repo's title
+convention, not this one's; the prefixes are a per-adapter fact and the other side has its
+own.
 
 ### 5. Show the card, confirm, next
 
@@ -161,10 +170,21 @@ Introduced by: `<sha>` — <one line>.   ← ONLY if a regression / reveals inte
 - [ ] <verify ladder step green>
 ```
 
-Title: **`[QA] <one-line symptom>`** — the bracket prefix distinguishes triage-prd bugs from planned children at a glance (`work-on-prd` ignores the prefix). Severity = technical impact, independent of priority; both live in the issue body (no GitHub labels for them).
+Title: **`[BUG] <one-line symptom>`**.
+
+`[BUG]` is **shorthand for the adapter's *Title prefixes* row** at
+`<repo-root>/.claude/project/adapter.md`, written out for readability; if that row names a
+different prefix, it wins. The prefix is **load-bearing, not cosmetic**:
+`../_shared/prd-eligibility.md` keeps a PRD's child only when its title starts with `[TASK]`
+or `[BUG]`, so an unprefixed bug is invisible to `work-on-prd` and `next-prd-issue` — filed,
+parented, labelled `ready-to-start`, and never picked. It used to be `[QA]`, which now means
+something else entirely: a run's human QA pass, and deliberately *not* pickable.
+
+Severity = technical impact, independent of priority; both live in the issue body (no GitHub
+labels for them).
 
 ## Boundary / handoff
 
-- triage-prd = **investigate + decide + file**. It does **not** fix, and it does **not** need a separate "fix the bugs" skill: a bug filed in this repo with `## Parent → #N` + `ready-to-start` **is a PRD child** — `work-on-prd` (re-entrant, cold-start) discovers it via `in:body "#N"` and works it on the PRD branch with no new machinery. See `../_shared/prd-eligibility.md`.
+- triage-prd = **investigate + decide + file**. It does **not** fix, and it does **not** need a separate "fix the bugs" skill: a bug filed in this repo titled `[BUG] …` with `## Parent → #N` + `ready-to-start` **is a PRD child** — `work-on-prd` (re-entrant, cold-start) discovers it via `in:body "#N"`, keeps it on the `[BUG]` prefix, and works it on the PRD branch with no new machinery. All three are required; a bug missing the prefix is dropped by the child filter before eligibility ever runs. See `../_shared/prd-eligibility.md`.
 - Deferred (`deferred` label) issues sit as known follow-ups until promoted (relabel `ready-to-start`).
 - Related-repo issues are executed by that repo's own `work-on-issue`.

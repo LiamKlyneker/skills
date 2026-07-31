@@ -65,7 +65,16 @@ Report exactly these, in this order:
 2. **Verify evidence** — the actual test/build output (plus the screenshot for L3).
 3. **Deviation log** — every place the implementation diverged from the issue spec, and why.
    Empty is a valid answer; silence is not.
-4. **Refined QA notes** — concrete steps for the QA doc, refining the issue's `## QA notes`.
+4. **Refined QA notes** — concrete steps for the run's `[QA]` issue, refining the issue's
+   `## QA notes`. Each one is an action a human takes in the running app plus the observable
+   result they should get; "it looks right" is not a result.
+
+   **Only if this issue produced something a human can exercise.** A dependency bump, a
+   config change, a pure refactor or internal-only work earns no step — for those, write one
+   line saying what shipped and that there is nothing to exercise by hand, and stop there.
+   Do not manufacture a step to fill the section. The orchestrator drops such lines rather
+   than promoting them, and an invented step costs a tester real time discovering it tests
+   nothing.
 5. **Or** an honest "could not finish X because Y", with the attempts announced.
 
 No report theater — evidence over prose.

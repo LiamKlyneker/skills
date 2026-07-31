@@ -13,6 +13,7 @@ repo. That is self-hosting, not a broken install — expect `doctor` to say so.
 
 - Issue tracker / PRs: `LiamKlyneker/skills` (GitHub, via `gh`)
 - Default branch: `main` (PRs must target it — `Closes` keywords only fire against the default branch)
+- Title prefixes: `[PRD]` · `[TASK]` · `[BUG]` · `[QA]` — literal, at the start of the title, and what the skills filter a PRD's children on. `[TASK]` is a planned child, `[BUG]` a triaged finding; both are implementable, and the child filter keeps exactly those two. `[QA]` is a run's human QA pass and `[PRD]` the parent — neither is pickable work. Issues opened before the prefixes existed carry none; the set-level legacy fallback in `_shared/prd-eligibility.md` is what keeps their children visible.
 - Triage labels: `needs-triage` → `ready-to-start` → `state:in-progress` → `state:done-on-branch`. All four exist in the repo. The vocabulary is normative in `work-on-prd`'s `## Label vocabulary`; this line exists so a cold session that has only this adapter in context knows which tracker and which labels to use without asking.
 - Related repos (cross-repo issues, API contracts): None. Consumer repos exist
   (`creative-ghost/neonplace`, `creative-ghost/neonplace-ios`,
@@ -72,13 +73,7 @@ branch exists. Locally, `--base origin/main` is the equivalent.
 - **L2 — floor, every issue, non-negotiable**: `bash -n` on any changed shell script passes, and `doctor.sh` runs clean against at least one wired consumer repo. For a docs-only change, L2 is that every relative path the change introduces or moves actually resolves (`ls` the target).
 - **L3 — user-visible issues**: L2 + the change is *loaded* by a real Claude Code config and shown to be there — `claude plugin list` for a plugin, or the skill appearing in a fresh session for a skill. Paste the command output as evidence. "User-visible" here means anything that changes what a session discovers or how a skill behaves.
 - **L4** (agent-driven interaction): out of scope.
-- **L5 — human**: once per PRD, via the QA doc, on the branch, before merge. For this repo that means actually running the affected skill end-to-end in a live session.
-
-## QA doc convention
-
-- Path: `docs/qa/prd-<n>.md` (`<n>` = PRD issue number), committed on the PRD branch, linked from the PR body.
-- Per issue: what shipped · how to exercise it in a real session (which config dir, which command, what to look for) · edge cases the worker flagged.
-- The human runs it start-to-finish before merging.
+- **L5 — human**: once per orchestrated run, against the branch, before merge. The run files a `[QA]` issue and the human works it start-to-finish. For this repo, exercising a change means **running the affected skill end-to-end in a live session** — so every QA step names which config dir, which command, and what to look for. A step that cannot name those three is not a step this repo can test.
 
 ## Sources of truth (recon + hard gates)
 

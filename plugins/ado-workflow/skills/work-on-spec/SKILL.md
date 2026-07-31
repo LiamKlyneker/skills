@@ -42,8 +42,9 @@ Every project-specific value comes from the **project adapter** at
 `## Repo` → `### Azure DevOps`: the organisation, the **work-item project**, the **repo
 project**, the team, the repository, the work-item type, the **three board states**, the title
 prefixes and the **branch pattern**. From the rest of the adapter: the `## Commands` table, the
-verify ladder, the `## Project gates` registry, and the QA-doc convention — for the *shape* of a
-QA entry only; this loop writes no file at its path (see *Loop end*).
+verify ladder, and the `## Project gates` registry. The adapter carries no QA-doc convention on
+either tracker any more — the shape of a QA item is `../_shared/qa-item.md`'s, and this loop
+writes no file at all (see *Loop end*).
 
 **Abort** if the adapter is missing, or if its `Tracker:` line is anything other than
 `azure-devops` (an absent line means `github` — that project wants `work-on-prd`). Guessing an
@@ -105,11 +106,13 @@ Requires the Azure DevOps MCP server (`mcp__ado__*` tools).
   spec it moves to the claimed state; after that it is never written again — not advanced, not
   closed, not commented into a status feed. The human runs QA against it and may add `[TASK]`s
   afterwards, and a spec parked in the claimed state is what says "this is being run".
-- **No field of the parent work item is ever written.** It is read twice — walked to find the
-  spec's siblings (per the eligibility mechanics), and read at loop end for its acceptance
-  criteria. The only thing that touches it is the hierarchy relation the `[QA]` item creates from
-  its own side at loop end, the same way `to-spec-tasks` places a `[TASK]`. No field, no state, no
-  comment: it belongs to Product.
+- **No field of the parent work item is ever written.** It is read to walk the spec's siblings
+  (per the eligibility mechanics), and re-read at loop end for one purpose only: confirming the
+  `[QA]` item's hierarchy link actually landed. Loop end used to read its **acceptance criteria**
+  as well, for the `[QA]` item's coverage checklist; that checklist is gone and so is the read.
+  The only thing that touches the parent is the hierarchy relation the `[QA]` item creates from
+  its own side, the same way `to-spec-tasks` places a `[TASK]`. No field, no state, no comment:
+  it belongs to Product.
 - **No status feed.** The loop's only writes to work items are board-state moves on `[TASK]`s, the
   single `[SPEC]` move above, escalation comments on failed `[TASK]`s, and the one `[QA]` item at
   loop end.
@@ -139,6 +142,13 @@ discarded by design.
    a slug from its title (e.g. `spec/<id>-<slug>`). Check it out if it exists (local or remote),
    else create it from an up-to-date default branch. One branch per spec, on both a cold start
    and a resume — the pattern is what makes the resume find the same branch.
+
+   **Strip the title's prefix before slugging** — slug `dark-mode`, never `spec-dark-mode`. A
+   `[SPEC]` title always carries one here, so this is not an edge case; and a run whose computed
+   name stops matching the branch its work is on opens a *second* branch and a *second* pull
+   request, reconstructs zero commits, and re-runs every landed `[TASK]` without erroring. Strip
+   any leading `[…]` bracket group rather than the literal string, so an adapter naming a
+   different prefix is handled too.
 3. **Pull request** (one per spec): list the repository's open pull requests for this source
    branch — **repo project + repository, not the work-item project**. If one exists, adopt it;
    **never open a second**. If none exists, push (empty commit `spec AB#<id>: loop start` if the
@@ -303,121 +313,46 @@ Three things, in order: the `[QA]` work item, the pull-request body, the final s
 
 ### 1. The `[QA]` work item — one per *run*
 
-**The deliberate divergence from `work-on-prd`.** That loop commits a QA document to the branch at
-the adapter's QA-doc path. This one **commits nothing to the repo** — it creates a `[QA]` work
-item and leaves the working tree alone. Do not port the committed-file behaviour and do not write
-to the adapter's QA-doc path; the adapter's `## QA doc convention` still supplies the *shape* of a
-QA entry (what shipped · how to exercise it in the running app · edge cases the worker flagged),
-and no longer supplies a destination.
+**Read [`../_shared/qa-item.md`](../_shared/qa-item.md)** — normative for one per run, what
+earns a step, the nothing-testable rule, the body, step numbering, and the two sources the item
+is built from. Everything below is the Azure DevOps mechanics that document deliberately leaves
+to this skill.
 
-One per **run**, never one per `[SPEC]`. A run covers exactly the slice of `[TASK]`s that just
-landed, so a second run against the same `[SPEC]` creates a **second** `[QA]` item and never edits
-the first. That is the point of the divergence: a committed document accumulates and goes stale
-silently, while a per-run item describes one testable slice and is closed by the human once tested.
+**This used to be the deliberate divergence from `work-on-prd`.** That loop committed a QA
+document to the branch at a path in the adapter; this one created a work item and left the
+working tree alone, and this section explained at length why the two differed. `work-on-prd` has
+since converged on **this** behaviour — a per-run item, nothing committed — and the adapter's QA
+path convention is gone from both trackers. What is left of the divergence is mechanics: a work
+item here, an issue there. If you find a document telling you to write a file at a QA path, it
+predates the convergence.
 
-#### What it is built from
-
-Three sources, and nothing else:
-
-1. Each worker's **refined QA notes** — item 4 of the report contract in
-   [`../../agents/spec-worker.md`](../../agents/spec-worker.md). These are the steps; the
-   `[TASK]`'s original `## QA notes` are what the worker refined, not a second source to merge.
-2. Each worker's **deviation log** (item 3) and the edge cases it flagged. These are the gotchas.
-3. The **parent work item's acceptance criteria** — the coverage checklist. Read on, this is the
-   one that bites.
-
-#### Where the acceptance criteria come from
-
-Parse them from the **parent work item's description**, under its `## Acceptance Criteria`
-heading. **Never** from the dedicated acceptance-criteria field
-(`Microsoft.VSTS.Common.AcceptanceCriteria`).
-
-That field is unpopulated on this process, and reading it **does not fail** — it succeeds and
-returns empty. So a `[QA]` item built from it has a well-formed coverage checklist with nothing in
-it, and looks exactly like a correct one. Nothing downstream catches that: the human works through
-the steps, ticks a checklist that lists no criteria, and the acceptance criteria of the thing that
-just shipped are never checked by anybody. This is the one read in the whole loop where success is
-not evidence — confirm you got criteria, not just a response.
-
-The parent is the work item Setup step 1 already resolved from the `[SPEC]`'s `Hierarchy-Reverse`
-relation; fetch it with `mcp__ado__wit_work_item` (`action: "get"`), `expand: "relations"` and **no `fields`
-filter** ([`../_shared/ado-workitem-authoring.md`](../_shared/ado-workitem-authoring.md) §4).
-Take each criterion **verbatim** — a paraphrased criterion is a different criterion, and the human
-ticking it is agreeing to something Product never wrote.
-
-Two failure modes to handle rather than paper over:
-
-- **No `## Acceptance Criteria` heading in the parent's description** → omit the coverage section
-  and say in the final summary that the parent carries none. Do not fall back to the dedicated
-  field, and do not substitute the `[TASK]`s' own `## Acceptance criteria` sections — those are
-  per-task, they are what the workers already verified, and promoting them produces a checklist
-  that only restates the run.
-- **A criterion no `[TASK]` in this run touched** → it still goes on the checklist, marked *not
-  covered by this run*. The checklist measures the parent, not the run.
-
-#### What contributes, and what doesn't
-
-A `[TASK]` contributes steps only if it produced something a human can exercise in the running
-app. Setup, dependency installs, config, pure refactors and internal-only changes contribute
-**nothing** — not a step, and **not** a "nothing to test here" line. Those lines are what turn a QA
-item into a document nobody reads to the end.
-
-If **no** `[TASK]` in the run produced anything testable, create **no `[QA]` work item at all**.
-An empty one is worse than none: it is a work item a human has to open, read and close in order to
-learn nothing. Say so explicitly in the final summary — "no `[QA]` item: nothing in this run is
-manually testable" plus the list of `[TASK]`s — and put the same sentence where the PR body's `QA:`
-line would have gone.
+The one rule from the shared document worth restating at the call site, because the ADO lever for
+it is unusual: **an empty `[QA]` item is worse than none.** If no `[TASK]` in the run produced
+anything a human can exercise, create nothing, and say so in the final summary *and* where the PR
+body's `QA:` line would have gone.
 
 #### The `[QA]` body
 
-<!-- String contract: this template is the NORMATIVE copy of the `[QA]` body. Its only consumer
-is the human running verify-ladder L5 against the branch — no skill parses it, and nothing reads
-a previous run's `[QA]` item — so "normative" here means the section order and the three sources
-are fixed, not that a parser depends on the wording. The final summary and the PR body reference
-this item by id and url; neither restates its contents. -->
+The template and the rules governing it are [`../_shared/qa-item.md`](../_shared/qa-item.md)'s.
+Three things are this tracker's, and all three are silent when wrong:
 
-<qa-template>
-
-Run of [SPEC] #<spec-id> — <n> [TASK]s landed <date>
-PR: [<repo> PR NNNN](https://dev.azure.com/<org>/<repo-project>/_git/<repo>/pullrequest/NNNN)
-
-## Steps
-
-1. <action to take in the running app> — expected: <the observable result>  (#<task-id>)
-2. <next action> — expected: <result>  (#<task-id>)
-
-## Gotchas
-
-- <edge case or deviation the worker flagged, and what it means for the tester>  (#<task-id>)
-
-## Acceptance criteria coverage
-
-- [ ] <criterion, verbatim from the parent's description> — steps 1–3
-- [ ] <criterion> — **not covered by this run**
-
-</qa-template>
-
-Steps are numbered **continuously across the whole run**, in the order a human would sit down and
-work through them, each carrying the `[TASK]` id it came from so a failure routes straight back to
-the work item that caused it. Every step states its expected result; a step whose result is "it
-looks right" is not a step.
+- **Ids.** `[SPEC]` and `[TASK]` ids in the body are written as bare `#<id>` — they really are
+  work items in this org and ADO autolinks them correctly. The **pull request is not**: a bare
+  `#NNNN` for it autolinks to the *work item* with that id and sends the tester somewhere
+  unrelated ([`../_shared/ado-workitem-authoring.md`](../_shared/ado-workitem-authoring.md) §2).
+  Link the PR in full, with `<org>`, the **repo project** and `<repo>` from the adapter:
+  `PR: [<repo> PR NNNN](https://dev.azure.com/<org>/<repo-project>/_git/<repo>/pullrequest/NNNN)`.
+- **Angle brackets** (§1). This is the most bracket-dense body the plugin writes — QA steps are
+  prose full of component names, elements and generic types. Escape every one as `&lt;` / `&gt;`
+  **at synthesis time, before the body is sent**. `wit_work_item_write` (`action: "update"`) has
+  no `format` option and falls back to HTML, so an unescaped token survives creation and then
+  vanishes the first time anything edits the item.
+- **The run-context line** names the `[SPEC]` and the run: `Run of [SPEC] #<spec-id> — <n>
+  [TASK]s landed <date>`, with the PR link beneath it.
 
 Title: the adapter's `[QA]` prefix, the `[SPEC]` title, and the run's date. Two runs on the same
 day produce two items with the same title — that is fine and expected, they differ by id and
 creation time. Never reuse or edit an earlier one to avoid a duplicate.
-
-Apply the authoring invariants **at synthesis time, before the body is sent**
-([`../_shared/ado-workitem-authoring.md`](../_shared/ado-workitem-authoring.md)):
-
-- **§1, angle brackets.** This is the most bracket-dense body the plugin writes — QA steps are
-  prose full of component names, elements and generic types, including the placeholders above.
-  Escape every one of them as `&lt;` / `&gt;` before sending. `wit_work_item_write` (`action: "update"`) has no
-  `format` option and falls back to HTML, so an unescaped token survives creation and then
-  vanishes the first time anything edits the item.
-- **§2, never a bare `#NNNN` for the pull request.** ADO autolinks it to the *work item* with that
-  id and sends the tester somewhere unrelated. Link the PR in full, with `<org>`, the **repo
-  project** and `<repo>` from the adapter. Bare `#<id>` is correct for the `[SPEC]` and `[TASK]`
-  ids, and only for those — they really are work items in this org.
 
 #### Create and link it
 
@@ -447,7 +382,11 @@ with the no-QA sentence if none was created — and bring the task checklist to 
 call and same **repo project + repository** as every other PR-shaped call
 (`mcp__ado__repo_pull_request_write`, `action: "update"`). It stays `isDraft: true`.
 
-**Do not attach the `[QA]` item to the PR as a linked work item.** The PR's completion options
+**Do not attach the `[QA]` item to the PR as a linked work item.** This is the ADO lever for the
+merge-survival invariant in [`../_shared/qa-item.md`](../_shared/qa-item.md) — the QA pass is
+closed by the human who ran it and by nothing else. GitHub's lever is the PR's `Closes` line;
+this tracker's is the linked-work-item list, and it is the more dangerous of the two because it
+is armed by default. The PR's completion options
 transition every linked work item, and `transitionWorkItems` **defaults to `true`**
 (*Pull-request wiring*) — so this is not a risk you opt into by arming a flag, it is the default
 behaviour of any PR you have not deliberately disarmed. A linked `[QA]` item would close itself
