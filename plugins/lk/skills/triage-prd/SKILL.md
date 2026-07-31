@@ -22,12 +22,12 @@ Project facts (repos, commands, verify ladder) come from the **project adapter**
 Establish PRD scope before the first finding, and hold it for the whole session:
 
 - **Which PRD / PR.** Resolve the PR (`gh pr list` / branch's PR) and the PRD issue it runs (PR body's `Runs PRD #N` + `## Children`). Ask if not given.
-- **PRD issue** (`gh issue view <n>`) — especially its cross-repo dependencies, deferred / out-of-scope notes, and explicit locked decisions.
+- **PRD issue** (`gh issue view <n> --json body,comments`) — the body for its cross-repo dependencies, deferred / out-of-scope notes, and explicit locked decisions; the same call's `comments` array is what the QA comments below are read from.
 - **Child issues** + the PR's **Closes map** (#c1…#cN → their file areas) — this is the *owning-slice* attribution map, near-free.
 - **Touched `CONTEXT.md`** for the feature dir(s) under test (use the `scoped-context` skill if available).
-- **The PRD's `[QA]` issues** — `work-on-prd` files one per run, titled `[QA] PRD #<n> — …`; find them with `gh issue list --search "in:title \"[QA] PRD #<n>\""`. Read **all** of them, newest last: each covers only the slice its run landed, so the current state of the branch is the union, and an earlier one's `## Before you start` may name something a later run has since fixed. Plus code comments in the touched files marked "deferred", "later slice", "no resolver yet", placeholder. This is what powers the gap classification below.
+- **The PRD's QA comments** — `work-on-prd` posts one **comment** on the PRD issue per run (no `[QA]` issue any more); read them from the `comments` array the first bullet already fetched, rather than a second search. A QA comment is identified by two markers together, never a fragile substring: the **run-context line** it opens with (e.g. ``Branch `prd/52-extract-lk-plugin` · PR #63 · 9 issues landed``) and the **`## Steps` heading**, the one heading present in every QA comment by construction (`## What landed` is conditional, so it can't be the marker). Read **all** of them, newest last: each covers only the slice its run landed, so the current state of the branch is the union, and an earlier one's `## Before you start` may name something a later run has since fixed. Plus code comments in the touched files marked "deferred", "later slice", "no resolver yet", placeholder. This is what powers the gap classification below.
 
-  A PRD with no `[QA]` issue at all is normal, not a gap: a run whose children were all refactors or bumps creates none by design. And a `[QA]` issue is *never* a finding — it is the checklist the findings came from.
+  A PRD with no QA comment at all is normal, not a gap: a run whose children were all refactors or bumps creates none by design. And a QA comment is *never* a finding — it is the checklist the findings came from. The PRD's `needs-qa` label is worth noting alongside this — it signals an outstanding manual pass — but it does not change the classification above.
 
 ## Input
 
