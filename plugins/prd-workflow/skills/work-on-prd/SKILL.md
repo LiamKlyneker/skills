@@ -68,7 +68,7 @@ State lives in git + GitHub only (branch commits, issue labels, PR body). Zero s
 
    Closes line: (accumulated as issues land)
 
-   QA doc: (added at loop end)
+   QA: (added at loop end)
 
    🤖 Generated with [Claude Code](https://claude.com/claude-code)
    ```
@@ -98,14 +98,32 @@ State lives in git + GitHub only (branch commits, issue labels, PR body). Zero s
 
 ## Loop end (no eligible children left)
 
-1. **QA doc** at the adapter's QA-doc path: one section per completed issue — what shipped · how to test in the running app (issue `## QA notes` refined by the worker's report) · edge cases the worker flagged. Commit it to the branch, push.
-2. **PR body**: link the QA doc, final checklist state.
-3. **Final summary** to the human: issues done / skipped / failed · deviations worth reading · escalations. Leave the PR open (still draft) for human QA (verify ladder L5: run the QA doc start-to-finish on the branch, then merge manually). The PRD issue is **not** closed by the loop — `Closes` keywords fire on merge.
-4. **Release keep-awake** (mirror of Setup step 0; no-op if never started): let the machine sleep again.
+Three things, in order: the `[QA]` issue, the PR body, the final summary.
 
-   ```bash
-   [ -f /tmp/work-on-prd.caffeinate.pid ] && kill "$(cat /tmp/work-on-prd.caffeinate.pid)" 2>/dev/null; rm -f /tmp/work-on-prd.caffeinate.pid
-   ```
+### 1. The `[QA]` issue — one per *run*
+
+**Commit nothing.** This loop used to write a markdown document to a path in the adapter and commit it to the branch; it no longer does, and the adapter no longer names a path. Read `../_shared/qa-item.md` — it is normative for one-per-run, what earns a step, the nothing-testable rule, the body, step numbering and the two sources it is built from. Everything below is the GitHub mechanics that document deliberately leaves to this skill.
+
+- **Create** with `gh issue create` against the adapter's issue-tracker repo.
+- **Title**: `[QA] PRD #<n> — <the PRD title, prefix stripped>`. Two runs on the same PRD produce two issues with the same title; that is fine and expected, they differ by number and creation time. Never edit or reuse an earlier one to avoid a duplicate.
+- **Run context line**: the branch, the PR, and how many issues landed — e.g. ``Branch `prd/52-extract-lk-plugin` · PR #63 · 9 issues landed``.
+- **Ids in the body** are bare `#N` — GitHub autolinks them to issues in this repo, which is exactly where a tester needs to land.
+- **No `## Parent` section, no `ready-to-start`, no `state:*` label.** All three would make it look like work. `../_shared/prd-eligibility.md` drops `[QA]` titles unconditionally, so the prefix alone already keeps it off the pick path — the omissions are the second layer, for anything reading the issue by hand.
+- **It never appears in the PR's `Closes` line.** This is the merge-survival invariant in `../_shared/qa-item.md`, and on GitHub the lever is that one line: a `Closes #N` naming the QA issue auto-closes the QA pass the moment the branch merges, before anybody runs it. The step below writes a `#N` into the PR body a few characters from a keyword that would do exactly that — link it under `QA:`, never after a closing keyword, and never let the QA number join the accumulated `Closes` list.
+
+### 2. PR body
+
+Replace the placeholder `QA:` line from Setup step 3 with a link to the `[QA]` issue — or with the no-QA sentence if none was created — and bring the children checklist to its final state. The PR stays a draft.
+
+### 3. Final summary
+
+To the human: issues done / skipped / failed · deviations worth reading · escalations · the `[QA]` issue by number and url, or the explicit "no `[QA]` issue created: nothing in this run is manually testable" with the reason. Leave the PR open (still draft) for human QA (verify ladder L5: run the `[QA]` issue start-to-finish against the branch, then merge manually). The PRD issue is **not** closed by the loop — `Closes` keywords fire on merge. Do not close the `[QA]` issue you just created; the human who runs it closes it.
+
+Then release keep-awake — mirror of Setup step 0, no-op if never started:
+
+```bash
+[ -f /tmp/work-on-prd.caffeinate.pid ] && kill "$(cat /tmp/work-on-prd.caffeinate.pid)" 2>/dev/null; rm -f /tmp/work-on-prd.caffeinate.pid
+```
 
 ## Label vocabulary
 

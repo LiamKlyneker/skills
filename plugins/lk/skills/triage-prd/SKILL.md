@@ -25,7 +25,9 @@ Establish PRD scope before the first finding, and hold it for the whole session:
 - **PRD issue** (`gh issue view <n>`) — especially its cross-repo dependencies, deferred / out-of-scope notes, and explicit locked decisions.
 - **Child issues** + the PR's **Closes map** (#c1…#cN → their file areas) — this is the *owning-slice* attribution map, near-free.
 - **Touched `CONTEXT.md`** for the feature dir(s) under test (use the `scoped-context` skill if available).
-- **QA doc** at the path the adapter's `## QA doc convention` defines, plus code comments in the touched files marked "deferred", "later slice", "no resolver yet", placeholder. This is what powers the gap classification below.
+- **The PRD's `[QA]` issues** — `work-on-prd` files one per run, titled `[QA] PRD #<n> — …`; find them with `gh issue list --search "in:title \"[QA] PRD #<n>\""`. Read **all** of them, newest last: each covers only the slice its run landed, so the current state of the branch is the union, and an earlier one's `## Before you start` may name something a later run has since fixed. Plus code comments in the touched files marked "deferred", "later slice", "no resolver yet", placeholder. This is what powers the gap classification below.
+
+  A PRD with no `[QA]` issue at all is normal, not a gap: a run whose children were all refactors or bumps creates none by design. And a `[QA]` issue is *never* a finding — it is the checklist the findings came from.
 
 ## Input
 

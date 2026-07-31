@@ -86,17 +86,16 @@ present, which is the gap-fill case in step 3a and not a contradiction to stop o
 The PRD → issues → implementation loop. The reason the adapter exists.
 
 - **Status:** ready
-- **Adapter sections:** `## Repo`, `## Commands`, `## App facts`, `## Verify ladder`, `## QA doc convention`, `## Project gates`, `## Repo discipline`, `## One-time repo preconditions`
+- **Adapter sections:** `## Repo`, `## Commands`, `## App facts`, `## Verify ladder`, `## Project gates`, `## Repo discipline`, `## One-time repo preconditions`
 - **Gates:** none by default — `install/gates/gate.template.md` on request only
 
 Which skill drives which section, so a partial adoption can drop questions:
 
 | Section | Wanted by |
 |---|---|
-| `## Repo` | all five workflow skills |
+| `## Repo` | all five workflow skills — including the **title prefixes**, which every one of them either writes or filters on |
 | `## Commands`, `## Verify ladder` | `to-issues`, `work-on-prd`, `work-on-issue` |
 | `## App facts` | `work-on-prd` (pasted into every worker prompt) |
-| `## QA doc convention` | `work-on-prd` |
 | `## Project gates` | `to-prd`, `to-issues` |
 | `## Repo discipline` | `work-on-prd`, `work-on-issue` |
 | `## One-time repo preconditions` | `work-on-prd` (the `Closes #N` setting) |
@@ -118,18 +117,20 @@ Which skill drives which section:
 
 | Section | Wanted by |
 |---|---|
-| `## Repo` | all four workflow skills — and it carries far more here than on GitHub. The `### Azure DevOps` sub-section holds the org, the **two** projects (work items and repo, routinely different), the team, the repository, the work-item type, the three board states, the title prefixes and the branch pattern. None of it is discoverable from the tree, which is why every one of them is a question |
+| `## Repo` | all four workflow skills — and it carries far more here than on GitHub, though the gap has narrowed: both trackers now register **title prefixes** there. The `### Azure DevOps` sub-section holds the org, the **two** projects (work items and repo, routinely different), the team, the repository, the work-item type, the three board states, the title prefixes and the branch pattern. None of it is discoverable from the tree, which is why every one of them is a question |
 | `## Commands`, `## Verify ladder` | `to-spec-tasks` (every `[TASK]` names its own verify command), `work-on-spec`, and `spec-worker` through the adapter `work-on-spec` pastes into each worker prompt |
 | `## App facts` | `work-on-spec` (pasted into every worker prompt) |
 | `## Project gates` | `to-spec`, `to-spec-tasks` |
 | `## Repo discipline` | `work-on-spec`, and `spec-worker` for the scoped `CONTEXT.md` rule |
 | `## One-time repo preconditions` | all four — its `### Azure DevOps` sub-section names the MCP server key and the exact spelling of the board states, and both fail *silently* when wrong: a server under the wrong key reads as unconfigured, and a near-miss state name is a no-op rather than an error |
 
-**`## QA doc convention` is deliberately absent** — the one section `prd-workflow` requires
-that this bundle does not. `work-on-spec` ends a run by creating a `[QA]` **work item**
-describing the slice that just landed, not by committing a QA document to the repo, so
-there is no path convention to agree on and asking for one would fill in a value nothing
-reads.
+**This bundle's section list and `prd-workflow`'s are now the same set**, and neither asks
+anything about QA. They used to differ by exactly one row, back when `work-on-spec` created
+a per-run `[QA]` work item while `work-on-prd` committed a document to a path the adapter
+named. Both loops file a per-run item now, so that row was removed from the template and
+from both lists rather than added to this one — do not restore it to either. The shape of a
+QA item is `../_shared/qa-item.md`'s, which ships with the plugins and is not something an
+installer can ask a human for; the argument is ADR 0005.
 
 The row that looks like a GitHub leftover is real. `## One-time repo preconditions` survives
 even though the ADO side has no analogue of GitHub's un-queryable auto-close setting (the pull request's completion options transition
@@ -141,15 +142,14 @@ spelling, both human-checked once.
 The QA loop that runs against a PRD branch before merge.
 
 - **Status:** ready
-- **Adapter sections:** `## Repo`, `## QA doc convention`, `## Verify ladder`, `## Sources of truth`, `## Repo discipline`
+- **Adapter sections:** `## Repo`, `## Verify ladder`, `## Sources of truth`, `## Repo discipline`
 - **Gates:** none
 
 Which skill drives which section:
 
 | Section | Wanted by |
 |---|---|
-| `## Repo` | both — `triage-prd` also reads `Related repos` to route across the contract boundary |
-| `## QA doc convention` | `triage-prd` (loads the QA doc as decision context) |
+| `## Repo` | both — `triage-prd` also reads `Related repos` to route across the contract boundary, and the **title prefixes** it files bugs under |
 | `## Verify ladder` | `triage-prd` (every filed issue names its verify step) |
 | `## Sources of truth` | `triage-prd` — the project explorer agent, and the contract-boundary one for cross-repo findings |
 | `## Repo discipline` | both — scoped `CONTEXT.md` loading |

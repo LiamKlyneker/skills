@@ -68,13 +68,7 @@ Every command a worker or the orchestrator runs. Keep the **Purpose** column sta
 - **L2 — floor, every issue, non-negotiable**: `<test command>` passes.
 - **L3 — user-visible issues**: L2 + `<boot command>` boots the app + a screenshot as evidence (`<screenshot command>`).
 - **L4** (agent-driven interaction): out of scope v1.
-- **L5 — human**: once per PRD, via the QA doc, on the branch, before merge.
-
-## QA doc convention
-
-- Path: `<docs/qa/prd-<n>.md>` (`<n>` = PRD issue number), committed on the PRD branch, linked from the PR body.
-- Per issue: what shipped · how to test in the running app (from the issue's `## QA notes`, refined by the worker) · edge cases the worker flagged.
-- The human runs it start-to-finish before merging the PR.
+- **L5 — human**: once per orchestrated run, against the branch, before merge. The run files a `[QA]` issue/work item and the human works it start-to-finish. Say here what exercising this app actually means — `<which entry point, which command, what to look for>` — because the run's steps are written against it and a worker only knows what this line says.
 
 ## Sources of truth (recon + hard gates)
 

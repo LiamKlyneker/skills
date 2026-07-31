@@ -133,7 +133,7 @@ Everything a cold, isolated worker session needs to implement this slice without
 
 ## QA notes
 
-2–3 lines for the human QA pass (these seed the PRD's QA doc): what to do in the running app, what they should see, edge cases worth poking.
+2–3 lines for the human QA pass: what to do in the running app, what they should see, edge cases worth poking. The worker refines these into the steps of the run's `[QA]` issue, so write them as something a person could actually do — and where this slice is a refactor, a bump or config that nobody can exercise by hand, say that instead of inventing a step.
 
 ## Acceptance criteria
 
