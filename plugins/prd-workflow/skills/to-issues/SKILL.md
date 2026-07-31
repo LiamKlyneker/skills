@@ -88,6 +88,49 @@ For each approved slice, publish a new issue to the issue tracker, titled `[TASK
 
 Publish issues in dependency order (blockers first) so you can reference real issue identifiers in the "Blocked by" field.
 
+#### Link each child to the PRD as a native sub-issue
+
+Right after creating a child, link it to the parent PRD as a **native GitHub sub-issue**, and
+confirm the link landed before you create the next child. Three calls per child:
+
+```bash
+# 1. Resolve the child's INTERNAL numeric id — not its issue number
+id=$(gh api repos/<owner>/<repo>/issues/<child-number> --jq .id)
+
+# 2. Write the link
+gh api repos/<owner>/<repo>/issues/<prd-number>/sub_issues -X POST -F sub_issue_id="$id"
+
+# 3. Read the PRD's sub-issues back and confirm <child-number> is in the list
+gh api repos/<owner>/<repo>/issues/<prd-number>/sub_issues --jq '.[].number'
+```
+
+**`sub_issue_id` takes the internal numeric issue `id`, never the issue number.** There are
+three plausible-looking values for one issue and only one of them works:
+
+| Value | Where it comes from | What happens |
+|---|---|---|
+| **Internal numeric `id`** | `gh api repos/<owner>/<repo>/issues/<n> --jq .id` | correct — the only one the endpoint accepts |
+| Issue number (`<n>`) | the thing you have in hand | bare `404 Not Found` — **indistinguishable from "that issue does not exist"** |
+| GraphQL `node_id` | `gh issue view <n> --json id` | wrong value; the `id` field there is the base64 node id, not the REST `id` |
+
+So when a link call 404s, suspect this before you suspect a missing issue — that is the
+failure mode a cold session hits once per install.
+
+Two rules, both non-negotiable:
+
+- **Verify every link after writing it** (step 3 above) and say so out loud — print a line per
+  child naming the child and that it now appears under the PRD. `POST` succeeding is not
+  evidence the child is parented; reading the PRD's sub-issue list back is. `## Parent` in the
+  body is still written and is still what discovery reads today, but once discovery moves to
+  the links there is no text-search safety net, and a silently failed link is an invisible
+  child.
+- **Write links one at a time — never fan them out.** Create → link → verify one child, then
+  start the next. GitHub warns that creating or removing sub-issues "too quickly" trips
+  secondary rate limiting, and publishes no threshold to aim under.
+
+Use `gh api` for this. Do **not** use `gh issue create --parent`: that flag needs
+`gh >= 2.94.0`, this machine runs `2.89.0`, and `gh api` works on both.
+
 <!-- String contract: this template is the normative writer for the `## Parent`, `## External steps`, `## Blocked by`, `## Worker context`, `## Design reference` and `## QA notes` headings and for the two "None…" sentinel phrases below. `../_shared/prd-eligibility.md` and `next-prd-issue` parse them; `work-on-prd` consumes `## Worker context`. Change a heading or sentinel here and you must change them there. -->
 
 <issue-template>
