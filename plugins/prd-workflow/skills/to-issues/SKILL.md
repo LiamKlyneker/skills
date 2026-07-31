@@ -120,10 +120,10 @@ Two rules, both non-negotiable:
 
 - **Verify every link after writing it** (step 3 above) and say so out loud — print a line per
   child naming the child and that it now appears under the PRD. `POST` succeeding is not
-  evidence the child is parented; reading the PRD's sub-issue list back is. `## Parent` in the
-  body is still written and is still what discovery reads today, but once discovery moves to
-  the links there is no text-search safety net, and a silently failed link is an invisible
-  child.
+  evidence the child is parented; reading the PRD's sub-issue list back is. **The link is the
+  only thing discovery reads** (`../_shared/prd-eligibility.md`): `## Parent` is still written
+  into the body, but nothing searches on it any more, so there is no text-search safety net and
+  a silently failed link is an invisible child.
 - **Write links one at a time — never fan them out.** Create → link → verify one child, then
   start the next. GitHub warns that creating or removing sub-issues "too quickly" trips
   secondary rate limiting, and publishes no threshold to aim under.
