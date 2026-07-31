@@ -102,14 +102,59 @@ Three things, in order: the `[QA]` issue, the PR body, the final summary.
 
 ### 1. The `[QA]` issue — one per *run*
 
-**Commit nothing.** This loop used to write a markdown document to a path in the adapter and commit it to the branch; it no longer does, and the adapter no longer names a path. Read `../_shared/qa-item.md` — it is normative for one-per-run, what earns a step, the nothing-testable rule, the body, step numbering and the two sources it is built from. Everything below is the GitHub mechanics that document deliberately leaves to this skill.
+**Commit nothing.** This loop used to write a markdown document to a path in the adapter and commit it to the branch; it no longer does, and the adapter no longer names a path. Everything below is normative and is this skill's own — the shape of the issue and the GitHub mechanics both. `work-on-spec` states the same shape against Azure DevOps in `ado-workflow`'s `skills/references/qa-item.md`; the two are siblings, not a shared file and two call sites. The only consumer is the person running QA: **no skill parses this issue**, and nothing ever reads a previous run's, so "normative" means the section order, the sources and the earning rule are fixed — not that a parser depends on the wording.
+
+**One per run, never one per PRD.** A run covers exactly the slice of children that just landed. A second run against the same PRD creates a **second** `[QA]` issue and **never edits the first**. That is the whole point of an issue rather than a committed document: a document at a fixed path accumulates every run's output, goes stale silently, and gives the human no way to tell which half they already tested. A per-run issue describes one testable slice, and the human closes it once tested.
+
+**What earns a step.** A landed child earns a step **only if a human can exercise it in the running app**. Dependency bumps, config changes, pure refactors, internal-only work and setup contribute **nothing**: no step, and **no standalone "nothing to test here" line, paragraph or section**. Those lines are the entire reason the committed documents this replaces reached 440 lines — every landed issue earned a section whether or not anybody could act on it, so the sections that mattered were buried among the ones that didn't. Such a child still gets its **one line in `## What landed`**, so a reader can see it shipped and does not go hunting for the step it never had; that line may carry a short parenthetical — `(nothing to test by hand)`, a few words, inline — and that is the *only* form the idea is allowed to take. The moment it becomes its own line or section, the rule has been broken. Applied honestly, most runs produce a `[QA]` issue far shorter than the list of things they landed. That is the intended shape, not a sign something was missed.
+
+**Nothing testable in the whole run → create no issue at all.** If **no** child in the run produced anything a human can exercise, create **nothing** — an empty `[QA]` issue is worse than none, being a thing a person has to open, read and close in order to learn nothing. Say so explicitly, in both places the issue would otherwise have been named: the **final summary** ("no `[QA]` issue: nothing in this run is manually testable", plus the list of children the run landed), and the **pull request body**, where the `QA:` line would have gone — the same sentence. Silence in either place reads as a forgotten step rather than a decision.
+
+**The body:**
+
+<qa-template>
+
+<one line of run context: the branch, the pull request, how many children landed>
+
+## What landed
+
+- <id> — <one line on what shipped>
+- <id> — <one line>  (nothing to test by hand)
+
+## Before you start
+
+- <the thing that will look broken and is not, and why>
+
+## Steps
+
+1. <action to take in the running app> → expect <the observable result>  (<id>)
+2. <action> → expect <result>  (<id>)
+
+## Gotchas
+
+- <edge case or deviation a worker flagged, and what it means for the tester>  (<id>)
+
+</qa-template>
+
+The rules governing that template are deliberately written **outside** the fence. Copy the fence, not this prose — instructions pasted inside a body template ship to the reader as issue text.
+
+- **`## Before you start` is conditional.** Include it only when something will look broken and is not — a dangling symlink a later child repairs, a migration the tester has to run first, a feature flag that is off. **Omit the heading entirely** otherwise. A "None" under it is the 440-line habit in miniature.
+- **`## Gotchas` is conditional** the same way. No deviations and no flagged edge cases means no heading.
+- **`## What landed` and `## Steps` are always present** — a `[QA]` issue exists because at least one child earned a step, so both always have content by construction.
+- **Steps are numbered continuously across the whole run**, in the order a human would sit down and work through them, not grouped by child and not restarted per section.
+- **Every step carries the id of the child it came from**, so a failure routes straight back to the issue that caused it.
+- **Every step states an expected observable result.** A step whose expected result is "it looks right" is not a step — either name what the tester should see, or the change did not earn a step in the first place.
+
+**Built from two sources, and only two:** each worker's **refined QA notes** (item 4 of the report contract — these are the steps; the child's own `## QA notes` are what the worker refined, not a second source to merge back in), and each worker's **deviation log** (item 3) with the edge cases it flagged — these are the gotchas, and they are what `## Before you start` is built from when it appears at all. Nothing else: not the PRD's body, not the children's acceptance criteria, not the diff. A `[QA]` issue assembled from the artifacts instead of the reports describes what was *planned*; the reports are the only record of what was actually built.
+
+Then the GitHub mechanics:
 
 - **Create** with `gh issue create` against the adapter's issue-tracker repo.
 - **Title**: `[QA] PRD #<n> — <the PRD title, prefix stripped>`. Two runs on the same PRD produce two issues with the same title; that is fine and expected, they differ by number and creation time. Never edit or reuse an earlier one to avoid a duplicate.
 - **Run context line**: the branch, the PR, and how many issues landed — e.g. ``Branch `prd/52-extract-lk-plugin` · PR #63 · 9 issues landed``.
 - **Ids in the body** are bare `#N` — GitHub autolinks them to issues in this repo, which is exactly where a tester needs to land.
 - **Never linked to the PRD as a sub-issue**, and no `## Parent` section, no `ready-to-start`, no `state:*` label. The sub-issue link is the *only* thing child discovery reads (`../_shared/prd-eligibility.md`), so simply not writing one is what keeps the QA issue off the pick path — permanently and by construction, since `gh issue create` links nothing on its own. The three omissions are the second layer, for anything reading the issue by hand.
-- **It never appears in the PR's `Closes` line.** This is the merge-survival invariant in `../_shared/qa-item.md`, and on GitHub the lever is that one line: a `Closes #N` naming the QA issue auto-closes the QA pass the moment the branch merges, before anybody runs it. The step below writes a `#N` into the PR body a few characters from a keyword that would do exactly that — link it under `QA:`, never after a closing keyword, and never let the QA number join the accumulated `Closes` list.
+- **It never appears in the PR's `Closes` line.** The `[QA]` issue is the gate the merge passes **through**, so nothing about completing the pull request may close it — **the issue is closed by the human who ran it, and by nothing else.** A QA pass that marks itself done the moment the branch lands is indistinguishable from one a human ran, and it is silent: the failure surfaces only as nobody ever having tested the release. On GitHub the lever is that one line: a `Closes #N` naming the QA issue auto-closes the QA pass the moment the branch merges, before anybody runs it. The step below writes a `#N` into the PR body a few characters from a keyword that would do exactly that — link it under `QA:`, never after a closing keyword, and never let the QA number join the accumulated `Closes` list.
 
 ### 2. PR body
 

@@ -43,8 +43,8 @@ Every project-specific value comes from the **project adapter** at
 project**, the team, the repository, the work-item type, the **three board states**, the title
 prefixes and the **branch pattern**. From the rest of the adapter: the `## Commands` table, the
 verify ladder, and the `## Project gates` registry. The adapter carries no QA-doc convention on
-either tracker any more — the shape of a QA item is `../_shared/qa-item.md`'s, and this loop
-writes no file at all (see *Loop end*).
+either tracker any more — the shape of a `[QA]` item is `../references/qa-item.md`'s, and this
+loop writes no file at all (see *Loop end*).
 
 **Abort** if the adapter is missing, or if its `Tracker:` line is anything other than
 `azure-devops` (an absent line means `github` — that project wants `work-on-prd`). Guessing an
@@ -313,7 +313,7 @@ Three things, in order: the `[QA]` work item, the pull-request body, the final s
 
 ### 1. The `[QA]` work item — one per *run*
 
-**Read [`../_shared/qa-item.md`](../_shared/qa-item.md)** — normative for one per run, what
+**Read [`../references/qa-item.md`](../references/qa-item.md)** — normative for one per run, what
 earns a step, the nothing-testable rule, the body, step numbering, and the two sources the item
 is built from. Everything below is the Azure DevOps mechanics that document deliberately leaves
 to this skill.
@@ -326,14 +326,14 @@ path convention is gone from both trackers. What is left of the divergence is me
 item here, an issue there. If you find a document telling you to write a file at a QA path, it
 predates the convergence.
 
-The one rule from the shared document worth restating at the call site, because the ADO lever for
+The one rule from that reference worth restating at the call site, because the ADO lever for
 it is unusual: **an empty `[QA]` item is worse than none.** If no `[TASK]` in the run produced
 anything a human can exercise, create nothing, and say so in the final summary *and* where the PR
 body's `QA:` line would have gone.
 
 #### The `[QA]` body
 
-The template and the rules governing it are [`../_shared/qa-item.md`](../_shared/qa-item.md)'s.
+The template and the rules governing it are [`../references/qa-item.md`](../references/qa-item.md)'s.
 Three things are this tracker's, and all three are silent when wrong:
 
 - **Ids.** `[SPEC]` and `[TASK]` ids in the body are written as bare `#<id>` — they really are
@@ -383,7 +383,7 @@ call and same **repo project + repository** as every other PR-shaped call
 (`mcp__ado__repo_pull_request_write`, `action: "update"`). It stays `isDraft: true`.
 
 **Do not attach the `[QA]` item to the PR as a linked work item.** This is the ADO lever for the
-merge-survival invariant in [`../_shared/qa-item.md`](../_shared/qa-item.md) — the QA pass is
+merge-survival invariant in [`../references/qa-item.md`](../references/qa-item.md) — the QA pass is
 closed by the human who ran it and by nothing else. GitHub's lever is the PR's `Closes` line;
 this tracker's is the linked-work-item list, and it is the more dangerous of the two because it
 is armed by default. The PR's completion options

@@ -8,8 +8,9 @@ All four skills and the agent have landed, loop end included: `work-on-spec`
 ends a run by creating a per-run `[QA]` work item and printing a final summary.
 It commits **no** QA document — neither does `work-on-prd` any more, which is
 the convergence that removed the adapter's QA-path convention from both
-trackers. The shape of a QA item is `_shared/qa-item.md`'s, shared by both
-loops; this plugin owns only the Azure DevOps mechanics.
+trackers. The shape of a `[QA]` item lives at `skills/references/qa-item.md` —
+this plugin's own, stated in Azure DevOps terms; `work-on-prd` states the same
+shape for GitHub inside its own `## Loop end`.
 
 ## Layout
 
@@ -19,6 +20,7 @@ plugins/ado-workflow/
   skills/
     _shared -> ../../../_shared        # symlink, see below
     references/ado-mcp-setup.md        # plugin-wide, see below
+    references/qa-item.md              # plugin-wide, see below
     to-spec/  to-spec-tasks/
     next-task-to-implement/  work-on-spec/
   agents/spec-worker.md                # spawned by work-on-spec, per [TASK]
@@ -78,6 +80,14 @@ lets this plugin be inspected before it is installed anywhere.)
 A skill's *own* references still belong inside that skill, as
 `figma-tools:figma-to-spec` does it. `skills/references/` is for what the
 plugin shares.
+
+`qa-item.md` sits there too, and it is the one exception to that last line:
+only `work-on-spec` reads it. It is placed at plugin level because it is the
+ADO half of a document that used to be `_shared/qa-item.md` and is now stated
+twice — once here, once inside `work-on-prd`'s `## Loop end` — and a
+plugin-level file is the half a reader can find without knowing which skill
+happens to cite it. Anything else a single skill owns still goes inside that
+skill.
 
 ### Names carry no `-ado` suffix
 

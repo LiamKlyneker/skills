@@ -129,7 +129,8 @@ anything about QA. They used to differ by exactly one row, back when `work-on-sp
 a per-run `[QA]` work item while `work-on-prd` committed a document to a path the adapter
 named. Both loops file a per-run item now, so that row was removed from the template and
 from both lists rather than added to this one — do not restore it to either. The shape of a
-QA item is `../_shared/qa-item.md`'s, which ships with the plugins and is not something an
+QA item ships with the plugins — `work-on-prd`'s `## Loop end` for GitHub,
+`plugins/ado-workflow/skills/references/qa-item.md` for ADO — and is not something an
 installer can ask a human for; the argument is ADR 0005.
 
 The row that looks like a GitHub leftover is real. `## One-time repo preconditions` survives
