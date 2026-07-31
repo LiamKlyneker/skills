@@ -1,6 +1,6 @@
 # ADR 0005 — The QA pass is a per-run item, not a committed document
 
-- **Status**: Accepted
+- **Status**: Superseded by ADR 0006
 - **Date**: 2026-07-31
 - **Context**: the title-prefix + QA-item change; `docs/qa/prd-16.md` and `docs/qa/prd-52.md` are the evidence
 

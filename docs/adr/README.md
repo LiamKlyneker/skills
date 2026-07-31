@@ -60,4 +60,5 @@ or the adapter, and stops there.
 | [0002](0002-the-lk-plugin.md) | The `lk` plugin, and why `install-skills` is not in it | Accepted |
 | [0003](0003-invocation-policy.md) | Invocation is the isolation boundary | Accepted |
 | [0004](0004-shared-reference-and-skill-dependencies.md) | `_shared/` files are shared; skills are not | Accepted |
-| [0005](0005-qa-is-an-issue-not-a-committed-document.md) | The QA pass is a per-run item, not a committed document | Accepted |
+| [0005](0005-qa-is-an-issue-not-a-committed-document.md) | The QA pass is a per-run item, not a committed document | Superseded by ADR 0006 |
+| [0006](0006-sub-issues-and-qa-as-a-prd-comment.md) | A PRD's children are sub-issues, and its QA pass is a comment on it | Accepted |
