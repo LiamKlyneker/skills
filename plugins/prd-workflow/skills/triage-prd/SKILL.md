@@ -1,12 +1,12 @@
 ---
 name: triage-prd
-description: PRD-scoped triage — take the QA-finding comments logged on a PRD's PR (qa-prd-log output), confirm each against the PRD/issues/decision-lock and the code, pinpoint root cause via a cheap subagent, then file cold-runnable GitHub issues (in this repo, or in the related repo that owns the contract boundary) that work-on-prd/work-on-issue can execute with no plan mode. Invoke /lk:triage-prd to promote a PRD's PR QA findings into executable issues.
+description: PRD-scoped triage — take the QA-finding comments logged on a PRD's PR, confirm each against the PRD/issues/decision-lock and the code, pinpoint root cause via a cheap subagent, then file cold-runnable GitHub issues (in this repo, or in the related repo that owns the contract boundary) that work-on-prd/work-on-issue can execute with no plan mode. Invoke /prd-workflow:triage-prd to promote a PRD's PR QA findings into executable issues.
 disable-model-invocation: true
 ---
 
 # triage-prd
 
-The **investigate + promote** half of the PRD QA loop. `qa-prd-log` *captures* findings as self-contained comments on a PRD's PR; `triage-prd` *confirms, roots-causes, and promotes* the survivors into **cold-runnable issues** — one per finding — that `work-on-prd` (or `work-on-issue`) executes later with zero re-research. It is the PRD-scoped specialization of the generic triage pattern: it never reads a deploy-preview comment stream, it reads a PRD.
+The **investigate + promote** half of the PRD QA loop. The **capture phase** logs findings as self-contained comments on a PRD's PR; `triage-prd` *confirms, roots-causes, and promotes* the survivors into **cold-runnable issues** — one per finding — that `work-on-prd` (or `work-on-issue`) executes later with zero re-research. It is the PRD-scoped specialization of the generic triage pattern: it never reads a deploy-preview comment stream, it reads a PRD.
 
 Its edge over a generic triage is **decision context**: it loads the PRD, its child issues, the touched `CONTEXT.md`, and the locked decisions — so it can tell a real defect from a gap that was **deferred on purpose**, and route a finding to the repo that actually owns it.
 
@@ -15,7 +15,7 @@ Project facts (repos, commands, verify ladder) come from the **project adapter**
 ## Two non-negotiables
 
 1. **Every issue is a cold-runnable fix plan.** A future `work-on-issue`/`work-on-prd` session (fresh, no memory of this chat) must fix it with **no plan mode and no re-investigation**. So each issue carries: root cause (confirmed, not hypothesized), exact files + prior art, the fix approach, and testable acceptance criteria — mirroring the `to-issues` child template so the worker consumes a bug identically to a planned child.
-2. **Never fix.** triage-prd stops at filed issues. No code changes, no fix-tests. The fix belongs to `work-on-prd`/`work-on-issue`. (Mirror of qa-prd-log's capture/solve line, one phase later.)
+2. **Never fix.** triage-prd stops at filed issues. No code changes, no fix-tests. The fix belongs to `work-on-prd`/`work-on-issue`. (Mirror of the capture phase's capture/solve line, one phase later.)
 
 ## Context loading (once, up front)
 
@@ -31,9 +31,9 @@ Establish PRD scope before the first finding, and hold it for the whole session:
 
 ## Input
 
-The `### <emoji> QA finding:` comments on the PRD's PR (qa-prd-log output). Take **one per turn**; if the user pastes several, queue the rest. Ad-hoc paste (a finding not yet on the PR) is allowed — treat it identically.
+The `### <emoji> QA finding:` comments logged on the PRD's PR. Take **one per turn**; if the user pastes several, queue the rest. Ad-hoc paste (a finding not yet on the PR) is allowed — treat it identically.
 
-## Cadence (one finding per turn — clone of grill / qa-prd-log)
+## Cadence (one finding per turn — clone of grill / the capture phase)
 
 For each finding: **capture → validate (gap classification) → investigate (subagent) → dispose → show card → user confirm/correct → next.** Loop until the user says done, then **board → publish**. Never batch.
 
@@ -41,11 +41,11 @@ For each finding: **capture → validate (gap classification) → investigate (s
 
 ### 1. Capture
 
-Record the finding + its source (PR comment permalink, `file:line`, author). qa-prd-log already did the classification + hypothesis + evidence — inherit it as the warm start; do not re-derive.
+Record the finding + its source (PR comment permalink, `file:line`, author). The capture phase already did the classification + hypothesis + evidence — inherit it as the warm start; do not re-derive.
 
 ### 2. Validate + gap classification (HARD GATE — before filing anything)
 
-qa-prd-log labels root cause as *hypothesis*. triage-prd's first job is to decide what the finding **is**, using the loaded decision context. Resolve from PRD/issues/CONTEXT/code before asking the user:
+The capture phase labels root cause as *hypothesis*. triage-prd's first job is to decide what the finding **is**, using the loaded decision context. Resolve from PRD/issues/CONTEXT/code before asking the user:
 
 | Verdict | Evidence | Action |
 |---|---|---|
@@ -62,7 +62,7 @@ qa-prd-log labels root cause as *hypothesis*. triage-prd's first job is to decid
 Spawn **one read-only subagent per finding** (the token-saver: the main session orchestrates + decides only, never greps/blames itself). Use the project explorer agent named in the adapter's `## Sources of truth`, or `Explore` where it says None.
 
 - **Model:** **Sonnet-class** by default (it authors a fix plan). Drop to **Haiku-class** for a trivial/mechanical finding; **never Opus**. Speak in tiers per `../_shared/model-effort-heuristics.md`; for exact ids defer to `claude-api`.
-- **Warm start:** hand it qa-prd-log's hypothesis + `file:line`. Its job is **confirm + plan**, not discover-from-scratch.
+- **Warm start:** hand it the capture phase's hypothesis + `file:line`. Its job is **confirm + plan**, not discover-from-scratch.
 - **Job:**
   1. **Confirm the root cause** on the current branch — trace the call path; for a contract-boundary finding, re-run the decisive `curl` against the live endpoint.
   2. **Attribute to the owning child slice** (from the Closes map) — always, it's cheap.
@@ -132,7 +132,7 @@ When the user says done:
    rejects, which are closed rather than parented.
 3. **Report** created issue numbers grouped by disposition + repo, e.g.
    `ready-to-start: #61 #62 · deferred: #63 · <related repo>#NNN · closed: —`
-4. **Remind** the human of the external steps triage-prd can't do: (a) close resolved qa-prd-log PR comments / mark them triaged, (b) the related-repo issue is tracked but **not** auto-closed by this repo's PR.
+4. **Remind** the human of the external steps triage-prd can't do: (a) close resolved QA-finding PR comments / mark them triaged, (b) the related-repo issue is tracked but **not** auto-closed by this repo's PR.
 
 ### Linking a bug to its PRD
 

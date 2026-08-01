@@ -21,10 +21,10 @@ assume otherwise:
 
 | Bundle | Distributed as | Same set? |
 |---|---|---|
-| `prd-workflow` | the `prd-workflow` plugin | **Yes, today** — the five loop skills the plugin ships are exactly the set this bundle asks questions for. It read **No** until the `grill` bundle took `## Sources of truth` off the list; the grills are `lk` skills and their question is asked under their own bundle now |
+| `prd-workflow` | the `prd-workflow` plugin | **No** — the bundle is the five loop skills, and the plugin also ships `triage-prd`, which the `prd-qa` bundle asks for instead. It read **Yes, today** right up until `triage-prd` moved in from `lk`; nothing about the bundle changed, the plugin simply grew past it |
 | `ado-workflow` | the `ado-workflow` plugin | **Yes, today**, for the same reason — the plugin ships the four `[SPEC]`-loop skills and the `spec-worker` agent, and nothing outside it puts a section on this bundle's list any more |
-| `prd-qa` | two skills of the `lk` plugin | **No** — the bundle is `triage-prd` + `qa-prd-log`, two of the seven skills `lk` ships. Installing the plugin is not adopting the bundle, and the bundle does not want the plugin's other five |
-| `grill` | two skills of the `lk` plugin | **No** — the bundle is `grill` + `deep-grill`, the two `lk` skills that read a project fact. `lk` therefore maps to **two** bundles, which is exactly why neither of them is named after it |
+| `prd-qa` | one skill of the `prd-workflow` plugin | **No** — the bundle is `triage-prd`, one of the six skills `prd-workflow` ships. Installing the plugin is not adopting the bundle, and the bundle does not want the plugin's other five. `prd-workflow` therefore maps to **two** bundles, which is exactly why the plugin's name being shared with one of them proves nothing |
+| `grill` | two skills of the `lk` plugin | **No** — the bundle is `grill` + `deep-grill`, the two `lk` skills that read a project fact. The plugin ships five, and the other three ask for nothing |
 | `figma-tools` | the `figma-tools` plugin | Yes, today |
 
 `figma-tools` was called `figma` here until the plugin took that name and then had to give
@@ -32,8 +32,14 @@ it up: `figma@claude-plugins-official` already owns it, and the clash breaks ski
 loading outright. The bundle followed the plugin rather than keeping a name that now points
 at somebody else's integration. A bundle and a plugin sharing a name still does not make
 them the same set; where the table says "yes" it is reporting today's lists, not a rule.
-`grill` and `prd-qa` are the standing proof that the two namespaces come apart: each is a
-pair of skills inside the `lk` plugin, and neither of them is `lk`.
+
+`grill` and `prd-qa` are the standing proof that the two namespaces come apart, and they
+now prove it from both directions. `grill` is a **pair of skills inside `lk`** — a bundle
+smaller than the plugin that carries it. `prd-qa` is **one skill inside `prd-workflow`** —
+and the plugin it lives in is *also* named after a different bundle, so `prd-workflow` the
+plugin answers to two bundles at once while being neither of them. A bundle is a set of
+adapter questions; a plugin is a unit of distribution. Nothing requires them to line up,
+and here they demonstrably do not.
 
 ## Schema
 
@@ -140,7 +146,8 @@ spelling, both human-checked once.
 
 ## `prd-qa`
 
-The QA loop that runs against a PRD branch before merge.
+The QA loop that runs against a PRD branch before merge — today, its triage half:
+`triage-prd`, which promotes the findings of a manual pass into executable issues.
 
 - **Status:** ready
 - **Adapter sections:** `## Repo`, `## Verify ladder`, `## Sources of truth`, `## Repo discipline`
@@ -150,17 +157,22 @@ Which skill drives which section:
 
 | Section | Wanted by |
 |---|---|
-| `## Repo` | both — `triage-prd` also reads `Related repos` to route across the contract boundary, and the **title prefixes** it files bugs under |
+| `## Repo` | `triage-prd` — where it files, the `Related repos` it routes across the contract boundary, and the **title prefixes** it files bugs under |
 | `## Verify ladder` | `triage-prd` (every filed issue names its verify step) |
 | `## Sources of truth` | `triage-prd` — the project explorer agent, and the contract-boundary one for cross-repo findings |
-| `## Repo discipline` | both — scoped `CONTEXT.md` loading |
+| `## Repo discipline` | `triage-prd` — scoped `CONTEXT.md` loading |
 
 **Pairs with `prd-workflow`, doesn't replace it.** `triage-prd` files issues shaped like
 `to-issues` children, so `work-on-prd` / `work-on-issue` execute them with no new
 machinery. Adopting `prd-qa` alone is legal but leaves nothing downstream to run the
 issues it files — say so rather than silently bootstrapping both.
 
-Both skills degrade rather than break where the adapter says "None": no related repo
+Note the asymmetry that creates: the two bundles are separate adoptions, but they arrive
+in **one plugin**. Installing `prd-workflow` puts `triage-prd` on the machine whether or
+not `prd-qa` was adopted — the skill being present is not the same as its adapter
+questions having been answered, and it is the adapter that decides whether it can run.
+
+`triage-prd` degrades rather than breaks where the adapter says "None": no related repo
 means every finding is a this-repo finding, and no contract-boundary explorer agent
 means a cross-boundary root cause gets filed locally and flagged as unmodelled.
 

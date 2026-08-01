@@ -4,6 +4,12 @@ The PRD-to-merge workflow, packaged as a Claude Code plugin: `to-prd` →
 `to-issues` → `next-prd-issue` → `work-on-prd` / `work-on-issue`, plus the
 `prd-worker` agent that `work-on-prd` spawns per child issue.
 
+`triage-prd` closes the loop from the other end: it takes the QA findings
+logged against a PRD's PR and promotes the survivors back into cold-runnable
+children that `work-on-prd` picks up with no new machinery. It lived in the
+`lk` plugin until it didn't — `lk` is the skills that talk to the user and the
+codebase, and a skill that files GitHub issues was never one of those.
+
 ## Layout
 
 ```
@@ -12,6 +18,7 @@ plugins/prd-workflow/
   skills/
     _shared -> ../../../_shared        # symlink, see below
     to-prd/  to-issues/  next-prd-issue/  work-on-prd/  work-on-issue/
+    triage-prd/                        # QA findings back into children
   agents/prd-worker.md
 ```
 
@@ -21,18 +28,29 @@ as a plugin skill — and pays always-on token cost for both.
 
 ## Decisions
 
-### No `version` in `plugin.json`
+### `plugin.json` carries a `version`, and changing this plugin bumps it
 
-With a `version` set it becomes the install cache key, and a forgotten bump
-means installs silently never see changes. Omitting it means every install
-resolves fresh.
+This section used to argue the opposite — omit `version`, because it becomes
+the install cache key and a forgotten bump strands consumers on stale files.
+That risk is real and has not gone away; #57 reversed the decision anyway,
+because abstaining from versions bought safety by giving up `--strict` (a
+missing `version` is a warning, and `--strict` is warnings-as-errors) and by
+having no enforcement at all.
 
-The cost is that `claude plugin validate --strict` cannot pass: a missing
-`version` is a warning, and `--strict` turns warnings into errors. Plain
-`claude plugin validate` passes ("Validation passed with warnings"), and the
-missing `version` is the *only* warning — adding a version to an otherwise
-identical manifest makes `--strict` pass clean. So the strict run is a
-known, single-cause failure, not an unvalidated manifest.
+The rule now:
+
+- Bump `version` in `.claude-plugin/plugin.json` for any change to this
+  plugin's contents — including `skills/_shared`, whose target install
+  dereferences into every consumer's cache copy.
+- Mirror the same value into `.claude-plugin/marketplace.json`. The two must
+  agree; the catalog is what an install actually pins to.
+- `python3 .github/scripts/validate_skills.py --base origin/main` enforces
+  both, and is what makes versions safe to have. Without `--base` the bump
+  check reports itself skipped and the rest still run.
+
+ADR [0001](../../docs/adr/0001-version-the-plugins-and-enforce-the-bump.md) has
+the argument; the `version` bullet in the project adapter's `## Repo
+discipline` has the observed failure mode in full.
 
 ### The shared reference lives at `skills/_shared`
 
@@ -44,9 +62,13 @@ clone of this repo carries the root `_shared/` the link points at).
 
 The alternative was `plugins/prd-workflow/_shared` plus rewriting every
 reference to `../../_shared/`. It was not needed: `claude plugin details`
-reports **Skills (5), Agents (1)** with the symlink in place, so a non-skill
-directory under `skills/` does *not* register as a phantom component. Measured,
-not assumed — later slices of PRD #16 depend on this shape.
+reports **Skills (6), Agents (1)** with the symlink in place — the six real
+skills and no phantom entry for `_shared`, because a directory under `skills/`
+with no `SKILL.md` does *not* register as a component. Measured, not assumed.
+
+Keeping the same link at the same depth in every plugin is also what let
+`triage-prd` move here from `lk` without editing one of its `../_shared/…`
+references.
 
 ### Compat shims — gone (#26)
 

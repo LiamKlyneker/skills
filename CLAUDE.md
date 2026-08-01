@@ -144,10 +144,13 @@ instructions: `INSTALL.md`.
 The consequence that bites: **an installed plugin pins to its cached version.** Edits in
 this working tree are invisible to it, and so are committed and pushed ones — a reinstall
 at an unchanged version is a silent no-op that re-copies nothing, so the copy only moves
-when the `version` does. Live authoring therefore runs through skills-dir mode — this repo self-hosts via one
-symlink, `.claude/skills/prd-workflow -> ../../plugins/prd-workflow`, and edits there
-are live on the next session launch. Never run both routes for the same plugin in one
-place; every skill loads twice.
+when the `version` does. Live authoring therefore runs through skills-dir mode — this repo self-hosts via **two**
+symlinks, `.claude/skills/prd-workflow -> ../../plugins/prd-workflow` and
+`.claude/skills/lk -> ../../plugins/lk`, and edits there are live on the next session
+launch. That is also what makes `claude plugin details prd-workflow` and `claude plugin
+details lk` read this working tree rather than a cache, which is the cheapest evidence
+available that a change to either plugin actually loads. Never run both routes for the
+same plugin in one place; every skill loads twice.
 
 Rules that hold regardless of route:
 
