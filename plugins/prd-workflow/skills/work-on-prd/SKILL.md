@@ -108,13 +108,15 @@ Three things, in order: the QA comment, the PR body, the final summary.
 
 **One per run, never one per PRD.** A run covers exactly the slice of children that just landed. A second run against the same PRD posts a **second comment** and **never edits the first**. That is the whole point of a per-run artifact rather than a committed document: a document at a fixed path accumulates every run's output, goes stale silently, and gives the human no way to tell which half they already tested. A per-run comment describes one testable slice.
 
+**Ticking is not authoring.** The one carve-out against that never-edit rule: every step is a `- [ ]` task-list item, and **checkbox state is the only thing that may change after posting**. A tester ticks boxes as they work and resumes a partial pass later; a human or a later skill may tick them. The prohibition is on the run's *content* — no rewording a step, no appending a new one to an earlier comment, no deleting a comment. A ticked box is a record of the pass, not a second author.
+
 **Posting while `needs-qa` is still applied → link back first.** The label already being on the PRD means an earlier pass is **outstanding** — nobody has worked it yet. The new comment's **first line is a permalink to that earlier comment**, so an outstanding pass is never silently buried under a fresher one. Still one comment per run, still never edit or delete the earlier one, and leave the label where it is (re-applying it is a no-op). Find the earlier one with the newest comment carrying the template's `## Steps` heading, which is present in every QA comment by construction:
 
 ```bash
 gh api repos/<owner>/<repo>/issues/<n>/comments --jq '[.[] | select(.body | contains("## Steps"))] | last | .html_url'
 ```
 
-**What earns a step.** A landed child earns a step **only if a human can exercise it in the running app**. Dependency bumps, config changes, pure refactors, internal-only work and setup contribute **nothing**: no step, and **no standalone "nothing to test here" line, paragraph or section**. Those lines are the entire reason the committed documents this replaces reached 440 lines — every landed issue earned a section whether or not anybody could act on it, so the sections that mattered were buried among the ones that didn't. Such a child gets its **one line in `## What landed`** and nothing more; that line may carry a short parenthetical — `(nothing to test by hand)`, a few words, inline — and that is the *only* form the idea is allowed to take. The moment it becomes its own line or section, the rule has been broken. Applied honestly, most runs produce a comment far shorter than the list of things they landed. That is the intended shape, not a sign something was missed.
+**What earns a step.** A landed child earns a step **only if a human can exercise it in the running app**. Dependency bumps, config changes, pure refactors, internal-only work and setup contribute **nothing**: no step, and **no standalone "nothing to test here" line, paragraph or section**. Those lines are the entire reason the committed documents this replaces reached 440 lines — every landed issue earned a section whether or not anybody could act on it, so the sections that mattered were buried among the ones that didn't. Such a child gets **nothing at all**: not a line, not a parenthetical, not a heading of its own. The PRD's **native sub-issue list** renders directly above this comment with every child, its title and its completion state, so a reader who wants the manifest already has one, and repeating it here only pushes the steps further down the page. The single exception is a child **deliberately left for a human**, or a slice deferred to a later run — something a tester would otherwise chase as a defect. That earns **one line under `## Before you start`** and nothing more. Applied honestly, most runs produce a comment far shorter than the list of things they landed. That is the intended shape, not a sign something was missed.
 
 **Nothing testable in the whole run → post nothing and label nothing.** If **no** child in the run produced anything a human can exercise, there is no comment and no `needs-qa` — an empty QA comment is worse than none, being a thing a person has to open and read in order to learn nothing, and a label pointing at it puts a PRD in the queue that has no pass to run. Say so explicitly, in both places the comment would otherwise have been linked: the **final summary** ("no QA comment: nothing in this run is manually testable", plus the list of children the run landed), and the **pull request body**, where the `QA:` line would have gone — the same sentence. Silence in either place reads as a forgotten step rather than a decision.
 
@@ -126,36 +128,32 @@ gh api repos/<owner>/<repo>/issues/<n>/comments --jq '[.[] | select(.body | cont
 
 <one line of run context: the branch, the pull request, how many children landed>
 
-## What landed
-
-- <id> — <one line on what shipped>  (nothing to test by hand)
-
 ## Before you start
 
-- <the thing that will look broken and is not, and why>
+- <the thing that will look broken and is not, and why — or a child deliberately left for a human>
 
 ## Steps
 
-1. <action to take in the running app> → expect <the observable result>  (<id>)
-2. <action> → expect <result>  (<id>)
-
-## Gotchas
-
-- <edge case or deviation a worker flagged, and what it means for the tester>  (<id>)
+- [ ] 0. <the setup a tester does once, before anything else> → expect <the observable result> <!-- 76 -->
+- [ ] 1. <action to take in the running app> → expect <the observable result> <!-- 75 -->
+- [ ] 2. <action> → expect <result> <!-- 75 80 -->
 
 </qa-template>
 
 The rules governing that template are deliberately written **outside** the fence. Copy the fence, not this prose — instructions pasted inside a body template ship to the reader as comment text.
 
-- **`## Before you start` is conditional.** Include it only when something will look broken and is not — a dangling symlink a later child repairs, a migration the tester has to run first, a feature flag that is off. **Omit the heading entirely** otherwise. A "None" under it is the 440-line habit in miniature.
-- **`## Gotchas` is conditional** the same way. No deviations and no flagged edge cases means no heading.
-- **`## Steps` is always present** — a QA comment exists because at least one child earned a step, so it always has content by construction.
-- **`## What landed` lists only the children that earned no step**, one line each with the inline parenthetical, and is **conditional**: every child earned a step → omit the heading entirely. It is not a manifest of the run. The section existed so a reader could see something shipped and not go hunting for a step it never had, and the PRD's native sub-issue list — rendered directly above this comment, completion state and all — now does that job for everything else.
-- **Steps are numbered continuously across the whole run**, in the order a human would sit down and work through them, not grouped by child and not restarted per section.
-- **Every step carries the id of the child it came from**, so a failure routes straight back to the issue that caused it.
-- **Every step states an expected observable result.** A step whose expected result is "it looks right" is not a step — either name what the tester should see, or the change did not earn a step in the first place.
+**There are exactly two headings, and one of them is conditional.** Do not add a third — every section this template has ever grown was a place for content that turned out not to change what the tester does.
 
-**Built from two sources, and only two:** each worker's **refined QA notes** (item 4 of the report contract — these are the steps; the child's own `## QA notes` are what the worker refined, not a second source to merge back in), and each worker's **deviation log** (item 3) with the edge cases it flagged — these are the gotchas, and they are what `## Before you start` is built from when it appears at all. Nothing else: not the PRD's body, not the children's acceptance criteria, not the diff. A QA comment assembled from the artifacts instead of the reports describes what was *planned*; the reports are the only record of what was actually built.
+- **`## Before you start` is conditional.** Include it only when something will look broken and is not — a dangling symlink a later child repairs, a migration the tester has to run first, a feature flag that is off, a child deliberately left for a human, a slice deferred to a later run. A **run-wide** deviation lands here too. **Omit the heading entirely** otherwise. A "None" under it is the 440-line habit in miniature.
+- **`## Steps` is always present** — a QA comment exists because at least one child earned a step, so it always has content by construction.
+- **Every step is a `- [ ]` task-list item.** GitHub renders those as live checkboxes in an issue comment, so the tester records progress in place and can resume a partial pass instead of restarting it. See *Ticking is not authoring* above for how that squares with never editing a posted comment.
+- **Steps are numbered continuously across the whole run, starting at 0**, in the order a human would sit down and work through them, not grouped by child and not restarted per section. **Step 0 is the setup** a tester does once before anything else — the config dir to launch under, the branch to check out, the migration to run. It used to be a floating `Setup, once:` paragraph above the list, which made the one instruction a tester must do first the only one with no checkbox and no completion gate. No setup needed → the first real action is step 0.
+- **Every step states an expected observable result.** A step whose expected result is "it looks right" is not a step — either name what the tester should see, or the change did not earn a step in the first place.
+- **Every step carries the child it came from, as a trailing HTML comment** — `<!-- 75 -->`, space-separated numbers when a step came from more than one child, no `#`. The attribution is not optional: a failed step has to route back to the slice that owns it, and `triage-prd`'s card has an `Owning slice:` field that wants exactly this. What changed is only the rendering — the comment is invisible to the reader and survives in the body a later skill reads back. **Never write the id as a bare `#N`.** GitHub does not render that as `#N`; it expands the reference to the **full issue title plus number**, so a step citing two children carries two complete titles inline and becomes more citation than instruction. That mechanism alone is most of what made this comment unworkably long.
+
+**A deviation earns a place in this comment only if it changes what the tester does.** Where it then lands follows from that: a deviation attached to **one step** folds into that step's expected-result clause, where the tester meets it at the moment it matters rather than twenty steps early; a **run-wide** one becomes a `## Before you start` line. Everything else — code-review notes, observations about the diff, "this table is duplicated in two skills" — belongs in the **PR body**, not in the QA script. There is deliberately no heading left to park it under: in the run that produced this rule, five bullets were collected under one and exactly one of them was something a tester could act on.
+
+**Built from two sources, and only two:** each worker's **refined QA notes** (item 4 of the report contract — these are the steps; the child's own `## QA notes` are what the worker refined, not a second source to merge back in), and each worker's **deviation log** (item 3) with the edge cases it flagged — filtered by the rule above, these become either part of a step's expected result or a `## Before you start` line, and the rest go to the PR body. Nothing else: not the PRD's body, not the children's acceptance criteria, not the diff. A QA comment assembled from the artifacts instead of the reports describes what was *planned*; the reports are the only record of what was actually built.
 
 Then the GitHub mechanics:
 
@@ -163,8 +161,7 @@ Then the GitHub mechanics:
 - **Capture the permalink it prints.** `gh issue comment` writes the new comment's url to stdout; that url is what §2 puts in the PR body and §3 reports, and what a later run links back to.
 - **Then label the PRD** `needs-qa` — `gh issue edit <prd-number> --add-label needs-qa`. Comment first, label second, always: the label is the queue signal, and a PRD in the queue with no comment under it sends the operator looking for steps that do not exist. Applying a label the PRD already carries is a no-op, which is what makes the second-run path above safe.
 - **The label must already exist in the repo.** The loop applies it and cannot create it; `gh issue edit --add-label` against a missing label fails loudly, but a run that swallows that failure leaves a comment nobody is queued to find. It is a one-time human precondition — see the adapter.
-- **Run context line**: the branch, the PR, and how many issues landed — e.g. ``Branch `prd/52-extract-lk-plugin` · PR #63 · 9 issues landed``.
-- **Ids in the body** are bare `#N` — GitHub autolinks them to issues in this repo, which is exactly where a tester needs to land.
+- **Run context line**: the branch, the PR, and how many issues landed — e.g. ``Branch `prd/52-extract-lk-plugin` · PR #63 · 9 issues landed``. The PR number here is the one place a `#N` is wanted in rendered form; step attribution is not (see the fence rules above).
 
 ### 2. PR body
 
