@@ -14,8 +14,9 @@ adding a skill here means adding it to a plugin. The rest of the top level:
 
 - `.claude-plugin/` — `marketplace.json`, the published catalog.
 - `plugins/` — the packaged plugins.
-- `docs/` — `estate-inventory.md`, `adr/`, and `qa/`, the two committed QA documents the
-  loops no longer produce (kept as ADR 0005's evidence — see below). Documentation for
+- `docs/` — `adr/`, `qa/` (the two committed QA documents the loops no longer produce,
+  kept as ADR 0005's evidence — see below), and `estate-inventory.md`, a **dated snapshot**
+  of one consumer's machine that is no longer maintained (ADR 0007). Documentation for
   humans; no session loads any of it.
 - `_shared/` — **global reference only.** Docs several skills read, true in every
   project: `model-effort-heuristics.md`, `eligibility-policy.md`, `prd-eligibility.md`,
@@ -32,9 +33,16 @@ The migration's compat shims — top-level names that were **symlinks into
 `work-on-prd/agents/prd-worker.md` link. Every top-level entry is now one of the ones
 listed above. Don't reintroduce the shape: a top-level symlink into
 `plugins/` makes the same skill discoverable under two names, which is what the
-migration existed to end. The estate that consumes all of this — which config has
-which plain skill, which repo enables which plugin — is recorded in
-`docs/estate-inventory.md`; update it when you change the wiring.
+migration existed to end.
+
+**What consumes this repo is not this repo's business.** It publishes a versioned
+marketplace; whether a given machine has installed it, and at what version, is that
+machine's concern. Don't read `~/.claude*` to answer a question about this repo and don't
+audit consumers pre-emptively — a stale or broken install is an ordinary bug, fixed where
+and when it surfaces. What *is* this repo's business is that the catalog is coherent and
+every content change moves its plugin's `version`, because a missed bump strands a
+consumer silently. ADR [0007](docs/adr/0007-a-marketplace-not-an-estate-manager.md) has
+the argument, including why that one rule gets stricter rather than looser.
 
 **A plugin namespaces everything it provides.** Skills invoke as
 `prd-workflow:work-on-prd`, agents resolve as `subagent_type: prd-workflow:prd-worker`,

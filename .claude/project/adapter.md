@@ -63,9 +63,9 @@ branch exists. Locally, `--base origin/main` is the equivalent.
 - **Also a plugin marketplace.** `.claude-plugin/marketplace.json` publishes marketplace `liamklyneker` with five plugins, `plugins/prd-workflow/`, `plugins/figma-tools/`, `plugins/ado-workflow/`, `plugins/lk/` and `plugins/install-skills/`, each carrying a `version` the catalog mirrors. A plugin's skills live in `<plugin>/skills/<skill>/` and its agents in `<plugin>/agents/`; both inventories are discovered from the directory, not listed in the manifest.
 - **Every skill is inside a plugin — there are no plain skills left.** The top level is `.claude-plugin/`, `plugins/`, `_shared/` (global reference read by several skills), `install/` (what a consuming project gets wired with), `docs/`, and the two deprecated directories `figma-component/` and `tokens-init/`. The migration's compat shims (top-level symlinks into `plugins/`) were deleted by #26 — do not reintroduce the shape.
 - **A plugin namespaces every component it provides.** Skills invoke as `prd-workflow:<skill>`, and agents resolve as `subagent_type: prd-workflow:prd-worker` / `figma-tools:figma-region-extractor`. Bare names exist only on the plain-skill symlink route. An unresolvable `subagent_type` does not error — it silently becomes `general-purpose` — so a wrong type name produces a run that looks entirely normal.
-- **The estate inventory is `docs/estate-inventory.md`**: which config directory holds which plain-skill symlink, which repo enables which plugin, and why each is deliberate. Plain skills are placed by hand one link at a time, so that file is the only record of the state; a change to any config's wiring updates it in the same commit.
+- **`docs/estate-inventory.md` is a dated snapshot, not a maintained record.** It describes one consumer's machine as it stood at PRD #52's close. It is **not** updated when wiring changes and nothing here depends on it being current — ADR [0007](../../docs/adr/0007-a-marketplace-not-an-estate-manager.md). Read it for the platform behaviour it happens to record; never as an assertion about today.
 - **Two delivery routes.** A plugin installed from the marketplace is a *copy* in a config's cache, keyed by the plugin's **`version`** — the git commit SHA is only the fallback key an *unversioned* plugin gets, and all five here are versioned now. So a cache copy pins to its version, and neither an uncommitted edit nor a committed and pushed one reaches it until the version moves; reinstalling at an unchanged version is a silent no-op. Both key shapes are visible in `~/.claude/plugins/cache/` today, because the installs made before #57 have not been refreshed. A `.claude/skills/<name>` symlink pointing at a plugin directory loads as `<name>@skills-dir` with no copy, so edits are live — that is how this repo authors against itself, via the single link `.claude/skills/prd-workflow -> ../../plugins/prd-workflow`. Editing a file through such a symlink edits this repo. Never write "into" a skill via a consumer's link, and never run both routes for one plugin in one place (every skill loads twice).
-- Three Claude Code config dirs consume this repo, switched by `$PWD` in `~/.zshrc`: `~/.claude` (personal), `~/.claude-teamsnap`, `~/.claude-schmiede`. Each has its own plugin cache, marketplaces and `enabledPlugins` — they do not share state. **The `claude plugin` CLI ignores `CLAUDE_CONFIG_DIR`** and always reads `~/.claude`, so the other two are inspected by reading their `settings.json`, `plugins/installed_plugins.json` and `plugins/cache/` directly, and installed into only from an in-session `/plugin` under that config.
+- **A config directory is a consumer, and consumers are out of scope.** Several may exist on one machine — Liam's are switched by `$PWD` in `~/.zshrc` — each with its own plugin cache, marketplaces and `enabledPlugins`, sharing nothing. The platform fact worth carrying: **the `claude plugin` CLI ignores `CLAUDE_CONFIG_DIR`** and always reads `~/.claude`, so any other config is installed into only from an in-session `/plugin` under it. That is a limit to state when someone hits it — not an invitation to go inspect their `installed_plugins.json`. See ADR [0007](../../docs/adr/0007-a-marketplace-not-an-estate-manager.md).
 - **Packaging did not move the project.** Skills resolve `<repo-root>/.claude/project/adapter.md` against the project the session runs in, at runtime — unchanged whether the skill came from a cache directory or a symlink. `INSTALL.md` is the guide for all of the above.
 
 ## Verify ladder
@@ -81,11 +81,17 @@ branch exists. Locally, `--base origin/main` is the equivalent.
 - **Contract-boundary explorer agent**: None — no contract boundary.
 - **Access-policy source**: None — no stored data, no user-scoped data layer.
 
-Two sources of truth sit **outside** this repo and must be read rather than assumed
+One source of truth sits **outside** this repo and must be read rather than assumed
 whenever a change touches distribution:
 
-- The live config dirs (`~/.claude`, `~/.claude-teamsnap`, `~/.claude-schmiede`) — what is actually linked and installed today.
 - The Claude Code plugin CLI (`claude plugin --help`, `list`, `details`, `validate`) — the platform's real behaviour, which has repeatedly differed from the docs. Verify against the binary before writing a claim down.
+
+**The live config dirs are not on that list, deliberately** — see ADR
+[0007](../../docs/adr/0007-a-marketplace-not-an-estate-manager.md). This repo's job is to
+publish a correct, correctly-versioned catalog; whether some machine has installed it is that
+machine's business. Do **not** go reading `~/.claude*` to answer a question about this repo,
+and do not audit consumers pre-emptively. A stale or broken install is an ordinary bug, fixed
+in the config where it surfaces, at the moment it surfaces.
 
 ## Project gates
 

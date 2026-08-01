@@ -1,19 +1,23 @@
-# Estate inventory
+# Estate inventory — a dated snapshot, no longer maintained
 
-Where every skill and plugin from this repo actually lives on this machine, and why.
+> **Status: historical.** This file records one consumer's machine as it stood at the close of
+> PRD #52 (#61, the config cutover), read from the live directories at that time. It is **not
+> updated when wiring changes**, nothing validates it, and no rule in `CLAUDE.md` or the
+> adapter requires it to be current. Treat every specific claim below — versions, scopes,
+> which config has what — as **stale until re-checked**.
+>
+> It is kept for the platform behaviour it happens to document, not for the inventory:
+> SHA-keyed installs from the unversioned era, which scope suits which tenancy and why, and a
+> repo whose `.claude` is itself a symlink refusing a scoped install. Anything here that is
+> genuinely about the *platform* belongs in [`INSTALL.md`](../INSTALL.md) and should migrate
+> there when someone next touches it.
+>
+> Why it was demoted rather than deleted, and why this repo stopped tracking consumers at all:
+> ADR [0007](adr/0007-a-marketplace-not-an-estate-manager.md). The short version — this repo
+> publishes a versioned marketplace, and a stale install is an ordinary bug fixed where it
+> surfaces, not a standing audit obligation.
 
-Nothing derives this state and nothing validates it against an intent, so this file *is* the
-intent — an entry missing here is a leftover, and a plugin missing there is a config that
-quietly does not have the skill. Change the wiring, change this file in the same commit.
-
-Rewritten at the close of PRD #52 (#61, the config cutover), **from the live directories**
-rather than from memory. `doctor.sh` can confirm links resolve; only this file says whether
-they are supposed to exist.
-
-> **Confirmed by reading back:** `~/.claude`, this repo, and the symlink state of all three
-> configs. **Not yet done:** `lk` and `install-skills` are *not installed* under
-> `~/.claude-teamsnap` or `~/.claude-schmiede` — see [The open gap](#the-open-gap). That is a
-> known, deliberate deferral, not an omission from this record.
+Where every skill and plugin from this repo lived on that machine, and why.
 
 ---
 
