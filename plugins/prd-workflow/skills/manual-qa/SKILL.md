@@ -82,9 +82,9 @@ Before step 0, confirm two things and say what you found:
 
 If either is wrong, or anything else is unexpected — dirty tree, detached HEAD, a closed PR — **say so and stop for the human**. Never `git checkout`, never `git stash`, never start the app. The tester owns their machine; this skill owns the bookkeeping.
 
-## `## Before you start` is read first, and ticks nothing
+## `## Before you start` folds into step 0, and ticks nothing
 
-If the chosen comment has a `## Before you start` section, **read it verbatim and get an acknowledgement before step 0.** It has no checkbox and it ticks nothing — there is nothing to record.
+If the chosen comment has a `## Before you start` section, read it verbatim as the lead-in of the **same message** that presents step 0 — there is no separate acknowledgement turn to wait on. The human's step-0 outcome is what confirms it landed. It has no checkbox and it ticks nothing — there is nothing to record on its own.
 
 Skipping it produces a **false finding on step 1**, because that section is the "this will look broken and is not" warning: the dangling symlink a later child repairs, the flag that is off, the child deliberately left for a human. A tester who never heard it logs the known gap as a defect and burns a triage round-trip on it.
 
