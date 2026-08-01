@@ -4,11 +4,14 @@ The PRD-to-merge workflow, packaged as a Claude Code plugin: `to-prd` →
 `to-issues` → `next-prd-issue` → `work-on-prd` / `work-on-issue`, plus the
 `prd-worker` agent that `work-on-prd` spawns per child issue.
 
-`triage-prd` closes the loop from the other end: it takes the QA findings
-logged against a PRD's PR and promotes the survivors back into cold-runnable
-children that `work-on-prd` picks up with no new machinery. It lived in the
-`lk` plugin until it didn't — `lk` is the skills that talk to the user and the
-codebase, and a skill that files GitHub issues was never one of those.
+`manual-qa` and `triage-prd` close the loop from the other end. `manual-qa`
+drives the QA comment a run posted on the PRD — one step per turn, ticking each
+box as the human confirms it and posting a `### [FINDING]` comment to the PR for
+each failure. `triage-prd` then takes those findings and promotes the survivors
+back into cold-runnable children that `work-on-prd` picks up with no new
+machinery. Both lived in the `lk` plugin until they didn't — `lk` is the skills
+that talk to the user and the codebase, and a skill that files GitHub issues was
+never one of those.
 
 ## Layout
 
@@ -18,6 +21,7 @@ plugins/prd-workflow/
   skills/
     _shared -> ../../../_shared        # symlink, see below
     to-prd/  to-issues/  next-prd-issue/  work-on-prd/  work-on-issue/
+    manual-qa/                         # drive the QA comment, capture findings
     triage-prd/                        # QA findings back into children
   agents/prd-worker.md
 ```
@@ -62,9 +66,11 @@ clone of this repo carries the root `_shared/` the link points at).
 
 The alternative was `plugins/prd-workflow/_shared` plus rewriting every
 reference to `../../_shared/`. It was not needed: `claude plugin details`
-reports **Skills (6), Agents (1)** with the symlink in place — the six real
+reports **Skills (7), Agents (1)** with the symlink in place — the seven real
 skills and no phantom entry for `_shared`, because a directory under `skills/`
-with no `SKILL.md` does *not* register as a component. Measured, not assumed.
+with no `SKILL.md` does *not* register as a component. Measured, not assumed —
+and re-measured on each skill added, which is why the count is a number and not
+"all of them".
 
 Keeping the same link at the same depth in every plugin is also what let
 `triage-prd` move here from `lk` without editing one of its `../_shared/…`

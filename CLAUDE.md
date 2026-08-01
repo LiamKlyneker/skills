@@ -70,7 +70,15 @@ Both orchestrators still **commit nothing** for QA, and the adapter names no QA 
 tracker — but the artifact itself has diverged, deliberately. `work-on-prd` posts the run's QA
 steps as a **comment on the PRD issue** and labels the PRD **`needs-qa`**; the human works the
 comment and removes the label when the pass is done. **No `[QA]` issue is created on GitHub.**
-`work-on-spec` still files a per-run **`[QA]` work item** on Azure DevOps. Each loop owns the
+The GitHub chain from there is `manual-qa` → `triage-prd`, both in `prd-workflow`: `manual-qa`
+takes a PRD URL, drives that comment's steps one at a time, ticks each box as the human
+confirms it, and posts a `### [FINDING]` comment to the PR for each failure; `triage-prd`
+promotes the survivors into children. **That marker is a parse contract, not a title prefix** —
+it is hardcoded in both skills and deliberately absent from the adapter, because a project free
+to edit it would get a triage pass that silently finds nothing. The tick state in the comment is
+the only record a pass happened; neither skill writes a session log, and only a human removes
+`needs-qa`. `work-on-spec` still files a per-run **`[QA]` work item** on Azure DevOps, with no
+driver on that side. Each loop owns the
 whole shape of its own artifact — `work-on-prd`'s `## Loop end` for GitHub,
 `plugins/ado-workflow/skills/references/qa-item.md` for ADO. There was a shared
 `_shared/qa-item.md`; it was dissolved into those two, and they are now free to differ. The
