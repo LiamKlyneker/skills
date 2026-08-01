@@ -64,16 +64,17 @@ couldn't finish.
 
 | Bundle | What it wires up |
 |---|---|
-| `prd-workflow` | The PRD → issues → implementation loop — exactly the five skills the `prd-workflow` plugin ships |
+| `prd-workflow` | The PRD → issues → implementation loop — five of the six skills the `prd-workflow` plugin ships |
 | `ado-workflow` | The same loop against an Azure DevOps board — `[SPEC]` → `[TASK]`s → implementation, exactly the four skills the `ado-workflow` plugin ships |
-| `prd-qa` | The QA loop run against a PRD branch before merge — `triage-prd` + `qa-prd-log`, two of the seven skills the `lk` plugin ships |
+| `prd-qa` | The QA loop run against a PRD branch before merge — `triage-prd`, the sixth skill the `prd-workflow` plugin ships |
 | `grill` | The interviews that run *before* either loop — `grill` inline on one thread, `deep-grill` with recon subagents and hard gates. Two more `lk` skills; only `deep-grill` reads the adapter, so `## Sources of truth` is the whole of this bundle's interview |
 | `figma-tools` | Figma → spec — the `figma-tools` plugin. Adapter-free |
 
 Definitions live in [`install/bundles.md`](install/bundles.md); a bundle names the adapter
 sections a set of skills needs filled, not the skills themselves. Bundle and plugin are
-separate namespaces and only sometimes the same set — `lk` alone maps to **two** bundles,
-`prd-qa` and `grill`, which is exactly why neither of them is named after it.
+separate namespaces and only sometimes the same set — `prd-workflow` alone maps to **two**
+bundles, `prd-workflow` and `prd-qa`, so even a plugin that shares a bundle's name is not
+that bundle.
 
 `/install-skills:install-skills doctor` is the other half, and the more important one.
 Forked copies, leftover `_shared/` directories, half-filled adapters and dead gate

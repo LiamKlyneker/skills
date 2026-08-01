@@ -57,9 +57,11 @@ or the adapter, and stops there.
 | ADR | Title | Status |
 |---|---|---|
 | [0001](0001-version-the-plugins-and-enforce-the-bump.md) | Version the plugins, and enforce the bump | Accepted |
-| [0002](0002-the-lk-plugin.md) | The `lk` plugin, and why `install-skills` is not in it | Accepted |
+| [0002](0002-the-lk-plugin.md) | The `lk` plugin, and why `install-skills` is not in it | Superseded by ADR 0008 |
 | [0003](0003-invocation-policy.md) | Invocation is the isolation boundary | Accepted |
 | [0004](0004-shared-reference-and-skill-dependencies.md) | `_shared/` files are shared; skills are not | Accepted |
 | [0005](0005-qa-is-an-issue-not-a-committed-document.md) | The QA pass is a per-run item, not a committed document | Superseded by ADR 0006 |
-| [0006](0006-sub-issues-and-qa-as-a-prd-comment.md) | A PRD's children are sub-issues, and its QA pass is a comment on it | Accepted |
+| [0006](0006-sub-issues-and-qa-as-a-prd-comment.md) | A PRD's children are sub-issues, and its QA pass is a comment on it | Superseded by ADR 0009 |
 | [0007](0007-a-marketplace-not-an-estate-manager.md) | This repo publishes a marketplace; it does not manage the estate | Accepted |
+| [0008](0008-prd-qa-skills-belong-to-prd-workflow.md) | The PRD-QA skills belong to `prd-workflow`, not to `lk` | Accepted |
+| [0009](0009-the-qa-comment-is-a-parse-contract.md) | The QA comment is a parse contract, and the receipt comes back | Accepted |

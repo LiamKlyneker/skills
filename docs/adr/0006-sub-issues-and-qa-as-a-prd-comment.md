@@ -1,6 +1,6 @@
 # ADR 0006 — A PRD's children are sub-issues, and its QA pass is a comment on it
 
-- **Status**: Accepted
+- **Status**: Superseded by ADR 0009
 - **Date**: 2026-07-31
 - **Context**: PRD #73, implemented by #74–#81
 - **Supersedes**: ADR 0005

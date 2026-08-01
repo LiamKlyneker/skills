@@ -70,13 +70,27 @@ Both orchestrators still **commit nothing** for QA, and the adapter names no QA 
 tracker — but the artifact itself has diverged, deliberately. `work-on-prd` posts the run's QA
 steps as a **comment on the PRD issue** and labels the PRD **`needs-qa`**; the human works the
 comment and removes the label when the pass is done. **No `[QA]` issue is created on GitHub.**
-`work-on-spec` still files a per-run **`[QA]` work item** on Azure DevOps. Each loop owns the
+The GitHub chain from there is `manual-qa` → `triage-prd`, both in `prd-workflow` and neither in
+`lk` — a skill that parses the loop's own template belongs in the plugin that writes it, ADR
+[0008](docs/adr/0008-prd-qa-skills-belong-to-prd-workflow.md): `manual-qa`
+takes a PRD URL, drives that comment's steps one at a time, ticks each box as the human
+confirms it, and posts a `### [FINDING]` comment to the PR for each failure; `triage-prd`
+promotes the survivors into children. **That marker is a parse contract, not a title prefix** —
+it is hardcoded in both skills and deliberately absent from the adapter, because a project free
+to edit it would get a triage pass that silently finds nothing. The tick state in the comment is
+the only record a pass happened; neither skill writes a session log, and only a human removes
+`needs-qa`. `work-on-spec` still files a per-run **`[QA]` work item** on Azure DevOps, with no
+driver on that side. Each loop owns the
 whole shape of its own artifact — `work-on-prd`'s `## Loop end` for GitHub,
 `plugins/ado-workflow/skills/references/qa-item.md` for ADO. There was a shared
 `_shared/qa-item.md`; it was dissolved into those two, and they are now free to differ. The
 reasoning for moving QA out of the repo at all, including why the two 440-line documents in
 `docs/qa/` are kept rather than deleted, is ADR
-[0005](docs/adr/0005-qa-is-an-issue-not-a-committed-document.md).
+[0005](docs/adr/0005-qa-is-an-issue-not-a-committed-document.md). The reasoning for the comment
+being a **contract** rather than prose — its load-bearing literals, the second never-edit
+carve-out, and "all boxes ticked, no failure suffix, label removed" as the receipt — is ADR
+[0009](docs/adr/0009-the-qa-comment-is-a-parse-contract.md), which supersedes ADR 0006 **on the
+QA half only**: a PRD's children are still native sub-issues.
 
 GitHub titles carry `[PRD]` · `[TASK]` · `[BUG]`, registered in the adapter's `## Repo` →
 *Title prefixes* row, never hardcoded in a skill. **They are a human scanning convention and
@@ -144,10 +158,13 @@ instructions: `INSTALL.md`.
 The consequence that bites: **an installed plugin pins to its cached version.** Edits in
 this working tree are invisible to it, and so are committed and pushed ones — a reinstall
 at an unchanged version is a silent no-op that re-copies nothing, so the copy only moves
-when the `version` does. Live authoring therefore runs through skills-dir mode — this repo self-hosts via one
-symlink, `.claude/skills/prd-workflow -> ../../plugins/prd-workflow`, and edits there
-are live on the next session launch. Never run both routes for the same plugin in one
-place; every skill loads twice.
+when the `version` does. Live authoring therefore runs through skills-dir mode — this repo self-hosts via **two**
+symlinks, `.claude/skills/prd-workflow -> ../../plugins/prd-workflow` and
+`.claude/skills/lk -> ../../plugins/lk`, and edits there are live on the next session
+launch. That is also what makes `claude plugin details prd-workflow` and `claude plugin
+details lk` read this working tree rather than a cache, which is the cheapest evidence
+available that a change to either plugin actually loads. Never run both routes for the
+same plugin in one place; every skill loads twice.
 
 Rules that hold regardless of route:
 
