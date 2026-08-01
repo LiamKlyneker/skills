@@ -62,3 +62,4 @@ or the adapter, and stops there.
 | [0004](0004-shared-reference-and-skill-dependencies.md) | `_shared/` files are shared; skills are not | Accepted |
 | [0005](0005-qa-is-an-issue-not-a-committed-document.md) | The QA pass is a per-run item, not a committed document | Superseded by ADR 0006 |
 | [0006](0006-sub-issues-and-qa-as-a-prd-comment.md) | A PRD's children are sub-issues, and its QA pass is a comment on it | Accepted |
+| [0007](0007-a-marketplace-not-an-estate-manager.md) | This repo publishes a marketplace; it does not manage the estate | Accepted |

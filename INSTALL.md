@@ -33,32 +33,33 @@ repo authors against itself, and it is the only way to get live edits at all; se
 [Live authoring](#4-live-authoring-skills-dir-mode). What changed is that nothing here
 *depends* on it for delivery.
 
-## Before you start: which config directory
+## Before you start: which config directory, and at what scope
 
-Three Claude Code config directories are switched by `$PWD` in `~/.zshrc`. Each has its own
-plugin cache, its own marketplace registry and its own `enabledPlugins` — **they share
-nothing**. Installing into one tells you nothing about the others.
+You may have more than one Claude Code config directory — a common arrangement is one per
+client or employer, switched by `$PWD` in a shell profile. Each has its own plugin cache, its
+own marketplace registry and its own `enabledPlugins`; **they share nothing**, so installing
+into one tells you nothing about the others.
 
-| Config | Tenancy | Serves |
+**Pick the scope from the config's tenancy, not from the scope's name.**
+
+| Tenancy | Correct scope | Why |
 |---|---|---|
-| `~/.claude` | multi-tenant | personal repos: this one, `liamklyneker`, `neonplace`, `neonplace-ios`, and anything else personal |
-| `~/.claude-teamsnap` | single-tenant | TeamSnap repos only |
-| `~/.claude-schmiede` | single-tenant | Schmiede repos only |
+| **Multi-tenant** — one config serving many unrelated repos | **project** | user scope would enable the plugin's agents in *every* repo that config serves, including ones that never opted in |
+| **Single-tenant, client repo** | **local** | project scope writes a *committed* `.claude/settings.json` into someone else's repo. Local scope writes `.claude/settings.local.json` instead — confirm the repo ignores it before installing |
+| **Single-tenant, repo that refuses scoped writes** | **user** | see [trap 3](#trap-3-a-repo-whose-claude-is-itself-a-symlink-cannot-take-a-scoped-install) |
 
-Pick the scope from the *tenancy*, not from the scope's name:
-
-| Config | Correct scope | Why |
-|---|---|---|
-| `~/.claude` | **project** | user scope would enable `prd-worker` in every personal repo, including ones that never opted in |
-| `~/.claude-teamsnap` | **local** | project scope writes a *committed* `.claude/settings.json` into an employer's repo. Local scope writes `.claude/settings.local.json` instead — confirm the repo ignores it before installing (`organization-frontend-v2` covers it with `.claude/**/*.local.*`) |
-| `~/.claude-schmiede` | **user** | its repos refuse scoped writes outright — see [trap 3](#trap-3-a-repo-whose-claude-is-itself-a-symlink-cannot-take-a-scoped-install) |
-
-**In a single-tenant config, user scope *is* the narrow option.** The PRD's "install broadly,
-enable narrowly" was written with `~/.claude` in mind and does not generalise. Repeating it
+**In a single-tenant config, user scope *is* the narrow option.** "Install broadly, enable
+narrowly" was written with a multi-tenant config in mind and does not generalise; repeating it
 at a single-tenant config sends you straight into trap 3.
 
 **Never use project scope in a client repo.** It writes a committed settings file — exactly
 the footprint the plugin migration existed to avoid.
+
+*Worked example — Liam's machine, as of PRD #52's close:* `~/.claude` is multi-tenant across
+personal repos and takes **project** scope; `~/.claude-teamsnap` is single-tenant and takes
+**local**; `~/.claude-schmiede` is single-tenant over repos whose `.claude` is a symlink, so it
+takes **user**. That is an illustration of the table above, not state this repo tracks — see
+ADR [0007](docs/adr/0007-a-marketplace-not-an-estate-manager.md).
 
 ## 1. Add the marketplace
 
@@ -537,20 +538,24 @@ follow the plugin.
 
 ---
 
-## The estate today
+## What this repo does not track
 
-**[`docs/estate-inventory.md`](docs/estate-inventory.md)** — which config directory holds
-which install, at which scope, and which repo enables it.
+**Who has installed what.** This repo publishes a versioned marketplace and its
+responsibility ends there: a coherent catalog, and a `version` that moves whenever a plugin's
+content does. Whether any given machine has installed it, at which version, is that machine's
+business — a stale or broken install is an ordinary bug, diagnosed in the config where it
+surfaces, at the moment it surfaces. The argument is ADR
+[0007](docs/adr/0007-a-marketplace-not-an-estate-manager.md), including why the bump rule in
+[trap 2](#trap-2-version-is-the-install-cache-key-and-a-forgotten-bump-is-silent) gets
+*stricter* under that posture rather than looser.
 
-That state is not derived from anything and nothing validates it, so it lives in exactly one
-file on purpose. This page used to carry a second copy of the table for orientation; a
-duplicate of a hand-maintained record is a duplicate that goes stale without a symptom, and
-the inventory already says everything the copy said. `doctor` can confirm the links and
-installs it names resolve; only the inventory says whether they are *supposed* to exist.
+So there is no current inventory here, and there is not meant to be. What belongs on this page
+is the **mechanism**: which scope suits which tenancy
+([above](#before-you-start-which-config-directory-and-at-what-scope)), and the traps that make
+a given choice the only workable one.
 
-What belongs here rather than there is the mechanism, and it is all above: which scope suits
-which tenancy ([§3](#3-enable-it-for-a-single-project)), and the traps that make a given
-choice the only workable one — [trap 3](#trap-3-a-repo-whose-claude-is-itself-a-symlink-cannot-take-a-scoped-install)
-in particular, which is why a Schmiede repo takes a user-scope install and nothing else.
+[`docs/estate-inventory.md`](docs/estate-inventory.md) still exists as a **dated snapshot** of
+one machine at PRD #52's close, kept for the platform behaviour it records rather than for the
+inventory. Every specific claim in it is stale until re-checked.
 
 A dev install from a local-directory marketplace is scaffolding and belongs in neither.

@@ -13,7 +13,7 @@ five top-level directories carry all of it:
 | `plugins/` | The five packaged plugins: `prd-workflow/`, `figma-tools/`, `ado-workflow/` (the PRD workflow's ADO counterpart), `lk/` (the personal skills) and `install-skills/` (the bootstrapper, its own plugin so reaching it needs nothing else). Their skills live one level down, in `<plugin>/skills/` |
 | `_shared/` | **Global reference** — nine docs several skills read that are true in every project, from the eligibility rules to the shape of a QA item. No templates, no project values. Each plugin reaches this one canonical copy through a `skills/_shared` symlink |
 | `install/` | **Templates a project fills in** — `adapter.template.md`, `bundles.md` and `gates/`, plus the layout guide. Also the directory the `install-skills` plugin symlinks in as `skills/install`, which is what keeps its packaged skill reading these files at an unchanged relative path |
-| `docs/` | `estate-inventory.md`, the [decision records](docs/adr/README.md), and `qa/` — two committed QA documents the loops no longer produce, kept as [ADR 0005](docs/adr/0005-qa-is-an-issue-not-a-committed-document.md)'s evidence. Documentation for humans — no session loads any of it |
+| `docs/` | The [decision records](docs/adr/README.md); `qa/`, two committed QA documents the loops no longer produce, kept as [ADR 0005](docs/adr/0005-qa-is-an-issue-not-a-committed-document.md)'s evidence; and `estate-inventory.md`, a dated snapshot that is no longer maintained ([ADR 0007](docs/adr/0007-a-marketplace-not-an-estate-manager.md)). Documentation for humans — no session loads any of it |
 
 **There are no plain skills left in this repo.** That is a change of shape, not a detail:
 every skill now arrives by installing or enabling its plugin, and every one of them
@@ -22,9 +22,12 @@ invokes under that plugin's namespace. The only other top-level entries are
 part of no plugin and linked nowhere. The migration's compat shims (top-level symlinks
 into `plugins/`) are gone; nothing resolves through a pre-plugin path any more.
 
-Which config directory has which plugin, and which repo enables it, is recorded in
-[`docs/estate-inventory.md`](docs/estate-inventory.md) — nothing derives that state, so
-the inventory is the only place it exists.
+**This repo does not track who has installed it.** It publishes a versioned catalog and its
+job ends there — a coherent marketplace, and a `version` that moves whenever a plugin's
+content does, because a missed bump strands a consumer silently. Whether any given machine
+has the plugin, at which version, is that machine's business; a stale install is an ordinary
+bug, fixed where it surfaces. [ADR 0007](docs/adr/0007-a-marketplace-not-an-estate-manager.md)
+has the argument.
 
 Two delivery routes, on purpose: a plugin installed from the marketplace (a copy in the
 config's cache, keyed by the plugin's `version`), or a symlink into a config's `skills/`
