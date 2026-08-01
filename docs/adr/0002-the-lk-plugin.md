@@ -1,6 +1,6 @@
 # ADR 0002 — The `lk` plugin, and why `install-skills` is not in it
 
-- **Status**: Accepted
+- **Status**: Superseded by ADR 0008
 - **Date**: 2026-07-30
 - **Context**: PRD #52, implemented by #62 (`lk`) and #53 (`install-skills` as its own plugin)
 
