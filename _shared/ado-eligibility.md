@@ -43,9 +43,11 @@ Keep a sibling only when **both** hold:
 - Its description carries the spec reference (`Spec: #<spec-id>`) **or** a `Related` link
   points back at this `[SPEC]`.
 
-The parent collects every kind of child — other specs, their tasks, `[QA]` items, ordinary
-work someone filed by hand. Sitting under the same parent is not membership, and picking such
-a sibling means working something this spec never scoped.
+The parent collects every kind of child — other specs, their tasks, `[FINDINGS]` items, the
+`[BUG]`s triaged out of them, ordinary work someone filed by hand. All of them are the same
+work-item type as the `[TASK]`s, so the title prefix is the only thing telling them apart.
+Sitting under the same parent is not membership, and picking such a sibling means working
+something this spec never scoped.
 
 Report the siblings you dropped and why. A silently-dropped task looks identical to a spec
 with fewer slices than it has.

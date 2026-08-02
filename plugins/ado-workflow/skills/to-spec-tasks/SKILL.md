@@ -31,9 +31,12 @@ before the first MCP call and hardcode none of it here.
 error — it writes work items somewhere nobody is looking, or returns an empty result that
 reads like a story with no children.
 
-`[SPEC]`, `[TASK]` and `[QA]` below are **shorthand for the adapter's *Title prefixes* row**,
-written out for readability. If that row names different prefixes, they win — here, and in
-every title filter this skill applies.
+`[SPEC]`, `[TASK]`, `[FINDINGS]` and `[BUG]` below are **shorthand for the adapter's *Title
+prefixes* row**, written out for readability. If that row names different prefixes, they win —
+here, and in every title filter this skill applies. On this tracker the prefix is the *only*
+thing separating one kind of child from another, since all four are the same work-item type
+under the same parent — so a filter that reads the wrong prefix returns an empty set, not an
+error.
 
 ## Readiness: the ADO MCP server
 

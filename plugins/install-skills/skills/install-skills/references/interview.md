@@ -33,7 +33,7 @@ way.
 
 | Adapter section | Read this | Ask only for |
 |---|---|---|
-| `## Repo` | **GitHub**: `gh repo view --json nameWithOwner,defaultBranchRef`. **Azure DevOps**: the default branch from git and nothing else — the tree states none of the rest | related repos / contract boundaries on either tracker — nothing states these reliably. **Title prefixes on either tracker**: offer the defaults (`[PRD]`·`[TASK]`·`[BUG]` on GitHub, `[SPEC]`·`[TASK]`·`[QA]` on ADO — GitHub has no `[QA]` prefix, since its QA artifact is a comment on the PRD) and only ask whether this repo already uses different words — one confirmation, not four questions. On Azure DevOps, the whole `### Azure DevOps` block as well: org, the **two** projects (work items and repo — ask for both even when they are the same, since querying the wrong one returns empty rather than an error), team, repository, work-item type, the three board states, and the branch pattern |
+| `## Repo` | **GitHub**: `gh repo view --json nameWithOwner,defaultBranchRef`. **Azure DevOps**: the default branch from git and nothing else — the tree states none of the rest | related repos / contract boundaries on either tracker — nothing states these reliably. **Title prefixes on either tracker**: offer the defaults (`[PRD]`·`[TASK]`·`[BUG]` on GitHub, `[SPEC]`·`[TASK]`·`[FINDINGS]`·`[BUG]` on ADO — neither tracker has a `[QA]` prefix) and only ask whether this repo already uses different words — one confirmation, not four questions. On ADO the answer is load-bearing rather than cosmetic, since every kind of child is the same work-item type and the prefix is all that separates them, so read it back. On Azure DevOps, the whole `### Azure DevOps` block as well: org, the **two** projects (work items and repo — ask for both even when they are the same, since querying the wrong one returns empty rather than an error), team, repository, work-item type, the three board states, and the branch pattern |
 | `## Commands` | `package.json` scripts · `Makefile` targets · `Package.swift` + schemes · `Cargo.toml` · `pyproject.toml`. Package manager from the lockfile (`pnpm-lock.yaml` → pnpm, `bun.lockb` → bun, …) | the screenshot command — it is usually unscripted, and "none, use the browser tools interactively" is a real answer |
 | `## App facts` | language + version, framework + version, path aliases, generated-vs-source files, strict flags — all from the manifests and config files | **the fragile part.** The subsystem that breaks silently and that no linter catches. This is the highest-value line in the adapter and it is never in a file |
 | `## Verify ladder` | candidate L2 from the test/build scripts | confirmation that L2 is the real floor, and what L3 evidence looks like. A repo with no test suite is a legitimate answer — record *why*, so no worker treats it as a gap to fill on the side |
@@ -70,7 +70,7 @@ here, because every one of them fails *silently*:
 
 Do not ask which tracker — the bundle already said. There is no QA path to ask for on
 either tracker: GitHub posts a per-run QA comment on the PRD and labels it `needs-qa`,
-Azure DevOps files a per-run `[QA]` work item, and neither writes a file.
+Azure DevOps files a per-run `[FINDINGS]` work item, and neither writes a file.
 
 **`prd-qa`** — a subset of `prd-workflow`'s sections, so if the repo already ran that
 install every one is filled: confirm, don't re-ask. On a standalone install the one worth a
