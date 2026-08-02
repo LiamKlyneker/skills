@@ -27,8 +27,8 @@ plugins/ado-workflow/
 ```
 
 Nothing sits at the plugin root. A directory holding both a root `SKILL.md`
-and a `skills/` subdirectory registers **twice** — once as a plain skill, once
-as a plugin skill — and pays always-on token cost for both.
+and a `skills/` subdirectory registers **twice** — once as a skill in its own
+right, once as a plugin skill — and pays always-on token cost for both.
 
 ## Decisions
 
@@ -55,8 +55,8 @@ it, this one included — install dereferences the link into each cache copy.
 `skills/_shared` is a symlink to the repo's single canonical `_shared/`
 (`../../../_shared`), the same target and the same relative depth as the two
 existing plugins. Every future skill's `../_shared/…` reference resolves with
-zero rewrites, in both delivery modes: live through the symlink in
-skills-dir mode, and inside the tree in marketplace mode.
+zero rewrites wherever the plugin is loaded from: live through the link under
+`--plugin-dir`, and inside the tree in an install cache.
 
 ### Plugin-wide references live at `skills/references/`
 
@@ -65,8 +65,8 @@ server before its first call — so it belongs to the plugin, not to whichever
 skill happened to be written first. It sits beside `_shared` as a sibling of
 the skill directories, which makes the pointer `../references/ado-mcp-setup.md`
 from any skill: the same relative depth as `../_shared/…`, valid live through
-the skills-dir symlink and valid inside a marketplace install cache, where the
-whole plugin directory is copied. The cross-skill route the client repo used
+the packaging link under `--plugin-dir` and valid inside an install cache, where
+the whole plugin directory is copied. The cross-skill route the client repo used
 (`../<other-skill>/references/…`) is what packaging cannot carry.
 
 A directory under `skills/` with no `SKILL.md` is not registered as a skill —

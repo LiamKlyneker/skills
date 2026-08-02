@@ -14,8 +14,8 @@ Figma integration, which is installed and enabled in `~/.claude` — and all thr
 config dirs have that marketplace added, so the other two are one install away
 from the same clash. The collision is not marketplace-only: linking a second
 `figma` into a config's `skills/` reports
-`✘ Not loaded — the name "figma" is already taken`, which breaks the skills-dir
-mode this repo depends on for live authoring.
+`✘ Not loaded — the name "figma" is already taken`, and a `--plugin-dir` load
+collides with an installed `figma` just as readily.
 
 `figma-tools` collides with nothing and yields `/figma-tools:figma-to-spec`.
 
@@ -46,12 +46,11 @@ reasoning and evidence — repeated here only where this plugin differs):
   placement (`plugins/<name>/skills/` is three levels below the repo root
   either way), so the identical relative target is correct verbatim.
 - **Compat shims — gone (#26).** The top-level `figma-to-spec` name survived the
-  migration as a symlink into `plugins/figma-tools/skills/figma-to-spec` so the
-  config-dir consumer links kept resolving during the cutover. #24 removed
-  `~/.claude/skills/figma-to-spec` and `~/.claude/agents/figma-region-extractor.md`
-  (this plugin, installed user-scope, provides both), #26 repointed
-  `~/.claude-schmiede/skills/figma-to-spec` straight at the skill directory, and the
-  shim is deleted.
+  migration as a symlink into `plugins/figma-tools/skills/figma-to-spec` so that
+  consumers' links kept resolving during the cutover. #24 repointed them at the
+  plugin and #26 deleted the shim. Nothing reaches this plugin by a pre-plugin
+  path, and ADR [0010](../../docs/adr/0010-one-distribution-one-dev-mode.md)
+  retired the route those links belonged to outright.
 
 ### The nested agent link is not a shim, and stays
 
@@ -78,5 +77,6 @@ before falling back.
 
 ## Out of scope
 
-`figma-component/` and `tokens-init/` are untouched — deprecated, unlinked,
-and staying that way until #9 and #14 decide what to salvage.
+`figma-component/` and `tokens-init/` were the two top-level skills this one
+superseded. They sat deprecated and unlinked for a while pending #9 and #14;
+ADR [0010](../../docs/adr/0010-one-distribution-one-dev-mode.md) deleted them.

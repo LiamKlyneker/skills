@@ -10,9 +10,8 @@ bundle-specific instead of asking every question every time, and it has no home 
 else. The installer **reads this file** rather than hardcoding a section list.
 
 **Bundles do not list skills.** Getting the skills themselves onto a machine is the
-platform's job — `/plugin marketplace add LiamKlyneker/skills` and `/plugin install`, or a
-symlink into a config's `skills/` directory for a plain skill. The catalog owns the
-inventory; this file owns the questions.
+platform's job — `/plugin marketplace add LiamKlyneker/skills` and `/plugin install`. The
+catalog owns the inventory; this file owns the questions.
 
 ## Bundle is not plugin
 
@@ -28,7 +27,7 @@ assume otherwise:
 | `figma-tools` | the `figma-tools` plugin | Yes, today |
 
 `figma-tools` was called `figma` here until the plugin took that name and then had to give
-it up: `figma@claude-plugins-official` already owns it, and the clash breaks skills-dir
+it up: `figma@claude-plugins-official` already owns it, and the clash stops the plugin
 loading outright. The bundle followed the plugin rather than keeping a name that now points
 at somebody else's integration. A bundle and a plugin sharing a name still does not make
 them the same set; where the table says "yes" it is reporting today's lists, not a rule.
@@ -237,8 +236,7 @@ own primitive homes, real token files and stack-specific traps named registers o
 same way as any other gate. Accepting it is the one case where an adapter-free bundle
 still ends up with an adapter, because the `## Project gates` registry lives there.
 
-`tokens-init` and `figma-component` are **deprecated** — superseded by `figma-to-spec`.
-They are part of no bundle and no plugin, are linked into no project, and carry
-`disable-model-invocation: true` so nothing can auto-fire them. The directories stay in
-the canonical repo only until their salvageable parts are moved out; #14 tracks what the
-UI Primitive and Token manifests need once that happens. Do not install them.
+`tokens-init` and `figma-component` were the two deprecated top-level skills this bundle
+superseded. They were part of no bundle and no plugin, and ADR
+[0010](../docs/adr/0010-one-distribution-one-dev-mode.md) deleted them; #14 tracks what
+the UI Primitive and Token manifests still need.

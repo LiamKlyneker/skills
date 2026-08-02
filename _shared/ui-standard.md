@@ -1,6 +1,6 @@
 # UI Standard (the canon)
 
-Shared reference for the component-tier design-to-code skills: `tokens-init` bootstraps toward it, `figma-component` resolves against it, and the future `ui-foundation` skill will audit/migrate existing repos toward it. When a host repo has its own established conventions, its ui-profile documents them and **repo idiom wins** — this doc is the default for greenfield and the yardstick for hygiene findings.
+Shared reference for the component-tier design-to-code skills: `figma-to-spec` resolves against it, and the future `ui-foundation` skill will audit/migrate existing repos toward it. When a host repo has its own established conventions, its ui-profile documents them and **repo idiom wins** — this doc is the default for greenfield and the yardstick for hygiene findings.
 
 ## Stack
 
@@ -26,7 +26,7 @@ Naming mirrors Figma slash paths 1:1: `color/surface/primary` → `--color-surfa
 ## Component conventions
 
 - Compositional API by default (compound `Root/Trigger/Content` parts) for behavior-heavy components.
-- Config-heavy widgets (DataGrid/DatePicker class) may take a configured-props API — follow established library precedent (see figma-component's `pattern-precedent.md`), don't invent taxonomy.
+- Config-heavy widgets (DataGrid/DatePicker class) may take a configured-props API — follow established library precedent, don't invent taxonomy.
 - The **WAI-ARIA APG** pattern is the behavior spec of record.
 
 ## Story contract
@@ -34,12 +34,12 @@ Naming mirrors Figma slash paths 1:1: `color/surface/primary` → `--color-surfa
 - CSF3 + autodocs (`tags: ['autodocs']`).
 - One story per variant/state axis, plus an `AllVariants` grid story for visual comparison.
 - Play-function interaction tests only where real behavior exists (open/close, keyboard) — **plus** a regression guard wherever a styling failure would be *silent* (computed size/weight on the type slots). Guarding a silent failure is not over-testing; it is the only thing that catches it.
-- Never assert a pseudo-state that an addon forces for display — it won't apply in the test runner. Real focus is assertable; synthetic hover is not. See `figma-component/references/render-verification.md`.
+- Never assert a pseudo-state that an addon forces for display — it won't apply in the test runner. Real focus is assertable; synthetic hover is not.
 - **Naming parity**: Figma property = component prop = story arg. A mismatch (`type` in code vs `variant` in Figma) breaks the single source of truth — it's a checkpoint question, never a silent rename.
 
 ## Designer contract (Figma hygiene checklist)
 
-What `figma-component`'s hygiene report measures a node against:
+What a hygiene report measures a node against:
 
 - All colors/spacing/radius bound to **variables** with semantic slash names (`color/surface/primary`, never `blue-500` or a raw hex). Code syntax set where the plan allows.
 - **Typography bound to text styles** — *not* variables; a text style is a different object entirely. Role-based slash names (`heading/lg`, `body` — never `text-20`, which becomes a lie the day the size changes), with each style's `fontSize`/`lineHeight` bound to variables so the ramp has a primitive tier beneath it. Text carrying unbound font properties is the type equivalent of a raw hex fill.

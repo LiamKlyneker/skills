@@ -214,12 +214,20 @@ def check_agents() -> None:
 
 
 def check_symlinks() -> None:
-    """No broken links, nothing escaping the repo, and no top-level plugin shims.
+    """Packaging links are legal; links that make a skill *load* are not.
 
-    The illegal shape is a *top-level* symlink into `plugins/` (a skill discoverable
-    under two names). Links under `.claude/skills/` are the opposite — that is how this
-    repo self-hosts and authors against its own working tree — so they stay legal.
+    Two different things get called a symlink here (ADR 0010):
+
+    - **Packaging** — `plugins/*/skills/_shared`, `install-skills`' `skills/install`,
+      and `figma-to-spec`'s agent link. Install dereferences these into each cache
+      copy; they are build mechanics and they are required.
+    - **Delivery** — a link that makes a plugin or skill load. Two shapes of it have
+      existed here and both are now illegal: a *top-level* shim into `plugins/` (one
+      skill discoverable under two names, #26), and a link under `.claude/skills/`
+      into `plugins/` (this repo self-hosting itself, retired in favour of
+      `claude --plugin-dir`). Prose alone would let either back in by habit.
     """
+    claude_skills = ROOT / ".claude" / "skills"
     for dirpath, dirnames, filenames in os.walk(ROOT, followlinks=False):
         dirnames[:] = [d for d in dirnames if d != ".git"]
         for entry in dirnames + filenames:
@@ -236,6 +244,10 @@ def check_symlinks() -> None:
             elif path.parent == ROOT and resolved.is_relative_to(ROOT / "plugins"):
                 fail(path, "top-level symlink into plugins/ — makes one skill "
                            "discoverable under two names (see CLAUDE.md)")
+            elif path.is_relative_to(claude_skills) and resolved.is_relative_to(ROOT / "plugins"):
+                fail(path, "symlink under .claude/skills/ into plugins/ — the retired "
+                           "self-host route; author with `claude --plugin-dir "
+                           f"{relpath(resolved)}` instead (ADR 0010)")
             elif source and target and source != target:
                 # Install dereferences the link, so this would publish one plugin's files
                 # inside another — and edits to `target` would need `source` bumped too.

@@ -15,8 +15,8 @@ Project facts (repo, title prefixes, commands, verify ladder) come from the **pr
 
 `/work-on-prd #N [--gate=issue|events|end]`
 
-**Invocation name depends on the install route.** From a plugin (marketplace install or a
-skills-dir link) every skill in this plugin is namespaced: `/prd-workflow:work-on-prd`,
+**Every skill in this plugin is namespaced**, on every route — installed from the
+marketplace or loaded with `claude --plugin-dir`: `/prd-workflow:work-on-prd`,
 `/prd-workflow:to-issues`, and so on. Only a bare symlink into a config's `skills/`
 directory — the pre-plugin route — gives the unprefixed `/work-on-prd`. The same rule
 governs the agent type; see Loop step 5. Unprefixed names below are shorthand for
@@ -88,7 +88,7 @@ State lives in git + GitHub only (branch commits, issue labels, PR body). Zero s
    - The **branch name** `prd/<n>-<slug>` and the **issue number** for the `(#N)` commit suffix.
    - The **routing call** you announced in step 4.
 
-   **Agent type by route — get this right before you fall back.** A plugin namespaces every component it provides, so installed from the marketplace *or* linked as a skills-dir plugin the type is **`prd-workflow:prd-worker`**. Only a hand-placed `.claude/agents/prd-worker.md` (the pre-plugin route) registers the bare `prd-worker`. Try the namespaced name first and the bare name second; treating the bare name as primary is what silently produced a whole run of `general-purpose` workers once already.
+   **Agent type — get this right before you fall back.** A plugin namespaces every component it provides, so the type is **`prd-workflow:prd-worker`** however the plugin was loaded: installed from the marketplace, or via `claude --plugin-dir`. There is no unprefixed form; the bare `prd-worker` only ever came from a hand-placed `.claude/agents/` file on the retired pre-plugin route. Use the namespaced name — treating the bare name as primary is what silently produced a whole run of `general-purpose` workers once already.
 
    *Detachable — expect to need this*: `prd-worker` is project-scoped, and registration lags. A file added to an agents directory that already existed resolves after a few minutes; a **newly created** `.claude/agents/` does not resolve at all for the rest of the session, and a plugin enabled mid-session does not register its agents until the next session. So if **neither** type name resolves, do not wait and retry — read `../../agents/prd-worker.md` and paste its body (everything below the frontmatter) into a `general-purpose` agent for the whole run. Same contract, one source of truth. **Announce which of the three paths the run took** — namespaced, bare, or detached — because a detached run looks identical to a real one in the output, and that is the only signal that the agent did not resolve.
 6. **Judge the report**: commit exists on branch · verify evidence is real (spot-check: re-run the L2 command if evidence looks thin) · deviations acceptable · AC covered.

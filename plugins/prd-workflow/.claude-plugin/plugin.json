@@ -1,7 +1,7 @@
 {
   "name": "prd-workflow",
   "description": "PRD-to-merge workflow for Claude Code: turn context into a PRD, slice it into tracer-bullet issues, pick the next one, run the whole thing end-to-end with a per-issue worker subagent, and triage the QA findings that come back into cold-runnable issues",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "author": {
     "name": "Liam Klyneker",
     "url": "https://github.com/LiamKlyneker"

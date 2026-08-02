@@ -1,7 +1,7 @@
 {
   "name": "figma-tools",
   "description": "Figma design-to-spec extraction for Claude Code: reads a Figma file region by region and produces implementation-ready page/gap specs, backed by the figma-region-extractor subagent",
-  "version": "1.2.0",
+  "version": "1.3.0",
   "author": {
     "name": "Liam Klyneker",
     "url": "https://github.com/LiamKlyneker"

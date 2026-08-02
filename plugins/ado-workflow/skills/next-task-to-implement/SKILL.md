@@ -11,8 +11,8 @@ respects `## Blocked by`, surfaces any `## External steps` the user must do in-s
 This skill **does not** implement, close tickets, modify state, or enter plan mode. It ends at
 a recommendation. The user decides what to do next.
 
-**Invocation name depends on the install route.** From a plugin (marketplace install or a
-skills-dir link) every skill in this plugin is namespaced: `/ado-workflow:next-task-to-implement`,
+**Every skill in this plugin is namespaced**, on every route — installed from the
+marketplace or loaded with `claude --plugin-dir`: `/ado-workflow:next-task-to-implement`,
 `/ado-workflow:to-spec-tasks`, and so on. Only a bare symlink into a config's `skills/`
 directory — the pre-plugin route — gives the unprefixed `/next-task-to-implement`. Unprefixed
 names below are shorthand for whichever form your route provides.

@@ -1,6 +1,6 @@
 ---
 name: install-skills
-description: Bootstrap a project's adapter (`.claude/project/adapter.md`) for a skill bundle, and diagnose an install that has rotted — a missing or half-filled adapter, a forked skill, a dead gate pointer. It does not place skills — plugins come from the marketplace. Invoke /install-skills:install-skills to bootstrap or repair a project's skills wiring.
+description: Bootstrap a project's adapter (`.claude/project/adapter.md`) for a skill bundle, and diagnose an install that has rotted — a missing or half-filled adapter, a banned `_shared/`, a dead gate pointer. It does not place skills — plugins come from the marketplace. Invoke /install-skills:install-skills to bootstrap or repair a project's skills wiring.
 disable-model-invocation: true
 ---
 
@@ -17,18 +17,18 @@ Two modes, and only two — the two jobs no distribution mechanism can do for yo
 **It does not place skills.** The platform does that, and does it better — installation,
 versioning and updates are all things it has and a pile of symlinks never did:
 
-- **Plugin** → `/plugin marketplace add LiamKlyneker/skills`, then `/plugin install
+- **Install** → `/plugin marketplace add LiamKlyneker/skills`, then `/plugin install
   <plugin>` from a session running under the config directory you want it in. Plugins are
   stored per config directory, so personal / client / other is an independent decision each
-  time.
-- **Plain skill, or live authoring** → a symlink into that config's `skills/` directory,
-  pointing at your clone. Edits land immediately; nothing is copied.
-- **Plugin that must travel with a repo** (collaborators, CI, cloud agents) → committed
-  project settings, not a symlink only one laptop has.
+  time. **This is the only way a published skill reaches a machine.**
+- **Make it travel with a repo** (collaborators, CI, cloud agents) → committed project
+  settings naming `plugin@marketplace`, never a path only one laptop has.
+- **Author against a working tree** → `claude --plugin-dir <path-to-plugin>`, session-scoped
+  and branch-agnostic. That is a dev mode, not a way to deliver anything (ADR 0010).
 
-So there is no `update` mode here, no copy-in mode, and nothing writes outside
-`.claude/project/`. If you are asked to put skills somewhere, name the route above and
-stop — do not hand-roll it.
+So there is no `update` mode here, no copy-in mode, no symlink mode, and nothing writes
+outside `.claude/project/`. If you are asked to put skills somewhere, name the route above
+and stop — do not hand-roll it.
 
 The layout being bootstrapped is settled elsewhere and is not up for negotiation here: a
 project owns exactly one directory (`<repo-root>/.claude/project/`), and **a project never
@@ -43,8 +43,11 @@ two are separate namespaces from the plugins.
 Both modes need the path to the canonical skills repo on this machine — the adapter
 template, the gate templates and `doctor.sh` all live there.
 
-- If this skill was reached through a symlink, its own physical location *is* canonical:
+- If this skill was loaded from the canonical repo — a `--plugin-dir` session, or a
+  checkout you are sitting in — its own physical location *is* canonical:
   `cd "$(dirname <this SKILL.md>)/.." && pwd -P`.
+- If it was loaded from an install cache, that copy carries the templates and `doctor.sh`
+  too (they are dereferenced into it), so the same resolution works and needs no clone.
 - Otherwise ask. Never guess a clone path.
 
 If the target project *is* the canonical repo, stop: it bootstraps nothing into itself.
@@ -203,7 +206,6 @@ its checks by hand or "spot-check" a subset.
 
 | Label | Means |
 |---|---|
-| `FORK` | a real directory where a symlink belongs, **shadowing a skill of the same name** — one in canonical, or one a reachable plugin provides. A real directory that shadows neither is a skill the project genuinely owns — reported as `INFO`, not a problem |
 | `BANNED` | a project-owned `_shared/` — shadows canonical for any copied skill |
 | `DANGLING` | a symlink under `.claude/` whose target is gone |
 | `HOLE` | a skill reaching this repo reads the adapter, and there isn't one — from `.claude/skills/`, or from a plugin the repo's committed `.claude/settings.json` enables |
@@ -218,65 +220,37 @@ as warnings, not problems. `OK` and `INFO` are neither, and `--quiet` hides them
 
 Exit 0 clean · 1 problems · 2 usage error.
 
-**Where skills come from is a lookup, not a check.** A skill can reach a session from
-`.claude/skills/`, from a plugin cache, from a skills-dir plugin, or from a plugin the
-project enables in committed settings — so doctor reads all four and reports what it finds
-as `INFO`. It never reports a plugin-provided skill as missing, and a repo with no
-`.claude/skills/` at all is the normal post-plugin shape, not a broken one. What stays loud
-is the shadowing: a real directory sitting on top of a skill something else already
-provides.
+**Where skills come from is a lookup, not a check.** A published skill reaches a session
+exactly one way — an installed plugin — so doctor reads the plugin caches and the plugins a
+repo enables in its committed settings, and reports what it finds as `INFO`. It never reports
+a plugin-provided skill as missing, and **a repo with no `.claude/skills/` at all is the
+normal shape**, not a broken one.
 
-### The double-load scan
+**What lives in a project's own `.claude/skills/` is the project's business.** Doctor names
+each entry and moves on. It does not compare them against canonical, against a plugin's
+inventory, or against each other — there is no second delivery route for a published skill to
+arrive by, so a directory there is a skill the project owns rather than a competing copy of
+one this repo ships (ADR 0010). What stays loud is what is *broken* rather than merely
+different: a link whose target is gone, and a `_shared/` no project may own.
 
-Running both delivery routes for one skill in one place loads it twice. Doctor reports that
-as `INFO` — it is a wiring decision, not a broken install — in two places:
-
-- **Inside the repo**, for `.claude/skills/<name>` that a reachable plugin also provides.
-- **In each config directory**, for `~/.claude*/skills/<name>` that a plugin installed in
-  **that same config** also provides, and for a skills-dir plugin parked there whose plugin
-  is *also* installed from a marketplace into that config.
-
-The config-level half is scoped per config on purpose. The configs share no plugin state, so
-a plugin cached under one says nothing about a symlink under another — asked globally the
-check would flag a hand-placed `~/.claude/skills/<name>` because an unrelated plugin in a
-*different* config happens to ship a skill of that name.
-
-A plugin root inside the canonical repo is **source, not a second install**, so a link
-pointing into a checkout is one copy and is never reported. That is what keeps this repo's
-own `.claude/skills/prd-workflow` self-hosting link quiet.
-
-**The scan announces what it walked**, one line per config directory, whether or not it
-found anything:
-
-```
-INFO      double-load scan: ~/.claude/skills — 13 entries, 13 checked (skills: 11, skills-dir plugin roots: 2)
-INFO      double-load scan: ~/.claude-schmiede/skills — 8 entries, 7 checked (skills: 7; skipped _shared)
-INFO      double-load scan: ~/.claude-foo has no skills/ — nothing hand-placed there
-```
-
-Read the counts. `entries` is what `ls` would show, so it cross-checks directly; a directory
-missing from the list, or a count that does not match, means the scan skipped input — and a
-checker that skipped its input reads exactly like a clean one. That is the whole reason the
-announcement exists. It runs before the layout section, so it still reports for a repo that
-has no `.claude/` at all. `--quiet` suppresses it along with every other `INFO`.
-
-Interpretation is yours, not the script's. In particular: a `FORK` is a decision, not a
-delete. Someone edited that copy for a reason and the diff against canonical may contain
-work worth back-porting. Report it, show the diff, and let the human decide — replacing a
-fork with a symlink silently destroys whatever was in it.
+Nothing here scans a config directory's `skills/` folder. That check existed when two
+delivery routes could load the same skill twice; with one route there is no second copy, and
+auditing a machine's leftovers is not this repo's job (ADR 0007).
 
 ---
 
 ## Edge cases
 
 - **Asked to install the skills themselves** → not this skill's job any more. Name the
-  marketplace or symlink route and stop.
+  marketplace route and stop. There is no other one.
 - **Adapter exists but predates the bundle** → gap-fill the missing sections; leave
   everything else alone, including sections the bundle doesn't require.
 - **Adapter-free bundle** → no `.claude/project/`, no interview, no questions. The gate
   offer is the only thing left, and it is optional.
-- **`doctor` finds a fork** → do not resolve it as part of a bootstrap. Stop, show the
-  diff, hand it back.
+- **A project's `.claude/skills/` holds something that looks like a copy of a published
+  skill** → doctor no longer reports it, and neither do you as part of a bootstrap. If it
+  comes up anyway, show the diff and hand it back: someone edited that copy for a reason,
+  and replacing it silently destroys whatever was in it.
 - **No `gh` remote** → the *GitHub* workflow bundles are unusable without one. Say so
   rather than filling `## Repo` with a guess. On `ado-workflow` it is expected, not a
   finding: that project's tracker facts come from the interview.

@@ -17,8 +17,8 @@ a GitHub one.
 
 `/ado-workflow:work-on-spec <spec-url|id> [--gate=task|events|end]`
 
-**Invocation name depends on the install route.** From a plugin (marketplace install or a
-skills-dir link) every skill in this plugin is namespaced: `/ado-workflow:work-on-spec`,
+**Every skill in this plugin is namespaced**, on every route — installed from the
+marketplace or loaded with `claude --plugin-dir`: `/ado-workflow:work-on-spec`,
 `/ado-workflow:next-task-to-implement`, and so on. Only a bare symlink into a config's `skills/`
 directory — the pre-plugin route — gives the unprefixed `/work-on-spec`. The same rule governs
 the agent type; see Loop step 5. Unprefixed names below are shorthand for whichever form your
@@ -274,11 +274,11 @@ transition anything.
    - The **branch name** and the **work-item id** for the `Work-item: AB#<id>` commit trailer.
    - The **routing call** you announced in step 4.
 
-   **Agent type by route — get this right before you fall back.** A plugin namespaces every
-   component it provides, so installed from the marketplace *or* linked as a skills-dir plugin
-   the type is **`ado-workflow:spec-worker`**. Only a hand-placed `.claude/agents/spec-worker.md`
-   (the pre-plugin route) registers the bare `spec-worker`. Try the namespaced name first and the
-   bare name second; treating the bare name as primary is what silently produced a whole run of
+   **Agent type — get this right before you fall back.** A plugin namespaces every component
+   it provides, so the type is **`ado-workflow:spec-worker`** however the plugin was loaded:
+   installed from the marketplace, or via `claude --plugin-dir`. There is no unprefixed form;
+   the bare `spec-worker` only ever came from a hand-placed `.claude/agents/` file on the
+   retired pre-plugin route. Use the namespaced name; treating the bare name as primary is what silently produced a whole run of
    `general-purpose` workers once already on the GitHub loop.
 
    *Detachable — expect to need this*: agent registration lags. A file added to an agents

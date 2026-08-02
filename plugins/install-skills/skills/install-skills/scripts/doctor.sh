@@ -2,9 +2,14 @@
 #
 # doctor.sh — check that a project's skill wiring still matches the layout.
 #
-# Every failure class here is one that is silent today: a forked copy that looks
-# like an install, a leftover `_shared/` that shadows canonical, an adapter still
-# carrying template placeholders, a pointer to a gate file nobody wrote.
+# Every failure class here is one that is silent today: a leftover `_shared/` that
+# shadows canonical, a dangling link, an adapter still carrying template
+# placeholders, a pointer to a gate file nobody wrote.
+#
+# What it deliberately does NOT do is audit what a machine has lying around in a
+# `skills/` directory. Skills reach a session one way — an installed plugin — so
+# there is no second copy for one to load from, and a project's own skills are the
+# project's business. ADR 0007 and ADR 0010.
 #
 # Usage:
 #   doctor.sh [--repo <path>] [--bundle <slug>] [--canonical <path>] [--quiet]
@@ -70,94 +75,78 @@ echo
 # ---------------------------------------------------------------- 1. plugin inventory
 #
 # Pure lookup, and deliberately the first thing that runs: it reads no repo state
-# and prints nothing, so the config-level scan below it can run even for a repo
-# that turns out to have no `.claude/` at all — the case where the layout section
-# below stops early. A machine-wide double-load is not the repo's fault and is not
-# the repo's to hide.
+# and prints nothing.
 #
-# A skill no longer has to sit in `.claude/skills/` to reach a session — a plugin
-# can carry it. That is a lookup, not a judgement call. These are the only places
-# a plugin's files ever live, and a skill is plugin-provided exactly when
-# `<plugin root>/skills/<name>` exists:
+# A skill does not sit in `.claude/skills/` to reach a session — a plugin carries
+# it. That is a lookup, not a judgement call. These are the only places a plugin's
+# files ever live:
 #
 #   ~/.claude*/plugins/installed_plugins.json   each install's `installPath`
 #   ~/.claude*/plugins/cache/<marketplace>/<plugin>[/<version>]
-#   ~/.claude*/skills/<plugin>/                 skills-dir plugins
 #   <repo>/plugins/<plugin>/                    a repo that ships its own
 #
 # Every config dir is scanned, not just ~/.claude: which one a session in this
 # repo runs under is decided by $PWD in the user's shell and is not knowable from
 # here, so "reachable from some config" is the honest question.
 
-# Enumerated once and reused: section 2 walks this same list to ask which of these
-# configs hand-place a skill their own plugins already provide.
 config_dirs="$(
   for cfg in "$HOME/.claude" "$HOME"/.claude-*; do
     [ -d "$cfg" ] && printf '%s\n' "$cfg"
   done | sort -u
 )"
 
-# "<config dir><TAB><plugin root>". Keeping the association is what lets a later
-# check ask "reachable from *this* config" rather than "reachable from anywhere":
-# the configs share no plugin state, so a plugin cached under one says nothing
-# about a symlink under another.
+# Order matters and survives the dedupe below: every config's *live* installPath
+# first, then the cache directories. `uninstall` and `update` leave the old cache
+# directory behind, so `cache/<mkt>/<plugin>/` accumulates one per version ever
+# installed and only the one named in installed_plugins.json is live. Reporting
+# the first lexical match would name a stale copy — 1.1.0 ahead of 1.3.0 — which
+# reads exactly like a consumer who never updated.
 config_roots="$(
-  while IFS= read -r cfg; do
-    [ -n "$cfg" ] || continue
-    {
+  {
+    while IFS= read -r cfg; do
+      [ -n "$cfg" ] || continue
       inst="$cfg/plugins/installed_plugins.json"
       [ -f "$inst" ] && grep -o '"installPath"[[:space:]]*:[[:space:]]*"[^"]*"' "$inst" |
         sed 's/.*"\(.*\)"$/\1/'
-      for d in "$cfg"/plugins/cache/*/* "$cfg"/plugins/cache/*/*/* "$cfg"/skills/*; do
+      true
+    done <<< "$config_dirs"
+
+    while IFS= read -r cfg; do
+      [ -n "$cfg" ] || continue
+      for d in "$cfg"/plugins/cache/*/* "$cfg"/plugins/cache/*/*/*; do
         [ -f "$d/.claude-plugin/plugin.json" ] && printf '%s\n' "$d"
       done
       true
-    } | sort -u | awk -v c="$cfg" 'NF { print c "\t" $0 }'
-  done <<< "$config_dirs"
+    done <<< "$config_dirs"
+  }
 )"
 
-# A repo that ships its own, plus a plugin dropped into the skills dir of this
-# repo — the project-scoped half of skills-dir mode, which `claude plugin list`
-# reports as `<name>@skills-dir` with `Scope: project`. Resolved to a physical
-# path so a project link pointing at a plugin already found above dedupes into
-# one root rather than reading as two.
+# A repo that ships its own plugins. Resolved to a physical path so it dedupes
+# against anything already found above.
 #
 # No apostrophes in the comments inside the substitution below, deliberately:
 # bash 3.2 (the macOS system bash, and what this script runs under) does not strip
 # `#` comments inside `$( )` before scanning for quotes, so one apostrophe there
 # is a syntax error at a line 100+ further down.
 repo_roots="$(
-  for d in "$repo"/plugins/* "$skills_dir"/*; do
+  for d in "$repo"/plugins/*; do
     [ -f "$d/.claude-plugin/plugin.json" ] && printf '%s\n' "$(cd "$d" && pwd -P)"
   done
   true
 )"
 
+# Deduped with awk rather than `sort -u`, so the live-install-first ordering above
+# is preserved instead of being replaced by lexical order.
 plugin_roots="$(
   {
-    printf '%s\n' "$config_roots" | cut -f2-
+    printf '%s\n' "$config_roots"
     printf '%s\n' "$repo_roots"
-  } | grep -v '^[[:space:]]*$' | sort -u
+  } | grep -v '^[[:space:]]*$' | awk '!seen[$0]++'
 )"
 
-# Print the root of a plugin that provides skill $1, nothing if none does.
-# $2, when given, is the newline-separated root list to search; it defaults to
-# every root reachable from anywhere, which is the honest question for a repo
-# whose config is not knowable from here. The config-level scan passes one
-# config's roots instead, because "loads twice" is only true within one config.
-plugin_provides() {
-  local root
-  while IFS= read -r root; do
-    [ -n "$root" ] || continue
-    [ -d "$root/skills/$1" ] && { printf '%s\n' "$root"; return 0; }
-  done <<< "${2-$plugin_roots}"
-  return 1
-}
-
 # Print the root of the plugin *named* $1, nothing if it is not reachable.
-# Matched on the manifest's own name rather than on a path segment, so cache
-# layout (with or without a version directory) and skills-dir plugins both work.
-# $2 narrows the search the same way it does for plugin_provides.
+# Matched on the manifest's own name rather than on a path segment, so a cache
+# layout with or without a version directory both work.
 plugin_root_named() {
   local root
   while IFS= read -r root; do
@@ -166,90 +155,11 @@ plugin_root_named() {
     if grep -q "\"name\"[[:space:]]*:[[:space:]]*\"$1\"" "$root/.claude-plugin/plugin.json"; then
       printf '%s\n' "$root"; return 0
     fi
-  done <<< "${2-$plugin_roots}"
+  done <<< "$plugin_roots"
   return 1
 }
 
-# ---------------------------------------------------------------- 2. config skills dirs
-#
-# Section 4 asks whether a plugin can reach *this repo*. This asks the other half,
-# which no project can see from the inside: does a config directory hand-place a
-# skill that a plugin installed in that same config already provides. Both routes
-# load, so the skill loads twice — the same failure the entries pass below catches
-# inside `.claude/skills/`, one level out, where the repo has no visibility.
-#
-# Scoped per config, deliberately. Asked globally this check would report
-# `~/.claude/skills/grill-me` as a double-load because an unrelated plugin in a
-# *different* config happens to ship a skill of that name.
-#
-# The walk is announced whether or not it finds anything. A checker that silently
-# skipped its input is indistinguishable from a clean one, and that is precisely
-# the failure class this check exists to catch rather than inherit.
-
-while IFS= read -r cfg; do
-  [ -n "$cfg" ] || continue
-  cfg_skills="$cfg/skills"
-
-  if [ ! -d "$cfg_skills" ]; then
-    info "double-load scan: $(homerel "$cfg") has no skills/ — nothing hand-placed there"
-    continue
-  fi
-
-  cfg_roots="$(printf '%s\n' "$config_roots" | awk -F'\t' -v c="$cfg" '$1 == c { print $2 }')"
-
-  n_seen=0; n_skills=0; n_roots=0; n_skipped=""
-  for entry in "$cfg_skills"/*; do
-    [ -e "$entry" ] || [ -L "$entry" ] || continue
-    n_seen=$((n_seen + 1))
-    name="$(basename "$entry")"
-
-    # A plugin root parked in a skills dir is not a skill: its skills sit one
-    # level down, so name-matching it as one matches it against itself and reports
-    # every skills-dir plugin as its own duplicate. The real duplication for one of
-    # these is the same plugin *also* installed from a marketplace into this config
-    # — both routes load, and every skill it carries loads twice.
-    if [ -f "$entry/.claude-plugin/plugin.json" ]; then
-      n_roots=$((n_roots + 1))
-      pname="$(grep -o '"name"[[:space:]]*:[[:space:]]*"[^"]*"' "$entry/.claude-plugin/plugin.json" |
-               head -1 | sed 's/.*"\(.*\)"$/\1/')"
-      others="$(printf '%s\n' "$cfg_roots" | grep -vxF "$entry")"
-      if [ -n "$pname" ] && dup="$(plugin_root_named "$pname" "$others")"; then
-        case "$dup" in
-          "$repo"/*|"$canonical"/*) ;;
-          *) info "$(homerel "$entry") is a skills-dir plugin and $pname is also installed at $(homerel "$dup") — every skill it carries loads twice under $(homerel "$cfg")" ;;
-        esac
-      fi
-      continue
-    fi
-
-    # Another repo's shared reference, not a skill of ours —
-    # `~/.claude-schmiede/skills/_shared` is the live example. Out of scope here,
-    # and named in the count rather than quietly dropped from it.
-    if [ "$name" = "_shared" ]; then
-      n_skipped="${n_skipped:+$n_skipped, }$name"
-      continue
-    fi
-
-    n_skills=$((n_skills + 1))
-    # Same judgement the entries pass makes: a plugin root inside the canonical
-    # repo (or the repo under test) is *source*, not a second install, so a link
-    # pointing into a checkout is one copy of the skill and not two.
-    if proot="$(plugin_provides "$name" "$cfg_roots")"; then
-      case "$proot" in
-        "$repo"/*|"$canonical"/*) ;;
-        *) info "$(homerel "$entry") is symlinked here and also provided by the plugin at $(homerel "$proot") — $name loads twice under $(homerel "$cfg")" ;;
-      esac
-    fi
-  done
-
-  # Phrased "label: count" so it reads correctly at any count, including 1.
-  detail="skills: $n_skills"
-  [ "$n_roots" -gt 0 ] && detail="$detail, skills-dir plugin roots: $n_roots"
-  [ -n "$n_skipped" ] && detail="$detail; skipped $n_skipped"
-  info "double-load scan: $(homerel "$cfg_skills") — $n_seen entries, $((n_skills + n_roots)) checked ($detail)"
-done <<< "$config_dirs"
-
-# ---------------------------------------------------------------- 3. layout
+# ---------------------------------------------------------------- 2. layout
 
 if [ ! -d "$claude_dir" ]; then
   info "no $(rel "$claude_dir") — nothing is wired in this repo"
@@ -257,11 +167,11 @@ if [ ! -d "$claude_dir" ]; then
 fi
 
 if [ ! -d "$skills_dir" ]; then
-  info "no $(rel "$skills_dir") — no skills are placed inside this repo"
-  info "(normal: skills reach a session from a plugin or a global config dir)"
+  info "no $(rel "$skills_dir") — this repo owns no skills of its own"
+  info "(normal: a published skill reaches a session from an installed plugin)"
 fi
 
-# ---------------------------------------------------------------- 4. plugins this repo enables
+# ---------------------------------------------------------------- 3. plugins this repo enables
 #
 # A project can enable a plugin in its own committed settings — the third place
 # a skill can come from, and the only one that travels with the repo.
@@ -290,7 +200,16 @@ while IFS= read -r plug; do
   fi
 done <<< "$enabled_plugins"
 
-# ---------------------------------------------------------------- 5. entries
+# ---------------------------------------------------------------- 4. entries
+#
+# A project may keep its own skills in `.claude/skills/`. That is the project's
+# business and this script does not second-guess it: no shadow check, no fork
+# check, no comparison against what a plugin happens to provide. Skills reach a
+# session from an installed plugin, so an entry here is a project-owned skill
+# rather than a competing copy of a published one.
+#
+# What is still checked is what is broken rather than merely different: a link
+# with no target, and a `_shared/` the project must never own (#11).
 
 installed=""   # newline-separated "<name>\t<physical path>"
 
@@ -299,57 +218,23 @@ if [ -d "$skills_dir" ]; then
     [ -e "$entry" ] || [ -L "$entry" ] || continue
     name="$(basename "$entry")"
 
-    # An entry here can be a *plugin root* rather than a skill — skills-dir mode,
-    # and how this repo self-hosts its own plugin while keeping edit-in-place
-    # authoring. A plugin is not a skill: its skills sit one level down at
-    # `<plugin>/skills/<name>/`, so `../_shared/` resolves from *there*. Checking
-    # the plugin root as though it were a skill invents SHARED failures for every
-    # shared file its skills legitimately read. Register the skills it carries
-    # instead, at their real paths.
-    if entry_phys="$(cd "$entry" 2>/dev/null && pwd -P)" &&
-       [ -f "$entry_phys/.claude-plugin/plugin.json" ]; then
-      info "$(rel "$entry") is a skills-dir plugin root — its skills load from the plugin, not as entries here"
-      for sk in "$entry_phys"/skills/*; do
-        [ -d "$sk" ] || continue
-        skname="$(basename "$sk")"
-        [ "$skname" = "_shared" ] && continue
-        installed="$installed$skname	$(cd "$sk" && pwd -P)
-"
-      done
-      continue
-    fi
-
     if [ -L "$entry" ]; then
       if [ ! -e "$entry" ]; then
-        err "DANGLING" "$(rel "$entry") → $(readlink "$entry") (target does not exist)"
+        err "DANGLING" "$(rel "$entry") -> $(readlink "$entry") (target does not exist)"
         continue
       fi
       phys="$(cd "$entry" 2>/dev/null && pwd -P)" || { err "DANGLING" "$(rel "$entry") is not a directory"; continue; }
       installed="$installed$name	$phys
 "
-      # Same skill from two directions loads twice. A root inside this repo is
-      # source, not an install, so it does not count as a second copy.
-      if proot="$(plugin_provides "$name")"; then
-        case "$proot" in
-          "$repo"/*) ;;
-          *) info "$(rel "$entry") is symlinked here and also provided by the plugin at $(homerel "$proot") — $name loads twice" ;;
-        esac
-      fi
+      info "$(rel "$entry") -> $(homerel "$phys")"
       continue
     fi
 
     if [ -d "$entry" ]; then
       if [ "$name" = "_shared" ]; then
         err "BANNED" "$(rel "$entry") — a project never owns a _shared/ (#11); it shadows canonical for any copied skill"
-      elif [ -d "$canonical/$name" ]; then
-        err "FORK" "$(rel "$entry") is a real directory, not a symlink — it shadows the canonical skill of the same name"
-      elif proot="$(plugin_provides "$name")"; then
-        err "FORK" "$(rel "$entry") is a real directory, not a symlink — it shadows the $name skill the plugin at $(homerel "$proot") provides"
       else
-        # Nothing of that name in canonical and no plugin providing it: there is
-        # nothing to shadow, so this is a skill the project genuinely owns — the
-        # one legitimate reason for a real directory here.
-        info "$(rel "$entry") is project-owned (no skill of that name in canonical or in any reachable plugin)"
+        info "$(rel "$entry") is project-owned"
       fi
       continue
     fi
@@ -365,7 +250,7 @@ while IFS= read -r found; do
   err "BANNED" "$(rel "$found") — a project never owns a _shared/ (#11)"
 done < <(find "$claude_dir" -type d -name _shared 2>/dev/null)
 
-# ---------------------------------------------------------------- 6. dangling links anywhere under .claude/
+# ---------------------------------------------------------------- 5. dangling links anywhere under .claude/
 
 while IFS= read -r link; do
   [ -n "$link" ] || continue
@@ -373,7 +258,7 @@ while IFS= read -r link; do
   err "DANGLING" "$(rel "$link") → $(readlink "$link") (target does not exist)"
 done < <(find "$claude_dir" -type l ! -exec test -e {} \; -print 2>/dev/null)
 
-# ---------------------------------------------------------------- 7. the adapter
+# ---------------------------------------------------------------- 6. the adapter
 
 while IFS=$'\t' read -r name phys; do
   [ -n "$name" ] || continue
@@ -430,7 +315,7 @@ elif [ -f "$adapter" ]; then
   ok "$(rel "$adapter") present"
 fi
 
-# ---------------------------------------------------------------- 8. ../_shared/ resolution
+# ---------------------------------------------------------------- 7. ../_shared/ resolution
 
 while IFS=$'\t' read -r name phys; do
   [ -n "$name" ] || continue
@@ -443,7 +328,7 @@ while IFS=$'\t' read -r name phys; do
   done < <(grep -rhoE '\.\./_shared/[A-Za-z0-9._-]+\.md' "$phys" 2>/dev/null | sort -u)
 done <<< "$installed"
 
-# ---------------------------------------------------------------- 9. bundle
+# ---------------------------------------------------------------- 8. bundle
 #
 # A bundle declares adapter sections and gate templates. It does **not** list
 # skills — placing skills is the platform's job — so "is what this bundle needs

@@ -16,8 +16,8 @@ design/engineering interview for the work item first, then invoke this skill aga
 The `[SPEC]` is **engineering-only**. Product owns the parent work item; never restate product
 scope here.
 
-**Invocation name depends on the install route.** From a plugin (marketplace install or a
-skills-dir link) every skill in this plugin is namespaced: `/ado-workflow:to-spec`,
+**Every skill in this plugin is namespaced**, on every route — installed from the
+marketplace or loaded with `claude --plugin-dir`: `/ado-workflow:to-spec`,
 `/ado-workflow:to-spec-tasks`, and so on. Only a bare symlink into a config's `skills/`
 directory — the pre-plugin route — gives the unprefixed `/to-spec`. Unprefixed names below are
 shorthand for whichever form your route provides.

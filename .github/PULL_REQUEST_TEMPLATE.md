@@ -5,12 +5,13 @@
 ## Checklist
 
 - [ ] `python3 .github/scripts/validate_skills.py` passes
-- [ ] I ran the affected skill end to end at least once
+- [ ] I ran the affected skill end to end at least once, loaded with
+      `claude --plugin-dir plugins/<name>`
 - [ ] Frontmatter `description` says *when to invoke*, not only what it does
 - [ ] No new instruction to fetch remote content, send data anywhere, or run commands
       beyond what the skill's stated purpose needs (see `SECURITY.md`)
-- [ ] Any subagent type named is spelled for the right route — `plugin:agent` inside a
-      plugin, bare name only on the plain-skill route
+- [ ] Any subagent type named is namespaced `plugin:agent` — there is no bare form, and a
+      wrong type degrades silently to `general-purpose` rather than erroring
 
 ## Notes for review
 
