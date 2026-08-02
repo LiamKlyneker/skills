@@ -59,12 +59,11 @@ detachable:
 - **A Figma node URL** (a page/frame, or a single component node in component mode). Missing
   → ask, never guess.
 - **`figma-region-extractor` subagent (preferred, detachable).** Phase B's extraction
-  contract lives at `agents/figma-region-extractor.md`. **The type name depends on the
-  install route**: the `figma-tools` plugin provides the agent and namespaces it, so it is
-  **`figma-tools:figma-region-extractor`**; only a hand-placed `agents/` file (the
-  pre-plugin route, and how a plain-skill symlink install still has to do it) registers the
-  bare `figma-region-extractor`. Spawned by type it is pinned to Sonnet with write tools
-  denied; if **neither** name resolves, Phase B reads that same file and pastes its body
+  contract lives at `agents/figma-region-extractor.md`. The `figma-tools` plugin provides
+  the agent and namespaces it, so the type is **`figma-tools:figma-region-extractor`** on
+  every route — installed from the marketplace, or loaded with `claude --plugin-dir`. There
+  is no unprefixed form. Spawned by type it is pinned to Sonnet with write tools
+  denied; if that name does not resolve, Phase B reads that same file and pastes its body
   into a `general-purpose` agent. One source of truth either way — but a freshly installed
   agent does not register until the next session, so Phase 0 checks and announces which
   path the run takes.

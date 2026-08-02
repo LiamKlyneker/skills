@@ -20,16 +20,16 @@ that is why.
 
 `CLAUDE.md` is the real map — read it first. The short version:
 
-- A skill lives either **inside a plugin** (`plugins/<plugin>/skills/<skill>/`) or
-  **at the top level** as a plain skill, one directory each.
+- Every skill lives **inside a plugin**, at `plugins/<plugin>/skills/<skill>/`. There
+  is no other kind, and no other place to put one.
 - `_shared/` is global reference only — docs true in every project. No templates, no
   project-specific values.
 - `install/` is what a project gets wired with. `INSTALL.md` covers getting any of it
   onto a machine.
 - Plugins namespace everything: `prd-workflow:work-on-prd`,
   `subagent_type: prd-workflow:prd-worker`. Naming an agent type wrong does **not**
-  error — it silently degrades to `general-purpose` — so any doc naming a subagent
-  type must say which route it means.
+  error — it silently degrades to `general-purpose` — so a run that completes is never
+  evidence the type resolved.
 
 ## Before you open a PR
 
@@ -54,8 +54,11 @@ Then, for a skill change:
   `<repo-root>/.claude/project/adapter.md`. Never name a project-specific gate file
   directly — follow the adapter's `## Project gates` registry. Hardcoding one
   project's filename forks the skill.
-- Do not add a top-level symlink into `plugins/`. It makes one skill discoverable
-  under two names, which is exactly what the plugins migration removed.
+- Do not add a symlink that makes a skill *load* — not a top-level shim into
+  `plugins/` (one skill under two names) and not a link under `.claude/skills/` (the
+  retired self-host route). The validator fails on both. To work against the working
+  tree, run `claude --plugin-dir plugins/<name>`. The packaging links inside
+  `plugins/*/skills/` are a different thing and are required.
 
 ## Pull requests
 

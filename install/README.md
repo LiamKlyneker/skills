@@ -4,7 +4,7 @@ Templates for the two things a project owns. Everything else stays canonical her
 reaches a machine through the platform.
 
 **Getting the skills onto a machine is [`INSTALL.md`](../INSTALL.md)'s job**, not this
-directory's — marketplace, config directories, scopes, live authoring and the traps in
+directory's — marketplace, config directories, scopes, the dev mode and the traps in
 each. This file covers only what a *project* owns once the skills can reach it.
 
 ## Layout
@@ -27,8 +27,8 @@ Three rules fall out, and skills are written against them:
 
 **Rule 2 is unaffected by how a skill was delivered.** It resolves against the project the
 session is running in, at runtime — so a skill served from a plugin cache directory finds
-the adapter exactly the way a symlinked one did. Only *creating* the adapter was ever a
-bootstrapping problem, which is why `install-skills` kept that half and dropped the rest.
+the adapter exactly the way a skill loaded from a working tree does. Only *creating* the
+adapter was ever a bootstrapping problem, which is why `install-skills` kept that half and dropped the rest.
 
 ## Bootstrapping the adapter
 
@@ -57,14 +57,15 @@ deletes nothing. See
 [`plugins/install-skills/skills/install-skills/SKILL.md`](../plugins/install-skills/skills/install-skills/SKILL.md)
 step 3a.
 
-The other mode is **`doctor`**, the anti-rot check: a real directory shadowing a skill that
-canonical or a reachable plugin already provides, a leftover `_shared/`, an unfilled
+The other mode is **`doctor`**, the anti-rot check: a leftover `_shared/`, an unfilled
 placeholder, a dead gate pointer, a dangling link. Every one of those is silent today and
 loud after this. Safe to run anywhere, any time; it changes nothing.
 
-It resolves a plugin from four places — installed manifests, versioned cache directories,
-skills-dir plugins, and a repo-local `plugins/` — across all three config directories, so a
-skill that arrives from a plugin does not read as missing.
+It resolves a plugin from installed manifests, versioned cache directories and a
+repo-local `plugins/`, across every config directory it can see, so a skill that arrives
+from a plugin does not read as missing. It does **not** inspect what a project keeps in
+its own `.claude/skills/` beyond reporting what is broken — that is the project's
+business.
 
 ## Doing it by hand
 

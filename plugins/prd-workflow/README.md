@@ -27,8 +27,8 @@ plugins/prd-workflow/
 ```
 
 Nothing sits at the plugin root. A directory holding both a root `SKILL.md`
-and a `skills/` subdirectory registers **twice** — once as a plain skill, once
-as a plugin skill — and pays always-on token cost for both.
+and a `skills/` subdirectory registers **twice** — once as a skill in its own
+right, once as a plugin skill — and pays always-on token cost for both.
 
 ## Decisions
 
@@ -60,9 +60,9 @@ discipline` has the observed failure mode in full.
 
 `skills/_shared` is a symlink to the repo's single canonical `_shared/`
 (`../../../_shared`). Every skill's existing `../_shared/…` reference keeps
-resolving with zero rewrites, in both delivery modes: live through the symlink
-in skills-dir mode, and inside the tree in marketplace mode (a marketplace
-clone of this repo carries the root `_shared/` the link points at).
+resolving with zero rewrites wherever the plugin is loaded from: live through
+the link under `--plugin-dir`, and inside the tree in an install cache (which
+carries the dereferenced copy the link pointed at).
 
 The alternative was `plugins/prd-workflow/_shared` plus rewriting every
 reference to `../../_shared/`. It was not needed: `claude plugin details`

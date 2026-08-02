@@ -72,8 +72,8 @@ A page's `CONTEXT.md` can carry a `## Design reference` table pointing at the de
 
 ## Adopting the Convention in a Project
 
-The skill itself needs **no per-project install** — it is symlinked into the personal
-global config and reads nothing from the project. Adopting the convention is two steps:
+The skill itself needs **no per-project install** — it ships in the `lk` plugin and reads
+nothing from the project. Adopting the convention is two steps:
 
 1. Add the CONTEXT.md convention section to your `CLAUDE.md`:
 

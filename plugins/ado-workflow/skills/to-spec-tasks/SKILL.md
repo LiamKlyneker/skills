@@ -12,8 +12,8 @@ unit — the same relationship a PRD has to its child issues on the GitHub side.
 never decides *whether* to break a spec down; it decides only **where the cuts fall**, and a
 spec with no seam in it yields exactly one `[TASK]` covering the whole thing, never zero.
 
-**Invocation name depends on the install route.** From a plugin (marketplace install or a
-skills-dir link) every skill in this plugin is namespaced: `/ado-workflow:to-spec-tasks`,
+**Every skill in this plugin is namespaced**, on every route — installed from the
+marketplace or loaded with `claude --plugin-dir`: `/ado-workflow:to-spec-tasks`,
 `/ado-workflow:next-task-to-implement`, and so on. Only a bare symlink into a config's
 `skills/` directory — the pre-plugin route — gives the unprefixed `/to-spec-tasks`.
 Unprefixed names below are shorthand for whichever form your route provides.

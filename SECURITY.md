@@ -19,11 +19,12 @@ to the git commit that was `HEAD` at install time. That pin is the security boun
 
 - You are trusting this repository's state **at the moment you install**.
 - Later commits here cannot reach you until you reinstall or update.
-- The skills-dir route (a symlink into a config's `skills/`) has **no** pin — edits
-  in the working tree are live on the next session launch.
+- `claude --plugin-dir <path>` has **no** pin by design — it loads a working tree for
+  one session. That is a dev mode for code you control, not a way to run someone
+  else's plugin.
 
-If you did not write a skill, read it before you run it. `INSTALL.md` describes both
-routes in full.
+If you did not write a skill, read it before you run it. `INSTALL.md` describes
+installation in full.
 
 ## Reporting a vulnerability
 

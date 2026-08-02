@@ -6,7 +6,7 @@ Single home for every project-specific fact the skills need. Workflow skills (`w
 
 > **Pick your tracker first.** Two sections here — `## Repo` and `## One-time repo preconditions` — carry a `### GitHub` and an `### Azure DevOps` sub-section. Fill the one that matches your tracker and **delete the other**; a filled adapter that keeps both gives every skill two answers to the same question. Everything in between is tracker-agnostic and is never forked.
 
-**Canonical source:** skill *logic* is canonical in **`LiamKlyneker/skills`** and reaches a project either as an installed plugin from marketplace `liamklyneker` or as a symlink into a config's `skills/` directory. Either way there is nothing to back-port — an installed copy is a regenerated cache keyed by git commit, never a place to edit. Project *facts* live in `<repo-root>/.claude/project/`, which is the one directory skills resolve from the repo root, and they resolve it against the project the session is running in regardless of how the skill was delivered. A project never owns a `_shared/`: `../_shared/…` from any skill can therefore only ever mean the canonical global-reference files in the skills repo.
+**Canonical source:** skill *logic* is canonical in **`LiamKlyneker/skills`** and reaches a project as an installed plugin from marketplace `liamklyneker`. There is nothing to back-port — an installed copy is a regenerated cache keyed by the plugin's version, never a place to edit. Project *facts* live in `<repo-root>/.claude/project/`, which is the one directory skills resolve from the repo root, and they resolve it against the project the session is running in regardless of how the skill was delivered. A project never owns a `_shared/`: `../_shared/…` from any skill can therefore only ever mean the canonical global-reference files in the skills repo.
 
 ## Repo
 
@@ -94,7 +94,7 @@ A project-flavored `ui-manifests.md` (concrete primitive homes, real token files
 
 - **CONTEXT.md**: read the scoped `CONTEXT.md` before touching files in any directory (see the `scoped-context` skill). Update it only if documented architecture changes.
 - `<any house rules: export order, no barrel files, where generated code lives, etc.>`
-- Where skills come from: `<installed plugin + scope, or a symlink in .claude/skills/>`. Either way the skill files are not this project's to edit: a plugin cache is regenerated on install, and a symlink writes straight into the canonical repo. Project facts and gates live in `.claude/project/` instead, which is real and committed.
+- Where skills come from: `<installed plugin + scope>`. The skill files are not this project's to edit — a plugin cache is regenerated on install. Project facts and gates live in `.claude/project/` instead, which is real and committed.
 
 ## One-time repo preconditions (human)
 

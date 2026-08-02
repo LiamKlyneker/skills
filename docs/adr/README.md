@@ -65,3 +65,4 @@ or the adapter, and stops there.
 | [0007](0007-a-marketplace-not-an-estate-manager.md) | This repo publishes a marketplace; it does not manage the estate | Accepted |
 | [0008](0008-prd-qa-skills-belong-to-prd-workflow.md) | The PRD-QA skills belong to `prd-workflow`, not to `lk` | Accepted |
 | [0009](0009-the-qa-comment-is-a-parse-contract.md) | The QA comment is a parse contract, and the receipt comes back | Accepted |
+| [0010](0010-one-distribution-one-dev-mode.md) | One distribution, one dev mode | Accepted |

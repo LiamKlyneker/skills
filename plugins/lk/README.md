@@ -5,10 +5,11 @@ plugin: `grill` and `deep-grill` for interviewing a plan, `pinpoint`,
 `scoped-context`, and `how-i-write`.
 
 They talk to the **user and the codebase** rather than to a tracker, which is
-exactly why they do not belong to a tracker-bound workflow plugin. Until now
-they reached a machine only as hand-made symlinks, one per skill per config
-directory, recorded nowhere but `docs/estate-inventory.md`. This plugin ends
-that: `/plugin install lk@liamklyneker` places all five at once.
+exactly why they do not belong to a tracker-bound workflow plugin. Before this
+plugin they reached a machine only as hand-made symlinks, one per skill per
+config directory, recorded nowhere the repo could check. This plugin ended
+that: `/plugin install lk@liamklyneker` places all five at once, at a version
+the catalog pins.
 
 That criterion — the user and the codebase, never a tracker — is the whole
 membership rule, and it now holds with **no exception**. The plugin carried the PRD QA loop for a while, and that loop
@@ -30,7 +31,7 @@ plugins/lk/
 
 Nothing sits at the plugin root, and there are no agents. A directory holding
 both a root `SKILL.md` and a `skills/` subdirectory registers **twice** — once
-as a plain skill, once as a plugin skill — and pays always-on token cost for
+as a skill in its own right, once as a plugin skill — and pays always-on token cost for
 both.
 
 The inventory is **discovered from the directory**, not listed in the manifest.
@@ -61,7 +62,7 @@ replace.
 `skills/_shared` is a symlink to the repo's single canonical `_shared/`
 (`../../../_shared`), the same target and the same relative depth as the other
 plugins. A skill's existing `../_shared/…` references keep resolving with zero
-rewrites, in both delivery modes: live through the symlink in skills-dir mode,
+rewrites wherever the plugin is loaded from: live through the link under `--plugin-dir`,
 and inside the tree in marketplace mode. Same depth in every plugin is also
 what let `triage-prd` move to `prd-workflow` without touching a single
 reference.
