@@ -62,7 +62,7 @@ directories, scopes, the dev mode, and the traps. Keep it accurate; it is writte
 from observed platform behaviour, and the platform has repeatedly differed from its
 own docs.
 
-## QA lands differently per tracker, and titles are only a scanning convention
+## QA lands differently per tracker, and so do title prefixes
 
 Both orchestrators still **commit nothing** for QA, and the adapter names no QA path on either
 tracker — but the artifact itself has diverged, deliberately. `work-on-prd` posts the run's QA
@@ -77,12 +77,24 @@ promotes the survivors into children. **That marker is a parse contract, not a t
 it is hardcoded in both skills and deliberately absent from the adapter, because a project free
 to edit it would get a triage pass that silently finds nothing. The tick state in the comment is
 the only record a pass happened; neither skill writes a session log, and only a human removes
-`needs-qa`. `work-on-spec` still files a per-run **`[QA]` work item** on Azure DevOps, with no
-driver on that side. Each loop owns the
-whole shape of its own artifact — `work-on-prd`'s `## Loop end` for GitHub,
-`plugins/ado-workflow/skills/references/qa-item.md` for ADO. There was a shared
-`_shared/qa-item.md`; it was dissolved into those two, and they are now free to differ. The
-reasoning for moving QA out of the repo at all is ADR
+`needs-qa`. **Azure DevOps now has the same shape and its own drivers.** `work-on-spec` posts a
+tickable Markdown comment on the `[SPEC]` and puts a `needs-qa` **tag** on it — **no `[QA]` work
+item is created any more**, and the type is retired on that tracker. The chain from there is
+`ado-workflow:manual-qa` → `ado-workflow:triage`, both in `ado-workflow` for the same
+parse-contract reason: `manual-qa` drives the comment and appends each failure to **one
+`[FINDINGS]` work item per run**, `triage` reads that item, files a `[BUG]` per survivor and
+closes it. **GitHub's `Triaged:` back-annotation does not exist on that side and must not be
+added** — a fresh findings item per run means "already handled" is simply "that item is closed",
+one field read in the same fetch that loads the findings. The two loops are
+**siblings that arrived at the same shape, not a shared file with two call sites**: every literal
+is its own tracker's, and GitHub's `<!-- 75 80 -->` id trailer does not survive on ADO at all
+(HTML comments are stripped out of a comment's API read), so ids ride in the open, backticked.
+Each loop owns the whole shape of its own artifact — `work-on-prd`'s `## Loop end` for GitHub,
+`work-on-spec`'s `## Loop end` plus
+`plugins/ado-workflow/skills/references/findings-item.md` for ADO. There was a shared
+QA-item reference under `_shared/`; it was dissolved into two per-tracker halves, and they are
+now free to differ — the ADO half is itself deleted now, its `[QA]` work item having gone with
+it. The reasoning for moving QA out of the repo at all is ADR
 [0005](docs/adr/0005-qa-is-an-issue-not-a-committed-document.md) — whose two 440-line
 evidence documents under `docs/qa/` were retired by ADR
 [0010](docs/adr/0010-one-distribution-one-dev-mode.md), two supersessions after the loop
@@ -90,17 +102,36 @@ stopped producing them. The reasoning for the comment
 being a **contract** rather than prose — its load-bearing literals, the second never-edit
 carve-out, and "all boxes ticked, no failure suffix, label removed" as the receipt — is ADR
 [0009](docs/adr/0009-the-qa-comment-is-a-parse-contract.md), which supersedes ADR 0006 **on the
-QA half only**: a PRD's children are still native sub-issues.
+QA half only**: a PRD's children are still native sub-issues. The reasoning for the ADO half —
+the three claims ADR 0008 made about that tracker and got wrong, what it got right, and why the
+prefixes diverge — is ADR
+[0011](docs/adr/0011-azure-devops-qa-is-a-tickable-comment.md), which supersedes 0008 **on the
+platform half only**: its plugin-membership rule stands, and is exactly what put both new skills
+in `ado-workflow`.
 
 GitHub titles carry `[PRD]` · `[TASK]` · `[BUG]`, registered in the adapter's `## Repo` →
-*Title prefixes* row, never hardcoded in a skill. **They are a human scanning convention and
-nothing more — no skill filters on them.** A PRD's children are its **native GitHub
+*Title prefixes* row, never hardcoded in a skill. **On GitHub they are a human scanning
+convention and nothing more — no skill filters on them. Azure DevOps is the opposite, so read
+the next paragraph before carrying this rule across.** A PRD's children are its **native GitHub
 sub-issues**, read back from the sub-issues API (`_shared/prd-eligibility.md`), so an unprefixed
 issue linked to a PRD is a full child while a perfectly prefixed one that was never linked is
 invisible. The one place a prefix is still mechanical is `work-on-prd` stripping a leading
 `[…]` group before slugging the branch. Don't reintroduce a title filter, and don't write a body
 `## Parent` section to stand alongside the link — two sources of truth that can disagree is
 exactly what the links removed.
+
+**On Azure DevOps the prefix is load-bearing, and that divergence is deliberate.** ADO titles
+carry `[SPEC]` · `[TASK]` · `[FINDINGS]` · `[BUG]` — registered in the same adapter row, never
+hardcoded — and **skills do filter on them**: `_shared/ado-eligibility.md` §3 keeps a sibling
+only when its title starts with `[TASK]`. The reason is the board, not taste. **Everything the
+loop creates is the same work-item type — a Task under one parent User Story** — because Task →
+Task parenting is API-legal and product-hostile (it removes the parent from the taskboard and
+disables reordering board-wide) and Bug-type items are requirement-level there, rendering as a
+sibling swimlane rather than a child. So the prefix is the *only* thing separating a `[BUG]`
+from a `[TASK]`, and `triage` filing a `[BUG]` is filing it **unscheduled** on purpose:
+promotion is a one-field retitle to `[TASK]`, the ADO analogue of GitHub's `deferred` →
+`ready-to-start` relabel. Never "fix" an ADO filter by retitling a bug, and never assume the
+GitHub rule holds on both sides — a mistyped prefix there returns an empty set, not an error.
 
 ## Git workflow
 
