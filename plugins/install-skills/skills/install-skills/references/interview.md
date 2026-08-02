@@ -75,7 +75,7 @@ Azure DevOps files a per-run `[QA]` work item, and neither writes a file.
 **`prd-qa`** — a subset of `prd-workflow`'s sections, so if the repo already ran that
 install every one is filled: confirm, don't re-ask. On a standalone install the one worth a
 real question is `## Sources of truth` — specifically whether a **contract-boundary** repo
-and explorer agent exist. `triage-prd` routes cross-repo findings through them, and "None" is a fine
+and explorer agent exist. `triage` routes cross-repo findings through them, and "None" is a fine
 answer that makes every finding a this-repo finding; a *guessed* answer sends issues to
 the wrong tracker.
 

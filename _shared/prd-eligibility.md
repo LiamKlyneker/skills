@@ -18,7 +18,7 @@ gh api repos/<owner>/<repo>/issues/<prd-number>/sub_issues
 ```
 
 The second call is the **authoritative and only** list of the PRD's children. `to-issues` links
-each child to its PRD as a native sub-issue as it creates it, and `triage-prd` does the same for
+each child to its PRD as a native sub-issue as it creates it, and `triage` does the same for
 each `[BUG]` it files; this endpoint reads those links back. It returns one object per child
 carrying `number`, `title`, `state`, `body` and `labels` — everything the parsing below needs,
 in one call.

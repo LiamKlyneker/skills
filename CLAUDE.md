@@ -68,11 +68,11 @@ Both orchestrators still **commit nothing** for QA, and the adapter names no QA 
 tracker — but the artifact itself has diverged, deliberately. `work-on-prd` posts the run's QA
 steps as a **comment on the PRD issue** and labels the PRD **`needs-qa`**; the human works the
 comment and removes the label when the pass is done. **No `[QA]` issue is created on GitHub.**
-The GitHub chain from there is `manual-qa` → `triage-prd`, both in `prd-workflow` and neither in
+The GitHub chain from there is `manual-qa` → `triage`, both in `prd-workflow` and neither in
 `lk` — a skill that parses the loop's own template belongs in the plugin that writes it, ADR
 [0008](docs/adr/0008-prd-qa-skills-belong-to-prd-workflow.md): `manual-qa`
 takes a PRD URL, drives that comment's steps one at a time, ticks each box as the human
-confirms it, and posts a `### [FINDING]` comment to the PR for each failure; `triage-prd`
+confirms it, and posts a `### [FINDING]` comment to the PR for each failure; `triage`
 promotes the survivors into children. **That marker is a parse contract, not a title prefix** —
 it is hardcoded in both skills and deliberately absent from the adapter, because a project free
 to edit it would get a triage pass that silently finds nothing. The tick state in the comment is

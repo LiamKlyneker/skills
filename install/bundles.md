@@ -20,9 +20,9 @@ assume otherwise:
 
 | Bundle | Distributed as | Same set? |
 |---|---|---|
-| `prd-workflow` | the `prd-workflow` plugin | **No** — the bundle is the five loop skills, and the plugin also ships `manual-qa` and `triage-prd`, which the `prd-qa` bundle asks for instead. It read **Yes, today** right up until `triage-prd` moved in from `lk`; nothing about the bundle changed, the plugin simply grew past it |
+| `prd-workflow` | the `prd-workflow` plugin | **No** — the bundle is the five loop skills, and the plugin also ships `manual-qa` and `triage`, which the `prd-qa` bundle asks for instead. It read **Yes, today** right up until `triage` moved in from `lk`; nothing about the bundle changed, the plugin simply grew past it |
 | `ado-workflow` | the `ado-workflow` plugin | **Yes, today**, for the same reason — the plugin ships the four `[SPEC]`-loop skills and the `spec-worker` agent, and nothing outside it puts a section on this bundle's list any more |
-| `prd-qa` | two skills of the `prd-workflow` plugin | **No** — the bundle is `manual-qa` + `triage-prd`, two of the seven skills `prd-workflow` ships. Installing the plugin is not adopting the bundle, and the bundle does not want the plugin's other five. `prd-workflow` therefore maps to **two** bundles, which is exactly why the plugin's name being shared with one of them proves nothing |
+| `prd-qa` | two skills of the `prd-workflow` plugin | **No** — the bundle is `manual-qa` + `triage`, two of the seven skills `prd-workflow` ships. Installing the plugin is not adopting the bundle, and the bundle does not want the plugin's other five. `prd-workflow` therefore maps to **two** bundles, which is exactly why the plugin's name being shared with one of them proves nothing |
 | `grill` | two skills of the `lk` plugin | **No** — the bundle is `grill` + `deep-grill`, the two `lk` skills that read a project fact. The plugin ships five, and the other three ask for nothing |
 | `figma-tools` | the `figma-tools` plugin | Yes, today |
 
@@ -147,7 +147,7 @@ spelling, both human-checked once.
 
 The QA loop that runs against a PRD branch before merge, in both halves: `manual-qa`
 drives the run's QA comment step by step and captures what fails as findings on the PR,
-and `triage-prd` promotes the survivors into executable issues.
+and `triage` promotes the survivors into executable issues.
 
 - **Status:** ready
 - **Adapter sections:** `## Repo`, `## Verify ladder`, `## Sources of truth`, `## Repo discipline`
@@ -157,17 +157,17 @@ Which skill drives which section:
 
 | Section | Wanted by |
 |---|---|
-| `## Repo` | both — `manual-qa` for which tracker holds the QA comment and which repo's PR takes the findings; `triage-prd` for where it files, the `Related repos` it routes across the contract boundary, and the **title prefixes** it files bugs under |
-| `## Verify ladder` | both — `manual-qa` reads the **L5** rung, which is what makes a step that cannot name a config dir, a command and an expected result a finding rather than a shrug; `triage-prd` because every filed issue names its verify step |
-| `## Sources of truth` | both — the project explorer agent, which `manual-qa` spawns for on-demand elaboration of a step and `triage-prd` for root-causing, plus the contract-boundary one for `triage-prd`'s cross-repo findings |
-| `## Repo discipline` | `triage-prd` — scoped `CONTEXT.md` loading |
+| `## Repo` | both — `manual-qa` for which tracker holds the QA comment and which repo's PR takes the findings; `triage` for where it files, the `Related repos` it routes across the contract boundary, and the **title prefixes** it files bugs under |
+| `## Verify ladder` | both — `manual-qa` reads the **L5** rung, which is what makes a step that cannot name a config dir, a command and an expected result a finding rather than a shrug; `triage` because every filed issue names its verify step |
+| `## Sources of truth` | both — the project explorer agent, which `manual-qa` spawns for on-demand elaboration of a step and `triage` for root-causing, plus the contract-boundary one for `triage`'s cross-repo findings |
+| `## Repo discipline` | `triage` — scoped `CONTEXT.md` loading |
 
 The `[FINDING]` marker the two skills hand off on is deliberately **not** an adapter
 question. It is a parse contract hardcoded in both, not a scanning convention: a project
-that could edit it would get a `triage-prd` that silently finds zero findings and reports
+that could edit it would get a `triage` that silently finds zero findings and reports
 a clean PR.
 
-**Pairs with `prd-workflow`, doesn't replace it.** `triage-prd` files issues shaped like
+**Pairs with `prd-workflow`, doesn't replace it.** `triage` files issues shaped like
 `to-issues` children, so `work-on-prd` / `work-on-issue` execute them with no new
 machinery. Adopting `prd-qa` alone is legal but leaves nothing downstream to run the
 issues it files — say so rather than silently bootstrapping both.
@@ -177,12 +177,12 @@ The other direction is tighter still: `manual-qa` drives the QA **comment** a
 with nothing to drive — its ad-hoc capture path still works, but that is the smaller half.
 
 Note the asymmetry that creates: the two bundles are separate adoptions, but they arrive
-in **one plugin**. Installing `prd-workflow` puts `manual-qa` and `triage-prd` on the
+in **one plugin**. Installing `prd-workflow` puts `manual-qa` and `triage` on the
 machine whether or not `prd-qa` was adopted — a skill being present is not the same as its
 adapter questions having been answered, and it is the adapter that decides whether it can
 run.
 
-`triage-prd` degrades rather than breaks where the adapter says "None": no related repo
+`triage` degrades rather than breaks where the adapter says "None": no related repo
 means every finding is a this-repo finding, and no contract-boundary explorer agent
 means a cross-boundary root cause gets filed locally and flagged as unmodelled.
 

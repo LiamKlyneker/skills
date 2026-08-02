@@ -6,7 +6,7 @@ disable-model-invocation: true
 
 # manual-qa
 
-Drive the **QA comment** a `work-on-prd` run posted on a PRD — one step at a time, gated on the human's word — and capture what fails as findings on that run's PR. This is the **capture phase** of the PRD QA loop. Triage (confirm, root-cause, promote to issues) happens **later, in a separate session**, via `triage-prd`.
+Drive the **QA comment** a `work-on-prd` run posted on a PRD — one step at a time, gated on the human's word — and capture what fails as findings on that run's PR. This is the **capture phase** of the PRD QA loop. Triage (confirm, root-cause, promote to issues) happens **later, in a separate session**, via `triage`.
 
 It **supersedes `qa-prd-log`**. Capture is not a separate skill: it is what this driver does when a step fails, and ad-hoc capture is this same skill invoked with nothing to drive (see `## Ad-hoc capture`). `qa-prd-log`'s two load-bearing blocks — `<the-line>` and `<comment-template>` — live here now, as sections of this skill.
 
@@ -21,7 +21,7 @@ Project facts come from the **project adapter** at `<repo-root>/.claude/project/
 ## Three non-negotiables
 
 1. **Capture, don't solve.** `<the-line>` says exactly where investigation stops. It has not moved: the driver added gating, not licence to debug.
-2. **Every comment is self-contained.** A cold `triage-prd` session reads the comment, not this conversation. Symptom, evidence, a `file:line` pointer, a labelled root-cause *hypothesis*, classification, repro — plus, here, which step and which children it came from.
+2. **Every comment is self-contained.** A cold `triage` session reads the comment, not this conversation. Symptom, evidence, a `file:line` pointer, a labelled root-cause *hypothesis*, classification, repro — plus, here, which step and which children it came from.
 3. **A `[x]` is a receipt, and it means exactly one thing**: a human executed that step and observed it pass. Nothing else ever ticks it — not "probably fine", not silence, not a change of subject. A false tick is a false receipt, and the comment is the only record the pass ever happened.
 
 ## Input: one PRD URL
@@ -162,7 +162,7 @@ A failed step is annotated **in place**, step text untouched:
 
 **The marker is `### [FINDING] <one-line symptom>`, hardcoded here.**
 
-It is deliberately **not** registered in the adapter's *Title prefixes* row. Those prefixes are a decorative human scanning convention; this is a **parse contract** — `triage-prd` reads the PR's comments looking for exactly this string. Making it project-configurable would let a project edit it and get a `triage-prd` that silently finds zero findings and reports a clean PR.
+It is deliberately **not** registered in the adapter's *Title prefixes* row. Those prefixes are a decorative human scanning convention; this is a **parse contract** — `triage` reads the PR's comments looking for exactly this string. Making it project-configurable would let a project edit it and get a `triage` that silently finds zero findings and reports a clean PR.
 
 **One finding per turn. Never batch.** Post it, report the permalink and a one-line recap, write the suffix, then move to the next step.
 
@@ -179,19 +179,19 @@ It is deliberately **not** registered in the adapter's *Title prefixes* row. Tho
 - Check the PRD / `CONTEXT.md` / code comments for **deferred-on-purpose**.
 - One **root-cause hypothesis**, clearly labelled as hypothesis, kept separate from observed facts.
 
-**Out of bounds (defer to `triage-prd`):**
+**Out of bounds (defer to `triage`):**
 - Tracing the full call graph to pin the exact broken line.
 - Reproducing many permutations beyond the one that decides routing or severity.
 - Reading another repo's handler to find the precise fix.
 - Writing or testing a fix.
-- Spawning code-exploration subagents. If a finding needs a deep code dive just to be *understood*, that is the signal it belongs in `triage-prd`. (The on-demand elaboration subagent is not an exception: it answers "what does this step mean", never "why did it break", and never decides an outcome.)
+- Spawning code-exploration subagents. If a finding needs a deep code dive just to be *understood*, that is the signal it belongs in `triage`. (The on-demand elaboration subagent is not an exception: it answers "what does this step mean", never "why did it break", and never decides an outcome.)
 </the-line>
 
 <routing>
 ### Routing (which repo/owner)
 
-- **This-repo bug** → a real defect in the code of the repo under test. Post to the PR; `triage-prd` will open an issue here.
-- **Contract-boundary bug** → the symptom is in this app but the cause sits on the other side of the API boundary, in the repo named by the adapter's `## Repo` → *Related repos*. Prove it with the one decisive probe where feasible and say so explicitly — `triage-prd` investigates over there and files the issue in that repo, cross-linked back. Do **not** fix or file across the boundary from here.
+- **This-repo bug** → a real defect in the code of the repo under test. Post to the PR; `triage` will open an issue here.
+- **Contract-boundary bug** → the symptom is in this app but the cause sits on the other side of the API boundary, in the repo named by the adapter's `## Repo` → *Related repos*. Prove it with the one decisive probe where feasible and say so explicitly — `triage` investigates over there and files the issue in that repo, cross-linked back. Do **not** fix or file across the boundary from here.
 - **Deferred-by-design** → not a bug. Say what was deferred, cite the code comment or PRD note, and what the follow-up slice needs. (If it was in `## Before you start`, it should not have reached a finding at all.)
 - **Works-as-intended / enhancement** → capture the desire, mark it as not-a-defect.
 
@@ -267,6 +267,6 @@ Invoked with no PRD URL, or a finding noticed outside any step, this skill is ju
 - **Omit** `**Step:**` **and** `**From:**` — there is no step and no trailer to lift.
 - Tick nothing. There is no comment being driven, so there is nothing to record but the finding itself.
 
-## Handoff to triage-prd
+## Handoff to triage
 
-The PR's `### [FINDING]` comments are this skill's only committed-to-the-tracker output; the ticks and suffixes on the QA comment are its only record of the pass. A later `/prd-workflow:triage-prd` session confirms each finding, roots it out, and promotes the survivors into cold-runnable children of the PRD. This skill never fixes anything and never files an issue.
+The PR's `### [FINDING]` comments are this skill's only committed-to-the-tracker output; the ticks and suffixes on the QA comment are its only record of the pass. A later `/prd-workflow:triage` session confirms each finding, roots it out, and promotes the survivors into cold-runnable children of the PRD. This skill never fixes anything and never files an issue.

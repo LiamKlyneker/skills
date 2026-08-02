@@ -14,7 +14,7 @@ having before the plugin lands.
 
 | Plugin | Contains | Bundle it serves |
 |---|---|---|
-| `prd-workflow` | `to-prd`, `to-issues`, `next-prd-issue`, `work-on-prd`, `work-on-issue`, `triage-prd` + the `prd-worker` agent | **two** bundles: `prd-workflow` (the five loop skills) and `prd-qa` (`triage-prd`) |
+| `prd-workflow` | `to-prd`, `to-issues`, `next-prd-issue`, `work-on-prd`, `work-on-issue`, `triage` + the `prd-worker` agent | **two** bundles: `prd-workflow` (the five loop skills) and `prd-qa` (`triage`) |
 | `ado-workflow` | `to-spec`, `to-spec-tasks`, `next-task-to-implement`, `work-on-spec` + the `spec-worker` agent | `ado-workflow` — same set, today |
 | `figma-tools` | `figma-to-spec` + the `figma-region-extractor` agent | `figma-tools`. Adapter-free |
 | `lk` | `grill`, `deep-grill`, `pinpoint`, `how-i-write`, `scoped-context` | `grill` (`grill` + `deep-grill`) — one bundle, and not the whole plugin; the other three ask for nothing |
