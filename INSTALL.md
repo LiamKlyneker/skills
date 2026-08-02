@@ -14,8 +14,8 @@ having before the plugin lands.
 
 | Plugin | Contains | Bundle it serves |
 |---|---|---|
-| `prd-workflow` | `to-prd`, `to-issues`, `next-prd-issue`, `work-on-prd`, `work-on-issue`, `triage-prd` + the `prd-worker` agent | **two** bundles: `prd-workflow` (the five loop skills) and `prd-qa` (`triage-prd`) |
-| `ado-workflow` | `to-spec`, `to-spec-tasks`, `next-task-to-implement`, `work-on-spec` + the `spec-worker` agent | `ado-workflow` — same set, today |
+| `prd-workflow` | `to-prd`, `to-issues`, `next-prd-issue`, `work-on-prd`, `work-on-issue`, `manual-qa`, `triage` + the `prd-worker` agent | **two** bundles: `prd-workflow` (the five loop skills) and `prd-qa` (`manual-qa` + `triage`) |
+| `ado-workflow` | `to-spec`, `to-spec-tasks`, `next-task-to-implement`, `work-on-spec`, `manual-qa`, `triage` + the `spec-worker` agent | **two** bundles: `ado-workflow` (the four loop skills) and `ado-qa` (`manual-qa` + `triage`) |
 | `figma-tools` | `figma-to-spec` + the `figma-region-extractor` agent | `figma-tools`. Adapter-free |
 | `lk` | `grill`, `deep-grill`, `pinpoint`, `how-i-write`, `scoped-context` | `grill` (`grill` + `deep-grill`) — one bundle, and not the whole plugin; the other three ask for nothing |
 | `install-skills` | `install-skills` — and `scripts/doctor.sh`, the only executable in the repo | none; it is what *writes* the adapter a bundle needs, so it must be reachable before any bundle is adopted |

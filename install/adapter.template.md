@@ -30,20 +30,26 @@ Tracker `github`, and what an adapter carrying no `Tracker:` line falls back to.
 Tracker `azure-devops`. Work items are reached through the Azure DevOps MCP server (`mcp__ado__*`). None of the facts below are discoverable from the repo, which is why every one of them is listed here rather than left for a skill to infer — a skill that hardcodes any of them is a bug.
 
 - Organisation: `<ado-org>` — the org segment of the `dev.azure.com` URL
-- **Work-item project**: `<ado-workitem-project>` — the ADO project the `[SPEC]` / `[TASK]` / `[QA]` work items live in
+- **Work-item project**: `<ado-workitem-project>` — the ADO project the `[SPEC]` / `[TASK]` / `[FINDINGS]` / `[BUG]` work items live in
 - **Repo project**: `<ado-repo-project>` — the ADO project the git repo lives in
 
   These are two separate fields on purpose, and they frequently differ. Querying the wrong one returns an empty result rather than an error, so the failure looks like a spec with no tasks or a repo that does not exist. Where the two genuinely are the same project, write the same value twice — never leave one implied.
 - Team: `<ado-team>` — the team whose board the states below belong to. Boards are per-team, so the state names only mean anything alongside it.
 - Repository: `<ado-repository>` — the git repository's name inside the **repo project**
-- Work-item type: `<ado-workitem-type>` — the type `[SPEC]`, `[TASK]` and `[QA]` items are created as, e.g. `Product Backlog Item`, `User Story`, `Task`
+- Work-item type: `<ado-workitem-type>` — the **one** type `[SPEC]`, `[TASK]`, `[FINDINGS]` and `[BUG]` items are all created as — a **task-level** type, e.g. `Task`, not a requirement-level one (`User Story`, `Product Backlog Item`), which is what the parent above these four is. One type for all four is deliberate; the *Title prefixes* row below says why, and why the prefix rather than the type is what tells them apart. Note that a `Task` carries no `AcceptanceCriteria` field, so a `[TASK]`'s acceptance criteria live in its description.
 - Board states — `System.State` is a per-process string, not a boolean, and the names differ between ADO processes, so name this board's three:
   - Pickable (open, unclaimed): `<ado-state-pickable>`
   - Claimed (a run is working it): `<ado-state-claimed>`
   - Committed, awaiting merge: `<ado-state-committed>` — where a `[TASK]` sits once its commit is on the branch but the PR has not completed. Work items close on PR completion, not on commit, so this state is **not** terminal and an orchestrated run must not read it as done.
 
   Every other state on the board counts as terminal. Where a board names none of these, ADO's stock terminal states are `Closed`, `Done`, `Resolved` and `Completed`.
-- Title prefixes: `[SPEC]` · `[TASK]` · `[QA]` — literal, at the start of the title, and what the skills filter a parent's children on. Change them here if this org uses different ones; never in a skill.
+- Title prefixes: `[SPEC]` · `[TASK]` · `[FINDINGS]` · `[BUG]` — literal, at the start of the title, and what the skills filter a parent's children on. `[SPEC]` is the spec, `[TASK]` a planned unit of work, `[FINDINGS]` a run's QA pass, `[BUG]` a finding triaged out of one. There is no `[QA]` prefix.
+
+  **On Azure DevOps the prefix is load-bearing. On GitHub it is decorative — do not carry the GitHub habit across.** The `### GitHub` row above calls prefixes a human scanning convention that nothing keys on, because a PRD's children are native sub-issues. There are no sub-issues here: all four kinds are the **same work-item type**, sitting as siblings under the same parent, so the prefix is the *only* thing distinguishing a `[BUG]` from a `[TASK]`. Mistype one and the item is not merely mislabelled — it is invisible to every skill that walks the parent's children, and it looks like a spec with one slice fewer than it has.
+
+  Why one type rather than the obvious types: a Task parented to a Task drops the parent off the taskboard and disables reordering board-wide, and where the project sets `bugsBehavior: 1` (bugs managed *with* requirements) a Bug-type item is requirement-level and renders as its own sibling swimlane instead of a child. One Task-type child per kind, distinguished by prefix, is what survives both.
+
+  Change the words here if this org uses different ones; never in a skill.
 - Branch pattern: `<ado-branch-pattern>` — e.g. `spec/<id>-<slug>`, where `<id>` is the `[SPEC]` work-item id
 
 ## Commands
@@ -68,7 +74,7 @@ Every command a worker or the orchestrator runs. Keep the **Purpose** column sta
 - **L2 — floor, every issue, non-negotiable**: `<test command>` passes.
 - **L3 — user-visible issues**: L2 + `<boot command>` boots the app + a screenshot as evidence (`<screenshot command>`).
 - **L4** (agent-driven interaction): out of scope v1.
-- **L5 — human**: once per orchestrated run, against the branch, before merge. On GitHub the run posts the QA steps as a comment on the PRD issue and labels it `needs-qa`; the human works the comment start-to-finish and removes the label when done. On Azure DevOps the run files a `[QA]` work item and the human works it start-to-finish. Say here what exercising this app actually means — `<which entry point, which command, what to look for>` — because the run's steps are written against it and a worker only knows what this line says.
+- **L5 — human**: once per orchestrated run, against the branch, before merge. On GitHub the run posts the QA steps as a comment on the PRD issue and labels it `needs-qa`; the human works the comment start-to-finish and removes the label when done. On Azure DevOps the run files a `[FINDINGS]` work item and the human works it start-to-finish. Say here what exercising this app actually means — `<which entry point, which command, what to look for>` — because the run's steps are written against it and a worker only knows what this line says.
 
 ## Sources of truth (recon + hard gates)
 

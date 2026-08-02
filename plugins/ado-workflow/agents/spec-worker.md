@@ -99,7 +99,7 @@ Report exactly these, in this order:
    Empty is a valid answer; silence is not. A `[TASK]` body is slim on purpose and its `[SPEC]`
    can have moved on since it was written — where the two disagree, say so here rather than
    quietly picking one.
-4. **Refined QA notes** — concrete steps for the run's `[QA]` work item, refining the
+4. **Refined QA notes** — concrete steps for the run's QA comment on the `[SPEC]`, refining the
    `[TASK]`'s `## QA notes`. Each one is an action a human takes in the running app plus the
    observable result they should get; "it looks right" is not a result.
 

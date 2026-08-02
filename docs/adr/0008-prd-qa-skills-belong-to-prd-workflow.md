@@ -1,6 +1,6 @@
 # ADR 0008 — The PRD-QA skills belong to `prd-workflow`, not to `lk`
 
-- **Status**: Accepted
+- **Status**: Superseded by ADR 0011
 - **Date**: 2026-08-01
 - **Context**: PRD #85, implemented by #88 (the relocation) and #89 (`manual-qa`)
 - **Supersedes**: ADR 0002

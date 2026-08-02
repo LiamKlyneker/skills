@@ -161,12 +161,25 @@ def check_plugin_manifests(entries: list[tuple[Path, dict]]) -> None:
 
 
 def check_skills() -> None:
-    """Every SKILL.md needs name + description, and names must be globally unique.
+    """Every SKILL.md needs name + description, and names unique *within a plugin*.
 
-    Two skills sharing a name is the exact failure the plugins migration existed to
-    end — the same skill discoverable under two routes.
+    A skill is invoked namespaced — `prd-workflow:triage` — so the plugin is part of the
+    name and two plugins may both ship a `triage` without ambiguity. What this rule
+    protects is a *single* plugin's inventory: two directories inside one plugin claiming
+    the same name give that plugin two skills reachable by one identifier, and which of
+    them a session loads is undefined.
+
+    It used to be global, justified as ending "the same skill discoverable under two
+    routes". That is a symlink shape, not a name collision, and `check_symlinks` is what
+    actually catches it — a top-level shim into `plugins/`, or a link under
+    `.claude/skills/`. Globally-unique names only ever stopped two genuinely different
+    skills, in different plugins, from picking the same obvious word.
     """
-    owners: dict[str, Path] = {}
+    # A SKILL.md outside `plugins/` has no owning plugin. Those share one bucket, so a
+    # stray pair still collides with each other rather than crashing on a `None` key.
+    # CLAUDE.md says no such skill exists here; this is what makes an accident report.
+    outside = "\0outside-plugins"
+    owners: dict[tuple[str, str], Path] = {}
     for path in walk_files(ROOT, "SKILL.md"):
         fields = read_frontmatter(path)
         if fields is None:
@@ -181,10 +194,13 @@ def check_skills() -> None:
             continue
         if name != path.parent.name:
             fail(path, f"frontmatter name `{name}` != directory `{path.parent.name}`")
-        if name in owners:
-            other = os.path.relpath(owners[name], ROOT)
-            fail(path, f"skill name `{name}` already claimed by {other}")
-        owners[name] = path
+        scope = owning_plugin(path) or outside
+        if (scope, name) in owners:
+            other = os.path.relpath(owners[(scope, name)], ROOT)
+            where = f"plugin `{scope}`" if scope != outside else "outside `plugins/`"
+            fail(path, f"skill name `{name}` already claimed by {other} — skill names "
+                       f"must be unique within {where}")
+        owners[(scope, name)] = path
 
 
 def check_agents() -> None:

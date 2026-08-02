@@ -1,12 +1,12 @@
 ---
-name: triage-prd
-description: PRD-scoped triage — take the [FINDING] comments manual-qa logged on a PRD's PR, confirm each against the PRD/issues/decision-lock and the code, pinpoint root cause via a cheap subagent, then file cold-runnable GitHub issues (in this repo, or in the related repo that owns the contract boundary) that work-on-prd/work-on-issue can execute with no plan mode. Invoke /prd-workflow:triage-prd to promote a PRD's PR QA findings into executable issues.
+name: triage
+description: PRD-scoped triage — take the [FINDING] comments manual-qa logged on a PRD's PR, confirm each against the PRD/issues/decision-lock and the code, pinpoint root cause via a cheap subagent, then file cold-runnable GitHub issues (in this repo, or in the related repo that owns the contract boundary) that work-on-prd/work-on-issue can execute with no plan mode. Invoke /prd-workflow:triage to promote a PRD's PR QA findings into executable issues.
 disable-model-invocation: true
 ---
 
-# triage-prd
+# triage
 
-The **investigate + promote** half of the PRD QA loop. `manual-qa` — the capture phase — drives a run's QA comment and logs each failure as a self-contained `### [FINDING]` comment on a PRD's PR; `triage-prd` *confirms, roots-causes, and promotes* the survivors into **cold-runnable issues** — one per finding — that `work-on-prd` (or `work-on-issue`) executes later with zero re-research. It is the PRD-scoped specialization of the generic triage pattern: it never reads a deploy-preview comment stream, it reads a PRD.
+The **investigate + promote** half of the PRD QA loop. `manual-qa` — the capture phase — drives a run's QA comment and logs each failure as a self-contained `### [FINDING]` comment on a PRD's PR; `triage` *confirms, roots-causes, and promotes* the survivors into **cold-runnable issues** — one per finding — that `work-on-prd` (or `work-on-issue`) executes later with zero re-research. It is the PRD-scoped specialization of the generic triage pattern: it never reads a deploy-preview comment stream, it reads a PRD.
 
 Its edge over a generic triage is **decision context**: it loads the PRD, its child issues, the touched `CONTEXT.md`, and the locked decisions — so it can tell a real defect from a gap that was **deferred on purpose**, and route a finding to the repo that actually owns it.
 
@@ -15,7 +15,7 @@ Project facts (repos, commands, verify ladder) come from the **project adapter**
 ## Two non-negotiables
 
 1. **Every issue is a cold-runnable fix plan.** A future `work-on-issue`/`work-on-prd` session (fresh, no memory of this chat) must fix it with **no plan mode and no re-investigation**. So each issue carries: root cause (confirmed, not hypothesized), exact files + prior art, the fix approach, and testable acceptance criteria — mirroring the `to-issues` child template so the worker consumes a bug identically to a planned child.
-2. **Never fix.** triage-prd stops at filed issues. No code changes, no fix-tests. The fix belongs to `work-on-prd`/`work-on-issue`. (Mirror of `manual-qa`'s `<the-line>`, one phase later.)
+2. **Never fix.** triage stops at filed issues. No code changes, no fix-tests. The fix belongs to `work-on-prd`/`work-on-issue`. (Mirror of `manual-qa`'s `<the-line>`, one phase later.)
 
 ## Context loading (once, up front)
 
@@ -78,7 +78,7 @@ Record the finding + its source (PR comment permalink, `file:line`, author). **`
 
 ### 2. Validate + gap classification (HARD GATE — before filing anything)
 
-`manual-qa` labels root cause as *hypothesis*. triage-prd's first job is to decide what the finding **is**, using the loaded decision context. Resolve from PRD/issues/CONTEXT/code before asking the user:
+`manual-qa` labels root cause as *hypothesis*. triage's first job is to decide what the finding **is**, using the loaded decision context. Resolve from PRD/issues/CONTEXT/code before asking the user:
 
 | Verdict | Evidence | Action |
 |---|---|---|
@@ -173,7 +173,7 @@ When the user says done:
 3. **Report** created issue numbers grouped by disposition + repo, e.g.
    `ready-to-start: #61 #62 · deferred: #63 · <related repo>#NNN · closed: —`, plus a line for
    anything **skipped** as already-triaged and the issue each already points at.
-4. **Remind** the human of the one external step triage-prd can't do: the related-repo issue is tracked but **not** auto-closed by this repo's PR. Marking findings triaged is no longer on this list — step 2 writes `**Triaged:** #N` itself, and that line is what makes the next pass skip them. What is still worth saying out loud is any finding that ends with **no** issue at all (deferred-by-design, cited): it carries no marker, so the next pass will surface it again.
+4. **Remind** the human of the one external step triage can't do: the related-repo issue is tracked but **not** auto-closed by this repo's PR. Marking findings triaged is no longer on this list — step 2 writes `**Triaged:** #N` itself, and that line is what makes the next pass skip them. What is still worth saying out loud is any finding that ends with **no** issue at all (deferred-by-design, cited): it carries no marker, so the next pass will surface it again.
 
 ### Marking the finding comment triaged
 
@@ -183,7 +183,7 @@ One line, appended to the `### [FINDING]` comment, naming the issue it became:
 **Triaged:** #92
 ```
 
-**This is the only place in the chain where the finding → issue link is written down.** `triage-prd` links the issue *up* to the PRD as a sub-issue, and nothing else links back down to the finding that produced it — so without this line a second pass has no way to tell a fresh finding from one it promoted last week.
+**This is the only place in the chain where the finding → issue link is written down.** `triage` links the issue *up* to the PRD as a sub-issue, and nothing else links back down to the finding that produced it — so without this line a second pass has no way to tell a fresh finding from one it promoted last week.
 
 **No contract amendment is needed for it.** The finding comment is `manual-qa`'s own artifact, authored by the same user, and carries no never-edit rule — unlike the QA comment on the PRD, which does and whose two carve-outs are `work-on-prd`'s to define.
 
@@ -300,6 +300,6 @@ labels for them).
 
 ## Boundary / handoff
 
-- triage-prd = **investigate + decide + file**. It does **not** fix, and it does **not** need a separate "fix the bugs" skill: a bug filed in this repo, **linked to that PRD as a native sub-issue** and labelled `ready-to-start`, **is a PRD child** — `work-on-prd` (re-entrant, cold-start) discovers it from the PRD's sub-issue list and works it on the PRD branch with no new machinery. Those two are the whole requirement; the `[BUG]` title prefix is a scanning convention and changes nothing about discovery. The link is what makes it a child at all: a bug filed but never linked is invisible before eligibility ever runs. See `../_shared/prd-eligibility.md`.
+- triage = **investigate + decide + file**. It does **not** fix, and it does **not** need a separate "fix the bugs" skill: a bug filed in this repo, **linked to that PRD as a native sub-issue** and labelled `ready-to-start`, **is a PRD child** — `work-on-prd` (re-entrant, cold-start) discovers it from the PRD's sub-issue list and works it on the PRD branch with no new machinery. Those two are the whole requirement; the `[BUG]` title prefix is a scanning convention and changes nothing about discovery. The link is what makes it a child at all: a bug filed but never linked is invisible before eligibility ever runs. See `../_shared/prd-eligibility.md`.
 - Deferred (`deferred` label) issues sit as known follow-ups until promoted (relabel `ready-to-start`).
 - Related-repo issues are executed by that repo's own `work-on-issue`.

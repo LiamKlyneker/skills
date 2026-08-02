@@ -67,7 +67,7 @@ couldn't finish.
 |---|---|
 | `prd-workflow` | The PRD → issues → implementation loop — five of the six skills the `prd-workflow` plugin ships |
 | `ado-workflow` | The same loop against an Azure DevOps board — `[SPEC]` → `[TASK]`s → implementation, exactly the four skills the `ado-workflow` plugin ships |
-| `prd-qa` | The QA loop run against a PRD branch before merge — `triage-prd`, the sixth skill the `prd-workflow` plugin ships |
+| `prd-qa` | The QA loop run against a PRD branch before merge — `triage`, the sixth skill the `prd-workflow` plugin ships |
 | `grill` | The interviews that run *before* either loop — `grill` inline on one thread, `deep-grill` with recon subagents and hard gates. Two more `lk` skills; only `deep-grill` reads the adapter, so `## Sources of truth` is the whole of this bundle's interview |
 | `figma-tools` | Figma → spec — the `figma-tools` plugin. Adapter-free |
 

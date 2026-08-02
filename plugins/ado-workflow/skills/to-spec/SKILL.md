@@ -34,9 +34,12 @@ the **work-item project** the items live in, the **work-item type** to create th
 error — it writes work items somewhere nobody is looking, or returns an empty result that
 reads like a story with no children.
 
-`[SPEC]`, `[TASK]` and `[QA]` below are **shorthand for the adapter's *Title prefixes* row**,
-written out for readability. If that row names different prefixes, they win — here, and in
-every title filter this skill applies.
+`[SPEC]`, `[TASK]`, `[FINDINGS]` and `[BUG]` below are **shorthand for the adapter's *Title
+prefixes* row**, written out for readability. If that row names different prefixes, they win —
+here, and in every title filter this skill applies. On this tracker the prefix is the *only*
+thing separating one kind of child from another, since all four are the same work-item type
+under the same parent — so a filter that reads the wrong prefix returns an empty set, not an
+error.
 
 ## Readiness: the ADO MCP server
 
@@ -87,8 +90,8 @@ introduced in the grill is the **lead**; any others are **followers**.
 
 The lead is a requirement-level item — whatever this board's process calls that. Do **not**
 assert a type name; process templates disagree about it. Verify instead that the lead's title
-carries **none** of the adapter's title prefixes: a `[SPEC]`, `[TASK]` or `[QA]` is never a
-lead.
+carries **none** of the adapter's title prefixes: a `[SPEC]`, `[TASK]`, `[FINDINGS]` or `[BUG]`
+is never a lead.
 
 ### 2. Resolve mode
 

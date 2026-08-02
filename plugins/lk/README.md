@@ -13,8 +13,8 @@ the catalog pins.
 
 That criterion — the user and the codebase, never a tracker — is the whole
 membership rule, and it now holds with **no exception**. The plugin carried the PRD QA loop for a while, and that loop
-writes to GitHub — so it belonged to `prd-workflow` all along. `triage-prd`
-moved there and invokes as `/prd-workflow:triage-prd`.
+writes to GitHub — so it belonged to `prd-workflow` all along. `triage`
+moved there and invokes as `/prd-workflow:triage`.
 
 ## Layout
 
@@ -64,7 +64,7 @@ replace.
 plugins. A skill's existing `../_shared/…` references keep resolving with zero
 rewrites wherever the plugin is loaded from: live through the link under `--plugin-dir`,
 and inside the tree in marketplace mode. Same depth in every plugin is also
-what let `triage-prd` move to `prd-workflow` without touching a single
+what let `triage` move to `prd-workflow` without touching a single
 reference.
 
 A directory under `skills/` with no `SKILL.md` is not registered as a skill, so

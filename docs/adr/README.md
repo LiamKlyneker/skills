@@ -63,6 +63,7 @@ or the adapter, and stops there.
 | [0005](0005-qa-is-an-issue-not-a-committed-document.md) | The QA pass is a per-run item, not a committed document | Superseded by ADR 0006 |
 | [0006](0006-sub-issues-and-qa-as-a-prd-comment.md) | A PRD's children are sub-issues, and its QA pass is a comment on it | Superseded by ADR 0009 |
 | [0007](0007-a-marketplace-not-an-estate-manager.md) | This repo publishes a marketplace; it does not manage the estate | Accepted |
-| [0008](0008-prd-qa-skills-belong-to-prd-workflow.md) | The PRD-QA skills belong to `prd-workflow`, not to `lk` | Accepted |
+| [0008](0008-prd-qa-skills-belong-to-prd-workflow.md) | The PRD-QA skills belong to `prd-workflow`, not to `lk` | Superseded by ADR 0011 |
 | [0009](0009-the-qa-comment-is-a-parse-contract.md) | The QA comment is a parse contract, and the receipt comes back | Accepted |
 | [0010](0010-one-distribution-one-dev-mode.md) | One distribution, one dev mode | Accepted |
+| [0011](0011-azure-devops-qa-is-a-tickable-comment.md) | Azure DevOps QA is a tickable comment, and 0008's three platform claims were false | Accepted |

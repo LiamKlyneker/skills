@@ -31,14 +31,18 @@ update   updates: [{ op: "add", path: "/fields/System.Title", value: "…" }]
 `create` takes a name/value array; `update` takes JSON-Patch. Carrying one shape into the other
 call is invalid — this is the most common way a working create is turned into a failing update.
 
-`add_child` exists as a create action and may collapse §3's create-then-link into one call.
-**It is untested here**; §3's two-step is the documented path until someone verifies otherwise.
+`add_child` is a create action, and it is **tested**: one `add_child` call sets `System.Parent`
+**and** writes the hierarchy relation, collapsing §3's create-then-link into a single call. No
+follow-up link write is needed for an item created that way. §3's two-step remains the path for
+parenting an item that already exists, and §5's verification still applies to both.
 
 ## 1. Pre-escape angle brackets in any description body
 
 Anywhere the body mentions a JSX/TSX token, HTML element, or generic type (`<AccordionContent>`, `<h3>`, `Foo<T>`), write `&lt;` and `&gt;`. Backtick-wrap for monospace too: `` `&lt;AccordionContent&gt;` ``.
 
-`wit_work_item_write` (`action: "create"`) accepts a per-field `format: "Markdown" | "Html"` flag, but `wit_work_item_write` (`action: "update"`)'s `updates[]` items have **no `format` option** and fall back to HTML — so any later edit silently strips every unescaped angle-bracketed token. Escaping at synthesis time means the body survives both calls regardless of the format flag.
+`wit_work_item_write` (`action: "create"`) accepts a per-field `format: "Markdown" | "Html"` flag, and so does **`action: "update_batch"`**, per item. **Plain `action: "update"` is the one that does not**: its `updates[]` items have **no `format` option** and fall back to HTML — so any later edit made through `update` silently strips every unescaped angle-bracketed token, and rewrites a Markdown body as HTML on its way past.
+
+The limitation is `update`'s alone. Do not state it as a property of every write: an append made through `update` when `update_batch` was available is what pushes a body out of Markdown and into HTML for no reason. Where a later edit must stay Markdown, use `update_batch` and pass `format` explicitly. Escaping at synthesis time is still what makes the body survive *whichever* of the three calls it goes through, regardless of the format flag.
 
 ## 2. Never reference a PR with a bare `#NNNN`
 
@@ -60,6 +64,13 @@ wit_work_item_link_write  { action: "link", updates: [{ id: <child-id>, linkToId
 
 `updates` is an array, so multiple parent links batch into one call.
 
+**`action: "add_child"` is the exception, and it is not a second no-op.** Creating through
+`add_child` sets `System.Parent` *and* writes the hierarchy relation in that one call — parenting
+is done when it returns (§0). The two-step above is what a *`create`* needs, and what any
+already-existing item needs; it is not a general rule that parenting always takes a separate link
+write. Reading it as one means a redundant link write against an item that is already parented,
+and a two-call create where one would have done.
+
 ## 4. `fields` and `expand` are mutually exclusive on reads
 
 `wit_work_item` (`action: "get"`) rejects them together, and passing a `fields` filter suppresses `relations`. When you need relations, pass `expand: "relations"` and **no** `fields`.
@@ -79,3 +90,35 @@ Pass the raw email string — ADO resolves it to the full identity. Take the ema
 ## 7. Call envelopes are arrays, not flat objects
 
 `wit_work_item_write` (`action: "update"`) and `wit_work_item_link_write` (`action: "link"`) both take a top-level `updates: [...]` array (plus optional `project`). Passing the fields flat at the top level is invalid.
+
+## 8. A read will not tell you a field's format, and the UI is not showing you its stored text
+
+Two different reasons a read hands back a confident wrong answer about a body.
+
+**A field-filtered `get` never returns `multilineFieldsFormat`.** Pass a `fields` filter and that
+map comes back absent — including for a field verified on the same item to be Markdown. There is
+**no cheap way to read a field's format back**, so an absent map means *the format was not
+reported*, never *this field is HTML*. Treating it as HTML is how a Markdown body gets rewritten
+into an HTML one by the very code trying to preserve it, at which point §1's escaping is the only
+thing standing between the body and its angle-bracketed tokens. Carry the format forward from the
+write that set it (§1) instead of probing for it. (§4 is the other half of this: a `fields` filter
+also suppresses `relations`.)
+
+**The Azure DevOps UI renders a comment from its sanitised text, not from `renderedText`.** So
+markup the read path drops does not appear on screen escaped — it simply **is not there**, and the
+sentence around it reads as if it were written that way. Vanishing text, not visible junk, is the
+symptom of read-path data loss here, which makes it easy to miss and impossible to diagnose from
+the UI alone. §1's escaping rule is therefore load-bearing for **comments** as much as for
+descriptions; do not treat it as a description-only precaution.
+
+## 9. A Task has no `AcceptanceCriteria` field
+
+The **Task** work item type carries `System.Description` and no acceptance-criteria field —
+`Microsoft.VSTS.Common.AcceptanceCriteria` belongs to the requirement-level types (User Story,
+Product Backlog Item), not to Task. So where the adapter's work-item type is `Task`, a `[TASK]`'s
+acceptance criteria live **in its description**, as a section of the body, and nothing should
+reach for the field.
+
+The failure mode is quiet in both directions: criteria aimed at a field the type does not have do
+not land on the item, and a read of that field returns nothing, so the work item shows up with no
+acceptance criteria at all — which looks exactly like a task that was authored without any.
