@@ -24,7 +24,7 @@ This is a **specialized locator**: it should surface more grounded detail than t
 1. **Location(s)** — file path(s) with line numbers for the exact thing asked about.
 2. **Key symbols** — the main component / function / hook / type name(s) that live there.
 3. **Signature** — one copied line: the props type, function, or hook signature of the primary symbol.
-4. **Used by** — grep the primary symbol and list the `file:line` sites that import or render it (this is literal grep output, not analysis).
+4. **Used by** — grep the primary symbol and list the `file:line` sites that import or render it (this is literal grep output, not analysis). Cap at ~10 sites; if there are more, list the first 10 and give the total count instead of the full list.
 5. **Neighbors** — the other files in the containing folder, listed (`ls`-level), so the area's neighborhood is visible.
 6. **Orientation** — 2–3 sentences on what the area is responsible for and its main pieces (the primary export plus any notable local helpers/subcomponents it's composed of). Stay descriptive — what it is, not how it flows or why.
 
