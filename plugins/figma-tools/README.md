@@ -2,10 +2,27 @@
 
 `figma-to-spec`, packaged as a Claude Code plugin, plus the
 `figma-region-extractor` agent it spawns per region — and `ds-catalog`, which
-authors the per-project design-system catalog `figma-to-spec` resolves against.
-Two skills, one dependency between them: the catalog. `ds-catalog` writes it,
-`figma-to-spec` reads it, and the shape both are written against is
+authors the per-project design-system catalog the spec skills resolve against.
+
+Three skills:
+
+- **`figma-to-spec`** — one Figma **page** node → a page-implementation spec plus
+  DS gap tickets. Runs in a **consumer** repo.
+- **`figma-component-to-spec`** — one Figma **component set** → one component
+  spec. Runs in a **library** repo: the repo that *is* the design system. Same
+  extractor agent, same catalog contract, same resolution rules; each variant
+  frame becomes one region tagged `variant:<name>`.
+- **`ds-catalog`** — writes the catalog the other two read.
+
+One dependency runs through all of it: the catalog. `ds-catalog` writes it, both
+spec skills read it, and the shape all three are written against is
 `figma-to-spec/references/catalog-contract.md`.
+
+**The two spec skills are mutually exclusive by repo, and both enforce it.** The
+adapter's `## Design system` → `Repo role:` row decides which one may run;
+**an absent row means `consumer`**, so an install that predates the row keeps
+running `figma-to-spec` untouched and only the new skill refuses. Each guard is a
+STOP with a one-line redirect to its sibling, checked before any Figma read.
 
 ## Naming
 
@@ -32,15 +49,21 @@ plugins/figma-tools/
     _shared -> ../../../_shared                    # symlink
     figma-to-spec/
       agents/figma-region-extractor.md -> ../../../agents/figma-region-extractor.md
+    figma-component-to-spec/
     ds-catalog/
   agents/figma-region-extractor.md
 ```
 
-`ds-catalog` reaches the shape contract by a plain relative path,
-`../figma-to-spec/references/catalog-contract.md`. Both skills ship in one
-plugin, so that path resolves identically in this working tree and in an install
-cache copy — and it needs no symlink, because nothing about it decides whether a
-skill loads.
+`ds-catalog` and `figma-component-to-spec` reach the shape contract by a plain
+relative path, `../figma-to-spec/references/catalog-contract.md` — as
+`figma-component-to-spec` also reaches `resolution-rules.md`. All three skills
+ship in one plugin, so those paths resolve identically in this working tree and
+in an install cache copy — and they need no symlink, because nothing about them
+decides whether a skill loads. `figma-component-to-spec` addresses the agent at
+the plugin root instead (`../../agents/figma-region-extractor.md`, and
+`../../../` from its `references/`), the same way `prd-workflow`'s `work-on-prd`
+addresses `prd-worker` — it has no docs written against an inner path, so it
+needs no nested link of its own.
 
 Nothing sits at the plugin root — same reason as `plugins/prd-workflow/`: a
 root `SKILL.md` alongside a `skills/` subdirectory registers twice.
