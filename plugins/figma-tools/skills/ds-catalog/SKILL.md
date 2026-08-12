@@ -64,8 +64,11 @@ thing that replaced it.
 - **The project adapter**, `<repo-root>/.claude/project/adapter.md`, its `## Design system`
   section: the *Design-system source* row says what to explore, the *Catalog* row says where
   the output goes, and the class-prefix and icon-ladder rows carry what a previous
-  install-time interview already established. `install-skills` writes that section; this skill
-  fills the one row only a catalog run can answer.
+  install-time interview already established — including the *Repo role* row and, where that
+  role is `library`, the variant-mechanism, token-pipeline and story-convention rows.
+  `install-skills` writes that section; this skill owns the fingerprint recipe outright, and
+  fills any of the role-gated rows the install never asked for (Phase 5 says which rows it may
+  write, which it may only propose, and which it never touches).
 - **The design system itself**, read-only: a repo path, a workspace package, or an installed
   copy of a published package.
 - **The shape contract**, `../figma-to-spec/references/catalog-contract.md` — the required
@@ -96,9 +99,9 @@ unimplementable. Say which assumption fails and stop.
 | **0 — Resolve** | main thread | Read the adapter's `## Design system`. Locate the design-system source · decide **author** vs **refresh** · run the scope gate. |
 | **1 — Explore** | explorer subagents ×N, read-only, parallel | One per area: public surface · tokens · typography · components and their variant axes · icons. Each carries `references/static-reading-failures.md`. Output: draft entries **plus an uncertainty ledger**. |
 | **2 — Probe** | main thread | Walk all five failure shapes against the draft. Every one resolves to *confirmed by <file>* or *a question*. |
-| **3 — Interview** | main thread, with the human | Ask the questions, in catalog order, evidence attached. Statuses and successors come from here. |
+| **3 — Interview** | main thread, with the human | Ask the questions, in catalog order, evidence attached. Statuses and successors come from here, and so does the **repo role** — with the three library conventions it gates. |
 | **4 — Write** | main thread | The catalog, against the shape contract, in consumer-facing form, fully enumerated. First disk write of the run. |
-| **5 — Fingerprint** | main thread | Design the recipe · run it twice from two directories · stamp line 1 · write the adapter row. |
+| **5 — Fingerprint** | main thread | Design the recipe · run it twice from two directories · stamp line 1 · write the adapter rows this run owns. |
 | **6 — Validate** | main thread | Run the contract's eight validation rules against what was just written, and report. |
 
 ### Phase 0 — Resolve
@@ -151,9 +154,12 @@ Rules that keep it finite and keep it honest:
   Button have?" is a worse question than "the map in `<file>` gives four values; the props type
   accepts any string — is the map the complete set?"
 - **One section per exchange.** Batch within a section; never mix sections in one message.
-- **Statuses are asked here, not bolted on later.** `legacy` / `deprecated` and the successor
-  pointer come out of this conversation and nowhere else — there is no second document to
-  reconcile afterwards, and no later pass that would catch a missed one.
+- **Statuses are asked here, not bolted on later.** `legacy` / `deprecated` / `unused` and the
+  successor pointer come out of this conversation and nowhere else — there is no second document
+  to reconcile afterwards, and no later pass that would catch a missed one. `unused` is the one
+  a static read essentially never surfaces, because "nothing imports this" is a fact about the
+  *consumers*, not about the design system: ask it rather than inferring it, and where nobody can
+  say, the entry is `current`.
 - **Never invent a successor.** A legacy entry with no replacement yet is a real state; record
   it as legacy with no successor. A dangling `successor:` fails validation rule 8 anyway.
 - **Unresolved at the end of the interview**: an unresolved question about **a whole section**
@@ -165,6 +171,30 @@ Rules that keep it finite and keep it honest:
 - Confirm the **class-prefix facts and the icon ladder** against what the adapter already
   says. Where this run's evidence contradicts a row, that is a finding for Phase 5, not a
   silent correction.
+
+**The role question, and the three it gates.** Ask these where the adapter's `## Design system`
+has no answer yet — and only there; a row that is already filled is confirmed, not re-asked.
+
+1. **What role does this repo play — `consumer` or `library`?** A consumer renders the design
+   system; a library *is* it. **Never guessed from the tree.** The role is an intent, and a repo
+   containing a `components/` directory is not thereby a library — a consumer's local components
+   look identical from the outside. An absent row means `consumer`, so this question only ever
+   *adds* information; it never has to be asked twice.
+2. **Only when the answer is `library`**, three conventions of the design system's own source,
+   each of which this run has probably just seen evidence for and none of which it can settle:
+   - **The variant mechanism, as a ladder** — what declares a component's axes first, what the
+     fallback is when that is absent, and which shapes are the *implementation* of a variant
+     rather than its declaration. Ask for the trap explicitly: shape 5 in
+     `references/static-reading-failures.md` is exactly this ladder's last rung, and a runtime
+     alias map outside the declaration is the classic one.
+   - **The token pipeline** — is there a generator, and what source does it consume? "None, the
+     emitted CSS is hand-edited" is a real answer. This decides how literal a downstream spec's
+     token delta may be, so it is worth one round of pressing.
+   - **The story convention** — where stories live, and whether `argTypes` are generated from the
+     variants or hand-written.
+
+   In a `consumer` repo these three are not asked and not written; Phase 5 deletes them if a
+   copied template left them behind.
 
 ### Phase 4 — Write the catalog
 
@@ -181,6 +211,29 @@ first run gets wrong:
 - **`None — <what is used instead>` for a section this project genuinely has none of.** An
   explicit `None` is a real answer; an absent section is not.
 - **`—` is not blank.** A component with no variant axis says so.
+
+**Four status shapes this skill may emit**, all of them defined in the contract's `## Status`
+section and all four found in real design systems before they were written down. They are listed
+here because a run that has the answer from Phase 3 and no way to write it down records nothing:
+
+- **A successor across tiers or sections.** `successor:` names an entry *anywhere* in the
+  catalog — a primitive superseded by a semantic token, a utility by a composite, a variant value
+  by a different component. Qualify the target (`<tier or section> → <entry>`) wherever the bare
+  string would match in two places; a pointer that resolves twice fails validation rule 8 the
+  same as one that resolves nowhere.
+- **A tier with no single successor.** Where a whole tier is retiring and its entries redistribute
+  rather than moving as a block, write it explicitly under the tier heading —
+  `status: legacy · successor: none — <where its entries go instead>`. Never leave the field bare
+  to mean this: "no single successor" and "nobody filled this in" must not look alike, which is
+  the entire reason the `none — …` form exists.
+- **`unused`.** The entry ships, nothing consumes it. Distinct from `legacy`, never a synonym for
+  it, and usually carrying no successor. Emit it only where the interview established it; the
+  default for "nobody could say" is `current`.
+- **A deprecated prop inside a `current` component.** Write the status on the axis, inline in the
+  *Variant axes / values* cell — never in the row's `Status` column, which belongs to the
+  component. Promoting a prop's status to the component is the failure the scoping rule exists to
+  prevent: every spec touching any part of that component then reads as flagged, and the one prop
+  that matters is buried.
 
 `## Conventions` is the section written for a human rather than a matcher, and it is where the
 interview's prose belongs: which way is current, how a token's name becomes its class including
@@ -225,6 +278,8 @@ Then write to the adapter's `## Design system` section:
 |---|---|
 | *Fingerprint command* | **Owns it.** Write the recipe. Nothing else in the system can — it is derived from the file set this run read. `None — staleness unchecked` is a real answer where no stable set exists, and the staleness check is soft, so it never fails a run. |
 | *Catalog* | **Writes it when nothing names one yet** — a catalog no pointer reaches is not a deliverable. Where a row already exists and the catalog was written there, leave it byte-intact. |
+| *Repo role* | **Writes it when no row exists**, from the Phase 3 answer and from nothing else — never from the tree. Where the row already says `consumer` or `library`, leave it alone; a role changes because a human decides it has, not because a run explored differently. |
+| *Variant mechanism* · *Token pipeline* · *Story convention* | **Writes all three when the role is `library`** and the rows are absent, from the Phase 3 answers. Where the role is `consumer`, write none of them, and **delete only an unfilled one a copied template left behind** — a row still carrying its `<placeholder>` is noise `doctor` will report forever, while a row somebody actually filled is theirs and stays. Where a row already exists and this run's evidence contradicts it, propose rather than overwrite, exactly like the class-prefix rows below. |
 | *Tailwind class prefix* · *CSS variable prefix* · *Consumer-facing emission form* · *Icon resolution ladder* | **Proposes, never silently changes.** Where this run's evidence contradicts what the row says, show the row, show the evidence, and let the human decide. These are three separate facts and one ordered list — collapsing any of them is how a spec recommends a class the app cannot write. |
 | *Design-system source* · *Usage-rules source* · *Downstream implementer* · everything outside `## Design system` | **Never touches.** The two optional rows degrade silently by design: absent means the spec cites nothing, and absent means a human implements. Neither is an error and neither gets a warning. |
 

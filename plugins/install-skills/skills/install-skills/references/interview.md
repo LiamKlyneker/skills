@@ -41,7 +41,7 @@ way.
 | `## Repo` | **GitHub**: `gh repo view --json nameWithOwner,defaultBranchRef`. **Azure DevOps**: the default branch from git and nothing else — the tree states none of the rest | related repos / contract boundaries on either tracker — nothing states these reliably. **Title prefixes on either tracker**: offer the defaults (`[PRD]`·`[TASK]`·`[BUG]` on GitHub, `[SPEC]`·`[TASK]`·`[FINDINGS]`·`[BUG]` on ADO — neither tracker has a `[QA]` prefix) and only ask whether this repo already uses different words — one confirmation, not four questions. On ADO the answer is load-bearing rather than cosmetic, since every kind of child is the same work-item type and the prefix is all that separates them, so read it back. On Azure DevOps, the whole `### Azure DevOps` block as well: org, the **two** projects (work items and repo — ask for both even when they are the same, since querying the wrong one returns empty rather than an error), team, repository, work-item type, the three board states, and the branch pattern |
 | `## Commands` | `package.json` scripts · `Makefile` targets · `Package.swift` + schemes · `Cargo.toml` · `pyproject.toml`. Package manager from the lockfile (`pnpm-lock.yaml` → pnpm, `bun.lockb` → bun, …) | the screenshot command — it is usually unscripted, and "none, use the browser tools interactively" is a real answer |
 | `## App facts` | language + version, framework + version, path aliases, generated-vs-source files, strict flags — all from the manifests and config files | **the fragile part.** The subsystem that breaks silently and that no linter catches. This is the highest-value line in the adapter and it is never in a file |
-| `## Design system` | the design-system dependency and its version from the manifests · a Tailwind config's `prefix` · an existing catalog file if the repo already has one | the **catalog pointer** if no file announces itself — never guess a filename, since this row is the only place it is ever named. The **fingerprint command** ("None — staleness unchecked" is a real answer). The **three class-prefix facts** as three questions, not one: the Tailwind class prefix, the CSS variable prefix, and the form an app actually writes — a design system that prefixes internally and emits unprefixed is the normal case, and reading one answer as all three makes every spec recommend a class that does not exist. The **icon ladder**, in order, including where each source may be used — ask for sources plural, since one is the exception. Then the two optional rows, once each: is there a best-practices doc a spec should cite, and does a skill implement filed specs? **"No" to either is a complete answer** — leave the row out and never warn |
+| `## Design system` | the design-system dependency and its version from the manifests · a Tailwind config's `prefix` · an existing catalog file if the repo already has one. **Never the repo role** — a `components/` directory is not evidence of a library, and the tree cannot tell you which side of the design system a repo is on | the **repo role** first (`consumer` or `library`; absent means `consumer`), because a `consumer` answer deletes three rows instead of asking about them. Then, **only when the answer is `library`**, the three convention rows: the **variant mechanism** as a ladder in the icon ladder's shape (primary declaration → fallback → the shapes that are the implementation rather than the declaration, plus the trap this repo has), the **token pipeline** (is there a generator, and what source does it consume? — "None, the CSS is hand-edited" is a real answer and it changes what a spec may say), and the **story convention** (where stories live, and are `argTypes` generated from the variants or hand-written?). Then, for either role: the **catalog pointer** if no file announces itself — never guess a filename, since this row is the only place it is ever named. The **fingerprint command** ("None — staleness unchecked" is a real answer). The **three class-prefix facts** as three questions, not one: the Tailwind class prefix, the CSS variable prefix, and the form an app actually writes — a design system that prefixes internally and emits unprefixed is the normal case, and reading one answer as all three makes every spec recommend a class that does not exist. The **icon ladder**, in order, including where each source may be used — ask for sources plural, since one is the exception. Then the two optional rows, once each: is there a best-practices doc a spec should cite, and does a skill implement filed specs? **"No" to either is a complete answer** — leave the row out and never warn |
 | `## Verify ladder` | candidate L2 from the test/build scripts | confirmation that L2 is the real floor, and what L3 evidence looks like. A repo with no test suite is a legitimate answer — record *why*, so no worker treats it as a gap to fill on the side |
 | `## Sources of truth` | agents available in `.claude/agents/` and `~/.claude/agents/` | the access-policy source — where per-operation policies actually live (migrations, IaC, a console, an MCP). "None — no data layer" is a real answer and closes the question |
 | `## Project gates` | — | one question: *is there a class of breakage here that ships silently and no test catches?* Default is **None**. A gate invented at install time to look thorough will never be run |
@@ -95,9 +95,37 @@ it makes sense to someone who has never read a skill:
    (*design-spec target*) and where an escalated design-system gap files (*DS-gap backlog*).
    Ask both even when the answer is the same value twice — the common case is that they
    differ, since a gap belongs to the design system rather than to the app being specced.
-3. **`## Design system`**, per the inference row above: the catalog pointer first (nothing
-   else in the section matters without it), then the fingerprint command, the three
+3. **Which role does this repo play?** `consumer` (it renders the design system) or `library`
+   (it *is* the design system). One question, asked before the rest of `## Design system`,
+   because it **gates** the three convention questions in step 4 — a `consumer` answer means
+   those three rows are never asked about and never written. On a fresh copy of the template
+   they are simply left out, which is ordinary filling; against an adapter that already exists
+   nothing is removed, per step 3's deletion rule. Never infer it: a repo with a
+   `components/` directory is not thereby a library, and the tree has no way to say which side
+   of the design system it sits on. `consumer` is the default and what an absent row means, so
+   an answer of "I don't know what that means" resolves to `consumer` safely.
+4. **Only when the answer was `library`** — the three convention rows, one question each. Each
+   is about the design system's own source, and none of them is readable:
+   - **How does a component declare its variant axes?** Ask for a **ladder**, in the icon
+     ladder's shape: what is tried first, what the fallback is when that is absent, and which
+     shapes are the *implementation* of a variant rather than its declaration. Ask explicitly
+     for the trap — the place where the mechanism lies, e.g. a runtime alias map outside the
+     declaration that accepts values it never lists.
+   - **Is there a token generator, and what source does it consume?** This one decides how
+     literal a spec's token delta may be, so it is worth pressing on: a generator plus a source
+     file → a spec states the literal source edit; **"None — the emitted CSS is hand-edited"**
+     is an equally real answer → a spec states a coordinated file-edit list instead.
+   - **Where do stories live, and are `argTypes` generated or hand-written?** Generated from the
+     variants means adding a variant value needs no story edit; hand-written means it does, and
+     a spec has to say so.
+5. **The rest of `## Design system`**, per the inference row above: the catalog pointer first
+   (nothing else in the section matters without it), then the fingerprint command, the three
    class-prefix facts, the icon ladder, and last the two optional rows.
+
+That is more than the six-question cap for a `library` repo, and it is the one place here where
+that is right: the cap exists to stop an installer asking for things it could have read, and
+none of these four is in any file. A `consumer` repo — the common case — gains exactly one
+question over what this bundle asked before.
 
 The `ui-manifests.md` gate is still the offer at the end, and the honest default is still no
 until this project has been burned once.

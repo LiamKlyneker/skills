@@ -317,7 +317,29 @@ Which skill drives which section:
 | Section | Wanted by |
 |---|---|
 | `## Repo` | `figma-to-spec` — the `Tracker:` line its filing phase branches on, plus the two filing rows inside that tracker's sub-section: the **design-spec target** (where a page spec files) and the **DS-gap backlog** (where an escalated gap files). Two rows rather than one because a design system's gaps routinely belong to a different repo or ADO project than the code being specced, and a single row would send them to whichever of the two was written down |
-| `## Design system` | `figma-to-spec` — the design-system source; the **catalog pointer**, which is the only place the catalog is ever named; the **fingerprint command** behind its soft staleness check; the **three class-prefix facts** (Tailwind class prefix, CSS variable prefix, consumer-facing emission form — separate facts, and collapsing them makes a spec recommend a class the app cannot write); and the **icon resolution ladder**, which is per-project and multi-source. Plus two optional rows that degrade silently: the usage-rules source (absent → the spec cites nothing) and the downstream implementer (absent → a human) |
+| `## Design system` | `figma-to-spec` — the design-system source; the **catalog pointer**, which is the only place the catalog is ever named; the **fingerprint command** behind its soft staleness check; the **three class-prefix facts** (Tailwind class prefix, CSS variable prefix, consumer-facing emission form — separate facts, and collapsing them makes a spec recommend a class the app cannot write); and the **icon resolution ladder**, which is per-project and multi-source. Plus two optional rows that degrade silently: the usage-rules source (absent → the spec cites nothing) and the downstream implementer (absent → a human). Also the **repo role** and, where that role is `library`, the three library conventions below |
+
+**One question in `## Design system` gates three others.** The **repo role** — `consumer` or
+`library`, and an absent row means `consumer` — is asked first, because it decides whether the
+rest of the section exists at all:
+
+- **`consumer`** (the default, and every adapter written before the row existed): the three
+  library-convention rows are **not asked and not written** — left out of a fresh copy the way
+  any inapplicable template row is. A consumer repo renders the design system and files gaps
+  against it; it has no variant mechanism of its own to declare.
+- **`library`**: three more rows, all of them facts about the design system's own source that no
+  file states outright — the **variant mechanism** (a ladder in the icon ladder's shape: the
+  primary declaration, the fallback, the shapes that are the *implementation* rather than the
+  declaration, plus the repo's own trap), the **token pipeline** (a generator plus the source it
+  consumes → a spec may state a literal source edit; no generator → a coordinated file-edit
+  list), and the **story convention** (where stories live, and whether `argTypes` are generated
+  from the variants or hand-written — which is what decides whether adding a variant value is
+  also a story edit).
+
+The role is an **intent, not an inference**: a repo containing a `components/` directory is not
+thereby a library, so it is asked and never read off the tree. `ds-catalog` asks the same
+questions where the adapter has no answer yet, and writes the rows — an install is not the only
+route into the section.
 
 **No longer adapter-free**, and that changed for a reason rather than by drift. These skills
 used to read global reference only, so a repo could run them with no `.claude/project/` at

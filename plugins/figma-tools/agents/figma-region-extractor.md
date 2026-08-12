@@ -34,9 +34,18 @@ the catalog.
 - **Region node:** the node ID and layer name given in your prompt. Every instruction below
   that says "this region" or "THIS region node" means that node ID.
 - **Source-node role:** given in your prompt. It is exactly one of `primary`,
-  `viewport:<bp>`, or `state:<name>`. **Echo the string back verbatim** — do not normalize
-  case, expand, abbreviate, or re-derive it from the layer name — so synthesis can group
-  this region across viewports / data states.
+  `viewport:<bp>`, `state:<name>`, or `variant:<name>`. **Echo the string back verbatim** — do
+  not normalize case, expand, abbreviate, or re-derive it from the layer name — so synthesis can
+  group this region across viewports / data states / variants.
+
+  `variant:<name>` marks a node that is **one value of a component's variant axis** — the same
+  component drawn again as `secondary`, `large`, `destructive` — rather than a different region,
+  a different breakpoint, or a different data state. It exists because those four group
+  differently downstream: viewports collapse into responsive behaviour, states into the region's
+  data states, and variants into the **props of one component**. Reading a variant as a state is
+  how one component becomes two in a spec. `<name>` is the variant value in the vocabulary the
+  prompt gives you; you never invent it, and you never infer the role from a layer name that
+  happens to look like a variant.
 - **Figma file / page URL:** given in your prompt, for context.
 - **Catalog (existence source):** read the absolute catalog path given in your prompt — this
   project's authoritative list of components (+ their variant axes and values), tokens by tier,
@@ -188,7 +197,7 @@ exactly as given to you. The values below are illustrative examples, not literal
     { "figmaLayer": "Button/Primary/Medium", "match": "Button",
       "props": { "variant": "primary", "size": "medium" },
       "confidence": "high|low", "status": "resolves|flag|gap",
-      "catalogStatus": "current|legacy|deprecated",
+      "catalogStatus": "current|legacy|deprecated|unused",
       "successor": "<the catalog's replacement>|null",
       "flagReason": "legacy-entry|null",
       "note": "why low-confidence, if applicable" }
@@ -199,7 +208,7 @@ exactly as given to you. The values below are illustrative examples, not literal
       "figmaValue": "#0a5c2b", "resolvedToken": "<catalog entry, verbatim>|null",
       "tier": "semantic|alias|primitive|none", "deltaE": 0.0,
       "bindingVerified": true,
-      "catalogStatus": "current|legacy|deprecated",
+      "catalogStatus": "current|legacy|deprecated|unused",
       "successor": "<the catalog's replacement>|null",
       "status": "resolves|flag|gap",
       "flagReason": "raw-hex|primitive-only|near-miss|binding-unverified|legacy-entry|null" }
@@ -207,7 +216,8 @@ exactly as given to you. The values below are illustrative examples, not literal
   // `propertyKind` is the candidate set you filtered to before comparing (rule 1 above).
   // `catalogStatus` + `successor` may appear on ANY finding that matched a catalog entry —
   // component, color, typography, spacing, icon. Omitted = `current`. `legacy`/`deprecated`
-  // means `status:"flag"` + `flagReason:"legacy-entry"`, never `status:"gap"`.
+  // means `status:"flag"` + `flagReason:"legacy-entry"`, never `status:"gap"`. `unused` means
+  // the entry ships and nothing consumed it until now — it resolves plainly, no flag.
   // `bindingVerified` (bool) is REQUIRED on every color and never omitted. It is `true` only
   // when the per-property binding read (step 4) confirmed this property's variable name.
   // In degraded color mode it is `false` for EVERY color, with

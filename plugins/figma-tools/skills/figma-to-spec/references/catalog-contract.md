@@ -213,14 +213,15 @@ One `###` subsection per source, each carrying:
 The **order** the sources are tried in is the adapter's icon-resolution-ladder row, not this
 section. The catalog says what exists; the adapter says what the project prefers.
 
-## Status: `current` · `legacy` · `deprecated`
+## Status: `current` · `legacy` · `deprecated` · `unused`
 
-**Every entry kind carries a status** — component, individual variant value, token, whole
-tier, typography utility, and icon entry — with an optional successor pointer:
+**Every entry kind carries a status** — component, individual variant value, a whole prop or
+variant axis, token, whole tier, typography utility, and icon entry — with an optional
+successor pointer:
 
 ```
-status: current | legacy | deprecated        (default: current)
-successor: <the entry that replaces it>      (optional)
+status: current | legacy | deprecated | unused        (default: current)
+successor: <the entry that replaces it>               (optional)
 ```
 
 Rules, defined once here and nowhere else:
@@ -230,7 +231,8 @@ Rules, defined once here and nowhere else:
   unwritable.
 - **`legacy`** — still works, still resolvable, no longer the way to do it.
   **`deprecated`** — on the way out: scheduled for removal, or warning at runtime.
-- **Neither is the same as absent.** *Absent from the catalog* is the only thing that means
+  **`unused`** — see below; it is a fact about *adoption*, not about direction of travel.
+- **None of them is the same as absent.** *Absent from the catalog* is the only thing that means
   "does not exist in the design system".
 - **`successor:`** names its replacement in the same vocabulary the entry uses — a class name
   for a class, a variant value for a variant value, a component name for a component. It is
@@ -241,12 +243,82 @@ Rules, defined once here and nowhere else:
   tier heading where a whole tier is legacy.
 - **A tier-level or component-level status cascades** to entries that don't override it.
 
+### `unused` — exists, nothing consumes it
+
+`unused` says the entry **is emitted and is resolvable, and no consumer uses it today**. It is
+not a weaker `legacy` and the two must not be collapsed: `legacy` means *this was the way and
+no longer is*, which implies something replaced it; `unused` means *this was built and nobody
+adopted it*, which implies nothing about replacement and often has no successor to name at all.
+A design drawn against an `unused` entry is the most on-system thing that can happen — the
+entry finally has a consumer — and grading it as a gap would send a human to build something
+that already ships.
+
+- An `unused` entry takes `successor:` only where one genuinely exists. The usual case is none.
+- `unused` and `legacy` may both appear in one catalog and never on one entry: an entry that was
+  superseded *and* has no consumers is `legacy`, because direction of travel is the more
+  actionable half.
+- Where the distinction cannot be established, the entry is `current` — the schema's default —
+  and the catalog run says so. Guessing `unused` invents adoption data nobody has.
+
+### A successor may point across tiers, and across sections
+
+`successor:` names an entry **anywhere in this catalog**, not an entry in the same tier or the
+same table. Cross-tier is the normal shape of a real migration: a primitive token superseded by
+a semantic one, a bare utility superseded by a composite, a variant value superseded by a
+different component entirely. Nothing here restricts the pointer's target to the pointing
+entry's own neighbourhood — the only requirement is that the target **exists in this catalog**,
+which is validation rule 8.
+
+Write the target unambiguously enough that a reader can find it: where the same literal string
+appears in two sections, qualify it (`successor: <tier or section> → <entry>`). A pointer that
+resolves to two entries is a dangling pointer with extra steps.
+
+### A tier may declare that it has no single successor
+
+A tier-level status applies to every entry under it, and a **whole tier** being retired is
+routinely *not* a one-to-one move: its entries redistribute across several tiers, or each entry
+maps individually, or the replacement is a rule rather than an entry. Saying so is a real
+answer, and it is written explicitly rather than by omitting the field:
+
+```
+status: legacy · successor: none — <where the tier's entries go instead>
+```
+
+The `none — …` form is the difference between **"we know there is no single successor, and here
+is what to do instead"** and **"nobody filled this in"**, and those must not look alike. It
+satisfies rule 8; a bare `successor:` with nothing after it does not. Individual entries under
+such a tier are still free to name their own successors, and where they do, the entry wins over
+the tier — the same override the cascade rule already gives.
+
+### A `current` component may contain a `deprecated` prop
+
+Status is scoped to **the thing it is written on**, and the scopes nest: a component, one of its
+props (a whole variant axis), and one value of that axis are three different entries as far as
+this field is concerned. A component whose own status is `current` — it ships, it is the way to
+do it, spec it freely — may perfectly well carry a prop that is on the way out, and the catalog
+records that on the prop:
+
+- **The prop's status does not cascade upward.** A deprecated axis inside a component never
+  makes the component deprecated. Writing it on the component instead is the failure this rule
+  exists to prevent: every spec that uses any part of that component then reads as flagged, and
+  the one prop that actually matters is buried.
+- **The component's status does cascade downward**, per the cascade rule, and a nested entry
+  overrides it. A `legacy` component may hold a `current` prop.
+- A prop-level status carries its own `successor:` in the prop's vocabulary — the prop that
+  replaces it, or a value on another axis — and may point across tiers and sections like any
+  other.
+- Where the entry lives in a table, a prop-level status is written inline in the
+  *Variant axes / values* cell against the axis it belongs to, not in the row's `Status`
+  column. The `Status` column is the component's.
+
 **What resolution does with a status is not defined here.** This contract's job is that the
 data exists and is unambiguous. One invariant does belong here, because it keeps the two
-concerns apart: **a status value never makes an entry invisible to a match.** The moment a
+concerns apart: **a status value never makes an entry invisible to a match** — at any of the
+four values and at any scope, component, prop, value, tier. The moment a
 `legacy` entry stops matching, a documentation field has quietly become an existence field,
 and designs drawn against the old component start reporting as gaps that need building — the
-exact false-gap this field exists to prevent.
+exact false-gap this field exists to prevent. `unused` makes the point twice over: an entry
+nothing consumes is precisely the one a new design is most likely to be the first consumer of.
 
 ## Validation — Phase 0, loud failure only
 
@@ -264,8 +336,22 @@ resolved.
 | 4 | `## Tokens` present, with at least one named tier, each tier declaring its consumer-facing form and enumerating its entries | heading missing, no `###` tier, a tier with no form declared, or a truncated list |
 | 5 | `## Typography` present — enumerated utilities, or an explicit `None — …` | heading missing, or present and empty |
 | 6 | `## Icons` present — at least one source with its code reference, or an explicit `None — …` | heading missing, a source with no reference form, or an unbounded set with no verification route |
-| 7 | Every `status:` value is one of the three | any other value, including a plausible synonym |
-| 8 | Every `successor:` names an entry that exists in this catalog | a dangling successor pointer |
+| 7 | Every `status:` value is one of the four — `current` · `legacy` · `deprecated` · `unused` — at whatever scope it is written on: component, prop/axis, single variant value, token, tier, utility, icon | any other value, including a plausible synonym (`obsolete`, `wip`, `internal`), and including `unused` used as a synonym for `legacy` where the catalog's own `## Conventions` says they differ |
+| 8 | Every `successor:` resolves — to exactly one entry **anywhere in this catalog**, in any section and any tier, or to the explicit `none — <what to do instead>` form | a pointer naming nothing in the catalog; a pointer whose literal string matches entries in two sections with nothing qualifying which; or a `successor:` present but empty, which is the "nobody filled this in" case the `none — …` form exists to distinguish from a real one |
+
+Three things rule 7 and rule 8 deliberately **do not** fail on, because each is a legitimate
+shape the Status section defines and a stricter reading would reject a correct catalog:
+
+- a `successor:` pointing **across tiers or across sections** — rule 8 asks only that the target
+  exists;
+- a **tier-level** status carrying `successor: none — …` — an explicit "no single successor" is a
+  filled-in answer, not a missing one;
+- a **prop-level or value-level** `deprecated` inside a component whose own `Status` column says
+  `current` — the scopes nest, and the nested one is not a contradiction of the outer one.
+
+Every one of the three was found in the wild before it was written down here. This amendment is
+**additive**: rule 7's value set widened, rule 8's failure conditions were made explicit rather
+than narrowed, and no catalog that passed these rules before passes any of them less now.
 
 The STOP message names three things — **the resolved catalog path, the rule that failed, and
 what to change** — and offers the two ways forward: fix the catalog, or point the run at a

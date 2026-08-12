@@ -144,10 +144,18 @@ rather than carrying its own styles. Deprecation markers of every kind — annot
 alias tables, comments. The changelog and version-control history for renames. Any migration
 document the design system keeps for itself.
 
-**What to ask.** Per entry: *is this current, legacy, or deprecated — and what replaces it?*
-Legacy means it still works and is no longer the way to do it; deprecated means it is on the
-way out. Never invent a successor: a legacy entry with no replacement yet is a real state and
+**What to ask.** Per entry: *is this current, legacy, deprecated or unused — and what replaces
+it?* Legacy means it still works and is no longer the way to do it; deprecated means it is on
+the way out; **unused** means it ships and nothing consumes it yet, which is a fact about
+adoption rather than direction of travel and is the one of the four a static read can almost
+never see. Never invent a successor: a legacy entry with no replacement yet is a real state and
 recording it honestly beats a plausible guess.
+
+Two follow-ups worth asking in the same breath, because both are shapes a reader records wrong
+by default: *does anything here replace something in a **different** tier or section?* (a
+successor may point anywhere in the catalog), and *is any of this scoped to one **prop** of a
+component that is otherwise current?* (a deprecated axis inside a shipping component is
+recorded on the axis, never on the component).
 
 **Cost of missing it.** Every entry defaults to `current`, the `status:` field becomes
 decorative, and a design drawn against the old name resolves either as clean (wrong — it hides
