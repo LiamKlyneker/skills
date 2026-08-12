@@ -128,12 +128,17 @@ Region agents are driven by `agents/figma-region-extractor.md`.
 
 **STOP gates — none of these is automatable:**
 
-1. **`figma-dev-mode` absent** → stop. There is no fallback (Phase 0).
-2. **No resolvable catalog, or one that fails `references/catalog-contract.md`** → stop, naming
+1. **The adapter's `Repo role:` is `library`** → stop, with a one-line redirect to
+   `figma-tools:figma-component-to-spec`. This repo *is* the design system, so a page spec
+   written here would file gaps against itself. **An absent `Repo role:` row means `consumer`**
+   and this skill runs normally — the guard fires only on an explicit `library`. Before any
+   Figma read (Phase 0, before step 1).
+2. **`figma-dev-mode` absent** → stop. There is no fallback (Phase 0).
+3. **No resolvable catalog, or one that fails `references/catalog-contract.md`** → stop, naming
    the path and the rule that failed. (Staleness alone never stops a run.)
-3. **Scope or node-canonicity conflict** between the ticket and the freetext → ask, don't
+4. **Scope or node-canonicity conflict** between the ticket and the freetext → ask, don't
    silently pick (Phase 0).
-4. **Human triage checkpoint** (Phase C step 8) → present every gap and flag; the user marks
+5. **Human triage checkpoint** (Phase C step 8) → present every gap and flag; the user marks
    each **escalate** / **compose-from-tokens** / **build-local**, and every non-escalated
    decision records a one-line rationale in its gap file. **No tracker write happens before
    this**, on either tracker — including in component mode, which still triages even though it

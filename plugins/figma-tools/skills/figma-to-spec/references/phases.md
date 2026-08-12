@@ -13,6 +13,27 @@ and tolerance rules in `resolution-rules.md`; the required shape of a project ca
 
 ## Phase 0 — Setup (main thread)
 
+**Before step 1 — the repo-role guard, and it is a STOP.** Read
+`<repo-root>/.claude/project/adapter.md`, `## Design system`, the `Repo role:` row, before any
+Figma read.
+
+- **`consumer`, or no `Repo role:` row at all** → continue with step 1. **An absent row means
+  `consumer`**, so every adapter written before that row existed — and every project that never
+  answered the question — runs this skill exactly as it always did. Absence is the answer here,
+  never a warning and never a question.
+- **`library`** → **stop**, with one line and nothing else:
+
+  > This repo's `Repo role:` is `library` — it *is* the design system, so a page spec written
+  > here would file gaps against itself. Use `figma-tools:figma-component-to-spec` instead.
+
+  Not a warning, not overridable, and not automatable past: a library repo has no DS-gap
+  backlog to escalate to that isn't itself, so a run here produces a spec whose whole triage
+  vocabulary is wrong. Never offer to rewrite the row to keep the run alive — the role is an
+  intent and the row is its record.
+
+This is the mirror image of `figma-component-to-spec`'s Phase 0 step 1, which refuses in a
+`consumer` repo and names this skill. Exactly one of the pair runs in any given repo.
+
 1. Require the Figma node URL arg. Ask if missing. **Record the file's version id or
    last-modified timestamp** as you first reach the file — whichever the tooling exposes,
    both when both are. It is the baseline the page spec pins (`page-spec-template.md`'s
