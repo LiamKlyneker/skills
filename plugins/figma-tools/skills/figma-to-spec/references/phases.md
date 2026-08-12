@@ -13,7 +13,12 @@ and tolerance rules in `resolution-rules.md`; the required shape of a project ca
 
 ## Phase 0 — Setup (main thread)
 
-1. Require the Figma node URL arg. Ask if missing.
+1. Require the Figma node URL arg. Ask if missing. **Record the file's version id or
+   last-modified timestamp** as you first reach the file — whichever the tooling exposes,
+   both when both are. It is the baseline the page spec pins (`page-spec-template.md`'s
+   `Extracted against:` line) and the thing a later design-QA pass compares against; captured
+   at the end of a run it would already be a different value. Unavailable → carry
+   `unknown — <why>` forward rather than dropping it.
 2. **Resolve, validate, then staleness-check the project catalog** — three parts, in this
    order. The catalog is a **per-project artifact in the consuming repo**, never a file inside
    this plugin.
@@ -260,9 +265,14 @@ region agent** — extraction is per-region and idempotent.
    heading with a **`spec-only — not integrated this pass`** banner so the implementer skips
    it.
 7. **Write `gaps/gap-NNN-*.md`** per `gap-spec-template.md`, one per deduped gap.
-8. **STOP — human triage checkpoint.** Present the gap list. The user marks each
-   **build-local** vs **escalate**, and confirms/overrides every near-miss,
-   suspected-intentional-deviation, and ambiguous-icon flag. **No ADO write happens
+8. **STOP — human triage checkpoint.** Present the gap list. The user marks each one
+   **escalate** / **compose-from-tokens** / **build-local** (the three outcomes in
+   `resolution-rules.md`), answering the question that separates them: *is this genuinely
+   reusable across the product, or inherently one-off to this design?* They also
+   confirm/override every near-miss, suspected-intentional-deviation and ambiguous-icon flag,
+   and decide **match-as-is vs modernize** on each legacy flag. **Record a one-line rationale
+   in the gap file for every non-escalated decision** — that line plus the written-back IDs is
+   what stops the next run re-litigating a deviation already settled. **No ADO write happens
    before this.**
 
 ## Phase D — Filing (gated — only after triage)
@@ -283,6 +293,10 @@ region agent** — extraction is per-region and idempotent.
 - **Build-local gaps** are not filed — the page spec's interim-fallback field carries the
   local recommendation + a `TODO` marker (codemod-friendly API note so it's swappable to
   the DS component later).
+- **Compose-from-tokens gaps** are not filed either, and there is nothing to build: the page
+  spec carries the composition (which existing tokens, in what arrangement) so the
+  implementer never reaches for a raw value. Both non-escalated outcomes still keep their gap
+  file, carrying the triage rationale — the file is the record that the deviation was settled.
 
 Reference PRs as `!<id>` and work items as `#<id>` in any ADO text (separate ID
 namespaces — see `~/schmiede-one/CLAUDE.md`).

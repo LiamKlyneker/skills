@@ -36,8 +36,10 @@ never substitute your own knowledge of grimme-ui for the catalog.
   authoritative list of grimme-ui components (+ cva variants), tokens (by tier), and
   SYSTEM_ICONS keys. This is the ONLY source for "does the DS have this?".
 - **Resolution rules:** read and follow the absolute resolution-rules path given in your
-  prompt, exactly (semantic-over-primitive, always-flag-raw-hex, color ΔE tolerance bands,
-  layered icon resolution, inferred component matching with a confidence gate).
+  prompt, exactly (property-kind candidate filtering before any comparison, legacy/deprecated
+  entries resolving with a flag, semantic-over-primitive, always-flag-raw-hex, color ΔE
+  tolerance bands, layered icon resolution, inferred component matching with a confidence
+  gate).
 
 ## Figma call discipline (do not deviate)
 
@@ -80,6 +82,36 @@ region agent.
 5. `get_design_context` — LAST, only on a small scoped sub-frame if you still need intent.
    Treat as intent, not pasteable code; strip arbitrary values.
 
+## Two filters that apply before anything below
+
+**1. Match within the property's kind.** For every value you resolve, narrow the catalog to
+the entries that can legally apply to *that property* — stroke to stroke/border dimensions,
+text fill to text colors, background fill to surface colors, gap to layout spacing — and only
+then compare values or names. This is normative in the resolution rules; the consequence for
+you is that a numerically perfect match from the wrong kind is a **wrong** finding, not a
+lucky one, and it emits as `resolves`, which is what makes it dangerous. Record the property
+kind you filtered on in the finding's `property` field. An empty candidate set is a real
+answer — resolve it as a gap or a layout-scale value, never by widening to another kind.
+
+**2. Vector geometry is out of scope for value flagging.** Inside a node that resolves as an
+icon or an illustration, the interior vector data — `VECTOR` / `BOOLEAN_OPERATION` / `LINE` /
+`STAR` / `POLYGON` children, their path fills, their sub-shape strokes and their internal
+dimensions — is **drawing data, not design decisions**. Do not emit color, spacing, or
+dimension findings for it, and never flag it as a hardcoded value. The icon resolves **as a
+whole** through the icon ladder; enumerating its interior produces dozens of unactionable
+"off-system hex" findings that bury the region's real ones.
+
+Two things this exclusion does **not** cover, because they are genuine token decisions made
+at the usage site:
+
+- the icon's **own box** — the size/dimension applied to the icon node in this region;
+- the **color applied to the icon** at its instance (the fill or `currentColor` binding on
+  the icon node itself, not on its interior paths).
+
+Both stay in scope and resolve normally. When you exclude interior geometry, say so once in
+`notes` (e.g. "vector interiors of 6 icon nodes excluded per vector-geometry rule") so
+synthesis can see the call rather than infer a silent gap in coverage.
+
 ## What to extract & resolve
 
 For the region:
@@ -89,9 +121,16 @@ For the region:
   Storybook render. High confidence → record the component + resolved props. Low
   confidence → an `unknown-component` gap with the parsed mapping attached for user
   confirmation.
-- **Colors** — per resolution rules: semantic → primitive/alias (flag) → raw hex
-  (nearest + always flag). Record the bound variable name, resolved catalog token (or
-  none), status, and ΔE to nearest if unbound/raw.
+- **Colors** — per resolution rules, within the property's color kind (text vs surface vs
+  border — never across them): semantic → primitive/alias (flag) → raw hex (nearest + always
+  flag). Record the bound variable name, resolved catalog token (or none), status, and ΔE to
+  nearest if unbound/raw.
+- **Catalog status on every match** — when the entry you matched is stamped `legacy` or
+  `deprecated`, the finding **resolves and carries a flag** (`flagReason: "legacy-entry"`,
+  plus the entry's `successor` when the catalog records one). It is **never** a gap: the
+  design system has this thing, and reporting "needs building" for a component that ships
+  today sends a human to triage an invented gap. Match-as-is vs modernize is the Phase C
+  checkpoint's call, not yours.
 - **Typography & spacing** — **first decide which kind of spacing it is.** *Generic layout
   spacing* between elements/regions (page rhythm: 24/16/12/8/4px gaps between siblings) maps
   to the **Tailwind spacing scale** (`gap-4`, `p-3`, …) and is **not a DS concern — do not
@@ -102,7 +141,9 @@ For the region:
   gap, and **never emit the `g-` prefixed form** (grimme-ui-internal, not the consumer API).
   Weight is literal, not a token.
 - **Icons** — layered: SystemIcon → FontAwesome (app-only) → gap (add SystemIcon) →
-  custom-inline. Flag ambiguous near-duplicates.
+  custom-inline. Flag ambiguous near-duplicates. Resolve the icon **as a whole**; its
+  interior vector geometry is excluded per the rule above, while its box size and its
+  applied color are not.
 - **States** — capture ONLY for components you classified unknown/new. Known DS
   components' states are DS-owned; don't spec them.
 - **Hidden variants** — the `visible:false` state-bearing nodes kept in step 1. Each is a
@@ -130,17 +171,27 @@ exactly as given to you. The values below are illustrative examples, not literal
   "components": [
     { "figmaLayer": "Button/Primary/Medium", "match": "Button",
       "props": { "variant": "primary", "size": "medium" },
-      "confidence": "high|low", "status": "resolves|gap",
+      "confidence": "high|low", "status": "resolves|flag|gap",
+      "catalogStatus": "current|legacy|deprecated",
+      "successor": "<the catalog's replacement>|null",
+      "flagReason": "legacy-entry|null",
       "note": "why low-confidence, if applicable" }
   ],
   "colors": [
-    { "property": "background", "boundName": "surface/primary|null",
+    { "property": "background", "propertyKind": "surface|text|border|...",
+      "boundName": "surface/primary|null",
       "figmaValue": "#0a5c2b", "resolvedToken": "bg-surface-button-primary|null",
       "tier": "semantic|alias|primitive|none", "deltaE": 0.0,
       "bindingVerified": true,
+      "catalogStatus": "current|legacy|deprecated",
+      "successor": "<the catalog's replacement>|null",
       "status": "resolves|flag|gap",
-      "flagReason": "raw-hex|primitive-only|near-miss|binding-unverified|null" }
+      "flagReason": "raw-hex|primitive-only|near-miss|binding-unverified|legacy-entry|null" }
   ],
+  // `propertyKind` is the candidate set you filtered to before comparing (rule 1 above).
+  // `catalogStatus` + `successor` may appear on ANY finding that matched a catalog entry —
+  // component, color, typography, spacing, icon. Omitted = `current`. `legacy`/`deprecated`
+  // means `status:"flag"` + `flagReason:"legacy-entry"`, never `status:"gap"`.
   // `bindingVerified` (bool) is REQUIRED on every color and never omitted. It is `true` only
   // when the per-property binding read (step 4) confirmed this property's variable name.
   // In degraded color mode it is `false` for EVERY color, with

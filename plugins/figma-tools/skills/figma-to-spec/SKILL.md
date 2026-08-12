@@ -112,13 +112,16 @@ Region agents are driven by `agents/figma-region-extractor.md`.
 3. **Scope or node-canonicity conflict** between the ticket and the freetext → ask, don't
    silently pick (Phase 0).
 4. **Human triage checkpoint** (Phase C step 8) → present every gap and flag; the user marks
-   build-local vs escalate. **No ADO write happens before this** — including in component
-   mode, which still triages even though it files nothing.
+   each **escalate** / **compose-from-tokens** / **build-local**, and every non-escalated
+   decision records a one-line rationale in its gap file. **No ADO write happens before this**
+   — including in component mode, which still triages even though it files nothing.
 
-Two extraction rules the regression fixtures exist to protect: **never resolve a fill by hex**
-(it silently collapses the token tier) and **never record absolute x/y coordinates** (layout
-output is relative auto-layout intent only). Both are normative in
-`agents/figma-region-extractor.md`.
+Four extraction rules the regression fixtures exist to protect: **never resolve a fill by
+hex** (it silently collapses the token tier), **never record absolute x/y coordinates**
+(layout output is relative auto-layout intent only), **never match across property kinds** (a
+stroke must not resolve to a spacing token), and **never enumerate the interior geometry of an
+icon** (it resolves as a whole; its paths are drawing data). All four are normative in
+`agents/figma-region-extractor.md` and `references/resolution-rules.md`.
 
 ## Idempotency & output
 
@@ -137,5 +140,8 @@ by a human. It cannot verify the design is *right*, that an inferred match is co
 user confirmation, or that the eventual code renders faithfully — that's the implementing
 skill's job. Never call an inferred match "confirmed" without the user's yes.
 
-Regression fixtures for the highest-risk silent-correctness defects live in
-`references/regression/` — run them after changing any extraction or enumeration rule.
+The regression **fixture format** and **expected-findings assertion style** live in
+`references/regression/`; concrete fixtures are per-project (they pin real node IDs) and are
+optionally registered in the adapter. Re-running them is a **documented pre-release step** —
+triggered by any change to an extraction or enumeration rule, before that change ships — and
+explicitly **not CI**, which cannot drive a live authenticated Figma session.

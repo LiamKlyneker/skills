@@ -5,6 +5,17 @@ ADO `[DESIGN-SPEC]` in **myGRIMME Core**. It tells an implementer HOW to build t
 on-system, cites `grimme-ui-components-best-practices` for usage rules (never duplicates
 them), and marks every DS gap inline as `⚠ blocked on gap-NNN`.
 
+**The `Extracted against:` line is required, and it is not decoration.** A spec is a snapshot
+of a file that keeps moving. Without the version it was read at, a later design-QA pass
+comparing build to design cannot tell an implementation defect from a design that changed
+*after* the spec was written — and every discrepancy then costs a full re-derivation to
+attribute. Record whichever the Figma tooling exposes (version id preferred, the file's
+last-modified timestamp otherwise), and both when both are available. If neither can be read,
+write `unknown — <why>`; never drop the line. An unpinned baseline is a real limitation, and
+downstream QA needs to see it stated rather than infer it from an absence. It is also what
+makes the Changelog below a *spec-vs-spec* diff between two known design states rather than
+between two undated documents.
+
 ---
 
 # [DESIGN-SPEC] <Page name> — implementation
@@ -12,6 +23,7 @@ them), and marks every DS gap inline as `⚠ blocked on gap-NNN`.
 **Mode:** page | component · **Figma node:** <url> · **Mobile/tablet node:** <url | "none — responsive inferred">
 **State nodes:** <state:empty=url, state:error=url | "none"> · **Scope ticket:** #<id | "none">
 **Generated:** <YYYY-MM-DD> · **Gap specs:** `gaps/` (N gaps) · **ADO [DESIGN-SPEC]:** #<id once filed | "n/a — component mode">
+**Extracted against:** Figma file version `<version id>` · last modified `<ISO timestamp>`
 
 ## Changelog
 
@@ -90,3 +102,8 @@ What an implementer should check after building: computed token values vs the Fi
 numbers per region, Storybook renders match, states behave, and the built layout matches
 each region's containment tree + auto-layout intent (cross-check against the Figma node
 itself). (This spec does not build or verify — it hands the implementer the checklist.)
+
+**Compare against the pinned baseline, not against "current Figma".** The `Extracted
+against:` version at the top is what this spec describes. If the file has moved on, a
+difference between build and canvas may be a design change rather than a defect — check the
+version before filing anything, and re-run the skill to re-baseline if it has.
