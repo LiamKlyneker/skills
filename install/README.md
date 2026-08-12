@@ -49,7 +49,8 @@ bundle declares, and finishes by running `doctor`. Bundles are defined in
 
 The template is **tracker-parametric**: `## Repo` and `## One-time repo preconditions` each
 carry a `### GitHub` and an `### Azure DevOps` sub-section, and the bundle decides which
-one survives. On a fresh copy the installer writes the `Tracker:` line and deletes the
+one survives — except `figma-tools`, which files on both and therefore asks you once. On a
+fresh copy the installer writes the `Tracker:` line and deletes the
 other sub-section, so the adapter you end up filling only ever asks about your own tracker.
 That deletion is the single narrow exception to never-delete, and it applies to a fresh
 template copy only — an install against an adapter that already exists gap-fills and

@@ -22,8 +22,13 @@ Tracker `github`, and what an adapter carrying no `Tracker:` line falls back to.
 
 - Issue tracker / PRs: `<owner>/<repo>` (GitHub, via `gh`)
 - PRs must target the default branch — `Closes` keywords only fire against it.
-- Title prefixes: `[PRD]` · `[TASK]` · `[BUG]` — literal, at the start of the title. A **human scanning convention, not a filter**: `[PRD]` is a parent, `[TASK]` a planned child, `[BUG]` a triaged finding. A PRD's children are its **native sub-issues**, so nothing keys on a title. There is no `[QA]` prefix on GitHub — `work-on-prd` posts the run's QA steps as a comment on the PRD and labels it `needs-qa`. Change them here if this repo uses different ones; never in a skill.
+- Title prefixes: `[PRD]` · `[TASK]` · `[BUG]` — literal, at the start of the title. A **human scanning convention, not a filter**: `[PRD]` is a parent, `[TASK]` a planned child, `[BUG]` a triaged finding. A PRD's children are its **native sub-issues**, so nothing keys on a title. There is no `[QA]` prefix on GitHub — `work-on-prd` posts the run's QA steps as a comment on the PRD and labels it `needs-qa`. A project that also runs `figma-tools` gains one more, `[DESIGN-SPEC]`, written by that bundle alone and filed against the *design-spec target* row below. Change them here if this repo uses different ones; never in a skill.
 - Triage labels: `needs-triage` → `ready-to-start` → `state:in-progress` → `state:done-on-branch`. All four must exist in the repo. The vocabulary is normative in `work-on-prd`'s `## Label vocabulary`; it is restated here so a cold session holding only this adapter knows which tracker and which labels to use without asking. Rename them if this repo already uses different words — keep the four roles.
+
+Two filing rows only `figma-tools` reads. A project that never runs it deletes both; a project that does fills both, because they answer different questions:
+
+- Design-spec target: `<owner>/<repo>` — where a `figma-to-spec` page spec files, as a `[DESIGN-SPEC]` issue. When Phase 0 was given a scope issue, the spec is linked as that issue's **native sub-issue** — the link is what makes it a child, so its body carries no `## Parent` section.
+- DS-gap backlog: `<owner>/<design-system-repo>` — where an **escalated** design-system gap files, one issue per gap. **Routinely a different repo from the row above**, because a gap belongs to the design system rather than to the code being specced. Where the two genuinely are the same repo, write the same value twice — never leave one implied.
 
 ### Azure DevOps
 
@@ -49,8 +54,15 @@ Tracker `azure-devops`. Work items are reached through the Azure DevOps MCP serv
 
   Why one type rather than the obvious types: a Task parented to a Task drops the parent off the taskboard and disables reordering board-wide, and where the project sets `bugsBehavior: 1` (bugs managed *with* requirements) a Bug-type item is requirement-level and renders as its own sibling swimlane instead of a child. One Task-type child per kind, distinguished by prefix, is what survives both.
 
+  A project that also runs `figma-tools` gains one more, `[DESIGN-SPEC]`, written by that bundle alone and filed against the *design-spec target* row below.
+
   Change the words here if this org uses different ones; never in a skill.
 - Branch pattern: `<ado-branch-pattern>` — e.g. `spec/<id>-<slug>`, where `<id>` is the `[SPEC]` work-item id
+
+Two filing rows only `figma-tools` reads. A project that never runs it deletes both; a project that does fills both, because they answer different questions:
+
+- Design-spec target: `<ado-designspec-project>` — the ADO project a `figma-to-spec` page spec files into, as a `[DESIGN-SPEC]` work item. When Phase 0 was given a scope work item, the spec is filed as its **child**.
+- DS-gap backlog: `<ado-ds-backlog-project>` — the ADO project whose backlog an **escalated** design-system gap files into, one item per gap. **Routinely a different project from the row above**, because a gap belongs to the design system rather than to the code being specced. Where the two genuinely are the same project, write the same value twice — never leave one implied.
 
 ## Commands
 
@@ -68,6 +80,24 @@ Every command a worker or the orchestrator runs. Keep the **Purpose** column sta
 
 - One or two lines of stack facts every worker should know before touching code (language + version, framework, the one file to edit vs. never touch, strict-mode flags, etc.).
 - e.g. `<language + version> · <framework> · <the generated/config file to edit, never its raw output>`
+
+## Design system
+
+Read by `figma-tools` and by nothing else — delete the whole section in a project that never
+runs it. It carries the facts that decide whether a value drawn in Figma **exists** in this
+project's design system, and in what form an app writes it. None of it is inferable from the
+tree at run time, which is why every line is here rather than left to a skill.
+
+- Design-system source: `<where the design system itself lives — repo path, workspace package, or published package + version>` — the thing a catalog is generated *from* and a gap is eventually built *in*. Or "None — `<how the design system is consumed instead>`".
+- Catalog: `./<catalog>.md` — this project's design-system catalog: the existence source `figma-to-spec` resolves every component, token, type utility and icon against. **This row is the only place the catalog is ever named**, exactly as `## Project gates` is the only place a gate is named — skills follow the pointer and never a filename. A path relative to this file, or anywhere in the repo. Its required shape is the `figma-to-spec` skill's `references/catalog-contract.md`; a catalog that fails that contract stops the run loudly rather than degrading.
+- Fingerprint command: `<the command that recomputes the catalog's stamp>` — the recipe behind the catalog's line-1 `fingerprint:` value. The catalog carries the *value*; this row carries the *recipe*, so the two never drift into two definitions. Hash **content only** — anything path-dependent differs between two checkouts of the same commit and turns every check into a false warning. Or "None — staleness unchecked", which is a real answer: the staleness check is soft and never fails a run.
+- Class prefixes — **three separate facts, and they are not interchangeable.** A design system routinely prefixes its build internally, its CSS custom properties differently, and emits something else again to consumers; collapsing them is how a spec recommends a class the app cannot write:
+  - Tailwind class prefix: `<prefix, or "None">` — what the Tailwind theme prefixes emitted utilities with, if anything.
+  - CSS variable prefix: `<prefix, or "None">` — what the design tokens' custom properties are named with.
+  - Consumer-facing emission form: `<the form an app actually writes, spelled out with one example>` — the form the catalog is written in and the form a spec must recommend. Where it differs from the library-internal form, say which is which and say it here rather than in a skill.
+- Icon resolution ladder: `<source 1 → source 2 → … → what happens when none matches>` — the icon sources this project tries, **in order**. Multi-source by default: an in-house set plus a third-party library used by consuming apps is the common shape, and where a source may be used (app layer only, design system only, both) is part of the answer. The catalog says what each source *contains*; this row says which order they are tried in and what a no-match becomes.
+- Usage-rules source *(optional)*: `<the best-practices doc or skill a page spec cites by stable name>` — the HOW, kept separate from the catalog's WHAT. A page spec **cites** it and never duplicates it, so a citation stands even where the source is not loaded. **Absent is not an error**: leave the row out and a spec cites nothing. Nothing warns about it.
+- Downstream implementer *(optional)*: `<the skill or workflow that implements a filed spec>` — who picks a `[DESIGN-SPEC]` up. **Absent means a human.** Also not an error, also never warned about.
 
 ## Verify ladder
 

@@ -15,10 +15,15 @@ metadata:
 
 Turn one Figma **page** node into two linked artifacts:
 
-1. a **page-implementation spec** (region-by-region, on-system, filed as an ADO
-   `[DESIGN-SPEC]` in **myGRIMME Core**), and
-2. **N design-system gap specs** (one per real gap, triaged by the user, then filed
-   as PBIs on the **GRIMME Libraries** backlog).
+1. a **page-implementation spec** (region-by-region, on-system, filed as a `[DESIGN-SPEC]`
+   against the adapter's **design-spec target**), and
+2. **N design-system gap specs** (one per real gap, triaged by the user, then the escalated
+   ones filed against the adapter's **DS-gap backlog**).
+
+**Where both of those land is the project adapter's answer, not this skill's.** Phase D reads
+the adapter's `Tracker:` line and runs the matching filing profile — GitHub issues, or Azure
+DevOps work items — against two separate rows, because a design system's gaps routinely live
+somewhere other than the code being specced.
 
 **This skill is a spec producer, not a builder.** It never writes page code. The specs
 it emits are implemented later — by a downstream build workflow (e.g. `develop-ticket`) or
@@ -49,6 +54,13 @@ detachable:
   `references/catalog-contract.md`; Phase 0 validates the resolved file against it and **fails
   loudly** rather than degrading. Staleness is a separate, soft check (Phase 0 step 2c) —
   never a hard fail.
+- **The project adapter (`<repo-root>/.claude/project/adapter.md`), two sections of it.**
+  `## Design system` carries the catalog pointer, the fingerprint command, the class-prefix
+  facts and the icon ladder; `## Repo` carries the `Tracker:` line Phase D branches on plus the
+  **design-spec target** and **DS-gap backlog** rows it files against. Two of that section's
+  rows are optional and their absence is the answer, never a warning: no *usage-rules source*
+  means the spec cites nothing, and no *downstream implementer* means a human picks the spec
+  up. `install-skills` writes both sections — the `figma-tools` bundle asks for them.
 - **Figma MCP — two distinct capability checks, do not conflate them:**
   1. **`figma-dev-mode` present (required):** `get_metadata`, `get_variable_defs`,
      `get_screenshot`, `get_design_context`. STOP if this server is absent — no fallback.
@@ -100,7 +112,7 @@ Region agents are driven by `agents/figma-region-extractor.md`.
 | **A — Decompose & scope** | Sonnet | Enumerate regions by node ID (recursing through pass-through wrappers), then assign each `in-scope` / `spec-only` / `excluded`. `in-scope` + `spec-only` fan out. |
 | **B — Region agents** | `figma-tools:figma-region-extractor` (Sonnet) ×N parallel | One agent per region: components, colors/tokens, type, spacing, icons, hidden variants, layout intent → structured JSON findings. |
 | **C — Synthesis & triage** | Opus | Dedup gaps · reconcile by concern · merge data states + responsive · changelog vs prior spec · write `page-spec.md` + `gaps/gap-NNN-*.md` · **triage checkpoint**. |
-| **D — Filing** | main thread | Page spec → ADO `[DESIGN-SPEC]` (child of the scope ticket) · escalated gaps → PBIs, IDs written back. |
+| **D — Filing** | main thread | Branch on the adapter's `Tracker:` line. Page spec → `[DESIGN-SPEC]` on the **design-spec target**, parented to the scope ticket (native sub-issue on GitHub, child work item on ADO) · escalated gaps → the **DS-gap backlog**, ids written back. |
 
 (Catalog refresh, if it's needed: Sonnet, via `grimme-ui-catalog`.)
 
@@ -113,8 +125,9 @@ Region agents are driven by `agents/figma-region-extractor.md`.
    silently pick (Phase 0).
 4. **Human triage checkpoint** (Phase C step 8) → present every gap and flag; the user marks
    each **escalate** / **compose-from-tokens** / **build-local**, and every non-escalated
-   decision records a one-line rationale in its gap file. **No ADO write happens before this**
-   — including in component mode, which still triages even though it files nothing.
+   decision records a one-line rationale in its gap file. **No tracker write happens before
+   this**, on either tracker — including in component mode, which still triages even though it
+   files nothing.
 
 Four extraction rules the regression fixtures exist to protect: **never resolve a fill by
 hex** (it silently collapses the token tier), **never record absolute x/y coordinates**
@@ -125,9 +138,11 @@ icon** (it resolves as a whole; its paths are drawing data). All four are normat
 
 ## Idempotency & output
 
-Re-running regenerates the local `page-spec.md` and `gaps/` fresh; ADO filing dedups via
-backlog search + written-back IDs, and the page `[DESIGN-SPEC]` is updated, not duplicated. A second
-run on the same node must create **zero** new PBIs/`[DESIGN-SPEC]`s. Write under a run directory
+Re-running regenerates the local `page-spec.md` and `gaps/` fresh; filing dedups via a search
+of the filing target + written-back ids, on either tracker, and the page `[DESIGN-SPEC]` is
+updated, not duplicated — including one still titled with the legacy `[SPEC]` prefix, which the
+dedup search also matches. A second
+run on the same node must create **zero** new gap tickets/`[DESIGN-SPEC]`s. Write under a run directory
 (suggest the scratchpad or a user-named dir): `page-spec.md` plus `gaps/gap-NNN-<slug>.md`.
 
 Screenshots are **not** persisted — `get_screenshot` returns an inline image, not a path.
