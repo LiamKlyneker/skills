@@ -62,10 +62,12 @@ and tolerance rules in `resolution-rules.md`; the required shape of a project ca
 4. **Ask the user: "Is there a separate mobile/tablet node?"** A Figma node is one
    viewport — breakpoints are not node properties. If yes, take that URL too; if no,
    responsive will be *inferred* and the assumptions flagged.
-5. **Accept optional scope context** — an ADO ticket URL and/or freetext ("only the card
-   grid + CTA"). This drives Phase A scoping and intent; it does **not** override canvas
-   values (ticket/context = *what to look at*; Figma = *the design values*). If a ticket
-   is given, fetch it and keep its ID for Phase D (the `[DESIGN-SPEC]` files as its child).
+5. **Accept optional scope context** — a **scope ticket** URL and/or freetext ("only the card
+   grid + CTA"). The ticket is whatever this project's tracker calls one: a GitHub issue or an
+   ADO work item, per the adapter's `Tracker:` line. This drives Phase A scoping and intent; it
+   does **not** override canvas values (ticket/context = *what to look at*; Figma = *the design
+   values*). If a ticket is given, fetch it and keep its id for Phase D, which files the
+   `[DESIGN-SPEC]` under it — as a native sub-issue on GitHub, as a child work item on ADO.
 
    **Scope precedence:** freetext (the most recent explicit human instruction) **>** ticket
    scope **>** the Phase A layer-name heuristic. The ticket is context/default; freetext
@@ -94,8 +96,8 @@ and tolerance rules in `resolution-rules.md`; the required shape of a project ca
 7. **Determine the run mode — from the prompt, not the node.** Node geometry can *suggest*
    granularity but cannot tell you *intent* (a Card node might be a fresh build or a
    one-line padding tweak). Read the mode from the invocation:
-   - **`page` (default)** — full decompose + fan-out + full page-spec; auto-files an ADO
-     `[DESIGN-SPEC]` (Phase D).
+   - **`page` (default)** — full decompose + fan-out + full page-spec; auto-files a
+     `[DESIGN-SPEC]` on the adapter's tracker (Phase D).
    - **`component` (lean)** — the prompt scopes to a single node / component ("lean
      update", "single-component / single-node", "only X changed", "just this node",
      "already implemented — give me the delta"). No fan-out; emit a lean **component-delta
@@ -140,7 +142,7 @@ header/footer) that is noise for a feature spec:
      field) is its **own region**, not chrome. A *repeated global* bar is chrome. When a
      node is genuinely ambiguous (neither clearly a region nor chrome), default to
      **including it as a region and `log()` the call**; only pause to ask if scope is fuzzy.
-2. Fold in the Phase 0 scope context (ADO ticket + freetext) per the **precedence** in
+2. Fold in the Phase 0 scope context (scope ticket + freetext) per the **precedence** in
    Phase 0 step 5 (freetext > ticket > heuristic) — an explicit "only the card grid"
    overrides the heuristic.
 3. **Assign each region one of three dispositions:**
@@ -248,7 +250,7 @@ region agent** — extraction is per-region and idempotent.
 4. **Responsive** — if a mobile node was given, merge responsive notes; otherwise infer
    (table reflow, minor stacking) and record the assumptions explicitly.
 5. **Changelog / delta (if a prior spec exists).** If a previous `page-spec.md` (run-dir)
-   or a linked ADO `[DESIGN-SPEC]` is found, diff **new spec vs old spec** — spec-vs-spec, never
+   or a previously filed `[DESIGN-SPEC]` is found, diff **new spec vs old spec** — spec-vs-spec, never
    spec-vs-code — and emit a **Changelog** section (what changed: tokens, props, layout,
    copy; what stayed). Mark affected regions `△ changed`. No prior baseline → note "new
    spec, no prior" and skip. Computing the *code*-level delta is the implementer's job
@@ -272,31 +274,75 @@ region agent** — extraction is per-region and idempotent.
    confirm/override every near-miss, suspected-intentional-deviation and ambiguous-icon flag,
    and decide **match-as-is vs modernize** on each legacy flag. **Record a one-line rationale
    in the gap file for every non-escalated decision** — that line plus the written-back IDs is
-   what stops the next run re-litigating a deviation already settled. **No ADO write happens
-   before this.**
+   what stops the next run re-litigating a deviation already settled. **No tracker write
+   happens before this** — on either tracker, in either run mode.
 
 ## Phase D — Filing (gated — only after triage)
 
-- **Page spec → ADO `[DESIGN-SPEC]`** in **myGRIMME Core** (reuse the `to-spec` pattern). If a
-  scope ticket was given in Phase 0, file the `[DESIGN-SPEC]` as its **child**. On re-run,
-  search for an existing linked spec and **update** it — never duplicate. **The dedup search
-  must match *either* prefix — `[DESIGN-SPEC]` or the legacy `[SPEC]`.** The prefix was
-  renamed; searching only the new one would miss a spec filed under the old name and file a
-  duplicate, breaking the zero-new-tickets guarantee. On finding a legacy `[SPEC]`, update it
-  in place **and retitle it** to `[DESIGN-SPEC]`. Only new tickets are created with
-  `[DESIGN-SPEC]`. *(Component mode files nothing by default — no `[DESIGN-SPEC]`, no PBIs —
-  unless the user explicitly asks; it produces local artifacts only.)*
-- **Escalated gaps → PBIs** in **GRIMME Libraries**. First **query available work-item
-  types** (ADO MCP) to confirm PBI exists; **search the backlog** (title / fingerprint)
-  to avoid duplicates; file only new ones; **write the returned work-item IDs back**
-  into the gap spec files and into the page spec's inline `blocked on gap-NNN` markers.
-- **Build-local gaps** are not filed — the page spec's interim-fallback field carries the
-  local recommendation + a `TODO` marker (codemod-friendly API note so it's swappable to
-  the DS component later).
-- **Compose-from-tokens gaps** are not filed either, and there is nothing to build: the page
-  spec carries the composition (which existing tokens, in what arrangement) so the
-  implementer never reaches for a raw value. Both non-escalated outcomes still keep their gap
-  file, carrying the triage rationale — the file is the record that the deviation was settled.
+**Filing is tracker-parametric. Read the adapter before writing anything.** Two things decide
+where this phase files, both in `<repo-root>/.claude/project/adapter.md` and neither of them
+in this file:
 
-Reference PRs as `!<id>` and work items as `#<id>` in any ADO text (separate ID
-namespaces — see `~/schmiede-one/CLAUDE.md`).
+1. **The `Tracker:` line** in `## Repo` — `github` or `azure-devops`, and **an absent line
+   means `github`**. It selects one of the two profiles below; run that one and ignore the
+   other entirely.
+2. **Two filing rows**, inside that tracker's `###` sub-section of `## Repo`:
+   - **design-spec target** — where the page spec files.
+   - **DS-gap backlog** — where an escalated gap files.
+
+   **They are separate rows and they routinely name different places**, because a design
+   system's gaps belong to the design system rather than to the code being specced. Never file
+   one against the other's row, and never infer either from the repo you happen to be running
+   in. A row that is missing is a question for the user, not a default to invent.
+
+Three things are true on both trackers, so they are stated once here:
+
+- **Component mode files nothing by default** — no page spec, no gap tickets — unless the user
+  explicitly asks. It produces local artifacts only, and it still triages.
+- **Build-local gaps are not filed.** The page spec's interim-fallback field carries the local
+  recommendation + a `TODO` marker (codemod-friendly API note so it's swappable to the DS
+  component later).
+- **Compose-from-tokens gaps are not filed either**, and there is nothing to build: the page
+  spec carries the composition (which existing tokens, in what arrangement) so the implementer
+  never reaches for a raw value. Both non-escalated outcomes still keep their gap file,
+  carrying the triage rationale — the file is the record that the deviation was settled.
+
+Whichever profile runs, **write every returned id back** into the gap spec files and into the
+page spec's inline `blocked on gap-NNN` markers. That write-back plus the dedup search is the
+entire zero-new-tickets guarantee on a re-run.
+
+### GitHub profile (`Tracker: github`, or no `Tracker:` line)
+
+- **Page spec → a `[DESIGN-SPEC]` issue** on the **design-spec target** repo, via `gh`.
+- **If Phase 0 was given a scope issue, link the new issue as its native sub-issue.** The link
+  is what makes it a child — the body carries **no `## Parent` section**, because a
+  hand-written parent beside a real link is a second source of truth that can disagree.
+  The mechanics are documented once, in `prd-workflow`'s `to-issues` skill under *Link each
+  child to the PRD as a native sub-issue*: create → link → **verify**, three `gh api` calls,
+  and `sub_issue_id` takes the issue's **internal numeric `id`** (`--jq .id`), never its issue
+  number — passing the number returns a bare `404` indistinguishable from "no such issue".
+  Follow that file; do not reconstruct the sequence here. A `POST` that succeeded is not
+  evidence the link landed — read the parent's sub-issue list back and say so out loud.
+- **Dedup on re-run:** search the design-spec target's issues for this node's existing spec and
+  **update it in place — never open a second.** Match **either** prefix, `[DESIGN-SPEC]` or the
+  legacy `[SPEC]`; on a legacy hit, update it **and retitle it** to `[DESIGN-SPEC]`. Only new
+  issues are created with `[DESIGN-SPEC]`.
+- **Escalated gaps → issues on the DS-gap backlog repo**, one per gap. Search that repo's
+  issues first (title / fingerprint) and file only the new ones. These are *not* sub-issues of
+  the page spec: a gap is the design system's work, tracked where the design system is.
+
+### Azure DevOps profile (`Tracker: azure-devops`)
+
+- **Page spec → an ADO `[DESIGN-SPEC]`** work item in the **design-spec target** project (reuse
+  the `to-spec` pattern). If a scope ticket was given in Phase 0, file the `[DESIGN-SPEC]` as
+  its **child**. On re-run, search for an existing linked spec and **update** it — never
+  duplicate. **The dedup search must match *either* prefix — `[DESIGN-SPEC]` or the legacy
+  `[SPEC]`.** The prefix was renamed; searching only the new one would miss a spec filed under
+  the old name and file a duplicate, breaking the zero-new-tickets guarantee. On finding a
+  legacy `[SPEC]`, update it in place **and retitle it** to `[DESIGN-SPEC]`. Only new tickets
+  are created with `[DESIGN-SPEC]`.
+- **Escalated gaps → PBIs** on the **DS-gap backlog** project. First **query available
+  work-item types** (ADO MCP) to confirm PBI exists; **search the backlog** (title /
+  fingerprint) to avoid duplicates; file only new ones.
+- Reference PRs as `!<id>` and work items as `#<id>` in any ADO text (separate ID
+  namespaces — see `~/schmiede-one/CLAUDE.md`).

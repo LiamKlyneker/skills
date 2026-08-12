@@ -110,12 +110,23 @@ it reads. When a tracker-bound bundle is installed against that adapter later, i
 neither" gap-fill case below, not the absent-means-`github` fallback and not a contradiction
 to stop on.
 
+**A bundle the table says implies *either* tracker asks, then settles it exactly like a
+tracker-bound one.** `figma-tools` is the case: it files on both trackers, so the table cannot
+answer for it, but its filing rows sit inside the `## Repo` sub-sections and an adapter keeping
+both would offer one page spec two filing targets. So on a fresh copy, ask the human which
+tracker this project runs — one question, and the only tracker question this skill ever asks —
+then take the three steps above unchanged: write the line, delete the other sub-section, touch
+nothing in between. "Either" is a question to ask, never a licence to guess, and never the
+same as "neither".
+
 **An adapter that already exists — delete nothing.** Read its `Tracker:` line; **absent
 means `github`**, which is what every adapter written before that line existed is. Then:
 
 - Tracker matches the bundle → gap-fill the bundle's missing sections and nothing else.
 - Tracker contradicts the bundle → **stop and hand it back.** One project runs one tracker,
   and reconciling that is a human decision, not a rewrite.
+- The bundle implies *either* → there is nothing to contradict. Whatever the line says is a
+  tracker it files on: gap-fill, and do not ask the tracker question.
 - It carries both sub-sections, or neither → that is a gap-fill question to ask, never a
   licence to delete.
 
@@ -157,7 +168,21 @@ and bundle-specific rather than asking every question every time.
 branch of `## Repo` and `## One-time repo preconditions` the interview covers — GitHub's
 `owner/repo` and label vocabulary, or Azure DevOps' org, two projects, team, repository,
 work-item type and board states. The other branch is not asked, not inferred, and (on a
-fresh copy) no longer in the file.
+fresh copy) no longer in the file. The two `figma-tools` filing rows live in that same
+branch, so they are asked in the surviving tracker's terms — repos on GitHub, projects on
+Azure DevOps — and never in both.
+
+**A section that exists but is missing a row this bundle needs is a gap, not a finished
+section.** Adding `figma-tools` to a repo that already ran `prd-workflow` finds `## Repo`
+filled and correct, and still has to add its two filing rows to it. Add the missing rows,
+leave every existing line exactly as the project wrote it, and add nothing the bundle did not
+ask for — that is gap-fill, not the re-templating step 3 forbids.
+
+**A row whose absence is the answer is not a question to press on.** `## Design system`
+carries two optional rows — the usage-rules source and the downstream implementer — and
+leaving each out is what makes a spec cite nothing and hands the spec to a human. Ask once,
+accept "no" as a complete answer, delete the row, and record no warning anywhere. An install
+that ends with an adapter carrying neither row is finished, not half-filled.
 
 ### 5. Gates
 
@@ -256,5 +281,8 @@ auditing a machine's leftovers is not this repo's job (ADR 0007).
   finding: that project's tracker facts come from the interview.
 - **Existing adapter, other tracker** → stop. Never rewrite the `Tracker:` line and never
   delete a sub-section from a filled adapter; see step 3a.
+- **Bundle implies *either* tracker** (`figma-tools`) → ask on a fresh copy, then proceed as
+  a tracker-bound bundle. Against an existing adapter there is nothing to ask and nothing to
+  contradict; see step 3a.
 - **The project is the canonical repo** → refuse.
 - **Target has no `.claude/` at all** → normal; that is a fresh bootstrap.

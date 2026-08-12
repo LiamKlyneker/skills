@@ -23,6 +23,11 @@ time the interview starts: `SKILL.md` step 3a takes it from the bundle (via the 
 tracker a bundle implies* table in `../../install/bundles.md`) on a fresh copy, or reads
 the existing adapter's `Tracker:` line, where **absent means `github`**.
 
+One bundle is the exception, and it is an exception to *who answers*, not to *when*:
+`figma-tools` implies **either** tracker, so on a fresh copy step 3a asks the human and
+settles it before the interview proper begins. Everything below then behaves identically —
+one branch asked, one branch already gone from the file.
+
 So it is not a question, and the other tracker's questions are not asked. Asking a GitHub
 project for its board state names is the first failure mode from the top of this file, with
 the added insult that the answers would go into a sub-section that is no longer in the
@@ -36,6 +41,7 @@ way.
 | `## Repo` | **GitHub**: `gh repo view --json nameWithOwner,defaultBranchRef`. **Azure DevOps**: the default branch from git and nothing else — the tree states none of the rest | related repos / contract boundaries on either tracker — nothing states these reliably. **Title prefixes on either tracker**: offer the defaults (`[PRD]`·`[TASK]`·`[BUG]` on GitHub, `[SPEC]`·`[TASK]`·`[FINDINGS]`·`[BUG]` on ADO — neither tracker has a `[QA]` prefix) and only ask whether this repo already uses different words — one confirmation, not four questions. On ADO the answer is load-bearing rather than cosmetic, since every kind of child is the same work-item type and the prefix is all that separates them, so read it back. On Azure DevOps, the whole `### Azure DevOps` block as well: org, the **two** projects (work items and repo — ask for both even when they are the same, since querying the wrong one returns empty rather than an error), team, repository, work-item type, the three board states, and the branch pattern |
 | `## Commands` | `package.json` scripts · `Makefile` targets · `Package.swift` + schemes · `Cargo.toml` · `pyproject.toml`. Package manager from the lockfile (`pnpm-lock.yaml` → pnpm, `bun.lockb` → bun, …) | the screenshot command — it is usually unscripted, and "none, use the browser tools interactively" is a real answer |
 | `## App facts` | language + version, framework + version, path aliases, generated-vs-source files, strict flags — all from the manifests and config files | **the fragile part.** The subsystem that breaks silently and that no linter catches. This is the highest-value line in the adapter and it is never in a file |
+| `## Design system` | the design-system dependency and its version from the manifests · a Tailwind config's `prefix` · an existing catalog file if the repo already has one | the **catalog pointer** if no file announces itself — never guess a filename, since this row is the only place it is ever named. The **fingerprint command** ("None — staleness unchecked" is a real answer). The **three class-prefix facts** as three questions, not one: the Tailwind class prefix, the CSS variable prefix, and the form an app actually writes — a design system that prefixes internally and emits unprefixed is the normal case, and reading one answer as all three makes every spec recommend a class that does not exist. The **icon ladder**, in order, including where each source may be used — ask for sources plural, since one is the exception. Then the two optional rows, once each: is there a best-practices doc a spec should cite, and does a skill implement filed specs? **"No" to either is a complete answer** — leave the row out and never warn |
 | `## Verify ladder` | candidate L2 from the test/build scripts | confirmation that L2 is the real floor, and what L3 evidence looks like. A repo with no test suite is a legitimate answer — record *why*, so no worker treats it as a gap to fill on the side |
 | `## Sources of truth` | agents available in `.claude/agents/` and `~/.claude/agents/` | the access-policy source — where per-operation policies actually live (migrations, IaC, a console, an MCP). "None — no data layer" is a real answer and closes the question |
 | `## Project gates` | — | one question: *is there a class of breakage here that ships silently and no test catches?* Default is **None**. A gate invented at install time to look thorough will never be run |
@@ -79,9 +85,22 @@ and explorer agent exist. `triage` routes cross-repo findings through them, and 
 answer that makes every finding a this-repo finding; a *guessed* answer sends issues to
 the wrong tracker.
 
-**`figma-tools`** — none. The bundle is adapter-free. The only question worth asking is
-whether this project wants its own `ui-manifests.md` gate, and the honest default is no
-until it has been burned once.
+**`figma-tools`** — two sections, and it is **the one bundle whose tracker is a question**
+(`SKILL.md` step 3a): it files on both, so nothing can answer for it. Order the interview so
+it makes sense to someone who has never read a skill:
+
+1. **Which tracker does this project run?** One question, asked before anything else, because
+   it decides which pair of filing rows the rest of `## Repo` even has.
+2. **`## Repo`'s two filing rows**, in that tracker's own words: where a page spec files
+   (*design-spec target*) and where an escalated design-system gap files (*DS-gap backlog*).
+   Ask both even when the answer is the same value twice — the common case is that they
+   differ, since a gap belongs to the design system rather than to the app being specced.
+3. **`## Design system`**, per the inference row above: the catalog pointer first (nothing
+   else in the section matters without it), then the fingerprint command, the three
+   class-prefix facts, the icon ladder, and last the two optional rows.
+
+The `ui-manifests.md` gate is still the offer at the end, and the honest default is still no
+until this project has been burned once.
 
 ## Writing the answers down
 

@@ -42,6 +42,13 @@ them. The only row left saying "yes" is `figma-tools`, and it says *today*. A bu
 set of adapter questions; a plugin is a unit of distribution. Nothing requires them to line
 up, and here they demonstrably do not.
 
+`figma-tools` used to prove something else as well — that a bundle could ask *nothing*, since
+its skills read global reference only. **It no longer does.** `figma-to-spec` resolves against a
+per-project catalog and files what it produces, and both of those are project facts, so the
+bundle now needs `## Repo` and `## Design system` filled like any other. Every bundle in this
+file asks for at least one section today; the empty-list case below is schema that nothing
+currently uses, not a live example.
+
 ## Schema
 
 One `##` section per bundle, named by its slug. Every field is a bold-labelled list
@@ -50,7 +57,7 @@ item, exactly these keys, in this order:
 | Field | Meaning |
 |---|---|
 | **Status** | `ready` — bootstrappable. `pending #N` — refuse and point at the issue. |
-| **Adapter sections** | `##` headings of `<repo-root>/.claude/project/adapter.md` this bundle needs filled. Empty means the bundle is adapter-free — no adapter, no interview, no questions. |
+| **Adapter sections** | `##` headings of `<repo-root>/.claude/project/adapter.md` this bundle needs filled. Empty means the bundle is adapter-free — no adapter, no interview, no questions. **No bundle here is empty today**; the case stays defined because a future one may be. |
 | **Gates** | Gate templates to offer, and where they land. Optional by definition — a gate exists only where a project has a silent-failure class. |
 
 Section headings are matched by **prefix**, so `## Sources of truth` matches the
@@ -69,7 +76,7 @@ twice, because the bundle already answers it:
 |---|---|
 | `prd-workflow`, `prd-qa` | `github` |
 | `ado-workflow`, `ado-qa` | `azure-devops` |
-| `figma-tools` | neither — adapter-free, so there is no `Tracker:` line to write |
+| `figma-tools` | **either — ask.** The one bundle that files on both trackers, so it reads the `Tracker:` line rather than implying one |
 | `grill` | neither — a grill is tracker-agnostic recon that runs *before* `to-prd` or `to-spec`, so there is nothing tracker-shaped to write |
 
 The installer reads this table rather than hardcoding the mapping, exactly as it reads
@@ -79,12 +86,23 @@ conflict to surface and stop on — never something to resolve by rewriting the 
 deleting a section. See the `install-skills` skill's own `SKILL.md`, step 3a, for the one
 narrow case in which a tracker sub-section is deleted at all.
 
-**"Neither" is not a licence to pick one.** `figma-tools` never reaches the question — it is
-adapter-free, so no adapter is created. `grill` does reach it, being the one bundle that
-needs a section but no tracker: it writes no `Tracker:` line and deletes neither `###`
-sub-section, leaving the choice to whichever tracker-bound bundle is installed next. That
-later install finds an adapter with no `Tracker:` line and **both** sub-sections still
-present, which is the gap-fill case in step 3a and not a contradiction to stop on.
+**"Neither" is not a licence to pick one, and "either" is not the same as "neither".** They are
+two different rows and they behave differently at install time:
+
+- **`grill` — neither.** The one bundle that needs a section but no tracker: it writes no
+  `Tracker:` line and deletes neither `###` sub-section, leaving the choice to whichever
+  tracker-bound bundle is installed next. That later install finds an adapter with no
+  `Tracker:` line and **both** sub-sections still present, which is the gap-fill case in step
+  3a and not a contradiction to stop on.
+- **`figma-tools` — either, so it asks.** `figma-to-spec` files a page spec and its escalated
+  gaps on whichever tracker the project runs, and its two filing rows live *inside* the
+  tracker sub-sections of `## Repo`. An adapter that kept both would hand one page spec two
+  filing targets, so this bundle settles a tracker exactly like a tracker-bound one — it just
+  gets the answer from the human instead of from this table. On a fresh copy: ask, write the
+  `Tracker:` line, delete the other sub-section. Against an adapter that already names a
+  tracker: **never a conflict** — either tracker is one it can file into, so gap-fill and ask
+  nothing. Against `grill`'s leftover (no `Tracker:` line, both sub-sections): ask, and that
+  answer settles it for good.
 
 ---
 
@@ -278,8 +296,9 @@ where the skill that reads it does.
 `deep-grill` also reads the adapter's `## Project gates` registry and runs every gate whose
 trigger the plan matches — but that is not an interview question here. A project with no
 extra gates needs no such section, and a project that accepts the gate template gains
-`## Project gates` as the place its gate is registered, by the same route `figma-tools`
-reaches an adapter it otherwise does not need.
+`## Project gates` as the place its gate is registered — an adapter section arriving through
+a gate rather than through the bundle's own list. (`figma-tools` used to be the other example
+of that route; it asks for two sections outright now.)
 
 Adopting this bundle alone is entirely normal: a grill is useful with no loop downstream, and
 its output is a conversation, not a tracker artifact. That is also why it implies neither
@@ -290,15 +309,30 @@ tracker — see *Which tracker a bundle implies* above.
 Figma → spec, and the UI-primitive skills that consume the same reference.
 
 - **Status:** ready
-- **Adapter sections:** —
+- **Adapter sections:** `## Repo`, `## Design system`
 - **Gates:** `install/gates/ui-manifests.template.md` → `.claude/project/ui-manifests.md`, optional
 
-**Adapter-free.** These skills read global reference only, so a repo can run them with
-no `.claude/project/` at all — the installer skips the interview entirely and asks
-nothing. The optional `ui-manifests.md` gate is the exception: a project that wants its
-own primitive homes, real token files and stack-specific traps named registers one, the
-same way as any other gate. Accepting it is the one case where an adapter-free bundle
-still ends up with an adapter, because the `## Project gates` registry lives there.
+Which skill drives which section:
+
+| Section | Wanted by |
+|---|---|
+| `## Repo` | `figma-to-spec` — the `Tracker:` line its filing phase branches on, plus the two filing rows inside that tracker's sub-section: the **design-spec target** (where a page spec files) and the **DS-gap backlog** (where an escalated gap files). Two rows rather than one because a design system's gaps routinely belong to a different repo or ADO project than the code being specced, and a single row would send them to whichever of the two was written down |
+| `## Design system` | `figma-to-spec` — the design-system source; the **catalog pointer**, which is the only place the catalog is ever named; the **fingerprint command** behind its soft staleness check; the **three class-prefix facts** (Tailwind class prefix, CSS variable prefix, consumer-facing emission form — separate facts, and collapsing them makes a spec recommend a class the app cannot write); and the **icon resolution ladder**, which is per-project and multi-source. Plus two optional rows that degrade silently: the usage-rules source (absent → the spec cites nothing) and the downstream implementer (absent → a human) |
+
+**No longer adapter-free**, and that changed for a reason rather than by drift. These skills
+used to read global reference only, so a repo could run them with no `.claude/project/` at
+all. `figma-to-spec` now resolves every value against a **per-project catalog** it reaches by
+pointer, and **files** what it produces onto the project's tracker — an existence source and a
+filing target are both project facts, and neither has anywhere else to live. So this bundle
+runs a real interview like every other one.
+
+Neither optional row is a question worth pressing on. "There is no best-practices doc" and
+"a human implements it" are the normal answers, they are what absence already means, and a
+run must never warn about either.
+
+The optional `ui-manifests.md` gate is unchanged: a project that wants its own primitive
+homes, real token files and stack-specific traps named registers one, the same way as any
+other gate, in the `## Project gates` registry this adapter now has regardless.
 
 `tokens-init` and `figma-component` were the two deprecated top-level skills this bundle
 superseded. They were part of no bundle and no plugin, and ADR
