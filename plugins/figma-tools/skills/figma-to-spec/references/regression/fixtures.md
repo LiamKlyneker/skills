@@ -24,7 +24,7 @@ its real regions under a single content-wrapper frame (B2).
 - **Additional node:** `11039:15398` — role `state:empty` — empty state
 - **Scope ticket:** `#12100` (myGRIMME Core) — the `[DESIGN-SPEC]` files as its child
 - **Freetext:** `"main configurations list, cards and its empty state"`
-- **Catalog:** bundled `references/catalog.md` (no arg override)
+- **Catalog:** the project catalog Phase 0 resolves via the adapter pointer (no arg override)
 
 **Capability profile (part of the fixture):**
 - `figma-dev-mode` — **present** (`get_metadata`, `get_variable_defs`, `get_screenshot`,
