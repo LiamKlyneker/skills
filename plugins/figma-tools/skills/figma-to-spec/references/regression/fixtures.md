@@ -22,7 +22,10 @@ filename in this plugin**. A project with no fixtures registered has nothing to 
 pre-release step below then reports *"no fixtures registered"* out loud rather than passing
 silently, because "no assertions ran" and "all assertions passed" must never look the same.
 
-The worked example at the bottom is here to show the shape, not to be run by another project.
+**This file carries no example fixture, and that is deliberate.** One shipped here would be one
+project's node IDs and one project's catalog vocabulary, published to every consumer of this
+plugin — and the first thing a reader would do is copy it. The field table below is the whole
+shape; a fixture is that table filled in with values only the project has.
 
 ## Required fields of a fixture
 
@@ -77,34 +80,3 @@ covered (form-heavy, data-table with reflow, real component instances), or a cap
 not yet tested. **One fixture per distinct failure mode**, each with a paired case in
 `expected-findings.md`. A fixture with no paired case is not a fixture; it is an invocation
 nobody can grade.
-
----
-
-## Worked example — the shape a fixture takes
-
-Illustrative. It is one project's fixture, kept here to show the format; another project's
-fixtures live in that project, per the section above.
-
-### FIXTURE-01 — configurations list (list + empty state), degraded color mode
-
-The case the v1.6.0 blocker fixes were written against. It is the hardest known page: it hides
-a required state as a `visible:false` sibling (B1) and buries its real regions under a single
-content-wrapper frame (B2).
-
-- **Run mode:** `page` (default)
-- **Primary node:** `11044:27567` — configurations list (populated)
-- **Additional node:** `11039:15398` — role `state:empty` — empty state
-- **Scope ticket:** `#12100` (myGRIMME Core) — the `[DESIGN-SPEC]` files as its child
-- **Freetext:** `"main configurations list, cards and its empty state"`
-- **Catalog:** the project catalog Phase 0 resolves via the adapter pointer (no arg override)
-
-**Capability profile (part of the fixture):**
-- `figma-dev-mode` — **present** (`get_metadata`, `get_variable_defs`, `get_screenshot`,
-  `get_design_context`)
-- `use_figma` / `/figma-use` binding read — **absent** → run in **degraded color mode**
-  (token names kept from `get_variable_defs`; every color flagged `binding-unverified`)
-
-**Why this fixture exists:** it is the minimum reproduction of both blockers plus the token
-crosswalk friction. A run that passes it proves the three highest-risk (silent-correctness)
-defects stay closed. It does **not** prove the skill handles structurally different pages — a
-project running a single fixture should treat that as coverage debt, not coverage.

@@ -75,13 +75,19 @@ what to *do* once a match lands on one.
    `use_figma` binding read (call discipline in `../agents/figma-region-extractor.md`). Two
    semantics routinely alias one primitive — matching on value is a coin flip that
    silently collapses the tier.
-2. **Prefer semantic.** If a semantic token (Tailwind-classed, **consumer form —
-   unprefixed**, e.g. `bg-surface-button-primary`) matches → ✅. Emit the unprefixed form;
-   the `g-` prefix is grimme-ui's internal build only (catalog's Class-prefix note).
-3. **Only a primitive/alias matches** (e.g. `--g-color-grey-100`,
-   `--g-primary-full-default`) → recommend it, but **⚠️ flag** — a primitive binding
-   looks right and breaks theming silently. (Only Button is on the semantic layer today,
-   so this flags a lot. That's correct signal, not noise.)
+2. **Prefer the most-derived tier the catalog offers** — its semantic tier over an alias over a
+   primitive, in the order the catalog's `## Conventions` states. A match there → ✅, emitted
+   **exactly as the catalog writes it**. The catalog is always written in the project's
+   consumer-facing form (`catalog-contract.md`), so copying an entry verbatim is the whole
+   rule: never re-prefix, un-prefix, or otherwise transform an entry on its way into a spec.
+   Where the design system's library-internal form differs from what an app writes, the
+   adapter's *Tailwind class prefix*, *CSS variable prefix* and *consumer-facing emission form*
+   rows are the three separate facts that say so — and a spec recommends the consumer form.
+3. **Only a primitive/alias tier matches** → recommend that entry, but **⚠️ flag** — a
+   primitive binding looks right and breaks theming silently. A design system whose semantic
+   tier covers only a few components will flag a lot; that is correct signal, not noise.
+   A tier the catalog marks **`CSS var only`** emits as a `var()` escape hatch, never as a
+   utility class the project doesn't produce.
 4. **Raw hex, no binding** → recommend the nearest catalog token by color distance, and
    **always ⚠️ flag**: a detached-variable hex is indistinguishable from an off-system
    hex post-hoc, so a human confirms intent.
@@ -105,11 +111,13 @@ that a machine can't tell an intentional new shade from a sloppy one.
 **Spacing splits in two — classify before resolving:**
 
 1. **Generic layout spacing** — gaps/padding between *siblings or regions* (page rhythm:
-   24/16/12/8/4px). grimme-ui has **no general layout-spacing token scale**; its dimension
-   tokens are **component-scoped** (button/chip/input internals). So generic layout spacing
-   maps to the **Tailwind spacing scale** (`gap-4`, `p-3`, `space-y-2`, …) and is **✅ not a
-   DS concern — do not flag it.** Flagging every layout gap against dimension tokens is a
-   false positive; the nearest-token test does **not** apply here.
+   24/16/12/8/4px). **Where the catalog's `## Conventions` puts the bifurcation line** — and
+   it is required to put it somewhere (`catalog-contract.md`) — generic layout rhythm is the
+   **Tailwind spacing scale**'s business (`gap-4`, `p-3`, `space-y-2`, …) and is **✅ not a DS
+   concern — do not flag it.** This is the common shape: a design system's dimension tokens are
+   routinely component-scoped (a control's internals) with no general layout scale at all.
+   Flagging every layout gap against component dimension tokens is a false positive; the
+   nearest-token test does **not** apply here.
 2. **Component-internal dimension** — a control's own padding, height, radius, icon box.
    *This* resolves against catalog **dimension** tokens; off-system → ⚠️ flag / ❌ gap by the
    same "is there a nearest token" logic as colors.
@@ -117,48 +125,76 @@ that a machine can't tell an intentional new shade from a sloppy one.
 The test: *is this the space **between** things (layout → Tailwind), or a **fixed dimension
 of one control** (→ dimension token)?*
 
-**Typography** resolves against the catalog's **enumerated `text-*` utility classes**
-(consumer form — unprefixed: `text-h1`…`text-h6`, `text-body1/2/3`, `text-caption`,
-`text-overline`, `text-button`, …). The catalog now lists the full set, so **match by name**;
-❌ gap only type with no `text-*` home (a genuinely novel size/role). **Never emit the `g-`
-prefixed form** — that's grimme-ui's internal build, not the consumer API (catalog's
-Class-prefix note). Weight stays **literal** (Figma keeps it in `fontName.style`, bound to
-nothing — tokenising it invents a tier the file doesn't have).
+**Typography** resolves against the catalog's **enumerated typography utilities**, which the
+contract requires in consumer-facing form and in full. Match **by name** first; where the
+design's text style carries the designer's name rather than the design system's — the common
+case — match on the properties each utility sets (size, line-height, weight, tracking). ❌ gap
+only type with no utility home at all (a genuinely novel size/role), and a catalog that says
+`None — <how text is styled instead>` means there is no utility vocabulary to match against, so
+say that rather than inventing one. Emit each utility **exactly as the catalog writes it** —
+never re-prefixed into a library-internal form. Weight stays **literal** (Figma keeps it in
+`fontName.style`, bound to nothing — tokenising it invents a tier the file doesn't have), and a
+composite utility the catalog marks as carrying its own breakpoints is never written with a
+responsive prefix.
 
-## Icons (layered resolution)
+## Icons (layered resolution — the layers are the project's)
 
-1. **SystemIcon** — the Figma icon matches a `SYSTEM_ICONS` key in the catalog → ✅ use
-   `<SystemIcon name="..." />`.
-2. **FontAwesome equivalent** — no SystemIcon, but the consuming app (mygrimme-frontend)
-   has a clear FA equivalent → record the FA icon for the app layer. (FA is app-only;
-   **never** propose adding FA to grimme-ui.)
-3. **Gap** — generic, reusable, grid-conforming icon with no SystemIcon and ideally ≥2
-   consumers → ❌ gap: add a new `SYSTEM_ICONS` key (raw SVG) to grimme-ui.
-4. **Custom / one-off SVG** — not reusable → note "inline locally as interim" in the
-   page spec's interim-fallback field; not a DS gap.
+**The ladder is not in this file and must never be written into it.** Which icon sources a
+project has, in what order it tries them, and what a no-match becomes are the adapter's *icon
+resolution ladder* row; what each source *contains* is the catalog's `## Icons` section, one
+`###` subsection per source. Two sources of truth, one each, deliberately: a ladder hardcoded
+here would name one organisation's icon module and silently mis-resolve every other project's.
 
-Ambiguous near-duplicate (looks like an existing SystemIcon but not sure) → ⚠️ flag for
+The rules that *are* this file's:
+
+1. **Walk the ladder in the order the row gives, and stop at the first source that matches.**
+   Order is the whole point — a project that prefers its in-house set to a third-party library
+   gets a different (correct) answer from one that prefers the reverse. Never re-order it
+   because a later source looks like a closer match.
+2. **A match resolves ✅ in that source's own reference form**, copied from the catalog's
+   subsection for it — the component call, import, or class the catalog records. Never invent a
+   reference form for a source.
+3. **Respect where a source may be used.** The catalog records this per source (available to
+   consuming apps but forbidden inside the design system, or the reverse). An icon resolved
+   from an app-layer-only source is recorded as an app-layer decision and **never** proposed as
+   an addition to the design system.
+4. **A no-match becomes exactly what the ladder's last step says** — typically ❌ a gap against
+   the design system's own icon set, or a locally inlined one-off. Where the row spells out the
+   threshold between them (generic and reusable, ideally ≥2 consumers, vs. one-off), apply it;
+   where it doesn't, ⚠️ flag the choice for the human rather than picking. A one-off inline SVG
+   goes in the page spec's interim-fallback field and is **not** a DS gap.
+5. **Resolve the icon as a whole.** Its interior vector geometry is drawing data, not design
+   decisions (normative in `../agents/figma-region-extractor.md`); its own box size and the
+   color applied at its instance resolve normally.
+
+Ambiguous near-duplicate (looks like an existing catalog icon but not certainly) → ⚠️ flag for
 the user, don't auto-decide.
 
-## Component matching (inferred — v1 is loose)
+## Component matching (inferred — deliberately loose)
 
-grimme-ui has no Code Connect and no name↔code map, so **infer**:
+Absent a published Figma-name↔code mapping — which neither design system this skill was built
+against had, and which the catalog therefore does not carry — **infer**:
 
 1. Parse the Figma layer name by common conventions — slash-separated
    `Component/Variant/Size`, or a bare `ComponentName`.
 2. Match the parsed component against the catalog's components; match parsed
-   variant/size against that component's recorded **cva** axes.
-3. **Cross-check** the region screenshot against the component's Storybook render.
+   variant/size against that component's recorded **variant axes and their listed values**.
+   The catalog is the closed set — a value it doesn't list does not exist, however plausible
+   the project's naming scheme makes it look.
+3. **Cross-check** the region screenshot against how the component actually renders, wherever
+   the project makes that visible (a component workbench, a docs page, the running app).
 4. **Confidence gate:**
-   - High (name + cva + visual all agree) → ✅ record `<Component props/>`.
+   - High (name + variant values + visual all agree) → ✅ record `<Component props/>`.
    - Low (name mismatch, unknown variant, or visual disagreement) → ❌ **unknown-component
      gap**, AND surface the parsed mapping so the user can confirm/correct. Never silently
      force a low-confidence match.
 5. A Figma **instance** inside a region may itself already be a DS primitive — check its
    name against the catalog before classifying it as build-needed.
 
-Components resolve against **grimme-ui only**. Never treat `@grimme/buttery` as a
-component source.
+Components resolve against **the catalog only** — the one design system the adapter's
+*design-system source* row names. Another library the app happens to depend on is not a
+component source, however many components it ships: the catalog is the existence answer, and
+anything outside it is a gap or a build-local, never a silent third option.
 
 ## Triage outcomes (feeds the Phase C checkpoint — user decides)
 
@@ -202,8 +238,9 @@ be unlike anything in the library and still be entirely of the library.
 
 **Required, in the gap file, for both `compose-from-tokens` and `build-local`** (an escalated
 gap carries its reasoning in the ticket it produces). One line, naming the specific reason —
-"one-off hero treatment for this landing page only", "expressible as surface-2 + gap-4 +
-text-h3", not "not needed".
+"one-off hero treatment for this landing page only", or "expressible as <the catalog's surface
+token> + <a layout gap> + <the heading utility>", naming each entry as the catalog writes it.
+Not "not needed".
 
 That line plus the written-back ticket IDs is the **whole dedup story across runs**. A re-run
 regenerates the spec from scratch; without a recorded rationale it re-surfaces a deviation
