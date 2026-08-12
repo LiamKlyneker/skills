@@ -46,6 +46,14 @@ and tolerance rules in `resolution-rules.md`; the required shape of a project ca
    source unreachable → note "staleness unchecked" and continue. **Never hard-fail on
    staleness.** The only hard STOPs in this area are 2a and 2b: no resolvable catalog at all,
    and a catalog that fails the shape contract.
+
+   **2d — While the adapter is open, read the rest of `## Design system` and keep it.** The
+   *icon resolution ladder* is needed verbatim by every Phase B spawn (the region agent never
+   reads the adapter itself), the three *class-prefix* rows settle what form a spec may
+   recommend, and the two optional rows — *usage-rules source*, *downstream implementer* —
+   decide what the page spec cites and who picks it up. **An absent optional row is the answer,
+   not a warning.** A missing icon ladder is different: with icon sources in the catalog and no
+   stated order, ask the user rather than picking one.
 3. **Confirm capability — three separate checks (see SKILL.md Prerequisites).** (a) Ensure
    **`figma-dev-mode`** is present — STOP if not. (b) Try to make the binding read
    (`use_figma`) available (load `/figma-use` if reachable). If it isn't, continue in
@@ -150,8 +158,8 @@ header/footer) that is noise for a feature spec:
    - **`spec-only`** — fully specced (blueprint, tokens, layout, gaps) but flagged **not to
      be integrated this pass** ("leave as-is / UI-only"). This is the "spec the whole page,
      but don't build part X yet" case from the Phase 0 conflict gate. It still fans out to a
-     Phase B agent and still runs triage — it just carries a banner downstream so
-     `develop-ticket` / a human skips integration.
+     Phase B agent and still runs triage — it just carries a banner downstream so the
+     implementer (the adapter's *downstream implementer*, or a human) skips integration.
    - **`excluded`** — app chrome or clearly out of scope; not specced.
 4. **Auto-skip when scope is explicit:** if the context names dispositions unambiguously,
    proceed and simply **`log()`** the `spec-only` and `excluded` regions. Only **pause for
@@ -181,11 +189,18 @@ deterministically).
 (the plugin namespaces it; a hand-placed `agents/` file registers the bare
 `figma-region-extractor` instead — try the namespaced name first),
 `model: 'sonnet'` passed explicitly, `run_in_background: false`. The extraction contract
-lives in the agent, so the per-call prompt carries **only the six inputs** — region node ID
+lives in the agent, so the per-call prompt carries **only the seven inputs** — region node ID
 · region layer name · source-node role (`primary` / `viewport:<bp>` / `state:<name>`) ·
-Figma file/page URL · **absolute** catalog path · **absolute** resolution-rules path. The
-agent hard-STOPs with `{"error": "missing input: <name>"}` if any is absent, so a malformed
-spawn fails loudly instead of hallucinating catalog contents.
+Figma file/page URL · **absolute** catalog path · **absolute** resolution-rules path · the
+adapter's **icon resolution ladder, pasted verbatim**. The agent hard-STOPs with
+`{"error": "missing input: <name>"}` if any is absent, so a malformed spawn fails loudly
+instead of hallucinating catalog contents.
+
+**Why the ladder is pasted rather than pointed at.** Every other input is a path or a node id;
+this one is a project fact, and the agent is deliberately adapter-blind — it reads no project
+file it wasn't handed. The main thread has already read the adapter in Phase 0, so it pastes
+the row's text into each spawn. A ladder the plugin restated instead would be one
+organisation's icon module shipped to every consumer.
 
 End every per-call prompt with this exact line — the schema now sits in the agent's system
 prompt rather than at the end of the prompt, and without it JSON-only compliance drifts:
@@ -204,16 +219,20 @@ phase reads standalone):
 
 - **Component match** — infer from the Figma layer name (e.g. slash-separated
   `Component/Variant/Size`) → match against the catalog's components + their variant axes;
-  cross-check the screenshot against the component's Storybook render. Confident →
+  cross-check the screenshot against however the project renders that component. Confident →
   record `<Component props/>`. Low confidence → record as an unknown-component gap and
   **surface the parsed mapping for user confirmation**.
 - **Colors / tokens** — `get_variable_defs` + the `use_figma` binding read for bound
   variable **names** (never resolve a fill by hex — that silently collapses the token
-  tier). Resolve per `resolution-rules.md`: prefer **semantic** token; only a primitive
-  matches → recommend it but **flag**; raw hex with no binding → nearest + **always flag**.
+  tier). Resolve per `resolution-rules.md`: prefer the **most-derived tier the catalog
+  offers**; only a primitive/alias matches → recommend it but **flag**; raw hex with no
+  binding → nearest + **always flag**.
 - **Typography, spacing** — resolve against catalog dimension/type tokens; flag off-system.
-- **Icons** — layered: SystemIcon (catalog) → FontAwesome equivalent → gap (add to
-  grimme-ui SystemIcon). Custom SVG → note "inline locally as interim."
+- **Icons** — walk the adapter's **icon resolution ladder**, in its order, stopping at the
+  first source that matches; the catalog says what each source contains. A no-match becomes
+  whatever the ladder's last step says (typically a DS gap for a reusable icon, a local inline
+  for a one-off). The ladder reaches the agent as an input, verbatim — it is never restated in
+  this plugin.
 - **Layout / placement** — capture the region's containment tree, child order, and
   **auto-layout intent** (direction, gap token, alignment, wrap) so an implementer can
   place every element without a screenshot. Capture *relative* intent, never absolute
@@ -253,19 +272,19 @@ region agent** — extraction is per-region and idempotent.
    or a previously filed `[DESIGN-SPEC]` is found, diff **new spec vs old spec** — spec-vs-spec, never
    spec-vs-code — and emit a **Changelog** section (what changed: tokens, props, layout,
    copy; what stayed). Mark affected regions `△ changed`. No prior baseline → note "new
-   spec, no prior" and skip. Computing the *code*-level delta is the implementer's job
-   (`develop-ticket` reconciles this spec against live code and touches only what differs);
-   this skill stays a pure function of the Figma node.
+   spec, no prior" and skip. Computing the *code*-level delta is the implementer's job — the
+   adapter's *downstream implementer* (or a human) reconciles this spec against live code and
+   touches only what differs; this skill stays a pure function of the Figma node.
 6. **Write the spec** per `page-spec-template.md`. **Page mode:** full region-by-region
    blueprint. **Component mode:** just the one targeted region's blueprint. Either way —
-   grimme-ui component + props, token per color/spacing/type, **layout/placement
+   catalog component + props, token per color/spacing/type, **layout/placement
    (containment tree + auto-layout intent)**, **data states** where state nodes were given,
    component states **only for new/unknown components**, responsive notes, and the
    **Changelog** from step 5 up top; gaps marked inline as `⚠ blocked on gap-NNN`; cite the
-   relevant `grimme-ui-components-best-practices` rules for HOW. Record the **Scope
-   dispositions** (in-scope / spec-only / excluded); prefix every `spec-only` region's
-   heading with a **`spec-only — not integrated this pass`** banner so the implementer skips
-   it.
+   relevant rules of the adapter's *usage-rules source* for HOW, by stable name, and cite
+   nothing where no such row exists. Record the **Scope dispositions** (in-scope / spec-only /
+   excluded); prefix every `spec-only` region's heading with a **`spec-only — not integrated
+   this pass`** banner so the implementer skips it.
 7. **Write `gaps/gap-NNN-*.md`** per `gap-spec-template.md`, one per deduped gap.
 8. **STOP — human triage checkpoint.** Present the gap list. The user marks each one
    **escalate** / **compose-from-tokens** / **build-local** (the three outcomes in
@@ -344,5 +363,5 @@ entire zero-new-tickets guarantee on a re-run.
 - **Escalated gaps → PBIs** on the **DS-gap backlog** project. First **query available
   work-item types** (ADO MCP) to confirm PBI exists; **search the backlog** (title /
   fingerprint) to avoid duplicates; file only new ones.
-- Reference PRs as `!<id>` and work items as `#<id>` in any ADO text (separate ID
-  namespaces — see `~/schmiede-one/CLAUDE.md`).
+- Reference PRs as `!<id>` and work items as `#<id>` in any ADO text — they are separate id
+  namespaces there, so a `#` in front of a PR number silently points at an unrelated work item.

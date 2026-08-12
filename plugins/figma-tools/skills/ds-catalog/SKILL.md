@@ -50,13 +50,14 @@ Two consequences worth stating up front:
 
 ## Supersedes
 
-This skill **supersedes and retires `grimme-ui-catalog`**, the schmiede-side skill that
-generated one organisation's catalog by reading one organisation's repo layout. Its subject
-matter survives here as the probe list; its hardcoded knowledge of a particular exports map,
-token pipeline and icon module does not, and must not be reintroduced. Nothing in this skill
-names a design system, a class vocabulary, a token tier or a file path: every one of those is
-read from the adapter or asked. Retiring the old skill in the schmiede repo is that repo's
-business — recorded here so the retirement is discoverable from the thing that replaced it.
+This skill **replaces the per-project catalog generators that came before it** — skills that
+produced one organisation's catalog by reading one organisation's repo layout, and lived in
+that organisation's repo. Their subject matter survives here as the probe list; their hardcoded
+knowledge of a particular exports map, token pipeline and icon module does not, and must not be
+reintroduced. Nothing in this skill names a design system, a class vocabulary, a token tier or
+a file path: every one of those is read from the adapter or asked. Retiring such a skill where
+it lives is that repo's business — recorded here so the retirement is discoverable from the
+thing that replaced it.
 
 ## Inputs
 

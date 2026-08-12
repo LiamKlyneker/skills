@@ -2,13 +2,15 @@
 name: figma-to-spec
 description: >
   Turn a Figma page node into a detailed, on-system implementation spec plus
-  design-system gap tickets. Scans via Figma MCP + Sonnet subagents, resolves
-  against grimme-ui, flags off-system colors/tokens/icons/components, and routes
-  each gap to build-local or a grimme-ui backlog PBI. Invoke /figma-to-spec <url>.
+  design-system gap tickets. Scans via Figma MCP + Sonnet subagents, resolves every
+  value against the project's design-system catalog, flags off-system
+  colors/tokens/icons/components, and routes each gap to build-local,
+  compose-from-tokens, or the adapter's design-system backlog.
+  Invoke /figma-tools:figma-to-spec <url>.
 disable-model-invocation: true
 metadata:
   author: liam
-  version: "1.8.0"
+  version: "2.0.0"
 ---
 
 # Figma → Spec
@@ -25,9 +27,9 @@ the adapter's `Tracker:` line and runs the matching filing profile — GitHub is
 DevOps work items — against two separate rows, because a design system's gaps routinely live
 somewhere other than the code being specced.
 
-**This skill is a spec producer, not a builder.** It never writes page code. The specs
-it emits are implemented later — by a downstream build workflow (e.g. `develop-ticket`) or
-a human.
+**This skill is a spec producer, not a builder.** It never writes page code. The specs it emits
+are implemented later — by whatever the adapter's `## Design system` → *downstream implementer*
+row names, and by a human where that row is absent.
 
 **The spec is high-fidelity; the 1:1 risk lives at implementation — which this skill hands
 off.** Extraction can be near-complete (the region subagents read bound variable names,
@@ -40,10 +42,10 @@ Connect), responsive behavior absent from a single node, and interaction states.
 
 ## Prerequisites
 
-Depends on **inputs and capabilities**, not on sibling skills being invokable. Skills resolve
-by directory scope, so a run rooted in a consumer repo (e.g. `mygrimme-frontend`) **cannot
-invoke** Marketplace skills like `grimme-ui-catalog` or `/figma-use`. Every dependency is
-detachable:
+Depends on **inputs and capabilities**, not on sibling skills being invokable. What a session
+can invoke depends on which plugins that machine has installed and where the session is rooted,
+so a run in a consumer repo may reach **none** of the companion skills named below. Every
+dependency is detachable:
 
 - **A project design-system catalog (required artifact).** The existence source — what tells
   the spec which class, token, component, and variant value actually exist. It is a
@@ -53,7 +55,9 @@ detachable:
   catalog pointer → ask**, stopping there. Its required shape is
   `references/catalog-contract.md`; Phase 0 validates the resolved file against it and **fails
   loudly** rather than degrading. Staleness is a separate, soft check (Phase 0 step 2c) —
-  never a hard fail.
+  never a hard fail. A project without one gets it from **`figma-tools:ds-catalog`**, the
+  companion skill in this plugin that explores the design system, interviews the human, and
+  writes a conforming catalog. This skill never authors one mid-run.
 - **The project adapter (`<repo-root>/.claude/project/adapter.md`), two sections of it.**
   `## Design system` carries the catalog pointer, the fingerprint command, the class-prefix
   facts and the icon ladder; `## Repo` carries the `Tracker:` line Phase D branches on plus the
@@ -82,9 +86,11 @@ detachable:
   into a `general-purpose` agent. One source of truth either way — but a freshly installed
   agent does not register until the next session, so Phase 0 checks and announces which
   path the run takes.
-- **`grimme-ui-components-best-practices` (optional).** The page spec **cites** its rules by
-  stable name and never duplicates them, so citations stand even when it isn't loaded. Load it
-  to enrich HOW-guidance only if reachable.
+- **A usage-rules source (optional).** Whatever the adapter's *usage-rules source* row names —
+  the HOW, kept out of the catalog's WHAT. The page spec **cites** its rules by stable name and
+  never duplicates them, so a citation stands even when the source isn't loaded. Load it to
+  enrich HOW-guidance only if reachable; **no row means the spec cites nothing**, which is an
+  answer rather than a warning.
 
 ## Resolution sources (what "does it exist?" reads)
 
@@ -93,13 +99,16 @@ detachable:
   ONLY source for "does the DS have this?".
 - **Catalog shape** → `references/catalog-contract.md` (bundled) — the required sections, the
   `status: current|legacy|deprecated` schema, and the Phase 0 validation rules.
-- **Usage / HOW** → `grimme-ui-components-best-practices` rules, **cited by stable name**. The
-  page spec cites; never duplicates.
+- **Usage / HOW** → the adapter's *usage-rules source*, **cited by stable name**. The page spec
+  cites; never duplicates; cites nothing when no row is registered.
 - **Resolution + tolerance rules** → `references/resolution-rules.md` (bundled).
 
-grimme-ui has **no Code Connect and no documented Figma-name↔code mapping** — component
-detection **infers** by layer-name convention + visual confirmation. Deliberately loose for
-v1: surface low-confidence matches for user confirmation rather than guessing silently.
+**Component detection infers**, by layer-name convention + visual confirmation, because a design
+system that publishes Code Connect or a documented Figma-name↔code mapping is the exception —
+neither of the systems this skill was built against had one, and the catalog records no such
+mapping. Deliberately loose: surface low-confidence matches for user confirmation rather than
+guessing silently. Where a project *does* have Code Connect, that mapping is better evidence
+than any inference here and should be trusted over it.
 
 ## Phases
 
@@ -114,7 +123,8 @@ Region agents are driven by `agents/figma-region-extractor.md`.
 | **C — Synthesis & triage** | Opus | Dedup gaps · reconcile by concern · merge data states + responsive · changelog vs prior spec · write `page-spec.md` + `gaps/gap-NNN-*.md` · **triage checkpoint**. |
 | **D — Filing** | main thread | Branch on the adapter's `Tracker:` line. Page spec → `[DESIGN-SPEC]` on the **design-spec target**, parented to the scope ticket (native sub-issue on GitHub, child work item on ADO) · escalated gaps → the **DS-gap backlog**, ids written back. |
 
-(Catalog refresh, if it's needed: Sonnet, via `grimme-ui-catalog`.)
+(No catalog, or one that has drifted from the design system: author or refresh it with
+`figma-tools:ds-catalog`, then re-run Phase 0.)
 
 **STOP gates — none of these is automatable:**
 

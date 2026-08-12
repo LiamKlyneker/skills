@@ -31,3 +31,9 @@ jobs:
         env:
           VALIDATE_BASE_REF: ${{ github.event.pull_request.base.sha }}
         run: python3 .github/scripts/validate_skills.py
+
+      # The validator is the only code this repo owns, so it is the only thing here with
+      # tests. Standard library `unittest` — no dependency manifest, same rule as the
+      # script itself.
+      - name: Test the validator's own rules
+        run: python3 .github/scripts/test_validate_skills.py

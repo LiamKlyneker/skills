@@ -29,6 +29,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 TOP_KEY = re.compile(r"^([A-Za-z0-9_-]+):[ \t]*(.*)$")
+NESTED_KEY = re.compile(r"^\s+([A-Za-z0-9_-]+):[ \t]*(.*)$")
+SEMVER = re.compile(r"^(\d+)\.(\d+)\.(\d+)$")
 SHARED_REF = re.compile(r"_shared/([A-Za-z0-9._-]+\.md)")
 BLOCK_SCALARS = {">", "|", ">-", "|-", ">+", "|+"}
 # `../_shared/x.md` is this repo's shorthand for "some shared doc" (see CLAUDE.md),
@@ -75,6 +77,42 @@ def read_frontmatter(path: Path) -> dict[str, str] | None:
         elif current and raw.strip():
             fields[current] = f"{fields[current]} {raw.strip()}".strip()
     return fields
+
+
+def read_metadata(path: Path) -> dict[str, str]:
+    """The `metadata:` sub-block of a SKILL.md's frontmatter, as key → value.
+
+    `read_frontmatter` deliberately folds every indented line into the key above it —
+    that is what makes a `description: >` block read as one string — so a genuinely
+    nested mapping needs its own small parse rather than a cleverer shared one, which
+    would start splitting any description that happens to contain a colon.
+    """
+    lines = path.read_text(encoding="utf-8").splitlines()
+    if not lines or lines[0].strip() != "---":
+        return {}
+    end = next((i for i, l in enumerate(lines[1:], 1) if l.strip() == "---"), None)
+    if end is None:
+        return {}
+
+    fields: dict[str, str] = {}
+    inside = False
+    for raw in lines[1:end]:
+        if not raw[:1].isspace():
+            inside = raw.strip() == "metadata:"
+            continue
+        match = NESTED_KEY.match(raw) if inside else None
+        if match:
+            fields[match.group(1)] = match.group(2).strip().strip("\"'")
+    return fields
+
+
+def parse_version(raw: str) -> tuple[int, int, int] | None:
+    """`1.8.0` → `(1, 8, 0)`. Anything that is not a plain numeric triple → None."""
+    match = SEMVER.match(raw.strip())
+    if not match:
+        return None
+    major, minor, patch = match.groups()
+    return int(major), int(minor), int(patch)
 
 
 def load_json(path: Path) -> dict | None:
@@ -201,6 +239,55 @@ def check_skills() -> None:
             fail(path, f"skill name `{name}` already claimed by {other} — skill names "
                        f"must be unique within {where}")
         owners[(scope, name)] = path
+
+
+def check_skill_versions(plugin_dirs: list[Path]) -> None:
+    """A skill's `metadata.version` may never run ahead of the plugin that ships it.
+
+    A consumer installs the *plugin*, at the plugin's `version`, and receives the skill
+    files inside that one cache copy — so a skill stamped newer than its plugin describes
+    a release nobody can install, and it does it silently. This repo has already had that
+    drift once: a skill sat at 1.8.0 inside a plugin still claiming 1.4.0, and it was
+    found by a human reading two files rather than by anything mechanical (#105).
+
+    Equal is fine and is the common case. Older is fine too — a skill may simply not have
+    changed since. Only *ahead* is a contradiction.
+    """
+    for directory in plugin_dirs:
+        manifest = directory / ".claude-plugin" / "plugin.json"
+        if not manifest.is_file():
+            continue  # check_plugin_manifests already reported the missing manifest
+        try:
+            declared = (json.loads(manifest.read_text(encoding="utf-8")) or {}).get("version") or ""
+        except (json.JSONDecodeError, OSError):
+            continue  # ditto — one problem, reported once
+
+        stamped: list[tuple[Path, str]] = []
+        for path in walk_files(directory, "SKILL.md"):
+            version = read_metadata(path).get("version")
+            if version:
+                stamped.append((path, version))
+        if not stamped:
+            continue  # most skills carry no version of their own; nothing to compare
+
+        plugin_version = parse_version(declared)
+        if plugin_version is None:
+            # Reported rather than skipped: a guard that quietly disables itself on a
+            # malformed version is indistinguishable from one that passed.
+            fail(manifest, f"version `{declared}` is not a numeric MAJOR.MINOR.PATCH — the "
+                           f"skill-version guard has nothing to compare against")
+            continue
+
+        for path, raw in stamped:
+            skill_version = parse_version(raw)
+            if skill_version is None:
+                fail(path, f"metadata.version `{raw}` is not a numeric MAJOR.MINOR.PATCH")
+            elif skill_version > plugin_version:
+                fail(path, f"skill `{path.parent.name}` metadata.version `{raw}` is ahead of "
+                           f"plugin `{directory.name}` version `{declared}` — a skill ships "
+                           f"inside its plugin, so the plugin's version is the one a consumer "
+                           f"installs; bump `{directory.name}` (here and in marketplace.json) "
+                           f"or lower the skill")
 
 
 def check_agents() -> None:
@@ -398,19 +485,22 @@ def main(argv: list[str]) -> int:
     args = parser.parse_args(argv)
 
     entries = check_marketplace()
+    plugin_dirs = [directory for directory, _ in entries]
     check_plugin_manifests(entries)
     check_skills()
+    check_skill_versions(plugin_dirs)
     check_agents()
     check_symlinks()
     check_shared_references()
-    check_version_bumps([directory for directory, _ in entries], args.base)
+    check_version_bumps(plugin_dirs, args.base)
 
     if errors:
         print(f"✗ {len(errors)} problem(s) found:\n", file=sys.stderr)
         for error in errors:
             print(f"  {error}", file=sys.stderr)
         return 1
-    print("✓ catalog, plugins, skills, agents, symlinks and _shared refs all valid")
+    print("✓ catalog, plugins, skills, skill versions, agents, symlinks and _shared refs "
+          "all valid")
     return 0
 
 
