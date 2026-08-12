@@ -40,12 +40,15 @@ by directory scope, so a run rooted in a consumer repo (e.g. `mygrimme-frontend`
 invoke** Marketplace skills like `grimme-ui-catalog` or `/figma-use`. Every dependency is
 detachable:
 
-- **`catalog.md` (required artifact).** The existence source — what tells the spec which
-  classname, semantic token, component, and cva variant actually exist. **Bundled at
-  `references/catalog.md`**, so a run needs no cross-repo path. Resolution order: a **passed
-  arg** → else the **bundled copy** → else ask. The `grimme-ui-catalog` *skill* is only needed
-  to *(re)generate* it. Staleness is opportunistic and soft (Phase 0 step 2) — never a hard
-  fail.
+- **A project design-system catalog (required artifact).** The existence source — what tells
+  the spec which class, token, component, and variant value actually exist. It is a
+  **per-project artifact in the consuming repo**, never bundled here, and it is registered in
+  the adapter's `## Design system` section by pointer — the same pattern as `## Project gates`,
+  so this skill never names its filename. Resolution order: **passed arg → the adapter's
+  catalog pointer → ask**, stopping there. Its required shape is
+  `references/catalog-contract.md`; Phase 0 validates the resolved file against it and **fails
+  loudly** rather than degrading. Staleness is a separate, soft check (Phase 0 step 2c) —
+  never a hard fail.
 - **Figma MCP — two distinct capability checks, do not conflate them:**
   1. **`figma-dev-mode` present (required):** `get_metadata`, `get_variable_defs`,
      `get_screenshot`, `get_design_context`. STOP if this server is absent — no fallback.
@@ -73,9 +76,11 @@ detachable:
 
 ## Resolution sources (what "does it exist?" reads)
 
-- **Existence** → the `catalog.md` **artifact** (components, cva variants, tokens by tier,
-  SYSTEM_ICONS keys), read from the bundle or an arg override — not by invoking
-  `grimme-ui-catalog`. The ONLY source for "does the DS have this?".
+- **Existence** → the project **catalog** artifact (components + variant axes and values,
+  tokens by tier, typography utilities, icon sources), resolved and validated in Phase 0. The
+  ONLY source for "does the DS have this?".
+- **Catalog shape** → `references/catalog-contract.md` (bundled) — the required sections, the
+  `status: current|legacy|deprecated` schema, and the Phase 0 validation rules.
 - **Usage / HOW** → `grimme-ui-components-best-practices` rules, **cited by stable name**. The
   page spec cites; never duplicates.
 - **Resolution + tolerance rules** → `references/resolution-rules.md` (bundled).
@@ -91,7 +96,7 @@ Region agents are driven by `agents/figma-region-extractor.md`.
 
 | Phase | Model | Does |
 |---|---|---|
-| **0 — Setup** | main thread | Resolve catalog + check staleness · confirm Figma capability · collect extra nodes by role (`viewport:*` / `state:*`) · collect scope context · pick run mode (`page` default / `component` lean). |
+| **0 — Setup** | main thread | Resolve catalog (arg → adapter pointer → ask) + validate against the shape contract + soft staleness check · confirm Figma capability · collect extra nodes by role (`viewport:*` / `state:*`) · collect scope context · pick run mode (`page` default / `component` lean). |
 | **A — Decompose & scope** | Sonnet | Enumerate regions by node ID (recursing through pass-through wrappers), then assign each `in-scope` / `spec-only` / `excluded`. `in-scope` + `spec-only` fan out. |
 | **B — Region agents** | `figma-tools:figma-region-extractor` (Sonnet) ×N parallel | One agent per region: components, colors/tokens, type, spacing, icons, hidden variants, layout intent → structured JSON findings. |
 | **C — Synthesis & triage** | Opus | Dedup gaps · reconcile by concern · merge data states + responsive · changelog vs prior spec · write `page-spec.md` + `gaps/gap-NNN-*.md` · **triage checkpoint**. |
@@ -102,7 +107,8 @@ Region agents are driven by `agents/figma-region-extractor.md`.
 **STOP gates — none of these is automatable:**
 
 1. **`figma-dev-mode` absent** → stop. There is no fallback (Phase 0).
-2. **No resolvable `catalog.md`** → stop. (Staleness alone never stops a run.)
+2. **No resolvable catalog, or one that fails `references/catalog-contract.md`** → stop, naming
+   the path and the rule that failed. (Staleness alone never stops a run.)
 3. **Scope or node-canonicity conflict** between the ticket and the freetext → ask, don't
    silently pick (Phase 0).
 4. **Human triage checkpoint** (Phase C step 8) → present every gap and flag; the user marks

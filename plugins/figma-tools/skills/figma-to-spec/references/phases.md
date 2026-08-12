@@ -6,36 +6,41 @@ you are running.
 
 Normative elsewhere, never restated here: the region-agent extraction contract and the
 `bindingVerified` / degraded-color-mode rules live in `../agents/figma-region-extractor.md`; resolution
-and tolerance rules in `resolution-rules.md`; existence in `catalog.md`.
+and tolerance rules in `resolution-rules.md`; the required shape of a project catalog in
+`catalog-contract.md`; existence itself in the project catalog Phase 0 resolves.
 
 ---
 
 ## Phase 0 — Setup (main thread)
 
 1. Require the Figma node URL arg. Ask if missing.
-2. **Resolve `catalog.md`** — arg override → else the bundled `references/catalog.md` → else
-   ask. Read it in. Then run the **skill-free staleness check** (no `grimme-ui-catalog`
-   invocation needed): if `~/schmiede-one/grimme-ui` is reachable, recompute the fingerprint
-   over its source-of-truth files and compare to the catalog's line-1 stamp —
+2. **Resolve, validate, then staleness-check the project catalog** — three parts, in this
+   order. The catalog is a **per-project artifact in the consuming repo**, never a file inside
+   this plugin.
 
-   ```
-   cat \
-     <(sed -n '/"exports"/,/^  }/p' ~/schmiede-one/grimme-ui/package.json) \
-     ~/schmiede-one/grimme-ui/theme/tokens/primitives.generated.css \
-     ~/schmiede-one/grimme-ui/theme/tokens/alias.generated.css \
-     ~/schmiede-one/grimme-ui/theme/tokens/semantic.generated.css \
-     ~/schmiede-one/grimme-ui/theme/tokens/dimensions.generated.css \
-     ~/schmiede-one/grimme-ui/system_icons/_list.tsx \
-     | shasum | cut -d' ' -f1
-   ```
+   **2a — Resolve: passed arg → the adapter's registered catalog pointer → ask the user.** In
+   that order, and no further: resolution stops at *ask*, with no fallback beyond it. The
+   pointer lives in `<repo-root>/.claude/project/adapter.md`'s `## Design system` section,
+   registered the same way a gate is registered in `## Project gates` — **that registry is the
+   only place the catalog is named.** Never hardcode a catalog filename or path here, and
+   never reconstruct one by reading the design system's source at run time. Read the resolved
+   file in.
 
-   The inner step is `cat`, not `shasum`, so the hash is **content-only** — no file paths in
-   it. It matches the `grimme-ui-catalog` recipe exactly and reproduces on any machine.
+   **2b — Validate against `catalog-contract.md`. Hard STOP on failure.** Run that file's
+   numbered validation rules **before any Figma read**. A malformed catalog fails **loudly and
+   specifically**: name the resolved path, the rule that failed, and what to change, then offer
+   the two ways forward (fix the catalog, or point the run at a different one). Never degrade,
+   never proceed on partial data, and never infer a missing section from the design system's
+   source — a spec built on a half-read catalog reads as fully resolved, which is exactly the
+   failure this gate exists to prevent.
 
-   Match → note "catalog current". Mismatch → **soft-warn** ("bundled catalog may lag live
-   grimme-ui — regenerate via `grimme-ui-catalog`") and **continue**. grimme-ui not reachable
-   → note "bundled snapshot, staleness unchecked" and continue. **Never hard-fail on
-   staleness.** The only hard STOP here is no resolvable `catalog.md` at all.
+   **2c — Staleness: soft, never fatal.** If the adapter registers a **fingerprint command**
+   for this design system, run it and compare the result to the catalog's line-1 stamp. Match
+   → note "catalog current". Mismatch → **soft-warn** ("catalog may lag the live design system
+   — regenerate it") and **continue**. No fingerprint command registered, or the design-system
+   source unreachable → note "staleness unchecked" and continue. **Never hard-fail on
+   staleness.** The only hard STOPs in this area are 2a and 2b: no resolvable catalog at all,
+   and a catalog that fails the shape contract.
 3. **Confirm capability — three separate checks (see SKILL.md Prerequisites).** (a) Ensure
    **`figma-dev-mode`** is present — STOP if not. (b) Try to make the binding read
    (`use_figma`) available (load `/figma-use` if reachable). If it isn't, continue in
@@ -191,7 +196,7 @@ above. Never keep a second copy of the contract — read it from the one file.
 phase reads standalone):
 
 - **Component match** — infer from the Figma layer name (e.g. slash-separated
-  `Component/Variant/Size`) → match against `catalog.md` components + cva variants;
+  `Component/Variant/Size`) → match against the catalog's components + their variant axes;
   cross-check the screenshot against the component's Storybook render. Confident →
   record `<Component props/>`. Low confidence → record as an unknown-component gap and
   **surface the parsed mapping for user confirmation**.

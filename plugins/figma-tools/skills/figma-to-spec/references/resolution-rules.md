@@ -1,9 +1,9 @@
 # Resolution & tolerance rules
 
 How a region agent decides whether a Figma property **resolves** to the design system,
-**near-misses** it (human call), or is **off-system** (gap). Applied against
-`grimme-ui-catalog`'s `catalog.md`. Status vocabulary: ✅ resolves · ⚠️ flag / confirm ·
-❌ gap.
+**near-misses** it (human call), or is **off-system** (gap). Applied against the **project
+catalog** Phase 0 resolved and validated (shape: `catalog-contract.md`) — never against a
+filename this file names. Status vocabulary: ✅ resolves · ⚠️ flag / confirm · ❌ gap.
 
 ## Colors / tokens
 
@@ -82,7 +82,7 @@ grimme-ui has no Code Connect and no name↔code map, so **infer**:
 
 1. Parse the Figma layer name by common conventions — slash-separated
    `Component/Variant/Size`, or a bare `ComponentName`.
-2. Match the parsed component against `catalog.md` components; match parsed
+2. Match the parsed component against the catalog's components; match parsed
    variant/size against that component's recorded **cva** axes.
 3. **Cross-check** the region screenshot against the component's Storybook render.
 4. **Confidence gate:**
