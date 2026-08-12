@@ -88,7 +88,8 @@ runs it. It carries the facts that decide whether a value drawn in Figma **exist
 project's design system, and in what form an app writes it. None of it is inferable from the
 tree at run time, which is why every line is here rather than left to a skill.
 
-- Design-system source: `<where the design system itself lives — repo path, workspace package, or published package + version>` — the thing a catalog is generated *from* and a gap is eventually built *in*. Or "None — `<how the design system is consumed instead>`".
+- Repo role: `<consumer|library>` — **an absent `Repo role:` row means `consumer`.** Which side of the design system this repo sits on: a `consumer` renders the design system and files gaps against it; a `library` **is** the design system, so a spec written here changes the thing everyone else resolves against. Every adapter written before this row existed belongs to a consumer repo, so an adapter that never gained the row still reads unambiguously and needs no edit. The role is an **intent, not an inference** — a repo that happens to contain a `components/` directory is not thereby a library — so it is always asked and never guessed from the tree.
+- Design-system source: `<where the design system itself lives — repo path, workspace package, or published package + version>` — the thing a catalog is generated *from* and a gap is eventually built *in*. Or "None — `<how the design system is consumed instead>`". In a `library` repo this points at this repo itself.
 - Catalog: `./<catalog>.md` — this project's design-system catalog: the existence source `figma-to-spec` resolves every component, token, type utility and icon against. **This row is the only place the catalog is ever named**, exactly as `## Project gates` is the only place a gate is named — skills follow the pointer and never a filename. A path relative to this file, or anywhere in the repo. Its required shape is the `figma-to-spec` skill's `references/catalog-contract.md`; a catalog that fails that contract stops the run loudly rather than degrading.
 - Fingerprint command: `<the command that recomputes the catalog's stamp>` — the recipe behind the catalog's line-1 `fingerprint:` value. The catalog carries the *value*; this row carries the *recipe*, so the two never drift into two definitions. Hash **content only** — anything path-dependent differs between two checkouts of the same commit and turns every check into a false warning. Or "None — staleness unchecked", which is a real answer: the staleness check is soft and never fails a run.
 - Class prefixes — **three separate facts, and they are not interchangeable.** A design system routinely prefixes its build internally, its CSS custom properties differently, and emits something else again to consumers; collapsing them is how a spec recommends a class the app cannot write:
@@ -98,6 +99,30 @@ tree at run time, which is why every line is here rather than left to a skill.
 - Icon resolution ladder: `<source 1 → source 2 → … → what happens when none matches>` — the icon sources this project tries, **in order**. Multi-source by default: an in-house set plus a third-party library used by consuming apps is the common shape, and where a source may be used (app layer only, design system only, both) is part of the answer. The catalog says what each source *contains*; this row says which order they are tried in and what a no-match becomes.
 - Usage-rules source *(optional)*: `<the best-practices doc or skill a page spec cites by stable name>` — the HOW, kept separate from the catalog's WHAT. A page spec **cites** it and never duplicates it, so a citation stands even where the source is not loaded. **Absent is not an error**: leave the row out and a spec cites nothing. Nothing warns about it.
 - Downstream implementer *(optional)*: `<the skill or workflow that implements a filed spec>` — who picks a `[DESIGN-SPEC]` up. **Absent means a human.** Also not an error, also never warned about.
+
+Three rows only a **library** repo fills — the conventions of the design system itself, which
+decide how a spec written *against this repo* is allowed to phrase a change. A repo whose
+`Repo role:` is `consumer` (including one with no role row at all) **deletes all three**, the
+same way a project that never runs `figma-tools` deletes the two filing rows in `## Repo`.
+None of the three is inferable from the tree at run time, and a wrong answer here does not
+error — it produces a spec whose edits land in the wrong file:
+
+- Variant mechanism: `<source 1 → source 2 → … → what happens when none matches>` — how this
+  library declares a component's variant axes and their values, **in the order a reader tries
+  them**, plus any repo-specific trap. A **ladder, not a value**, exactly like the icon
+  resolution ladder above: the primary mechanism first, the fallback path next, and the shapes
+  that *look* like the mechanism but are the implementation of it last. E.g. "`cva()` in the
+  component file → no `cva()` found → prop unions in the types file; conditional `className`
+  branches are the implementation, never the declaration · trap: a runtime deprecated-alias
+  map living outside the `cva` object, so an axis can accept values the `cva` call never
+  lists".
+- Token pipeline: `<the generator that consumes the token source, and the file it consumes — or "None — <how tokens are edited instead>">` — **this row decides how literal a spec's token delta may be.** A library with a generator that consumes a token source (JSON, YAML, a TS module) gets specs that state the **literal source edit**, because the emitted CSS and utilities are build output nobody hand-edits. A library with no generator gets a **coordinated file-edit list** instead — every file that must change together, named — because there is no single source whose edit propagates. Say which, and name the file either way.
+- Story convention: `<where stories live, and how their argTypes are declared>` — e.g.
+  "`*.stories.tsx` beside the component · `argTypes` generated from the `cva` variants, so a
+  new axis value appears in the story with no story edit" versus "`stories/` at the package
+  root · `argTypes` hand-written per story, so a new axis value needs the story updated too".
+  A spec that adds a variant value has to say whether a story edit is part of the change, and
+  this row is the only thing that can tell it.
 
 ## Verify ladder
 

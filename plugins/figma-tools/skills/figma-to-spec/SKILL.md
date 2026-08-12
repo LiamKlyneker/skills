@@ -98,7 +98,7 @@ dependency is detachable:
   tokens by tier, typography utilities, icon sources), resolved and validated in Phase 0. The
   ONLY source for "does the DS have this?".
 - **Catalog shape** → `references/catalog-contract.md` (bundled) — the required sections, the
-  `status: current|legacy|deprecated` schema, and the Phase 0 validation rules.
+  `status: current|legacy|deprecated|unused` schema, and the Phase 0 validation rules.
 - **Usage / HOW** → the adapter's *usage-rules source*, **cited by stable name**. The page spec
   cites; never duplicates; cites nothing when no row is registered.
 - **Resolution + tolerance rules** → `references/resolution-rules.md` (bundled).

@@ -37,10 +37,11 @@ this design.
    doesn't separate two kinds, record that in the finding's note rather than inventing the
    split — an invented boundary is the same failure in the other direction.
 
-## Status of a matched entry — `legacy` and `deprecated` resolve, and always flag
+## Status of a matched entry — every status resolves; `legacy` and `deprecated` also flag
 
 Applies to **every** match made by the rules below — component, variant value, token,
-typography utility, icon. The catalog stamps entries `current` / `legacy` / `deprecated`
+typography utility, icon. The catalog stamps entries `current` / `legacy` / `deprecated` /
+`unused`
 with an optional `successor:`; that field, its default, its cascade from a tier or component
 to the entries under it, and the invariant that **a status value never makes an entry
 invisible to a match** are all defined in `catalog-contract.md`. This section defines only
@@ -51,6 +52,12 @@ what to *do* once a match lands on one.
 | `current`, or no status field | ✅ resolves | the entry, plainly |
 | `legacy` | ✅ resolves **+ ⚠️ flag** | "on-system but legacy; successor is `<successor>`" |
 | `deprecated` | ✅ resolves **+ ⚠️ flag** | "on-system but deprecated; successor is `<successor>`" |
+| `unused` | ✅ resolves, **no flag** | the entry, plainly — optionally noting it had no consumers until now |
+
+**`unused` is not a weak `legacy`, and it does not flag.** It says the entry ships and nothing
+consumes it yet; a design that uses it is the first consumer, which is the best outcome
+available, not a warning. Flagging it would train a reader to treat "on-system" as a problem.
+The two values are defined apart in `catalog-contract.md` for exactly this reason.
 
 - **It is never a ❌ gap.** The design uses something the design system has. False-gapping a
   legacy component — reporting "needs building" for a component that ships today — is the
