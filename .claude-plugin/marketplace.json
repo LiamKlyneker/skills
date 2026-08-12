@@ -17,7 +17,7 @@
     {
       "name": "figma-tools",
       "description": "Figma design-to-spec extraction for Claude Code: reads a Figma file region by region and produces implementation-ready page/gap specs, backed by the figma-region-extractor subagent",
-      "version": "1.4.0",
+      "version": "1.8.0",
       "keywords": ["figma", "design-to-code", "design-spec", "figma-api", "subagent"],
       "category": "design",
       "source": "./plugins/figma-tools"
