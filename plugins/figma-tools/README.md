@@ -1,7 +1,11 @@
 # figma-tools
 
 `figma-to-spec`, packaged as a Claude Code plugin, plus the
-`figma-region-extractor` agent it spawns per region.
+`figma-region-extractor` agent it spawns per region — and `ds-catalog`, which
+authors the per-project design-system catalog `figma-to-spec` resolves against.
+Two skills, one dependency between them: the catalog. `ds-catalog` writes it,
+`figma-to-spec` reads it, and the shape both are written against is
+`figma-to-spec/references/catalog-contract.md`.
 
 ## Naming
 
@@ -28,8 +32,15 @@ plugins/figma-tools/
     _shared -> ../../../_shared                    # symlink
     figma-to-spec/
       agents/figma-region-extractor.md -> ../../../agents/figma-region-extractor.md
+    ds-catalog/
   agents/figma-region-extractor.md
 ```
+
+`ds-catalog` reaches the shape contract by a plain relative path,
+`../figma-to-spec/references/catalog-contract.md`. Both skills ship in one
+plugin, so that path resolves identically in this working tree and in an install
+cache copy — and it needs no symlink, because nothing about it decides whether a
+skill loads.
 
 Nothing sits at the plugin root — same reason as `plugins/prd-workflow/`: a
 root `SKILL.md` alongside a `skills/` subdirectory registers twice.
