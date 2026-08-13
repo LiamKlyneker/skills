@@ -68,6 +68,28 @@ ok()   { [ "$quiet" -eq 1 ] || printf '%-9s %s\n' "OK" "$1"; }
 rel()     { printf '%s' "${1#$repo/}"; }
 homerel() { case "$1" in "$HOME"/*) printf '~%s' "${1#$HOME}" ;; *) printf '%s' "$1" ;; esac; }
 
+# The value of an adapter row shaped `- <Label>: <value> — prose`. Every value in
+# the template is backticked, so the first backticked token on the line is the
+# answer; a row that dropped the backticks falls back to the text after the colon,
+# cut at the em dash the template starts its prose with.
+row_value() {
+  local line="$1" v
+  v="$(printf '%s\n' "$line" | grep -o '`[^`]*`' | head -1 | tr -d '`')"
+  if [ -z "$v" ]; then
+    v="${line#*:}"
+    v="${v%%—*}"
+    v="${v%% - *}"
+  fi
+  v="${v#"${v%%[![:space:]]*}"}"
+  v="${v%"${v##*[![:space:]]}"}"
+  printf '%s' "$v"
+}
+
+# True when a row value is nothing but a lone `<token>` — an unfilled template
+# placeholder, which check 7b already reports. Saying it twice reads as two
+# problems rather than one.
+is_unfilled_token() { printf '%s' "$1" | grep -qE '^<[^<>]*>$'; }
+
 echo "doctor: $repo"
 [ -n "$bundle" ] && echo "bundle: $bundle"
 echo
@@ -311,6 +333,55 @@ elif [ -f "$adapter" ]; then
       err "POINTER" "$(rel "$adapter") points at \`$ptr\`, but $(rel "$target") does not exist"
     fi
   done < <(printf '%s\n' "$gates_section" | sed -E 's#\.\./[A-Za-z0-9._/-]+\.md##g' | grep -o '\./[A-Za-z0-9._/-]\{1,\}\.md' | sort -u)
+
+  # 7d/7e. The two `## Repo` rows that shape what a run's branch and pull request
+  # look like to the team. Both are **optional and independent** — an adapter
+  # declaring neither is finished, not half-filled — so absence is silence here,
+  # never a warning. Only a row that is present and wrong gets reported.
+  #
+  # Scoped to `## Repo` for the reason 7c scopes to `## Project gates`, plus one
+  # of its own: the heading is matched *exactly*, because `## Repo discipline`
+  # opens with the same word and a prefix match would drag its prose in.
+  repo_section="$(awk '/^## Repo[[:space:]]*$/{flag=1; next} /^## /{flag=0} flag' "$adapter")"
+
+  # 7d. `Branch pattern:` placeholders. `<n>` (the GitHub PRD number), `<id>` (the
+  # Azure DevOps work-item id) and `<slug>` are the only tokens anything
+  # substitutes, and every one of them is optional — a pattern carrying none, like
+  # `release`, is legal and silent. Anything else survives into a real branch name
+  # as literal angle brackets.
+  while IFS= read -r line; do
+    [ -n "$line" ] || continue
+    value="$(row_value "$line")"
+    [ -n "$value" ] || continue
+    is_unfilled_token "$value" && continue
+    while IFS= read -r token; do
+      [ -n "$token" ] || continue
+      case "$token" in '<n>'|'<id>'|'<slug>') continue ;; esac
+      err "UNFILLED" "$(rel "$adapter") branch pattern \`$value\` uses $token, which nothing substitutes — the only placeholders are <n>, <id> and <slug>, and all three are optional"
+    done < <(printf '%s\n' "$value" | grep -o '<[^<>]*>')
+  done < <(printf '%s\n' "$repo_section" | grep -E '^[[:space:]]*[-*][[:space:]]+(\*\*)?Branch pattern')
+
+  # 7e. `PR template:` — a path has to resolve to a file, because the loop reads
+  # it blind at run time. A content snapshot is the template's last-resort form
+  # (the literal word `snapshot`, body fenced beneath the row), taken only when
+  # the project has no template file at all: there is nothing doctor can read that
+  # would say whether the team's real template has moved on since, so it says so
+  # every run rather than implying the copy is current.
+  while IFS= read -r line; do
+    [ -n "$line" ] || continue
+    value="$(row_value "$line")"
+    [ -n "$value" ] || continue
+    is_unfilled_token "$value" && continue
+    case "$value" in
+      [Ss]napshot)
+        warn "$(rel "$adapter") records its PR template as a content snapshot rather than a path — possibly stale, since nothing here can tell whether the team's template moved on; re-read it by hand"
+        continue ;;
+      /*) target="$value" ;;
+      *)  target="$repo/${value#./}" ;;
+    esac
+    [ -f "$target" ] ||
+      err "POINTER" "$(rel "$adapter") points its PR template at \`$value\`, which is not a file in this repo"
+  done < <(printf '%s\n' "$repo_section" | grep -E '^[[:space:]]*[-*][[:space:]]+(\*\*)?PR template')
 
   ok "$(rel "$adapter") present"
 fi

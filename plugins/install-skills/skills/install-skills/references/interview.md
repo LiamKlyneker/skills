@@ -38,7 +38,7 @@ way.
 
 | Adapter section | Read this | Ask only for |
 |---|---|---|
-| `## Repo` | **GitHub**: `gh repo view --json nameWithOwner,defaultBranchRef`. **Azure DevOps**: the default branch from git and nothing else — the tree states none of the rest | related repos / contract boundaries on either tracker — nothing states these reliably. **Title prefixes on either tracker**: offer the defaults (`[PRD]`·`[TASK]`·`[BUG]` on GitHub, `[SPEC]`·`[TASK]`·`[FINDINGS]`·`[BUG]` on ADO — neither tracker has a `[QA]` prefix) and only ask whether this repo already uses different words — one confirmation, not four questions. On ADO the answer is load-bearing rather than cosmetic, since every kind of child is the same work-item type and the prefix is all that separates them, so read it back. On Azure DevOps, the whole `### Azure DevOps` block as well: org, the **two** projects (work items and repo — ask for both even when they are the same, since querying the wrong one returns empty rather than an error), team, repository, work-item type, the three board states, and the branch pattern |
+| `## Repo` | **GitHub**: `gh repo view --json nameWithOwner,defaultBranchRef`; plus, for the two optional rows below, the PR template on disk (`.github/pull_request_template.md` and its casings, the root and `docs/` variants, then a `.github/PULL_REQUEST_TEMPLATE/` directory) and the branch convention the repo already uses (`git branch -r`, or the head branches of the last handful of merged PRs). **Azure DevOps**: the default branch from git and nothing else — the tree states none of the rest | related repos / contract boundaries on either tracker — nothing states these reliably. **Title prefixes on either tracker**: offer the defaults (`[PRD]`·`[TASK]`·`[BUG]` on GitHub, `[SPEC]`·`[TASK]`·`[FINDINGS]`·`[BUG]` on ADO — neither tracker has a `[QA]` prefix) and only ask whether this repo already uses different words — one confirmation, not four questions. On ADO the answer is load-bearing rather than cosmetic, since every kind of child is the same work-item type and the prefix is all that separates them, so read it back. On Azure DevOps, the whole `### Azure DevOps` block as well: org, the **two** projects (work items and repo — ask for both even when they are the same, since querying the wrong one returns empty rather than an error), team, repository, work-item type, the three board states, and the branch pattern. **On GitHub only**, the two optional rows `Branch pattern:` and `PR template:` — one confirmation each of what the read above turned up, never a cold question, and "we have neither" is a finished answer. The `prd-workflow` question set below carries the discovery ladder |
 | `## Commands` | `package.json` scripts · `Makefile` targets · `Package.swift` + schemes · `Cargo.toml` · `pyproject.toml`. Package manager from the lockfile (`pnpm-lock.yaml` → pnpm, `bun.lockb` → bun, …) | the screenshot command — it is usually unscripted, and "none, use the browser tools interactively" is a real answer |
 | `## App facts` | language + version, framework + version, path aliases, generated-vs-source files, strict flags — all from the manifests and config files | **the fragile part.** The subsystem that breaks silently and that no linter catches. This is the highest-value line in the adapter and it is never in a file |
 | `## Design system` | the design-system dependency and its version from the manifests · a Tailwind config's `prefix` · an existing catalog file if the repo already has one. **Never the repo role** — a `components/` directory is not evidence of a library, and the tree cannot tell you which side of the design system a repo is on | the **repo role** first (`consumer` or `library`; absent means `consumer`), because a `consumer` answer deletes three rows instead of asking about them. Then, **only when the answer is `library`**, the three convention rows: the **variant mechanism** as a ladder in the icon ladder's shape (primary declaration → fallback → the shapes that are the implementation rather than the declaration, plus the trap this repo has), the **token pipeline** (is there a generator, and what source does it consume? — "None, the CSS is hand-edited" is a real answer and it changes what a spec may say), and the **story convention** (where stories live, and are `argTypes` generated from the variants or hand-written?). Then, for either role: the **catalog pointer** if no file announces itself — never guess a filename, since this row is the only place it is ever named. The **fingerprint command** ("None — staleness unchecked" is a real answer). The **three class-prefix facts** as three questions, not one: the Tailwind class prefix, the CSS variable prefix, and the form an app actually writes — a design system that prefixes internally and emits unprefixed is the normal case, and reading one answer as all three makes every spec recommend a class that does not exist. The **icon ladder**, in order, including where each source may be used — ask for sources plural, since one is the exception. Then the two optional rows, once each: is there a best-practices doc a spec should cite, and does a skill implement filed specs? **"No" to either is a complete answer** — leave the row out and never warn |
@@ -64,6 +64,43 @@ Ask only for the sections the bundle declares in `../../install/bundles.md`.
 2. The verify floor, and what L3 evidence is when there's no screenshot command.
 3. The deliberate-looking-wrong conventions (`## Repo discipline`).
 
+Then `## Repo`'s two optional `### GitHub` rows, which decide what a run's branch and pull
+request look like **to the team**: `Branch pattern:` and `PR template:`. Both are
+**discovered first and confirmed second** — the infer-first rule at the top of this file
+applies to them more than to anything else here, because both answers are sitting in the
+repo and asking cold teaches the user the installer never looked.
+
+**`PR template:` is a ladder, and a path beats a copy at every rung.** The loop reads the
+path at run time, so a path keeps tracking the team's file as they edit it; a copy is
+frozen the moment it is taken.
+
+1. **The standard file.** `.github/pull_request_template.md`, its casings, and the root and
+   `docs/` variants GitHub also honours. Found one → record its path, confirm in one line,
+   done.
+2. **A multi-template directory** — `.github/PULL_REQUEST_TEMPLATE/`. This rung *is* a real
+   question, because there is more than one answer: which of these does a PRD's pull request
+   use? Record that one file's path, never the directory.
+3. **The team's own PR-opening skill or docs** — a project skill or slash command that opens
+   PRs, or a `CONTRIBUTING.md` section that dictates the body. Where it *reads* a file,
+   record that file's path; the template is still a path, it was just reached indirectly.
+4. **A snapshot, and only when the first three found nothing.** Write the literal word
+   `snapshot` as the row's value and the template body fenced beneath it. Say out loud that
+   `doctor` will report it as possibly stale on every run from then on — that is the cost of
+   a copy, and it is why the rungs above exist.
+
+**`Branch pattern:`** — read the branch names the repo already uses and offer back what you
+saw, as one confirmation rather than an open question: *"your merged PRs branch as `feat/…`
+and `fix/…` — should a PRD run's branch be `feat/<slug>`?"* The only placeholders are `<n>`
+(the PRD's issue number) and `<slug>`, and both are optional, so a constant like `release`
+is a legal answer. Don't infer a pattern from one branch, and don't invent a semantic prefix
+the repo does not already use — the loop makes one branch per PRD, not one per change kind.
+
+**Neither row is a gap.** Absent, they leave the loop on `prd/<n>-<slug>` with its own PR
+skeleton — exactly what every project got before the rows existed. Ask once each, take "no"
+or "we don't have one" as a complete answer, leave the row out, and record no warning
+anywhere. Same doctrine as `## Design system`'s two optional rows, and `SKILL.md` step 4
+states it once for all four.
+
 **`ado-workflow`** — the same set, and it is the one bundle where `## Repo` is a real
 interview rather than a `gh` call. Its board facts are worth more care than anything else
 here, because every one of them fails *silently*:
@@ -73,6 +110,10 @@ here, because every one of them fails *silently*:
    not an error — read them back for confirmation rather than accepting them once.
 2. Then the same top three as `prd-workflow`: the fragile subsystem, the verify floor and
    its L3 evidence, and the deliberate-looking-wrong conventions.
+
+The two optional rows in `prd-workflow`'s set are **GitHub-only and not asked here**: the
+`### Azure DevOps` block carries its own `Branch pattern:` row, filled as part of step 1
+above, and that side has no `PR template:` row at all.
 
 Do not ask which tracker — the bundle already said. There is no QA path to ask for on
 either tracker: GitHub posts a per-run QA comment on the PRD and labels it `needs-qa`,
