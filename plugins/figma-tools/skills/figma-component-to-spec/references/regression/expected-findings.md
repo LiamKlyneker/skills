@@ -27,14 +27,16 @@ plugin ships to every library.
   three times".
 - **Assert absences explicitly.** Several of the rules below are only visible as things that
   *didn't* happen (no gap for a component the token list contains, no Tailwind class recommended
-  for a var-only token, no tracker write before triage, **no metered extraction call before the
+  for a var-only token, no tracker write before triage, **no per-frame extraction call before the
   triage checkpoint**). An absence nobody wrote down is an absence nobody checks.
-- **A narrow extraction is not thin coverage, and the case must be able to tell them apart.**
-  Extraction runs only on the frames the fixture's kept set names, so most sections of a passing
-  spec are graded against the **lattice** rather than against what was extracted. Grade *Variant
-  axes* and every instance count as complete regardless of the kept set; grade *Token delta* and
-  *Figma fixes* against the kept set only. A case that grades the whole spec against the whole
-  set will fail every correct run of a narrowed triage.
+- **A short shortlist is not thin coverage, and the case must be able to tell them apart.**
+  Verification runs only on the frames the fixture's shortlist names, and the skeleton was written
+  before any of them — so most sections of a passing spec are graded against the **lattice and the
+  set-level reads** rather than against what was verified. Grade *Variant axes*, the color and
+  size picture, *Props API* and every instance count as complete regardless of the shortlist;
+  grade *Figma fixes*, the unbound half of *Token delta* and the geometry rows against the
+  shortlist only. A case that grades the whole spec against the whole set will fail every correct
+  run of a narrowed triage — and every correct `0 of N` run.
 - **Grade the current-state read separately from the design read.** This skill produces a
   *delta*, so a spec can be wrong in two independent ways: it misread Figma, or it misread the
   component as it stands today. A case that only asserts on the design half will pass a run
@@ -103,36 +105,63 @@ These are the lines the engine's shape earns, and each is graded against somethi
 did or did not do rather than against the quality of its prose. All of them are `MUST`.
 
 - **The axis table is complete before any per-frame extraction** — every axis and every value the
-  set draws appears in *Variant axes*, including on frames the kept set never touched. The lattice
-  comes from Setup's single root `get_metadata`, so an axis missing from the spec means the
-  lattice was mis-derived, **never** that a frame went unextracted. Grade this on a fixture whose
-  kept set is a strict subset; on a full-coverage fixture the assertion cannot fail.
-- **The extracted subset is disclosed, and a full-coverage reading is impossible** — the spec
-  carries an *Extraction coverage* section written as `<K> of <N>`, naming each frame that was
-  **deliberately** not extracted and its one-line reason, with a budget-guard narrowing recorded
-  as exactly that rather than dressed up as a design judgement. A spec that omits the section, or
-  writes "full coverage" for a kept set that happened to be everything, is a failure even when
-  every finding in it is correct: an implementer has no other way to tell a scoping decision from
-  thin coverage.
-- **Instance counts are computed from the lattice, not derived from extracted frames** — every
+  set draws appears in *Variant axes*, including on frames the shortlist never touched. The
+  lattice comes from Setup's root `get_metadata`, so an axis missing from the spec means the
+  lattice was mis-derived, **never** that a frame went unverified. Grade this on a fixture whose
+  shortlist is a strict subset or empty; on a full-coverage fixture the assertion cannot fail.
+- **The skeleton is axis-decomposed, never cell-shaped** — each color scheme, each size and each
+  state delta is stated **exactly once**, not once per variant frame. **A cell-shaped spec fails
+  even when every value in it is right**: it is the old engine's output written by the new one,
+  and it re-derives the same value dozens of times. The tell is a spec whose section count tracks
+  the frame count rather than the axis-value count.
+- **Inference is flagged** — a value derived from a token **name** rather than from a
+  per-property binding is marked as inference (`inferred-from-token-name`) wherever it appears,
+  and the flag is dropped **only** where a verification finding confirmed the binding.
+  **Presenting an inference as verified is a failure**, and it is one of the few that reads as a
+  cleaner result than the correct answer: nobody re-checks a value that looks confirmed.
+- **The shortlist is single-digit and justified** — every frame on it is either a **representative
+  of one variant axis-value at one size** or an **anomaly cell the cheap pass flagged**, and
+  nothing on it is a question Phase 3's source read already settled. A shortlist in the dozens is
+  a failure of triage, not a thorough run, and it is graded as such even when the spec it produces
+  is correct.
+- **`0 of N` is a pass** — a run whose triage shortlisted nothing produces a **complete** spec, and
+  it grades as complete, provided *Figma fixes* carries its bounded-completeness caveat (an
+  unbound fill is invisible to the cheap pass, so an empty section is not evidence the library is
+  clean). Grading `0 of N` as thin coverage is a defect in the **case**, not in the run.
+- **The verified subset is disclosed, and a full-coverage reading is impossible** — the spec
+  carries an *Extraction coverage* section written as `<K> of <N>`, naming which sections the
+  cheap pass wrote and which verification touched, each frame that was **deliberately** not
+  verified and its one-line reason, with a budget-guard narrowing recorded as exactly that rather
+  than dressed up as a design judgement. A spec that omits the section, or writes "full coverage"
+  for a shortlist that happened to be everything, is a failure even when every finding in it is
+  correct: an implementer has no other way to tell a scoping decision from thin coverage.
+- **Instance counts are computed from the lattice, not derived from verified frames** — every
   count is lattice arithmetic over the **drawn** set and is marked as computed. The tell is a
-  count that tracks `K` instead of `N`: on a fixture that keeps 3 of 24 frames, a value drawn in
-  8 frames still reports 8. A count that shrank with the triage tells a reviewer the opposite of
-  the truth about how load-bearing a value is.
-- **No metered call is spent before the triage checkpoint** — the only Figma read the run makes
-  before the human triages is the single `get_metadata` on the component set root. A per-frame
-  read, a second root read, or any `get_screenshot` at all before the checkpoint is a failure:
-  the whole point of the order is that the human narrows the spend before it happens. **There is
-  no `get_screenshot` anywhere in a correct run**, before the checkpoint or after it.
+  count that tracks `K` instead of `N`: on a fixture that shortlists 3 of 24 frames, a value drawn
+  in 8 frames still reports 8. A count that shrank with the triage tells a reviewer the opposite
+  of the truth about how load-bearing a value is.
+- **Exactly three set-level reads are spent before the triage checkpoint, and no per-frame call at
+  all** — root `get_metadata`, root `get_variable_defs`, and one wide root `get_screenshot`. **A
+  fourth set-level read, or any per-frame read, is a `MUST` failure**: the number is a fixed
+  constant independent of how many frames the set draws, and that independence is the guarantee.
+  The whole point of the order is that the human narrows the per-frame spend before it happens.
+- **Screenshots: exactly one wide set-level shot, any targeted shot justified out loud, and none
+  inside an agent** — a correct run makes **one wide `get_screenshot` on the set root** in the
+  cheap pass, plus any targeted shot it names a specific question for, and **no per-frame
+  screenshot inside a variant agent**. Visual evidence is the orchestrator's because
+  `get_screenshot` does not upscale: a per-agent single-node shot is the least informative shot in
+  the run. An agent-side screenshot is a failure; an unjustified orchestrator-side one is a
+  `SHOULD`.
 - **The budget is projected out loud before the first spawn, and the run stops rather than
-  discovers the ceiling** — the run states `K`, the floor and worst-case projections, the ceiling
-  and which source it came from, and the wave size it will throttle to. Where the projection
-  exceeds the ceiling it stops **before spawning anything** and re-triages. A run that extracts a
-  prefix of the kept set and stops half-way is a failure even if the partial spec looks clean:
-  the sections it never reached are silently empty, which reads exactly like a component with no
-  findings there.
+  discovers the ceiling** — the run states `K`, the floor and worst-case projections against a
+  base of the cheap pass's **three** set-level reads, the ceiling and which source it came from,
+  and the wave size it will throttle to (saying so even where a single-digit shortlist means the
+  throttle does not bind). Where the projection exceeds the ceiling it stops **before spawning
+  anything** and re-triages. A run that verifies a prefix of the shortlist and stops half-way is a
+  failure even if the partial spec looks clean: the sections it never reached are silently empty,
+  which reads exactly like a component with no findings there.
 - **Triage gate — two negatives, both asserted** — before the human triages, **zero tracker
-  writes** have happened (not a search, not a draft, on either tracker) **and zero metered
+  writes** have happened (not a search, not a draft, on either tracker) **and zero per-frame
   extraction calls** have been spent. These fail independently and neither implies the other.
 
 ## How to read a failure
@@ -144,15 +173,20 @@ did or did not do rather than against the quality of its prose. All of them are 
   wrong property kind, an axis reported covered that isn't) is next: the spec looks complete
   and isn't.
 - A **coverage `MUST`** failing (no *Extraction coverage* section, "full coverage" in place of
-  `K of N`, an instance count that tracked the kept set) is the same severity and is the failure
-  this engine specifically invites: a spec written from 3 of 24 frames is a **correct** spec, and
-  the only thing separating it from a badly thin one is the disclosure. Read it as a scoping bug,
-  not a formatting one.
+  `K of N`, an instance count that tracked the shortlist) is the same severity and is the failure
+  this engine specifically invites: a spec written from **0 or 3 of 24** frames is a **correct**
+  spec, and the only thing separating it from a badly thin one is the disclosure. Read it as a
+  scoping bug, not a formatting one.
+- An **engine-shape `MUST`** failing (a cell-shaped skeleton, an unflagged inference, a
+  dozens-long shortlist, a fourth set-level read before the checkpoint) means the run produced the
+  right answer the expensive way, or produced a confident answer it did not verify. It is the
+  failure mode this version exists to prevent, and none of it is visible by reading the spec for
+  correctness — grade it against the run's calls and the spec's shape, not its values.
 - A **shape `MUST`** failing (token delta in the wrong form, a class recommended for a var-only
   token) means the spec is right about *what* and wrong about *how*; the implementer hits it at
   edit time rather than at review time.
 - A **vocabulary `MUST`** failing means the spec emits something that doesn't exist; the
   implementer inherits a wrong value that looks on-system.
 - A **gate `MUST`** failing means the run crossed the checkpoint before the human did — it wrote
-  to the tracker, or it spent a metered extraction call, before triage. A process breach, not
+  to the tracker, or it spent a per-frame extraction call, before triage. A process breach, not
   just a content bug, and the metered half costs a day's rate budget as well as the trust.

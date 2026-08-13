@@ -35,7 +35,9 @@ write `unknown — <why>`; never drop the line.
 **Token-list entry:** `<entry name>` | **new component — no entry**
 **Generated:** <YYYY-MM-DD> · **Filed as:** <tracker id once filed | "not yet filed">
 **Extracted against:** Figma file version `<version id>` · last modified `<ISO timestamp>`
-**Extraction coverage:** <K> of <N> variant frames extracted — see *Extraction coverage*
+**Extraction coverage:** <K> of <N> variant frames verified — see *Extraction coverage*
+**Skeleton source:** three set-level reads — root `get_metadata` · root `get_variable_defs` ·
+one wide root `get_screenshot`
 **Run capabilities:** color binding <verified | ⚠ degraded — token tiers unconfirmed> · catalog
 <current | ⚠ may lag the design system | staleness unchecked> · pattern research <performed |
 ⚠ unavailable — reason>
@@ -56,27 +58,32 @@ much of it the library already expresses and what has to change for the rest.>
 
 ## Extraction coverage
 
-**Which variant frames this spec was written from, and which it deliberately was not.** A run
-extracts only the frames the Phase 4 triage checkpoint kept, so a spec written from 3 of 24
-frames is **normal** — but it reads as a scoping decision only if it says so, and reads as full
-coverage otherwise. **Never omit this section**, and never write "full coverage" as shorthand
-for a kept set that happened to be everything: write `24 of 24`.
+**Which variant frames this spec was verified against, and which it deliberately was not.** The
+skeleton below is written from **three set-level reads before any frame is verified**, and
+verification runs only on the shortlist the Phase 4 triage checkpoint produced. So `0 of 24` is a
+**complete** spec for a well-tokenized component, not an empty one — and `3 of 24` is normal. It
+reads as a scoping decision only if it says so, and reads as thin coverage otherwise. **Never
+omit this section**, and never write "full coverage" as shorthand for a shortlist that happened
+to be everything: write `24 of 24`.
 
-| Variant frame | Role | Extracted | Why not |
+| Variant frame | Role | Verified | Why not |
 |---|---|---|---|
 | `1234:5678` — Variant=Primary, Size=Medium | `variant:Variant=Primary,Size=Medium` | yes | — |
-| `1234:5690` — Variant=Secondary, Size=Large | `variant:Variant=Secondary,Size=Large` | **no** | triaged already-expressible — no unresolved value pointed at this frame |
+| `1234:5690` — Variant=Secondary, Size=Large | `variant:Variant=Secondary,Size=Large` | **no** | same scheme as `Secondary, Medium`, which is on the shortlist — one representative size per axis value |
 | `1234:5702` — Variant=Destructive, Size=Small | `variant:Variant=Destructive,Size=Small` | **no** | dropped when the budget guard narrowed the triage (Phase 5.1) |
 
-**What a narrow extraction does not cost this spec.** *Variant axes* below — the axes, their
-values, drawn-vs-cross-product and the instance counts — is **computed from the variant lattice**
-that Setup's single root `get_metadata` returned, before any frame was extracted. Per-frame
-extraction feeds exactly two sections, *Token delta* and *Figma fixes*, and only those two narrow
-with the kept set.
+**Which sections came from where.** The **cheap pass** wrote *Variant axes*, the color and size
+picture and *Props API*, from the three set-level reads named in the header. **Verification** fed
+*Figma fixes*, the **unbound-value half** of *Token delta*, and the geometry rows — the five things
+a variable dump structurally cannot see. Only those narrow with the shortlist.
+
+**What a short shortlist does not cost this spec.** *Variant axes* below — the axes, their values,
+drawn-vs-cross-product and the instance counts — is **computed from the variant lattice** that
+Setup's root `get_metadata` returned, before any frame was verified.
 
 **Instance counts are computed, never observed.** Every count below is lattice arithmetic — how
 many variant frames a value appears in across the **drawn** set — and never a count of frames
-this run extracted. A count derived from extracted frames shrinks with the triage and tells a
+this run verified. A count derived from verified frames shrinks with the triage and tells a
 reviewer the opposite of the truth about how load-bearing a value is.
 
 | Axis | Value | Instances (computed) |
@@ -85,10 +92,10 @@ reviewer the opposite of the truth about how load-bearing a value is.
 | `size` | `md` | 6 |
 
 **Two absences this section exists to keep honest**, because from the outside both look exactly
-like a clean result: a value whose drawn frames all went un-extracted carries **no** *Token
-delta* and **no** *Figma fixes* findings, and that silence is **not** evidence it is on-system;
-and a frame skipped because the budget guard narrowed the triage is recorded here with that as
-its reason, never dressed up as a design judgement.
+like a clean result: a value whose drawn frames all went unverified carries **no** *Token delta*
+and **no** *Figma fixes* findings, and that silence is **not** evidence it is on-system; and a
+frame skipped because the budget guard narrowed the triage is recorded here with that as its
+reason, never dressed up as a design judgement.
 
 ## Variant axes
 
@@ -110,8 +117,13 @@ value in both columns is already expressible and changes nothing.
   status and `successor:` here, plus the triage call made on it: **match-as-is** (spec the
   legacy value, it ships) or **modernize** (spec the successor). A modernize decision produces
   extend-component / extend-tokens rows *in this same spec* — never a second artifact.
+- **A value whose binding is inferred from a token name carries that flag in its row.** The cheap
+  pass reads a token *name* from the set-level variable dump and concludes which property it
+  applies to; that conclusion is usually right, which is exactly why an unflagged one is
+  dangerous. Write it as `inferred-from-token-name` in the row until a verification finding
+  confirms the per-property binding, and only then drop the flag.
 - **How many times a value is drawn is in *Extraction coverage* above, and it is computed from
-  the lattice** — never a count of the frames this run extracted.
+  the lattice** — never a count of the frames this run verified.
 - **A Phase 3 catalog-vs-source disagreement never appears silently resolved.** It appears as a
   row whose "Source of existing" cell reads `⚠ catalog says X, source says Y — resolved at
   triage in favour of <which>, see Triage record`, or, where the human deferred it, as an open
@@ -197,6 +209,13 @@ property assignment.
 | Figma node | What's wrong | Fix | Blocks |
 |---|---|---|---|
 | `<node id>` — <layer name> | fill is raw `#0a5c2b`, bound to nothing | bind to `<the token list's entry, verbatim>` | the `destructive` row above |
+
+**This section's completeness is bounded by the shortlist, and it must say so.** An unbound fill
+is **invisible to the cheap pass** — a variable dump lists what *is* bound, by construction — so
+every item here came from a frame that was actually verified. **An empty section on a run with a
+small shortlist is not evidence the Figma library is clean**; it is evidence that the frames
+verified had no raw values. State the shortlist size alongside an empty section rather than
+leaving the silence to be read as a result.
 
 **Nothing in this section is code work, and no item in it may also appear in *Variant axes*,
 *Props API* or *Token delta*.** That separation is the point of the section: a raw value in the

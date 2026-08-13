@@ -14,10 +14,15 @@ Three skills:
 - **`figma-component-to-spec`** — one Figma **component set** → one component
   spec. Runs in a **library** repo: the repo that *is* the design system. **Same
   resolution rules and same catalog contract; a different extractor agent, a
-  different existence source, and no regions.** It spawns
-  `figma-variant-extractor`, and only on the variant frames its triage checkpoint
-  kept — the whole axis lattice comes from one `get_metadata` on the set root, so
-  the checkpoint sits ahead of the metered extraction rather than behind it. Its
+  different existence source, and no regions.** The **whole spec skeleton comes
+  from three set-level reads** — root `get_metadata` (the axis lattice), root
+  `get_variable_defs` (every named binding across the set) and one wide root
+  `get_screenshot` — made once per run, so the pre-checkpoint cost is a fixed
+  constant independent of how many variants the set draws.
+  `figma-variant-extractor` then runs as a **verification pass on a single-digit
+  shortlist**: one agent per shortlisted frame, spawned to confirm or contradict
+  the skeleton's slice and to find the things a variable dump structurally cannot
+  see (unbound raw hex above all). A shortlist of **zero** is a complete run. Its
   existence source is a **token list** assembled from the adapter's *Token
   pipeline* row, which a catalog contributes to where one is registered.
 - **`ds-catalog`** — writes the catalog, and the adapter rows that go with it.

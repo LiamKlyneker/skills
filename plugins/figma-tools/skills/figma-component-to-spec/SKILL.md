@@ -8,15 +8,16 @@ description: >
   component already is source-first, through the adapter's variant-mechanism ladder,
   with a project catalog as optional cross-check rather than a hard requirement.
   Triages every candidate at a human checkpoint into already-expressible /
-  extend-component / extend-tokens / fix-figma before a single metered extraction call
-  is spent, then extracts only the frames that checkpoint kept — one Sonnet
-  figma-variant-extractor per frame, budgeted and throttled against the seat's Figma
-  rate ceiling — and files one spec on the adapter's tracker.
+  extend-component / extend-tokens / fix-figma before a single per-frame extraction
+  call is spent. Derives the whole spec skeleton from three cheap set-level reads, then
+  spends targeted verification extractions on a single-digit shortlist of frames —
+  one Sonnet figma-variant-extractor per shortlisted frame, budgeted and throttled
+  against the seat's Figma rate ceiling — and files one spec on the adapter's tracker.
   Invoke /figma-tools:figma-component-to-spec <url>.
 disable-model-invocation: true
 metadata:
   author: liam
-  version: "3.0.0"
+  version: "4.0.0"
 ---
 
 # Figma component → Spec
@@ -49,8 +50,16 @@ the two is recorded as a disagreement, never quietly settled.
 cheap. One `get_metadata` on the set root returns every variant frame *with its property
 assignments* — the whole axis lattice in one response — so the axes, the values, the
 drawn-vs-cross-product and the instance counts are all **computed, never observed**, and the
-human triage checkpoint sits **before a single metered extraction call is spent** rather than
+human triage checkpoint sits **before a single per-frame extraction call is spent** rather than
 after a hundred of them.
+
+**The lattice is not the only thing that reads at set level, and that is the whole engine.** One
+`get_variable_defs` on the same root returns every named token binding across the set in one
+small payload, and one wide `get_screenshot` on it returns every variant frame in one image.
+Three set-level reads, made once per run, and **the spec skeleton is free** — the axes, the
+color schemes, the size ladder and the props API are all written from them before any frame is
+read individually. Per-frame extraction stopped being how the spec gets written and became a
+**targeted verification pass** over a short list of frames that still hold an open question.
 
 ## Prerequisites
 
@@ -104,9 +113,10 @@ machine has installed and where the session is rooted.
   form the token list is written in.
 - **Figma MCP — two distinct capability checks, do not conflate them:**
   1. **`figma-dev-mode` present (required):** `get_metadata`, `get_variable_defs`,
-     `get_design_context` — the three this run actually calls. **`get_screenshot` is deliberately
-     never called** (see *Idempotency & output*), so it is not part of the check and must not be
-     projected into the extraction budget. STOP if this server is absent — no fallback.
+     `get_screenshot`, `get_design_context` — the four this run actually calls.
+     **`get_screenshot` is part of the capability check**: the cheap pass takes one wide
+     set-level shot, and a run that cannot take it loses the visual half of the skeleton and
+     must say so up front. STOP if this server is absent — no fallback.
   2. **Binding read (`use_figma`, via `/figma-use`) available (strongly preferred, separate
      server):** resolves each node's `boundVariables` → variable **name per property**. If
      unreachable, the run continues in **degraded color mode**, announced up front, with every
@@ -115,9 +125,12 @@ machine has installed and where the session is rooted.
 - **A Figma node URL** naming **one component set**. Missing → ask, never guess. What counts,
   and what is refused, is Setup's node-shape gate below.
 - **A Figma rate ceiling to project against — stated, not discovered.** Phase 5.1 budgets the
-  fan-out against it, so the run resolves one before spawning anything: a ceiling passed to the
-  run → a ceiling the adapter records, where a project records one → **the stated default,
-  `200/day · 20/min`**. Three properties of that number are carried in Phase 5.1 rather than
+  verification pass against it, so the run resolves one before spawning anything: a ceiling
+  passed to the run → a ceiling the adapter records, where a project records one → **the stated
+  default, `200/day · 20/min`**. The *magnitude* the guard projects is small now — the base is
+  the cheap pass's **three set-level reads**, and the fan-out is sized to a **single-digit
+  shortlist** rather than to the drawn set — but every property of the ceiling below still holds
+  and is still stated out loud. Three of them are carried in Phase 5.1 rather than
   re-derived: it is **org-scoped** (a file owned by a team the seat holds only a *View* membership
   in falls back to a **monthly** allowance in the single or low double digits — a different
   product, not a rate to throttle around); the daily figure is a **recorded disagreement** between
@@ -165,7 +178,7 @@ never forced onto the nearest name.
 ## What triage decides, and where the spec lands
 
 **Four outcomes, and they are about *where the edit lands*.** At the *Reconcile & triage*
-checkpoint — which sits **before any metered extraction call**, not after the fan-out — every
+checkpoint — which sits **before any per-frame extraction call**, not after the fan-out — every
 candidate is marked **already-expressible** (the library already says it — record how, change
 nothing) · **extend-component** (a variant axis, a value, or a props-API change) ·
 **extend-tokens** (through the adapter's token pipeline) · **fix-figma** (an unbound or raw value
@@ -201,19 +214,23 @@ Read `references/phases.md` for the phase you are running — it carries the ful
 Variant agents are driven by `../../agents/figma-variant-extractor.md`; the run's one artifact is
 shaped by `references/component-spec-template.md`.
 
-**The first four phases run before a single metered extraction call is spent**, and the whole
-run's Figma cost up to the checkpoint is **one `get_metadata` on the component set root**.
+**Every phase up to and including the triage checkpoint runs before a single per-frame extraction
+call is spent**, and the whole run's Figma cost up to the checkpoint is **three set-level
+reads** — three, and never more than three — fixed regardless of how many variants the set draws.
+That the number is **independent of N** is what makes the guarantee worth stating: a set drawing
+120 frames costs the same three reads as one drawing four.
 
 | Phase | Model | Does |
 |---|---|---|
-| **1 — Setup** | main thread | **Repo-role guard** · **node-shape gate** (one component set), whose single root `get_metadata` is the only metered read the pre-checkpoint half makes · **assemble the token list** from the *Token pipeline* row's source (catalog, where registered, validated + soft staleness-checked and contributing component/icon entries) · read the `## Design system` rows this skill needs · three Figma capability checks · identify the component under spec. |
-| **2 — Structure** | main thread | Derive the whole axis lattice from Setup's root response — drawn axes and values, drawn-vs-cross-product, duplicate/inconsistent Figma property values, the Figma vocabulary kept **verbatim**, and instance counts **computed, not observed**. Coverage self-check + logged tally. **Zero Figma calls.** |
+| **1 — Setup** | main thread | **Repo-role guard** · **node-shape gate** (one component set) · **the three set-level reads**, and never more than three: root `get_metadata` (shape + the whole lattice), root `get_variable_defs` (every named binding across the set), one wide root `get_screenshot` · **assemble the token list** from the *Token pipeline* row's source (catalog, where registered, validated + soft staleness-checked and contributing component/icon entries) · read the `## Design system` rows this skill needs · three Figma capability checks · identify the component under spec. |
+| **1.5 — Cheap pass** | Opus, main thread, **no subagents** | Turn Setup's three set-level reads into the **spec skeleton**, **decomposed by axis and never by cell**: N color schemes + M sizes + K state deltas, each stated once. Bind every value to a named token where the dump supplies one, mark anything derived from a token *name* as **inference**, and flag the anomalies the dump can see. **Zero further Figma calls, and no subagent.** |
+| **2 — Structure** | main thread | Derive the whole axis lattice from Setup's root response — drawn axes and values, drawn-vs-cross-product, duplicate/inconsistent Figma property values, the Figma vocabulary kept **verbatim**, and instance counts **computed, not observed**. Coverage self-check + logged tally. **Zero Figma calls of its own.** |
 | **3 — Current state** | main thread | What the component already is — **source-first** through the variant-mechanism ladder, naming the file it resolved at; the catalog as **cross-check** with every disagreement recorded unresolved; plus computable story coverage. **No Figma calls.** |
-| **4 — Reconcile & triage** | Opus, main thread | One axis table (delta both ways, axis-name mapping as a claim) · the candidate list with every ⚠️ flag joined in and the lattice's instance counts · **four-outcome triage checkpoint, before any metered extraction**, which also settles which frames are worth extracting. |
-| **5 — Targeted extraction** | `figma-tools:figma-variant-extractor` (Sonnet) ×N, **throttled** | **Budget guard first**: project the metered cost from the kept-frame count and the agent's call discipline, state it against the seat's daily ceiling, and **stop deliberately** rather than die mid-fan-out. Then one agent per **kept** variant frame → structured JSON findings, resolved against the token list pasted verbatim into each spawn, fanned out in **waves** sized for the per-minute cap. |
-| **6 — Reconcile by concern** | Opus, main thread | Make each concern consistent across the extracted frames — one color→token map, one type/spacing picture, one icon inventory. No Figma re-traversal. |
+| **4 — Reconcile & triage** | Opus, main thread | One axis table (delta both ways, axis-name mapping as a claim) · the candidate list with every ⚠️ flag joined in and the lattice's instance counts · **four-outcome triage checkpoint, before any per-frame extraction**, which also settles the **shortlist** of frames worth verifying. |
+| **5 — Targeted verification** | `figma-tools:figma-variant-extractor` (Sonnet) ×K, **throttled** | **Budget guard first**: project the metered cost from the **shortlist** size and the agent's call discipline, state it against the seat's daily ceiling, and **stop deliberately** rather than die mid-fan-out. Then one agent per **shortlisted** variant frame — spawned to **verify the skeleton's slice for that frame**, not to re-derive it → structured JSON findings, resolved against the token list pasted verbatim into each spawn, fanned out in **waves** sized for the per-minute cap. A shortlist of **zero** is a valid, complete run. |
+| **6 — Reconcile by concern** | Opus, main thread | Make each concern consistent across the skeleton and the verified frames — one color→token map, one type/spacing picture, one icon inventory. Where a verification finding contradicts the skeleton, **the finding wins and the contradiction is recorded**. No Figma re-traversal. |
 | **7 — Pattern precedent** | research subagents (Sonnet) | One per **extend-component** gap — **that outcome only** — APG → headless libraries → shadcn, walked in full. Spends **no Figma call**, so it runs **in parallel with Phase 5** and never enters its budget. |
-| **8 — The component spec** | Opus, main thread | Write **one** component spec per `references/component-spec-template.md`, including the **extraction-coverage disclosure**: which frames were extracted, which deliberately were not, and every instance count marked **computed from the lattice**. |
+| **8 — The component spec** | Opus, main thread | Write **one** component spec per `references/component-spec-template.md`, including the **extraction-coverage disclosure**: which sections the cheap pass wrote, which frames were verified, which deliberately were not, and every instance count marked **computed from the lattice**. `0 of N` is disclosed honestly, as a complete spec rather than an empty one. |
 | **9 — Filing** | main thread | Branch on the adapter's `Tracker:` line. The spec files as a plain `[SPEC]` work item (ADO) / an ordinary issue (GitHub) on **this repo's own tracker rows**, parented to the scope ticket where one was given, deduped by the component set's node id and updated in place. |
 
 (A catalog that has drifted from the design system, or a project that wants one: author or
@@ -242,15 +259,18 @@ run — the token list does.)
    every legacy flag (match-as-is vs modernize) and every catalog-vs-source disagreement, and
    **every decision records a one-line rationale** in the spec's *Triage record*. Two negatives
    hold at this gate: **no tracker write has happened** — not a search, not a draft, on either
-   tracker — and **no metered extraction call has been spent**.
+   tracker — and **no per-frame extraction call has been spent** (the three set-level reads are
+   the fixed pre-checkpoint cost).
 7. **The projected metered cost exceeds the ceiling** (Phase 5.1) → stop **before the first
-   spawn**, naming the kept-frame count, the floor and worst-case projections, the ceiling and
+   spawn**, naming the shortlist size, the floor and worst-case projections, the ceiling and
    where it came from, and how many frames would fit — then re-triage narrower. Exceeding a Figma
    rate limit is a hard stop with **no documented retry-after**, so a run that discovers the
-   ceiling by hitting it dies mid-fan-out with a partial extraction and a day's wait. Extracting a
-   prefix of the kept set and stopping half-way is **not** an alternative: it produces a spec whose
-   *Token delta* and *Figma fixes* omit whatever the budget ran out before reaching, which is
-   indistinguishable from a component that had no findings there.
+   ceiling by hitting it dies mid-fan-out with a partial verification and a day's wait. Verifying
+   a prefix of the shortlist and stopping half-way is **not** an alternative: it produces a spec
+   whose *Token delta* and *Figma fixes* omit whatever the budget ran out before reaching, which
+   is indistinguishable from a component that had no findings there. A shortlist that projects
+   over the ceiling at these sizes is usually a triage that was not done — single digits is the
+   target, and dozens is the signal to re-triage rather than to buy budget.
 
 The four extraction rules the regression fixtures protect apply here unchanged — **never
 resolve a fill by hex**, **never record absolute x/y coordinates**, **never match across
@@ -272,18 +292,39 @@ library the gap and the spec are the same document, so every gap is a section of
 rationale a row in *Triage record*. A second artifact would give one decision two homes that can
 disagree.
 
-Screenshots are **not** persisted, and in component mode they are **not taken** — the variant
-agent makes no `get_screenshot` call, by decision: its purpose in the page agent is visual ground
-truth for identifying the component, and here Setup identified the component, on the whole set,
-before any agent spawned. The layout tree plus auto-layout intent are the durable truth.
+Screenshots **are** taken and are **not** persisted. The cheap pass takes **one wide set-level
+shot** in Setup, and the orchestrator takes a **targeted shot only where a specific question
+needs pixel evidence** — each one justified out loud. **The variant agent takes none**: visual
+evidence is the orchestrator's, because `get_screenshot` **does not upscale** — a 48px node
+renders at 48px — so a wide set-level shot carries far more information per token than any
+per-variant shot, and a single-node shot must be **upscaled locally** to be readable at all. The
+layout tree plus auto-layout intent remain the durable truth; the image is evidence, not the
+record.
 
 ## What this skill verifies vs what it cannot
 
 It verifies that every child of the component set landed in the lattice or was explicitly pruned
 with a reason, that every design property it did extract was **resolved** against the token list,
 and that the component's current state was read through the adapter's stated mechanism rather
-than guessed. **It does not claim every variant frame was extracted** — extraction is scoped to
-what triage kept, deliberately, and the spec says which frames those were.
+than guessed. **It does not claim every variant frame was verified** — verification is scoped to
+the shortlist triage kept, deliberately, and the spec says which frames those were.
+
+**What the verification pass exists to cover is a fixed list, because the cheap pass has five
+known blind spots and only these five:**
+
+1. **Unbound raw-hex fills** — invisible in a variable dump, which by construction lists only what
+   *is* bound. Catching them is the whole point of the spec's *Figma fixes* section and the most
+   dangerous of the five.
+2. **Which layer of which frame binds which token** — a name implies an attribution; it does not
+   confirm one.
+3. **Icon and frame geometry** — sizes, auto-layout, padding, stroke alignment.
+4. **Per-cell consistency** — a frame labelled `Size=medium` that is actually 36px.
+5. **Effects** beyond what the variable dump lists.
+
+**A value taken from a token *name* rather than from a per-property binding is inference, and it
+is flagged as inference** — in the skeleton, in the findings, and in the spec. It is usually
+right, which is exactly why an unflagged one is dangerous: nobody re-checks a value that reads
+as verified.
 
 It cannot verify that the design is right, that an inferred component identity is correct
 without the user's yes, or that the eventual code renders faithfully. **Nor does it verify a
