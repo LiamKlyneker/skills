@@ -1,22 +1,36 @@
 # figma-tools
 
-`figma-to-spec`, packaged as a Claude Code plugin, plus the
-`figma-region-extractor` agent it spawns per region — and `ds-catalog`, which
-authors the per-project design-system catalog the spec skills resolve against.
+The two Figma-to-spec skills, packaged as a Claude Code plugin, plus **an
+extraction agent each** — `figma-region-extractor` for pages,
+`figma-variant-extractor` for component sets — and `ds-catalog`, which authors
+the per-project design-system catalog.
 
 Three skills:
 
 - **`figma-to-spec`** — one Figma **page** node → a page-implementation spec plus
-  DS gap tickets. Runs in a **consumer** repo.
+  DS gap tickets. Runs in a **consumer** repo. Fans every region out to
+  `figma-region-extractor`, and resolves against a project catalog it cannot run
+  without.
 - **`figma-component-to-spec`** — one Figma **component set** → one component
-  spec. Runs in a **library** repo: the repo that *is* the design system. Same
-  extractor agent, same catalog contract, same resolution rules; each variant
-  frame becomes one region tagged `variant:<name>`.
-- **`ds-catalog`** — writes the catalog the other two read.
+  spec. Runs in a **library** repo: the repo that *is* the design system. **Same
+  resolution rules and same catalog contract; a different extractor agent, a
+  different existence source, and no regions.** It spawns
+  `figma-variant-extractor`, and only on the variant frames its triage checkpoint
+  kept — the whole axis lattice comes from one `get_metadata` on the set root, so
+  the checkpoint sits ahead of the metered extraction rather than behind it. Its
+  existence source is a **token list** assembled from the adapter's *Token
+  pipeline* row, which a catalog contributes to where one is registered.
+- **`ds-catalog`** — writes the catalog, and the adapter rows that go with it.
 
-One dependency runs through all of it: the catalog. `ds-catalog` writes it, both
-spec skills read it, and the shape all three are written against is
-`figma-to-spec/references/catalog-contract.md`.
+What is genuinely shared is the **contracts**, not the pipeline:
+`figma-to-spec/references/resolution-rules.md` and
+`figma-to-spec/references/catalog-contract.md` are one file each with three
+readers, referenced by relative path and never copied. What stopped being shared
+is the agent (two now, with different call disciplines and different return
+schemas), the unit of extraction (a region vs. a variant frame), and the
+catalog's status — a hard requirement for `figma-to-spec`, an optional
+cross-check for `figma-component-to-spec`, which stops only when **no** existence
+source resolves at all.
 
 **The two spec skills are mutually exclusive by repo, and both enforce it.** The
 adapter's `## Design system` → `Repo role:` row decides which one may run;
@@ -50,8 +64,10 @@ plugins/figma-tools/
     figma-to-spec/
       agents/figma-region-extractor.md -> ../../../agents/figma-region-extractor.md
     figma-component-to-spec/
+      references/regression/                       # fixture format + assertion style
     ds-catalog/
-  agents/figma-region-extractor.md
+  agents/figma-region-extractor.md                 # figma-to-spec's, per region
+  agents/figma-variant-extractor.md                # figma-component-to-spec's, per variant frame
 ```
 
 `ds-catalog` and `figma-component-to-spec` reach the shape contract by a plain
@@ -59,11 +75,14 @@ relative path, `../figma-to-spec/references/catalog-contract.md` — as
 `figma-component-to-spec` also reaches `resolution-rules.md`. All three skills
 ship in one plugin, so those paths resolve identically in this working tree and
 in an install cache copy — and they need no symlink, because nothing about them
-decides whether a skill loads. `figma-component-to-spec` addresses the agent at
-the plugin root instead (`../../agents/figma-region-extractor.md`, and
-`../../../` from its `references/`), the same way `prd-workflow`'s `work-on-prd`
-addresses `prd-worker` — it has no docs written against an inner path, so it
-needs no nested link of its own.
+decides whether a skill loads. `figma-component-to-spec` addresses **its own**
+agent at the plugin root instead — `../../agents/figma-variant-extractor.md` from
+`SKILL.md`, `../../../` from its `references/`, and `../../../../` from
+`references/regression/` — the same way `prd-workflow`'s `work-on-prd` addresses
+`prd-worker`. It has no docs written against an inner path, so it needs no nested
+link of its own. It deliberately never addresses `figma-region-extractor`:
+spawning the page agent on a variant frame would hand a page contract the wrong
+unit of work, so that agent is not even checked for on the component side.
 
 Nothing sits at the plugin root — same reason as `plugins/prd-workflow/`: a
 root `SKILL.md` alongside a `skills/` subdirectory registers twice.
@@ -73,9 +92,17 @@ root `SKILL.md` alongside a `skills/` subdirectory registers twice.
 Same three calls as `plugins/prd-workflow/` (see its README for the full
 reasoning and evidence — repeated here only where this plugin differs):
 
-- **No `version` in `plugin.json`.** Plain `claude plugin validate` passes with
-  the missing-`version` warning as the only warning; `--strict` fails on that
-  warning by definition and is expected to.
+- **`plugin.json` carries a `version`, and changing this plugin bumps it.** This
+  bullet used to say the opposite — omit `version`, and accept the
+  missing-`version` warning that `--strict` fails on. #57 reversed that for every
+  plugin here: the version is bumped in this plugin's
+  `.claude-plugin/plugin.json`, mirrored into the repo-root
+  `.claude-plugin/marketplace.json` (the two must agree, because the catalog is
+  what an install pins to), and
+  `python3 .github/scripts/validate_skills.py --base origin/main` enforces the
+  bump. `--strict` is the standard now, and zero warnings is the bar. See
+  `plugins/prd-workflow/README.md` for the full argument and ADR
+  [0001](../../docs/adr/0001-version-the-plugins-and-enforce-the-bump.md).
 - **`skills/_shared -> ../../../_shared`.** Same depth as `prd-workflow`'s
   placement (`plugins/<name>/skills/` is three levels below the repo root
   either way), so the identical relative target is correct verbatim.
@@ -102,12 +129,18 @@ two consumer repos linked the inner path — so #26 deleted it and rewrote
 `work-on-prd/SKILL.md` to address `../../agents/prd-worker.md` instead. The
 asymmetry is deliberate.
 
-### The agent registers namespaced
+### Both agents register namespaced
 
-The type is **`figma-tools:figma-region-extractor`**, because a plugin namespaces
-every component it provides. The bare `figma-region-extractor` only exists where
-the file was hand-placed in an `agents/` directory. Phase 0 checks both names
-before falling back.
+The types are **`figma-tools:figma-region-extractor`** and
+**`figma-tools:figma-variant-extractor`**, because a plugin namespaces every
+component it provides. A bare `figma-region-extractor` / `figma-variant-extractor`
+only exists where the file was hand-placed in an `agents/` directory. Each skill
+checks both names before falling back to `general-purpose` with the agent's own
+body pasted in — `figma-to-spec` at Phase 0 step 3c, `figma-component-to-spec` at
+Phase 1 (Setup) step 5c. The check is not optional politeness: an unresolvable
+`subagent_type` does not error, it silently degrades to `general-purpose`, so a
+run that never announced which name resolved is a run nobody can tell apart from
+a correct one.
 
 ## Out of scope
 

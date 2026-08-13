@@ -3,11 +3,15 @@ name: figma-component-to-spec
 description: >
   Turn one Figma component set into an implementation spec for the design-system
   library that owns the component. Runs only in a `library` repo, refuses anything
-  that is not a single component set, fans each variant frame out to a Sonnet region
-  agent, reads what the component already is — catalog-first, source-second — via the
-  adapter's variant-mechanism ladder, triages every gap at a human checkpoint into
-  already-expressible / extend-component / extend-tokens / fix-figma, and files one
-  spec on the adapter's tracker.
+  that is not a single component set, and derives the whole variant lattice — axes,
+  values, instance counts — from one `get_metadata` on the set root. Reads what the
+  component already is source-first, through the adapter's variant-mechanism ladder,
+  with a project catalog as optional cross-check rather than a hard requirement.
+  Triages every candidate at a human checkpoint into already-expressible /
+  extend-component / extend-tokens / fix-figma before a single metered extraction call
+  is spent, then extracts only the frames that checkpoint kept — one Sonnet
+  figma-variant-extractor per frame, budgeted and throttled against the seat's Figma
+  rate ceiling — and files one spec on the adapter's tracker.
   Invoke /figma-tools:figma-component-to-spec <url>.
 disable-model-invocation: true
 metadata:
