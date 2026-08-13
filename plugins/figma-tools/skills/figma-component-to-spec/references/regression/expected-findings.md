@@ -4,7 +4,7 @@ One case per fixture — per fixture the *project* holds, in the format `fixture
 This file documents the **assertion style**; like that format it is plugin-side, while the
 concrete cases are per-project and live wherever that project keeps its fixtures. Nothing here
 is an example case, for the same reason nothing there is an example fixture: a case is written
-in one library's catalog vocabulary and graded against one library's conventions, and this
+in one library's token vocabulary and graded against one library's conventions, and this
 plugin ships to every library.
 
 ## The style
@@ -26,9 +26,15 @@ plugin ships to every library.
   appear in the variant-axes table with successors named", not "the word *deprecated* appears
   three times".
 - **Assert absences explicitly.** Several of the rules below are only visible as things that
-  *didn't* happen (no gap for a component the catalog contains, no Tailwind class recommended
-  for a var-only token, no tracker write before triage). An absence nobody wrote down is an
-  absence nobody checks.
+  *didn't* happen (no gap for a component the token list contains, no Tailwind class recommended
+  for a var-only token, no tracker write before triage, **no metered extraction call before the
+  triage checkpoint**). An absence nobody wrote down is an absence nobody checks.
+- **A narrow extraction is not thin coverage, and the case must be able to tell them apart.**
+  Extraction runs only on the frames the fixture's kept set names, so most sections of a passing
+  spec are graded against the **lattice** rather than against what was extracted. Grade *Variant
+  axes* and every instance count as complete regardless of the kept set; grade *Token delta* and
+  *Figma fixes* against the kept set only. A case that grades the whole spec against the whole
+  set will fail every correct run of a narrowed triage.
 - **Grade the current-state read separately from the design read.** This skill produces a
   *delta*, so a spec can be wrong in two independent ways: it misread Figma, or it misread the
   component as it stands today. A case that only asserts on the design half will pass a run
@@ -39,7 +45,7 @@ plugin ships to every library.
 
 ## Assertions any case should carry
 
-Rule-level lines every library's case is expected to include, adapted to its own catalog,
+Rule-level lines every library's case is expected to include, adapted to its own token list,
 component and conventions. These guard the rules most likely to break under a rule edit.
 
 - **Trap-inclusive current-state read** — the accepted set for a variant axis is the
@@ -62,11 +68,11 @@ component and conventions. These guard the rules most likely to break under a ru
   **coordinated file-edit list** naming every file that must change together. Emitting the wrong
   shape is a `MUST` failure even when the token itself is correct, because the implementer
   either hand-edits build output or misses half the files.
-- **Emission constraints are respected** — where the adapter or catalog records that some
-  tokens do not get a class, or that a source may only be used at one layer, the spec does not
-  recommend the unavailable form. A spec that recommends a class for a var-only token cannot be
-  implemented as written.
-- **Legacy resolution, not false-gapping** — a design element matching a catalog entry stamped
+- **Emission constraints are respected** — where the adapter, the token list or the catalog
+  records that some tokens do not get a class, or that a source may only be used at one layer,
+  the spec does not recommend the unavailable form. A spec that recommends a class for a var-only
+  token cannot be implemented as written.
+- **Legacy resolution, not false-gapping** — a design element matching a token-list entry stamped
   `legacy` / `deprecated` / `unused` appears as **resolved + flagged** with its successor named
   where one exists, and produces no extend-component section merely for existing. A
   "modernize" triage decision may still generate one; an automatic one is a `MUST` failure.
@@ -81,12 +87,53 @@ component and conventions. These guard the rules most likely to break under a ru
   API names the sources the precedent came from, and the spec does not present a researched
   shape as verified fit. `SHOULD`, and it is the line most worth reading even when it passes.
 - **No invented vocabulary** — every token, utility, variant value and prop name emitted in the
-  spec exists in the catalog the run resolved, or is explicitly marked as new.
+  spec exists in **the token list the run was handed**, or is explicitly marked as new. The list
+  is the whole existence source, whether it was assembled from the *Token pipeline* row's source,
+  from a registered catalog, or from both; an entry that is not on it does not exist, however
+  on-system it reads. Grade this against the **raw variant-agent findings** as well as the spec —
+  an invented token that synthesis happens to drop is still an extraction regression.
 - **Version pin** — the spec's extraction line carries a Figma file version or last-modified
   timestamp (or an explicit `unknown — <why>`), never nothing.
-- **Triage gate** — zero tracker writes happen before the human triages.
 - **One artifact** — the run produces `component-spec.md` and nothing else. A `gaps/` directory
   or a second file is a `MUST` failure: it gives one decision two homes that can disagree.
+
+### What the checkpoint-before-extraction order makes checkable
+
+These are the lines the engine's shape earns, and each is graded against something a run either
+did or did not do rather than against the quality of its prose. All of them are `MUST`.
+
+- **The axis table is complete before any per-frame extraction** — every axis and every value the
+  set draws appears in *Variant axes*, including on frames the kept set never touched. The lattice
+  comes from Setup's single root `get_metadata`, so an axis missing from the spec means the
+  lattice was mis-derived, **never** that a frame went unextracted. Grade this on a fixture whose
+  kept set is a strict subset; on a full-coverage fixture the assertion cannot fail.
+- **The extracted subset is disclosed, and a full-coverage reading is impossible** — the spec
+  carries an *Extraction coverage* section written as `<K> of <N>`, naming each frame that was
+  **deliberately** not extracted and its one-line reason, with a budget-guard narrowing recorded
+  as exactly that rather than dressed up as a design judgement. A spec that omits the section, or
+  writes "full coverage" for a kept set that happened to be everything, is a failure even when
+  every finding in it is correct: an implementer has no other way to tell a scoping decision from
+  thin coverage.
+- **Instance counts are computed from the lattice, not derived from extracted frames** — every
+  count is lattice arithmetic over the **drawn** set and is marked as computed. The tell is a
+  count that tracks `K` instead of `N`: on a fixture that keeps 3 of 24 frames, a value drawn in
+  8 frames still reports 8. A count that shrank with the triage tells a reviewer the opposite of
+  the truth about how load-bearing a value is.
+- **No metered call is spent before the triage checkpoint** — the only Figma read the run makes
+  before the human triages is the single `get_metadata` on the component set root. A per-frame
+  read, a second root read, or any `get_screenshot` at all before the checkpoint is a failure:
+  the whole point of the order is that the human narrows the spend before it happens. **There is
+  no `get_screenshot` anywhere in a correct run**, before the checkpoint or after it.
+- **The budget is projected out loud before the first spawn, and the run stops rather than
+  discovers the ceiling** — the run states `K`, the floor and worst-case projections, the ceiling
+  and which source it came from, and the wave size it will throttle to. Where the projection
+  exceeds the ceiling it stops **before spawning anything** and re-triages. A run that extracts a
+  prefix of the kept set and stops half-way is a failure even if the partial spec looks clean:
+  the sections it never reached are silently empty, which reads exactly like a component with no
+  findings there.
+- **Triage gate — two negatives, both asserted** — before the human triages, **zero tracker
+  writes** have happened (not a search, not a draft, on either tracker) **and zero metered
+  extraction calls** have been spent. These fail independently and neither implies the other.
 
 ## How to read a failure
 
@@ -96,10 +143,16 @@ component and conventions. These guard the rules most likely to break under a ru
 - A **silent-correctness `MUST`** failing (a variant frame collapsed, a value resolved to the
   wrong property kind, an axis reported covered that isn't) is next: the spec looks complete
   and isn't.
+- A **coverage `MUST`** failing (no *Extraction coverage* section, "full coverage" in place of
+  `K of N`, an instance count that tracked the kept set) is the same severity and is the failure
+  this engine specifically invites: a spec written from 3 of 24 frames is a **correct** spec, and
+  the only thing separating it from a badly thin one is the disclosure. Read it as a scoping bug,
+  not a formatting one.
 - A **shape `MUST`** failing (token delta in the wrong form, a class recommended for a var-only
   token) means the spec is right about *what* and wrong about *how*; the implementer hits it at
   edit time rather than at review time.
 - A **vocabulary `MUST`** failing means the spec emits something that doesn't exist; the
   implementer inherits a wrong value that looks on-system.
-- A **gate `MUST`** failing means the skill wrote to the tracker before human triage — a
-  process breach, not just a content bug.
+- A **gate `MUST`** failing means the run crossed the checkpoint before the human did — it wrote
+  to the tracker, or it spent a metered extraction call, before triage. A process breach, not
+  just a content bug, and the metered half costs a day's rate budget as well as the trust.

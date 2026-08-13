@@ -1,7 +1,7 @@
 # Component spec template
 
-Fill this from the Phase C synthesis. It is **the run's single artifact** — one component spec
-per component set — filed in Phase D as a plain `[SPEC]` work item (ADO) or an ordinary issue
+Fill this in **Phase 8**, from the reconciled findings. It is **the run's single artifact** — one
+component spec per component set — filed in **Phase 9** as a plain `[SPEC]` work item (ADO) or an ordinary issue
 (GitHub), and sliced from there by the tracker's existing chain (`ado-workflow:to-spec-tasks`,
 `prd-workflow:to-issues`) with no new machinery.
 
@@ -14,8 +14,8 @@ and the triage rationale that would have lived in a gap file lives in *Triage re
 artifact would give the same decision two homes that can disagree.
 
 **One thing in this template varies by project, and only one: how literal the token delta may
-be.** That is the adapter's `## Design system` → *Token pipeline* row, read in Phase 0 and
-applied in Phase C — a generator plus its source file means the spec states the **literal source
+be.** That is the adapter's `## Design system` → *Token pipeline* row, read in **Phase 1** and
+applied in **Phase 8** — a generator plus its source file means the spec states the **literal source
 edit**; no generator means a **coordinated file-edit list**, every file that must change
 together, named. Both shapes are written out below. Pick the one the row dictates and delete the
 other. Never pick by looking at the repo.
@@ -32,9 +32,10 @@ write `unknown — <why>`; never drop the line.
 # <Component> — component spec
 
 **Figma component set:** <url> · **node id:** `<id>` · **Scope ticket:** <#id | "none">
-**Catalog entry:** `<entry name>` | **new component — no catalog entry**
+**Token-list entry:** `<entry name>` | **new component — no entry**
 **Generated:** <YYYY-MM-DD> · **Filed as:** <tracker id once filed | "not yet filed">
 **Extracted against:** Figma file version `<version id>` · last modified `<ISO timestamp>`
+**Extraction coverage:** <K> of <N> variant frames extracted — see *Extraction coverage*
 **Run capabilities:** color binding <verified | ⚠ degraded — token tiers unconfirmed> · catalog
 <current | ⚠ may lag the design system | staleness unchecked> · pattern research <performed |
 ⚠ unavailable — reason>
@@ -53,11 +54,47 @@ Unchanged: <everything else>. No prior baseline → "n/a — new spec".
 <2–4 sentences: what the component is, which axes the Figma set draws, and the posture — how
 much of it the library already expresses and what has to change for the rest.>
 
+## Extraction coverage
+
+**Which variant frames this spec was written from, and which it deliberately was not.** A run
+extracts only the frames the Phase 4 triage checkpoint kept, so a spec written from 3 of 24
+frames is **normal** — but it reads as a scoping decision only if it says so, and reads as full
+coverage otherwise. **Never omit this section**, and never write "full coverage" as shorthand
+for a kept set that happened to be everything: write `24 of 24`.
+
+| Variant frame | Role | Extracted | Why not |
+|---|---|---|---|
+| `1234:5678` — Variant=Primary, Size=Medium | `variant:Variant=Primary,Size=Medium` | yes | — |
+| `1234:5690` — Variant=Secondary, Size=Large | `variant:Variant=Secondary,Size=Large` | **no** | triaged already-expressible — no unresolved value pointed at this frame |
+| `1234:5702` — Variant=Destructive, Size=Small | `variant:Variant=Destructive,Size=Small` | **no** | dropped when the budget guard narrowed the triage (Phase 5.1) |
+
+**What a narrow extraction does not cost this spec.** *Variant axes* below — the axes, their
+values, drawn-vs-cross-product and the instance counts — is **computed from the variant lattice**
+that Setup's single root `get_metadata` returned, before any frame was extracted. Per-frame
+extraction feeds exactly two sections, *Token delta* and *Figma fixes*, and only those two narrow
+with the kept set.
+
+**Instance counts are computed, never observed.** Every count below is lattice arithmetic — how
+many variant frames a value appears in across the **drawn** set — and never a count of frames
+this run extracted. A count derived from extracted frames shrinks with the triage and tells a
+reviewer the opposite of the truth about how load-bearing a value is.
+
+| Axis | Value | Instances (computed) |
+|---|---|---|
+| `variant` | `primary` | 4 |
+| `size` | `md` | 6 |
+
+**Two absences this section exists to keep honest**, because from the outside both look exactly
+like a clean result: a value whose drawn frames all went un-extracted carries **no** *Token
+delta* and **no** *Figma fixes* findings, and that silence is **not** evidence it is on-system;
+and a frame skipped because the budget guard narrowed the triage is recorded here with that as
+its reason, never dressed up as a design judgement.
+
 ## Variant axes
 
-**Existing vs. to-add, in one table.** *Existing* is the Phase B current-state read (catalog
-first, source second); *drawn* is what the Figma component set actually contains. A value in
-both columns is already expressible and changes nothing.
+**Existing vs. to-add, in one table.** *Existing* is the Phase 3 current-state read (**source
+first, catalog as cross-check**); *drawn* is what the Figma component set actually contains. A
+value in both columns is already expressible and changes nothing.
 
 | Axis (library) | Axis (Figma) | Existing values | Drawn in Figma | To add | Outcome | Source of "existing" |
 |---|---|---|---|---|---|---|
@@ -73,7 +110,9 @@ both columns is already expressible and changes nothing.
   status and `successor:` here, plus the triage call made on it: **match-as-is** (spec the
   legacy value, it ships) or **modernize** (spec the successor). A modernize decision produces
   extend-component / extend-tokens rows *in this same spec* — never a second artifact.
-- **A Phase B catalog-vs-source disagreement never appears silently resolved.** It appears as a
+- **How many times a value is drawn is in *Extraction coverage* above, and it is computed from
+  the lattice** — never a count of the frames this run extracted.
+- **A Phase 3 catalog-vs-source disagreement never appears silently resolved.** It appears as a
   row whose "Source of existing" cell reads `⚠ catalog says X, source says Y — resolved at
   triage in favour of <which>, see Triage record`, or, where the human deferred it, as an open
   question in *Triage record* and an axis row marked blocked.
@@ -91,7 +130,7 @@ decision that gets a line here:** Figma property = component prop = story arg.
 - Every **new or changed** prop cites a *Pattern precedent* entry, or states plainly that none
   was found and this shape is a local invention — which is a real answer and the one a reviewer
   most needs to see.
-- Emit every token, utility and class **exactly as the catalog writes it** — consumer-facing
+- Emit every token, utility and class **exactly as the token list writes it** — consumer-facing
   form, per the adapter's three class-prefix rows. Never re-prefix on the way into a spec.
 - Where the adapter's variant mechanism names a **trap** (a runtime alias map outside the
   declaration, a values list in a stylesheet, an axis that exists only in `.d.ts`), name the
@@ -100,7 +139,7 @@ decision that gets a line here:** Figma property = component prop = story arg.
 
 ## Story list
 
-Computed in Phase B, one way only: `argTypes[<axis>].options` diffed against the values actually
+Computed in Phase 3, one way only: `argTypes[<axis>].options` diffed against the values actually
 passed in story `args`. **Story export names are not a coverage signal** and no row here may be
 derived from one.
 
@@ -157,7 +196,7 @@ property assignment.
 
 | Figma node | What's wrong | Fix | Blocks |
 |---|---|---|---|
-| `<node id>` — <layer name> | fill is raw `#0a5c2b`, bound to nothing | bind to `<the catalog's token, verbatim>` | the `destructive` row above |
+| `<node id>` — <layer name> | fill is raw `#0a5c2b`, bound to nothing | bind to `<the token list's entry, verbatim>` | the `destructive` row above |
 
 **Nothing in this section is code work, and no item in it may also appear in *Variant axes*,
 *Props API* or *Token delta*.** That separation is the point of the section: a raw value in the
@@ -190,7 +229,7 @@ industry standard and nobody re-checks it.
 
 ## Triage record
 
-Every Phase C decision, one line of rationale each. **Required for all four outcomes**, not just
+Every Phase 4 triage decision, one line of rationale each. **Required for all four outcomes**, not just
 the ones that produce work.
 
 | Item | Outcome | Rationale | Decided |

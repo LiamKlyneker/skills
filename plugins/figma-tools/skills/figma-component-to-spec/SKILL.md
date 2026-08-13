@@ -3,16 +3,20 @@ name: figma-component-to-spec
 description: >
   Turn one Figma component set into an implementation spec for the design-system
   library that owns the component. Runs only in a `library` repo, refuses anything
-  that is not a single component set, fans each variant frame out to a Sonnet region
-  agent, reads what the component already is — catalog-first, source-second — via the
-  adapter's variant-mechanism ladder, triages every gap at a human checkpoint into
-  already-expressible / extend-component / extend-tokens / fix-figma, and files one
-  spec on the adapter's tracker.
+  that is not a single component set, and derives the whole variant lattice — axes,
+  values, instance counts — from one `get_metadata` on the set root. Reads what the
+  component already is source-first, through the adapter's variant-mechanism ladder,
+  with a project catalog as optional cross-check rather than a hard requirement.
+  Triages every candidate at a human checkpoint into already-expressible /
+  extend-component / extend-tokens / fix-figma before a single metered extraction call
+  is spent, then extracts only the frames that checkpoint kept — one Sonnet
+  figma-variant-extractor per frame, budgeted and throttled against the seat's Figma
+  rate ceiling — and files one spec on the adapter's tracker.
   Invoke /figma-tools:figma-component-to-spec <url>.
 disable-model-invocation: true
 metadata:
   author: liam
-  version: "2.1.0"
+  version: "3.0.0"
 ---
 
 # Figma component → Spec
@@ -29,16 +33,24 @@ component set** — implemented later by whatever the adapter's `## Design syste
 exclusive by repo.** `figma-to-spec` specs a **page** in a repo that *consumes* a design
 system and files gaps against it. This skill specs a **component** in the repo that *is* the
 design system, where a spec does not file a gap against someone else's library — it changes
-the thing every consumer resolves against. Phase 0 reads the adapter's `Repo role:` row and
+the thing every consumer resolves against. Setup reads the adapter's `Repo role:` row and
 hard-refuses on the wrong side of that line, in both directions. There is no run mode, no
 flag, and no override that crosses it.
 
 **The delta is against the component, not against a page.** A page spec asks "does this value
 exist in the design system?". A component spec asks the harder question — "what does this
-component *already do*, and what must change?" — so Phase B reads the component's current
-state alongside the Figma side, **catalog-first, source-second**. The fingerprinted catalog is
-the primary answer; source is fallback and cross-check, never a second derivation racing the
-first.
+component *already do*, and what must change?" — so *Current state* reads it **source-first,
+catalog-second**, before any extraction happens. In a library repo the variant declaration in
+source **is** the truth and the catalog is a photocopy of it sitting in the same tree, so the
+declaration is the primary answer and the catalog is cross-check — and a disagreement between
+the two is recorded as a disagreement, never quietly settled.
+
+**A component set is a lattice, not a list of unknowns**, and that is what makes this engine
+cheap. One `get_metadata` on the set root returns every variant frame *with its property
+assignments* — the whole axis lattice in one response — so the axes, the values, the
+drawn-vs-cross-product and the instance counts are all **computed, never observed**, and the
+human triage checkpoint sits **before a single metered extraction call is spent** rather than
+after a hundred of them.
 
 ## Prerequisites
 
@@ -53,71 +65,107 @@ machine has installed and where the session is rooted.
   never inferred**: a `components/` directory is not evidence, and neither is a package name.
   No adapter or no `## Design system` section at all is a different failure — that is a
   missing install, and the answer is `install-skills`, not a guess.
-- **A project design-system catalog (required artifact).** Same existence source, same shape
-  contract, same resolution order as `figma-to-spec`: **passed arg → the adapter's catalog
-  pointer → ask**, stopping there. Its required shape is
+- **An existence source (hard requirement) — the *token list*, and no longer necessarily a
+  catalog.** Setup assembles one explicit list covering **tokens by tier · typography utilities ·
+  dimension tokens · the components this library ships · the icon sources the icon ladder names,
+  with their entries**, and hands it verbatim to every extraction spawn. Its primary source is
+  the **token source the adapter's *Token pipeline* row names** — that row already answers "where
+  do the tokens live", and one file read gives what the catalog was standing in for.
+  **What must survive is the guarantee, not the artifact:** the catalog's hard STOP existed to
+  keep the extractor **training-blind**, and that needs only *an explicit list the agent may not
+  add to*. Without one, nothing stops a spec citing a token from a well-known public design
+  system this library never had, and it reads as entirely plausible. So **no existence source at
+  all is still a hard STOP**; a missing catalog is not.
+- **A project catalog (optional, and demoted rather than banned).** Where one is registered it
+  still resolves **passed arg → the adapter's catalog pointer → ask**, is still validated against
   `../figma-to-spec/references/catalog-contract.md` — **the shared file, referenced, never
-  copied**. Phase 0 validates against it and **fails loudly** rather than degrading; staleness
-  is a separate soft check. In a library repo the catalog describes *this* repo's own design
-  system, which makes it both more likely to be current and more consequential when it is not —
-  it stays a soft check either way. A project without a catalog gets one from
-  **`figma-tools:ds-catalog`**; this skill never authors one mid-run.
+  copied** — with a **registered** catalog that fails it a hard STOP, and is still soft
+  staleness-checked. What changed is its job: it contributes component and icon entries to the
+  token list and **cross-checks** the current-state read, rather than being the primary answer to
+  either. **The revisit condition is a row read, not a preference:** a *Token pipeline* row
+  naming a generator and its source means one read gives the token set and a derived catalog is
+  redundant; a row reading `None` means there is no single file whose read gives that set, the
+  run reconstructs it across many files every time, and a derived catalog starts paying for
+  itself again. `figma-tools:ds-catalog` writes one; this skill never authors one mid-run.
 - **Three library-only adapter rows**, all in `## Design system`, none of them inferable from
   the tree:
   - **Variant mechanism** — a **ladder**, read in its order, stopping at the first rung that
-    resolves, honouring the trap the row names. It is what tells Phase B where this library
-    declares a component's axes and values. Absent → ask; never pick a mechanism by looking at
-    the code.
-  - **Token pipeline** — decides how literal a token delta may be phrased (a generator and its
-    source → a literal source edit; none → a coordinated file-edit list). Recorded in this
-    slice; consumed when the spec is written.
-  - **Story convention** — where stories live and how their `argTypes` are declared. Phase B's
+    resolves, honouring the trap the row names. It is the **primary** current-state read: where
+    this library declares a component's axes and values. Absent → ask; never pick a mechanism by
+    looking at the code.
+  - **Token pipeline** — **does double duty.** It names the token source Setup reads to build the
+    existence list, *and* it decides how literal a token delta may be phrased (a generator and
+    its source → a literal source edit; `None` → a coordinated file-edit list). Absent → ask.
+  - **Story convention** — where stories live and how their `argTypes` are declared. The
     story-coverage read is scoped by it.
 - **The rest of `## Design system`**: the **icon resolution ladder** (needed *verbatim* by
-  every Phase B spawn — the region agent is deliberately adapter-blind) and the three
-  **class-prefix** rows, which settle what form a spec may recommend.
+  every extraction spawn — the variant agent is deliberately adapter-blind and catalog-blind)
+  and the three **class-prefix** rows, which settle what form a spec may recommend and which
+  form the token list is written in.
 - **Figma MCP — two distinct capability checks, do not conflate them:**
   1. **`figma-dev-mode` present (required):** `get_metadata`, `get_variable_defs`,
-     `get_screenshot`, `get_design_context`. STOP if this server is absent — no fallback.
+     `get_design_context` — the three this run actually calls. **`get_screenshot` is deliberately
+     never called** (see *Idempotency & output*), so it is not part of the check and must not be
+     projected into the extraction budget. STOP if this server is absent — no fallback.
   2. **Binding read (`use_figma`, via `/figma-use`) available (strongly preferred, separate
      server):** resolves each node's `boundVariables` → variable **name per property**. If
      unreachable, the run continues in **degraded color mode**, announced up front, with every
-     color flagged unverified. `../../agents/figma-region-extractor.md` step 4 is the
+     color flagged unverified. `../../agents/figma-variant-extractor.md` step 3 is the
      **normative** statement of that rule and its `bindingVerified` schema requirement.
 - **A Figma node URL** naming **one component set**. Missing → ask, never guess. What counts,
-  and what is refused, is Phase 0's node-shape gate below.
-- **`figma-region-extractor` subagent (preferred, detachable).** The same agent
-  `figma-to-spec` spawns, at `../../agents/figma-region-extractor.md`, spawned as
-  **`figma-tools:figma-region-extractor`** — the plugin namespaces it, on every route,
+  and what is refused, is Setup's node-shape gate below.
+- **A Figma rate ceiling to project against — stated, not discovered.** Phase 5.1 budgets the
+  fan-out against it, so the run resolves one before spawning anything: a ceiling passed to the
+  run → a ceiling the adapter records, where a project records one → **the stated default,
+  `200/day · 20/min`**. Three properties of that number are carried in Phase 5.1 rather than
+  re-derived: it is **org-scoped** (a file owned by a team the seat holds only a *View* membership
+  in falls back to a **monthly** allowance in the single or low double digits — a different
+  product, not a rate to throttle around); the daily figure is a **recorded disagreement** between
+  the seat's own `whoami` (200/day) and Figma's published rate-limits page (600/day for
+  Organization), taken at the lower, live-authority value; and **`use_figma`'s quota status is
+  unknown** — it appears on that page neither as exempt nor as counted. `whoami` is itself
+  rate-limit-exempt, so confirming a seat's real ceiling is free.
+- **`figma-variant-extractor` subagent (preferred, detachable).** This skill's own agent, at
+  `../../agents/figma-variant-extractor.md`, spawned as
+  **`figma-tools:figma-variant-extractor`** — the plugin namespaces it, on every route,
   installed or `--plugin-dir`. There is no unprefixed form except a hand-placed `agents/` file.
-  If the type does not resolve, Phase B reads that same file and pastes its body into a
-  `general-purpose` agent. One source of truth either way; Phase 0 checks and announces which
-  path the run takes.
+  If the type does not resolve, the extraction phase reads that same file and pastes its body
+  into a `general-purpose` agent. One source of truth either way; Setup checks and announces
+  which path the run takes. The page-side `figma-region-extractor` is `figma-to-spec`'s and is
+  deliberately **not** checked here — spawning it would hand a page contract a variant frame.
 
 ## Resolution sources (what "does it exist?" reads)
 
-- **Existence** → the project **catalog**, resolved and validated in Phase 0. The ONLY source
-  for "does the DS have this?" — including for the component under spec.
-- **Catalog shape** → `../figma-to-spec/references/catalog-contract.md` (shared with
-  `figma-to-spec` and `ds-catalog`; one file, three readers).
+- **Existence** → the **token list Setup assembles** and hands to every spawn. The ONLY source
+  for "does the DS have this?" — including for the component under spec. Its parts: tokens,
+  typography utilities and dimension tokens from the **token source the *Token pipeline* row
+  names**; the components this library ships and the icon sources' entries from the catalog where
+  one is registered, and otherwise enumerated once from the library itself. A part with no
+  resolvable source is written into the list as `none resolvable — <why>` and announced, never
+  left out — an omitted part and an empty one read identically to the agent.
+- **Catalog shape** (where a project registers one) →
+  `../figma-to-spec/references/catalog-contract.md` (shared with `figma-to-spec` and
+  `ds-catalog`; one file, three readers).
 - **Resolution + tolerance rules** → `../figma-to-spec/references/resolution-rules.md`
   (shared, same rule).
-- **Current state of the component** → **catalog first, source second.** The catalog entry is
-  the primary statement of what axes and values exist. Source is fallback where the catalog is
-  silent, and cross-check where it is not — read by walking the adapter's **variant mechanism**
-  ladder, in its order. A source read that disagrees with the catalog is **recorded as a
-  disagreement**, never silently preferred: one of the two is wrong, and deciding which is the
-  human's call in Phase C.
+- **Current state of the component** → **source first, catalog second.** The variant declaration
+  in source is the primary statement of what axes and values exist, read by walking the adapter's
+  **variant mechanism** ladder in its order, stopping at the first rung that resolves and
+  honouring the trap the row names. The catalog is **cross-check**: agreement is recorded once as
+  cross-checked, and a disagreement is **recorded as a disagreement**, never silently resolved in
+  either direction — one of the two is wrong, and deciding which is the human's call at the
+  triage checkpoint. This phase makes **no Figma call at all**.
 
 **Component identity is looked up, not inferred, wherever it can be.** In a library repo the
-component being drawn usually *is* a catalog entry, so match the component set to that entry
-and confirm it with the user when the match is anything less than obvious. Where no entry
+component being drawn usually *is* an entry in the token list, so match the component set to that
+entry and confirm it with the user when the match is anything less than obvious. Where no entry
 matches, that is the interesting case — a genuinely new component — and it is recorded as such,
 never forced onto the nearest name.
 
 ## What triage decides, and where the spec lands
 
-**Four outcomes, and they are about *where the edit lands*.** At the Phase C checkpoint every
+**Four outcomes, and they are about *where the edit lands*.** At the *Reconcile & triage*
+checkpoint — which sits **before any metered extraction call**, not after the fan-out — every
 candidate is marked **already-expressible** (the library already says it — record how, change
 nothing) · **extend-component** (a variant axis, a value, or a props-API change) ·
 **extend-tokens** (through the adapter's token pipeline) · **fix-figma** (an unbound or raw value
@@ -150,50 +198,70 @@ and `prd-workflow:to-issues` consume it with **zero new machinery and no edit to
 ## Phases
 
 Read `references/phases.md` for the phase you are running — it carries the full procedure.
-Region agents are driven by `../../agents/figma-region-extractor.md`; the run's one artifact is
+Variant agents are driven by `../../agents/figma-variant-extractor.md`; the run's one artifact is
 shaped by `references/component-spec-template.md`.
+
+**The first four phases run before a single metered extraction call is spent**, and the whole
+run's Figma cost up to the checkpoint is **one `get_metadata` on the component set root**.
 
 | Phase | Model | Does |
 |---|---|---|
-| **0 — Setup** | main thread | **Repo-role guard** · **node-shape gate** (one component set) · resolve catalog (arg → adapter pointer → ask) + validate against the shape contract + soft staleness check · read the `## Design system` rows this skill needs · three Figma capability checks · identify the component under spec. |
-| **A — Variants are the regions** | main thread | Enumerate the component set's variant frames. One variant frame = one region = one `variant:<name>` source-node role. Coverage self-check + logged tally. |
-| **B — Variant agents + current state** | `figma-tools:figma-region-extractor` (Sonnet) ×N parallel, plus main thread | One agent per variant frame → structured JSON findings. In parallel, on the main thread: what the component already is — **catalog-first, source-second** via the variant-mechanism ladder — plus computable story coverage. |
-| **C — Synthesis, triage & the spec** | Opus, main thread (+ research subagents) | Reconcile the two reads into one axis table · reconcile by concern · **four-outcome triage checkpoint** · **pattern-precedent research** per extend-component gap (APG → headless → shadcn) · write **one** component spec per `references/component-spec-template.md`. |
-| **D — Filing** | main thread | Branch on the adapter's `Tracker:` line. The spec files as a plain `[SPEC]` work item (ADO) / an ordinary issue (GitHub) on **this repo's own tracker rows**, parented to the scope ticket where one was given, deduped by the component set's node id and updated in place. |
+| **1 — Setup** | main thread | **Repo-role guard** · **node-shape gate** (one component set), whose single root `get_metadata` is the only metered read the pre-checkpoint half makes · **assemble the token list** from the *Token pipeline* row's source (catalog, where registered, validated + soft staleness-checked and contributing component/icon entries) · read the `## Design system` rows this skill needs · three Figma capability checks · identify the component under spec. |
+| **2 — Structure** | main thread | Derive the whole axis lattice from Setup's root response — drawn axes and values, drawn-vs-cross-product, duplicate/inconsistent Figma property values, the Figma vocabulary kept **verbatim**, and instance counts **computed, not observed**. Coverage self-check + logged tally. **Zero Figma calls.** |
+| **3 — Current state** | main thread | What the component already is — **source-first** through the variant-mechanism ladder, naming the file it resolved at; the catalog as **cross-check** with every disagreement recorded unresolved; plus computable story coverage. **No Figma calls.** |
+| **4 — Reconcile & triage** | Opus, main thread | One axis table (delta both ways, axis-name mapping as a claim) · the candidate list with every ⚠️ flag joined in and the lattice's instance counts · **four-outcome triage checkpoint, before any metered extraction**, which also settles which frames are worth extracting. |
+| **5 — Targeted extraction** | `figma-tools:figma-variant-extractor` (Sonnet) ×N, **throttled** | **Budget guard first**: project the metered cost from the kept-frame count and the agent's call discipline, state it against the seat's daily ceiling, and **stop deliberately** rather than die mid-fan-out. Then one agent per **kept** variant frame → structured JSON findings, resolved against the token list pasted verbatim into each spawn, fanned out in **waves** sized for the per-minute cap. |
+| **6 — Reconcile by concern** | Opus, main thread | Make each concern consistent across the extracted frames — one color→token map, one type/spacing picture, one icon inventory. No Figma re-traversal. |
+| **7 — Pattern precedent** | research subagents (Sonnet) | One per **extend-component** gap — **that outcome only** — APG → headless libraries → shadcn, walked in full. Spends **no Figma call**, so it runs **in parallel with Phase 5** and never enters its budget. |
+| **8 — The component spec** | Opus, main thread | Write **one** component spec per `references/component-spec-template.md`, including the **extraction-coverage disclosure**: which frames were extracted, which deliberately were not, and every instance count marked **computed from the lattice**. |
+| **9 — Filing** | main thread | Branch on the adapter's `Tracker:` line. The spec files as a plain `[SPEC]` work item (ADO) / an ordinary issue (GitHub) on **this repo's own tracker rows**, parented to the scope ticket where one was given, deduped by the component set's node id and updated in place. |
 
-(No catalog, or one that has drifted from the design system: author or refresh it with
-`figma-tools:ds-catalog`, then re-run Phase 0.)
+(A catalog that has drifted from the design system, or a project that wants one: author or
+refresh it with `figma-tools:ds-catalog`, then re-run Setup. Its **absence** no longer stops a
+run — the token list does.)
 
 **STOP gates — none of these is automatable:**
 
 1. **`Repo role:` is `consumer`, or the row is absent** → stop, with a one-line redirect to
    `figma-tools:figma-to-spec`. Before any Figma read. Not a warning, not overridable
-   (Phase 0 step 1).
+   (Setup step 1).
 2. **The node is not one component set** → stop: *one component set per run*. A page-shaped
    node and a node holding several component sets are both refused **by decision, not by
-   omission**. A lone component is fine — it is the 1-variant case (Phase 0 step 2).
-3. **`figma-dev-mode` absent** → stop. There is no fallback (Phase 0 step 5).
-4. **No resolvable catalog, or one that fails
-   `../figma-to-spec/references/catalog-contract.md`** → stop, naming the path and the rule
-   that failed. (Staleness alone never stops a run.)
+   omission**. A lone component is fine — it is the 1-variant case (Setup step 2).
+3. **`figma-dev-mode` absent** → stop. There is no fallback (Setup step 5).
+4. **No existence source resolves at all** — no token source behind the *Token pipeline* row, no
+   registered catalog, nothing enumerable → stop, naming each thing looked for and where (Setup
+   step 3c). Separately: a **registered** catalog that fails
+   `../figma-to-spec/references/catalog-contract.md` → stop, naming the path and the rule that
+   failed (Setup step 3d). Staleness alone never stops a run, and a *missing* catalog is not a
+   stop.
 5. **No variant-mechanism ladder in the adapter** → ask the user for it; never infer the
-   mechanism from the code. `ds-catalog` is what writes the row (Phase 0 step 4).
-6. **Human triage checkpoint** (Phase C4) → present every candidate and flag; the user marks each
+   mechanism from the code. `ds-catalog` is what writes the row (Setup step 4).
+6. **Human triage checkpoint** (Phase 4.3) → present every candidate and flag; the user marks each
    **already-expressible** / **extend-component** / **extend-tokens** / **fix-figma**, settles
    every legacy flag (match-as-is vs modernize) and every catalog-vs-source disagreement, and
-   **every decision records a one-line rationale** in the spec's *Triage record*. **No tracker
-   write happens before this** — not a search, not a draft — on either tracker.
+   **every decision records a one-line rationale** in the spec's *Triage record*. Two negatives
+   hold at this gate: **no tracker write has happened** — not a search, not a draft, on either
+   tracker — and **no metered extraction call has been spent**.
+7. **The projected metered cost exceeds the ceiling** (Phase 5.1) → stop **before the first
+   spawn**, naming the kept-frame count, the floor and worst-case projections, the ceiling and
+   where it came from, and how many frames would fit — then re-triage narrower. Exceeding a Figma
+   rate limit is a hard stop with **no documented retry-after**, so a run that discovers the
+   ceiling by hitting it dies mid-fan-out with a partial extraction and a day's wait. Extracting a
+   prefix of the kept set and stopping half-way is **not** an alternative: it produces a spec whose
+   *Token delta* and *Figma fixes* omit whatever the budget ran out before reaching, which is
+   indistinguishable from a component that had no findings there.
 
 The four extraction rules the regression fixtures protect apply here unchanged — **never
 resolve a fill by hex**, **never record absolute x/y coordinates**, **never match across
 property kinds**, **never enumerate the interior geometry of an icon** — and they are normative
-in `../../agents/figma-region-extractor.md` and
+in `../../agents/figma-variant-extractor.md` and
 `../figma-to-spec/references/resolution-rules.md`, never restated here.
 
 ## Idempotency & output
 
 Re-running re-derives everything from the node: extraction is a pure function of the component
-set plus the catalog. Filing dedups by **searching the filing target for the component set's
+set plus the token list. Filing dedups by **searching the filing target for the component set's
 node id** — never by title, because a component gets renamed — and **updates the existing item
 in place**, writing its id back into the spec. A second run on the same component set creates
 **zero** new tracker items.
@@ -204,14 +272,18 @@ library the gap and the spec are the same document, so every gap is a section of
 rationale a row in *Triage record*. A second artifact would give one decision two homes that can
 disagree.
 
-Screenshots are **not** persisted — `get_screenshot` returns an inline image, not a path.
-Variant agents view it inline; the layout tree plus auto-layout intent are the durable truth.
+Screenshots are **not** persisted, and in component mode they are **not taken** — the variant
+agent makes no `get_screenshot` call, by decision: its purpose in the page agent is visual ground
+truth for identifying the component, and here Setup identified the component, on the whole set,
+before any agent spawned. The layout tree plus auto-layout intent are the durable truth.
 
 ## What this skill verifies vs what it cannot
 
-It verifies that every variant frame in the component set was extracted or explicitly pruned,
-that every design property was **resolved** against the catalog, and that the component's
-current state was read through the adapter's stated mechanism rather than guessed.
+It verifies that every child of the component set landed in the lattice or was explicitly pruned
+with a reason, that every design property it did extract was **resolved** against the token list,
+and that the component's current state was read through the adapter's stated mechanism rather
+than guessed. **It does not claim every variant frame was extracted** — extraction is scoped to
+what triage kept, deliberately, and the spec says which frames those were.
 
 It cannot verify that the design is right, that an inferred component identity is correct
 without the user's yes, or that the eventual code renders faithfully. **Nor does it verify a
