@@ -25,6 +25,11 @@ Tracker `github`, and what an adapter carrying no `Tracker:` line falls back to.
 - Title prefixes: `[PRD]` · `[TASK]` · `[BUG]` — literal, at the start of the title. A **human scanning convention, not a filter**: `[PRD]` is a parent, `[TASK]` a planned child, `[BUG]` a triaged finding. A PRD's children are its **native sub-issues**, so nothing keys on a title. There is no `[QA]` prefix on GitHub — `work-on-prd` posts the run's QA steps as a comment on the PRD and labels it `needs-qa`. A project that also runs `figma-tools` gains one more, `[DESIGN-SPEC]`, written by that bundle alone and filed against the *design-spec target* row below. Change them here if this repo uses different ones; never in a skill.
 - Triage labels: `needs-triage` → `ready-to-start` → `state:in-progress` → `state:done-on-branch`. All four must exist in the repo. The vocabulary is normative in `work-on-prd`'s `## Label vocabulary`; it is restated here so a cold session holding only this adapter knows which tracker and which labels to use without asking. Rename them if this repo already uses different words — keep the four roles.
 
+Two rows that decide what a run's branch and pull request look like **to the team**. Both are **optional and independent**, and both are read by `prd-workflow` alone. An adapter that declares neither behaves exactly as it did before these rows existed — so leaving either out is a finished answer, not a gap, and nothing warns about an absent row:
+
+- Branch pattern *(optional)*: `<gh-branch-pattern>` — the branch a run creates, written in this file's own placeholder notation. The only tokens anything substitutes are `<n>` (the PRD's issue number) and `<slug>` (its title, slugged, with the leading `[…]` group stripped), and **every placeholder is optional** — a pattern that uses neither, like `release`, is legal. E.g. `feat/<slug>`. **Absent → `prd/<n>-<slug>`.** Purely cosmetic: nothing resolves a run *by* this name, so changing it mid-flight costs nothing.
+- PR template *(optional)*: `<path-to-pr-template>` — this project's pull-request template, as a **repo-relative path to one file** (`.github/pull_request_template.md`, or a single file inside a `.github/PULL_REQUEST_TEMPLATE/` directory). **A path is strongly preferred**, because the loop then reads the team's live file and the PR body keeps tracking it as the team edits it. Only when the project has no template file anywhere does this row instead carry a **content snapshot**: write the literal word `snapshot` as the value and the template body fenced beneath the row. `doctor` reports a snapshot as possibly stale on every run, deliberately — nothing can tell it when the real template moved on. **Absent → the loop's own PR skeleton.** The loop takes the template's *structure* only; draft state, target branch and its own bookkeeping stay the orchestrator's.
+
 Two filing rows only `figma-tools` reads. A project that never runs it deletes both; a project that does fills both, because they answer different questions:
 
 - Design-spec target: `<owner>/<repo>` — where a `figma-to-spec` page spec files, as a `[DESIGN-SPEC]` issue. When Phase 0 was given a scope issue, the spec is linked as that issue's **native sub-issue** — the link is what makes it a child, so its body carries no `## Parent` section.
@@ -180,8 +185,9 @@ filled adapter, on the theory that it was never filled in. A few angle-bracket t
 are notation rather than placeholders and are legitimately still there after filling —
 list them below so the check stays quiet about them and loud about everything else.
 
-`<id>` and `<slug>` are branch-pattern notation: a filled `Branch pattern:` value is
-itself a pattern (`spec/<id>-<slug>`), so those two survive filling by design.
+`<n>`, `<id>` and `<slug>` are branch-pattern notation: a filled `Branch pattern:` value
+is itself a pattern (`feat/<slug>` on GitHub, `spec/<id>-<slug>` on Azure DevOps), so all
+three survive filling by design.
 
 **Delete this whole comment when you fill your copy.** doctor reads the exemption list
 from the template, never from your adapter, so a copy of it here does nothing except

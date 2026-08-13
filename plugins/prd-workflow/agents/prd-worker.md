@@ -24,7 +24,9 @@ tool is denied to you, so you cannot delegate, and any searching is yours to do 
 ## Mandates
 
 1. **Read the scoped `CONTEXT.md`** before touching files in any directory (repo discipline).
-2. **Work only on the PRD branch** named in your prompt (`prd/<n>-<slug>`).
+2. **Work only on the PRD branch** named in your prompt — whatever it is called. `prd/<n>-<slug>`
+   is only the default shape; a project's adapter may name any pattern, so take the name from the
+   prompt rather than recomputing one.
 3. **Verify before committing, per the adapter's verify ladder: L2 always**, plus **L3** if
    the issue is marked user-visible. What L2 and L3 *mean* is the adapter's to define, and
    it is the only definition — run the commands in its **Commands** table as written. On a

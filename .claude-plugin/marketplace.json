@@ -9,7 +9,7 @@
     {
       "name": "prd-workflow",
       "description": "PRD-to-merge workflow for Claude Code: turn context into a PRD, slice it into tracer-bullet issues, pick the next one, run the whole thing end-to-end with a per-issue worker subagent, and triage the QA findings that come back into cold-runnable issues",
-      "version": "1.5.0",
+      "version": "1.6.0",
       "keywords": ["prd", "github-issues", "pull-requests", "workflow", "orchestration", "subagent", "qa-triage"],
       "category": "development",
       "source": "./plugins/prd-workflow"
@@ -41,7 +41,7 @@
     {
       "name": "install-skills",
       "description": "Bootstrap a project's `.claude/project/adapter.md` for a skill bundle, and diagnose an install that has rotted — the two jobs no distribution mechanism can do for you. Start here: the PRD and ADO workflows cannot run without the adapter it writes",
-      "version": "1.7.0",
+      "version": "1.8.0",
       "keywords": ["bootstrap", "adapter", "doctor", "install", "diagnostics"],
       "category": "development",
       "source": "./plugins/install-skills"

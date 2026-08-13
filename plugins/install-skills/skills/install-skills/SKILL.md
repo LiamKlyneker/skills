@@ -180,9 +180,12 @@ ask for — that is gap-fill, not the re-templating step 3 forbids.
 
 **A row whose absence is the answer is not a question to press on.** `## Design system`
 carries two optional rows — the usage-rules source and the downstream implementer — and
-leaving each out is what makes a spec cite nothing and hands the spec to a human. Ask once,
-accept "no" as a complete answer, delete the row, and record no warning anywhere. An install
-that ends with an adapter carrying neither row is finished, not half-filled.
+leaving each out is what makes a spec cite nothing and hands the spec to a human. `## Repo`'s
+GitHub sub-section carries two more — `Branch pattern:` and `PR template:` — and leaving each
+out is what keeps a run on `prd/<n>-<slug>` with the loop's own PR skeleton, which is what
+every project got before those rows existed. Ask once, accept "no" as a complete answer,
+delete the row, and record no warning anywhere. An install that ends with an adapter carrying
+none of the four is finished, not half-filled.
 
 ### 5. Gates
 
@@ -234,14 +237,14 @@ its checks by hand or "spot-check" a subset.
 | `BANNED` | a project-owned `_shared/` — shadows canonical for any copied skill |
 | `DANGLING` | a symlink under `.claude/` whose target is gone |
 | `HOLE` | a skill reaching this repo reads the adapter, and there isn't one — from `.claude/skills/`, or from a plugin the repo's committed `.claude/settings.json` enables |
-| `UNFILLED` | the adapter still carries the TEMPLATE marker or template placeholders, or is missing a `##` section the named bundle needs |
-| `POINTER` | the adapter's `## Project gates` table registers a gate whose file does not exist as a sibling of `adapter.md` |
+| `UNFILLED` | the adapter still carries the TEMPLATE marker or template placeholders, or is missing a `##` section the named bundle needs, or its `Branch pattern:` uses a placeholder nothing substitutes |
+| `POINTER` | the adapter points at a file that isn't there — a gate registered in `## Project gates` with no sibling file next to `adapter.md`, or a `## Repo` → `PR template:` path that is not a file in the repo |
 | `SHARED` | a skill reads `../_shared/x.md` that does not resolve from where it sits |
 | `BUNDLE` | `--bundle` named a slug `install/bundles.md` does not define, or one whose **Status** is not `ready` |
 | `MISSING` | a bundle offers a gate template that canonical does not ship |
 
-`WARN` lines (a loose file in the skills directory, a manifest doctor could not read) count
-as warnings, not problems. `OK` and `INFO` are neither, and `--quiet` hides them.
+`WARN` lines (a loose file in the skills directory, a manifest doctor could not read, a PR
+template recorded as a content snapshot rather than a path) count as warnings, not problems. `OK` and `INFO` are neither, and `--quiet` hides them.
 
 Exit 0 clean · 1 problems · 2 usage error.
 

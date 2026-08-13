@@ -60,20 +60,24 @@ Then ask the user how to proceed. Do not enter plan mode.
 
 1. Identify the directories/routes the issue touches. Read their `CONTEXT.md` (use the `scoped-context` skill if cross-feature imports are involved — it walks up to the route-group root).
 2. Apply `../_shared/model-effort-heuristics.md` to the issue → plan-mode y/n, model tier, effort. Downgrade detector against the Opus-high default; tiers not versioned ids (defer to `claude-api` for ids); hedge borderline.
-3. One-line confirm what you understood the issue to be.
-4. Print the block below — including the model/effort call — **before** `EnterPlanMode`. Entering plan mode commits the session model, so the operator needs the recommendation in hand first; if it differs from their current session they can switch before continuing.
-5. `EnterPlanMode` and draft the implementation plan there.
+3. **Branch and PR, advisory only** — this skill still does not branch, push, or open anything. Read the adapter's optional **`Branch pattern:`** and **`PR template:`** rows, in the `### GitHub` sub-section of `## Repo`, the same two rows and the same substitution rule `work-on-prd`'s Setup steps 2–3 use, but for this one issue and with **no machine block**: no pointer, no child checklist, no resume search — there is no loop here to resume. `<n>` is this issue's number, `<slug>` its title slugged (strip a leading `[…]` bracket group first, then lowercase, collapse non-alphanumerics to hyphens, keep every word — the same pathological-title exception `work-on-prd` uses if the title runs long). **Either row absent → today's behaviour: say nothing about it.** The two rows are independent — resolve whichever is present, both, or neither.
+4. One-line confirm what you understood the issue to be.
+5. Print the block below — including the model/effort call and, when step 3 resolved anything, the branch/PR-template line — **before** `EnterPlanMode`. Entering plan mode commits the session model, so the operator needs the recommendation in hand first; if it differs from their current session they can switch before continuing.
+6. `EnterPlanMode` and draft the implementation plan there.
 
 ```
 Issue: #<n> <title>  [open]
 
 Ready. Scope: <one line>. Touches: <dir(s)>.
+Branch: <resolved-name>   PR template: <path-or-"snapshot">
 
 Model/effort: <tier> · <effort>   (<downgrade from default | stay on default | borderline>)
   Why: <matched signals — no score>
 
 Entering plan mode. Switch model/effort first if it differs from your current session.
 ```
+
+Omit the `Branch:`/`PR template:` line entirely when both rows are absent — that is today's behaviour, unchanged. When only one row is present, print only that half of the line.
 
 ## Conventions
 
