@@ -222,3 +222,10 @@ this skill and worth saying plainly: **story coverage is only as computable as t
 convention allows.** An axis whose `argTypes` entry is not a select is reported *not computable
 — verify manually*, and never guessed at from story export names, which are proven unreliable
 as a coverage signal.
+
+The regression **fixture format** and **expected-findings assertion style** live in
+`references/regression/`; concrete fixtures are per-project (they pin real node IDs, and are
+graded against one library's conventions) and are optionally registered in the adapter.
+Re-running them is a **documented pre-release step** — triggered by any change to an extraction,
+enumeration or triage rule, before that change ships — and explicitly **not CI**, which cannot
+drive a live authenticated Figma session.
