@@ -48,15 +48,50 @@ State lives in git + GitHub only (branch commits, issue labels, PR body). Zero s
    ```
 
 1. **Fetch state**: PRD + children per `../_shared/prd-eligibility.md` — the children are the PRD's **native sub-issues**, read back in one `gh api …/sub_issues` call. Everything that call returns is a child by construction: there are no filters, so nothing is dropped and there is nothing to report as dropped. Zero children → **nothing is linked to this PRD**, which is not the same as "never sliced". Stop, and tell the user to link the PRD's children as sub-issues — explicitly **do not** tell them to re-run `/to-issues`, and say so: re-slicing a PRD that already has children doubles every one of them, and that plausible-sounding message is the expensive wrong move this branch exists to prevent. Cycle in `Blocked by` → report it, stop.
-2. **Branch** `prd/<n>-<slug>`: check out if it exists (local or remote), else create from up-to-date `main`.
+2. **Branch**: name it from the adapter's optional **`Branch pattern:`** row, in the `### GitHub`
+   sub-section of `## Repo`. Check the resulting name out if it exists (local or remote), else
+   create it from up-to-date `main` — subject to the collision guard below. One branch per PRD, on
+   a cold start and on a resume alike.
 
-   The slug comes from the PRD title **with the `[PRD]` prefix stripped first** — slug
+   **An absent row means `prd/<n>-<slug>`**, byte-for-byte the name every run used before the row
+   existed. Absent is the common case and a finished answer; nothing warns about it. Present, the
+   row is a pattern written in the adapter's own placeholder notation, and you substitute exactly
+   two tokens into it: **`<n>`**, the PRD's issue number, and **`<slug>`**, its title slugged.
+   **Both are optional** — a pattern naming neither, like `release`, is legal and yields that
+   literal name. Substitute nothing else: anything else the row contains is part of the name, not
+   a placeholder to fill.
+
+   **`<slug>` is the full title, slugged — never truncated.** Lowercase it, collapse every run of
+   non-alphanumerics to a single hyphen, drop leading and trailing hyphens, and keep every word.
+   Length is not a reason to cut: a half-title slug is how two PRDs end up sharing a branch name,
+   and it is the same word that gets cut both times. The one exception is a **pathological title**
+   — roughly eight words or more, where the honest slug is a paragraph. There you still do not
+   truncate; you **compose a short meaningful slug** from what the PRD is actually about
+   (`customer-eligibility`, out of *Rework how customer eligibility is decided at checkout for
+   partner accounts*) — and you **announce that you did it, and what you chose**, alongside the
+   branch name. An announced short slug is a naming call the human can correct in one line; an
+   unannounced one is a branch they cannot find and did not know to look for.
+
+   **Strip the leading `[…]` bracket group from the title before slugging** — slug
    `extract-lk-plugin`, never `prd-extract-lk-plugin`. This is the whole reason the strip is
    specced rather than assumed: a PRD that gains the prefix while a run is in flight computes a
    *different* branch name than the one its work is on, so the resume opens a second branch and
    a second PR, Setup step 4 finds zero commits on it, and every landed issue is re-run from
    scratch. Nothing errors. Strip any leading `[…]` bracket group, not the literal string
    `[PRD]`, so an adapter that names a different prefix is handled too.
+
+   **Collision guard — check it only when you are about to *create* the branch.** A pattern is
+   free to collide in a way `prd/<n>-<slug>` never could: `feat/<slug>`, or a bare `release`, can
+   name a branch that already exists and has nothing to do with this PRD. So before creating, if
+   the name is already taken, find out whose it is — an **open PR whose head is that branch and
+   whose body runs a different PRD** means it belongs to that run. **Stop and report**: name the
+   branch, the PR, and the PRD it is running, and ask the human for a different pattern or a
+   different name. Do not improvise a suffix, and never stack two PRDs on one branch — the second
+   PRD's commits land in the first one's PR, the first one's `Closes` line closes the second one's
+   issues on merge, and Setup step 4 reconstructs "done" from a commit history that is two runs
+   interleaved. The two innocent cases stay ordinary: an existing branch whose open PR runs *this*
+   PRD is the resume this loop is built around, and an existing branch with **no** open PR is a
+   cold start after one was closed — adopt either and carry on.
 3. **PR** (one per PRD, targets `main` — required for `Closes` to fire): if none exists for the branch, push (empty commit `prd #N: loop start` if the branch has no commits ahead) and open a **draft PR**. Body skeleton:
 
    ```
@@ -85,7 +120,7 @@ State lives in git + GitHub only (branch commits, issue labels, PR body). Zero s
 5. **Spawn worker**: Agent tool, `subagent_type: prd-workflow:prd-worker` (see *Agent type by route* below), `model` per the routing call, `run_in_background: false`. Flat hierarchy — workers never spawn workers. Isolation is total: everything the worker needs must be in its prompt, the issue, or the repo. The **mandates and the report contract live in `../../agents/prd-worker.md`** — never restate them in the prompt, which carries only the per-call inputs:
    - The **full issue body** (incl. `## Worker context`, `## QA notes`, acceptance criteria).
    - The **full contents of the project adapter** (path at the top of this skill). The adapter only; a gate it registers goes in the prompt **only** when this issue triggers it — pasting every gate into every worker is the tax that keeps gates out of the adapter in the first place.
-   - The **branch name** `prd/<n>-<slug>` and the **issue number** for the `(#N)` commit suffix.
+   - The **branch name as Setup step 2 resolved it** — the actual name, never the adapter's pattern — and the **issue number** for the `(#N)` commit suffix.
    - The **routing call** you announced in step 4.
 
    **Agent type — get this right before you fall back.** A plugin namespaces every component it provides, so the type is **`prd-workflow:prd-worker`** however the plugin was loaded: installed from the marketplace, or via `claude --plugin-dir`. There is no unprefixed form; the bare `prd-worker` only ever came from a hand-placed `.claude/agents/` file on the retired pre-plugin route. Use the namespaced name — treating the bare name as primary is what silently produced a whole run of `general-purpose` workers once already.
@@ -179,7 +214,7 @@ Then the GitHub mechanics:
 - **Capture the permalink it prints.** `gh issue comment` writes the new comment's url to stdout; that url is what §2 puts in the PR body and §3 reports, and what a later run links back to.
 - **Then label the PRD** `needs-qa` — `gh issue edit <prd-number> --add-label needs-qa`. Comment first, label second, always: the label is the queue signal, and a PRD in the queue with no comment under it sends the operator looking for steps that do not exist. Applying a label the PRD already carries is a no-op, which is what makes the second-run path above safe.
 - **The label must already exist in the repo.** The loop applies it and cannot create it; `gh issue edit --add-label` against a missing label fails loudly, but a run that swallows that failure leaves a comment nobody is queued to find. It is a one-time human precondition — see the adapter.
-- **Run context line**: the branch, the PR, and how many issues landed — e.g. ``Branch `prd/52-extract-lk-plugin` · PR #63 · 9 issues landed``. The PR number here is the one place a `#N` is wanted in rendered form; nothing inside a step is (see *No bare `#N` anywhere in a step* above).
+- **Run context line**: the branch **as Setup step 2 named it**, the PR, and how many issues landed — e.g. ``Branch `prd/52-extract-lk-plugin` · PR #63 · 9 issues landed``, which is what the default pattern yields; a project whose adapter names its own pattern gets that shape here instead. The PR number here is the one place a `#N` is wanted in rendered form; nothing inside a step is (see *No bare `#N` anywhere in a step* above).
 
 ### 2. PR body
 

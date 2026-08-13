@@ -38,7 +38,7 @@ gh issue view <prd-number> --json comments --jq '.comments[] | {url, createdAt, 
 
 A QA comment is identified by **two markers together**, never a fragile substring:
 
-- the **run-context line** it opens with — ``Branch `prd/<n>-<slug>` · PR #<n> · <count> issues landed``
+- the **run-context line** it opens with — ``Branch `<branch>` · PR #<n> · <count> issues landed``. Match the *line*, not the branch: `prd/<n>-<slug>` is only the default shape, and a project whose adapter names its own branch pattern opens with that instead.
 - the **`## Steps` heading**, present in every QA comment by construction (`## Before you start` is conditional, so it cannot be the marker)
 
 Take the **newest** comment carrying both. Then **say which one you picked** — its permalink, its run-context line, and how many steps it holds — *before* doing anything else. A driver that silently picks the wrong run walks a human through a slice they already tested.
