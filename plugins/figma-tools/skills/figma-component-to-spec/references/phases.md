@@ -17,11 +17,25 @@ Setup assembles and hands to every spawn**, and Setup's step 3 is the normative 
 that list covers, where each part of it comes from, and when the run stops for want of one.
 
 **The phases are named and numbered, not lettered, and the order is the whole design.** Setup ·
-Structure · Current state · Reconcile & triage all complete **before a single metered extraction
-call is spent** — the human checkpoint sits ahead of the expensive step, not behind it. A
-component set is a **lattice, not a list of unknowns**: one `get_metadata` on the set root
-returns every variant frame with its property assignments, which is the entire axis lattice in
-one response, so the spec's most important section needs zero per-frame extraction to write.
+Cheap pass · Structure · Current state · Reconcile & triage all complete **before a single
+per-frame extraction call is spent** — the human checkpoint sits ahead of the expensive step, not
+behind it. A component set is a **lattice, not a list of unknowns**: one `get_metadata` on the set
+root returns every variant frame with its property assignments, which is the entire axis lattice
+in one response, so the spec's most important section needs zero per-frame extraction to write.
+
+**The pre-checkpoint Figma cost is a fixed constant of three set-level reads — three, and never
+more than three.** Root `get_metadata` (the lattice), root `get_variable_defs` (every named
+binding across the set), one wide root `get_screenshot` (every variant frame in one image). All
+three are made **once per run, at set level, never per frame**, so the number is **independent of
+N**: a set drawing 120 frames costs the same three reads as one drawing four. That independence
+is what keeps the guarantee meaningful — the old "one call" figure was a smaller number of the
+same kind, not a different kind of promise.
+
+**And the skeleton those three reads produce is the spec.** Phase 1.5 turns them into the
+axis-decomposed skeleton — the color schemes, the size ladder, the state deltas, the props API —
+so per-frame extraction is no longer how the spec gets written. It is a **targeted verification
+pass** over a short list of frames that still hold an open question, and a run whose shortlist is
+empty is a **complete** run.
 
 ---
 
@@ -76,13 +90,14 @@ one response, so the spec's most important section needs zero per-frame extracti
    component set, continue with that node id. If the wrapper holds a set plus loose example
    instances, say so and ask which node is canonical.
 
-   **This `get_metadata` is the only metered Figma read the whole pre-checkpoint half spends,
-   and it is not two jobs — it is one.** A `get_metadata` on a component set root returns its
-   variant frames **with their property assignments**, so confirming the node's shape and
-   reading the entire axis lattice are the same call. **Keep the whole response.** Phase 2
+   **This `get_metadata` is the first of exactly three set-level reads the whole pre-checkpoint
+   half spends, and it is not two jobs — it is one.** A `get_metadata` on a component set root
+   returns its variant frames **with their property assignments**, so confirming the node's shape
+   and reading the entire axis lattice are the same call. **Keep the whole response.** Phase 2
    derives everything it needs from it and never re-reads; no phase before the checkpoint makes
    a per-frame call. Reaching for a second `get_metadata` before the checkpoint means something
-   upstream dropped this response, not that another one is needed.
+   upstream dropped this response, not that another one is needed. The other two set-level reads
+   are step 7 below.
 
    **Record the file's version id or last-modified timestamp** as you first reach the file —
    whichever the tooling exposes, both when both are. It is the baseline the spec pins, and
@@ -253,11 +268,104 @@ one response, so the spec's most important section needs zero per-frame extracti
    where they conflict; a conflict about *which node is canonical* goes back to step 2 and is
    asked, never picked.
 
+7. **The two remaining set-level reads. Both once per run, at set level, never per frame.**
+
+   **(a) `get_variable_defs` on the set root.** One call, a small payload — a few hundred tokens
+   for a set with dozens of variant frames — and it returns **every named token binding across
+   the whole set**. This is the **primary source for the spec's color-scheme and size sections**:
+   a component set's bindings are named after the scheme and the scale they belong to, so the
+   dump alone typically yields the entire color and size picture before a single frame is read.
+   Keep the whole response; Phase 1.5 is written from it.
+
+   **(b) `get_screenshot` on the set root — one wide shot.** Every variant frame in one image.
+
+   **`get_screenshot` does not upscale, and that fact decides how it is used.** A 48px node
+   renders at 48px. So a **wide set-level shot carries far more information per token than any
+   per-variant shot**, and a single-node shot is worth taking **only when a specific question
+   needs pixel evidence** — and it must be **upscaled locally** before it can be read at all.
+   Take the wide shot here; take a targeted shot later only against a named question, and say out
+   loud why each targeted one was taken.
+
+   **That is three, and never more than three, before the triage checkpoint.** A fourth set-level
+   read before the checkpoint means something upstream dropped a response, and a per-frame read
+   before it is the failure the whole phase order exists to prevent. Where `get_screenshot` is
+   unavailable, say so and continue: the skeleton loses its visual half, and every geometry
+   question it would have closed goes onto the shortlist instead.
+
+## Phase 1.5 — Cheap pass (Opus, main thread, no subagents)
+
+**This phase writes the spec skeleton, and it is the heart of the engine.** It spends **no Figma
+call at all** — it reasons over the three set-level reads Setup already made — and it is the
+primary source for *Variant axes*, the color and size sections, and *Props API*. Per-frame
+extraction feeds only *Figma fixes* and the parts of *Token delta* the variable dump could not
+settle.
+
+**The skeleton is the Figma-side half of those sections, stated on its own terms.** Phase 3 reads
+what the component already is and Phase 4 merges the two into the delta — so the skeleton says
+what the set *draws*, in Figma's vocabulary kept verbatim (Phase 2 step 2), and never pre-applies
+a mapping onto the library's names. It is written here, before the checkpoint, because it is what
+makes the candidate list worth triaging: a checkpoint presented with raw frames asks the human to
+do the cheap pass in their head.
+
+**It is numbered 1.5 because it depends on Setup and on nothing else.** The axes it decomposes by
+come straight out of the same root response Phase 2 derives its tally from, so the two read one
+payload rather than one feeding the other — and Phase 2's completeness self-check then grades the
+skeleton's axis list as well as its own. Where the two disagree, **something dropped the root
+response**, and the fix is to re-read it once, not to reconcile two derivations.
+
+### 1.5.1 — Decompose by axis, never by cell
+
+**The output is *N color schemes + M sizes + K state deltas*, each stated exactly once** — not
+one block per variant frame. A set drawing `4 schemes × 3 sizes × 5 states` is **12 statements**,
+not 60, because the scheme is the same scheme at every size and the size is the same size in
+every scheme.
+
+**A cell-shaped skeleton is the old engine wearing new clothes.** It costs the same to write, it
+reads as thorough, and it re-derives the same value dozens of times — which is precisely the
+spend this engine exists to remove. Where a cell genuinely departs from its axis (a scheme whose
+hover state uses a different token than every other scheme's), that departure is a **delta stated
+against the axis**, not a reason to enumerate the lattice.
+
+### 1.5.2 — Bind every value to a named token, and flag what is inference
+
+Where the variable dump supplies a binding for a value, state the **named token**. Where a value
+is derived from a **token name** rather than from a per-property binding — the dump lists
+`color/danger/surface` and the skeleton concludes the destructive scheme's background is that
+token — mark it **inference explicitly**, as `inferred-from-token-name`.
+
+That inference is usually right, which is exactly the problem: an unflagged one reads as
+verified, and nobody re-checks a value that reads as verified. The flag is what puts a value on
+the shortlist's candidate list rather than into the spec as settled fact.
+
+### 1.5.3 — Flag the anomalies the cheap pass can see
+
+Four kinds, all visible without reading a frame, and each one a candidate for the shortlist and
+for the Phase 4 checkpoint:
+
+- a **cell whose expected token is missing from the dump** — the scheme binds a token at every
+  other size and not at this one;
+- a **lattice-vs-frame-count discrepancy** — the arithmetic and the drawn set disagree;
+- a **token referenced by the dump that is absent from the token list** — either the list is
+  incomplete or the Figma file binds something this library does not ship;
+- **naming drift between generations** — two conventions for the same concept inside one set,
+  which is normally a library mid-migration.
+
+### 1.5.4 — What this phase does not do
+
+- **No Figma call.** The three set-level reads are Setup's, and they are all there are.
+- **No subagent.** The skeleton is one coherent document written by one reader of one payload;
+  fanning it out produces N partial skeletons that then have to be reconciled, which is the cost
+  the engine was inverted to remove.
+- **No claim about unbound values.** The variable dump lists what *is* bound, so an unbound raw
+  hex is invisible here **by construction**. The cheap pass must never present a clean color
+  picture as evidence the Figma library is clean — that is the verification pass's first job, and
+  the skeleton says so on its face.
+
 ## Phase 2 — Structure (main thread — zero Figma calls of its own)
 
 **A component set is a lattice, not a list of unknowns.** The `get_metadata` Setup already made
 on the set root returned every variant frame **with its property assignments**, which is the
-entire axis lattice in one response. So this phase spends **no Figma call at all** — not a
+entire axis lattice in one response. So this phase spends **no Figma call of its own** — not a
 second root read, and above all **not one per frame**. Enumeration stopped being a discovery
 phase and became a read, which is what makes the spec's *Variant axes* section — its most
 important — free.
@@ -319,8 +427,10 @@ Everything below is derived from that one response.
 
 **What this phase does *not* do**, and each omission is a decision rather than a gap:
 
-- **No Figma call.** Not one. A per-frame read here would put the run's whole cost back in front
-  of the checkpoint, which is the thing this shape exists to prevent.
+- **No Figma call of its own.** Not one. The cheap pass's other two set-level reads happened in
+  **Setup step 7**, not here, and this phase adds nothing to them. A per-frame read here would put
+  the run's whole cost back in front of the checkpoint, which is the thing this shape exists to
+  prevent.
 - **No axis-name translation** (step 2 above) — the mapping is a Phase 4 finding.
 - **No content-vs-chrome classification.** A component set has no app chrome. Every variant
   frame is content.
@@ -340,6 +450,12 @@ artifact at its least trustworthy exactly where it is most load-bearing. Reading
 directly removes that.
 
 **This phase makes no Figma call whatsoever.** Everything it reads is in this repo.
+
+**The source-first read closes geometry and props-API questions before a frame is ever
+shortlisted.** The declaration states the props, and the implementation states the sizes the
+component actually renders — so a question this read already answers **must not appear on the
+shortlist**. Sending an agent to Figma to confirm something the source states is the most
+expensive way there is to learn nothing.
 
 ### 3.1 — The source read, through the variant-mechanism ladder
 
@@ -427,7 +543,7 @@ None of it is a spec yet, and none of it cost a metered call:
 ## Phase 4 — Reconcile & triage (Opus, main thread)
 
 Three things happen here in order, and the order is the whole point: reconcile, assemble the
-candidate list, **stop for the human — before a single metered extraction call is spent.**
+candidate list, **stop for the human — before a single per-frame extraction call is spent.**
 
 **This is not a new principle; it is an old one applied one level earlier.** The reasoning behind
 "research after triage rather than before" was that precedent research is expensive and *a gap
@@ -469,6 +585,10 @@ load-bearing it is.
 **Every ⚠️ flag joins the list too**, because each is a question only a human can close:
 
 - every duplicate or inconsistent Figma property value from Phase 2 step 4;
+- **every anomaly Phase 1.5 flagged** — a cell whose expected token is missing from the dump, a
+  lattice-vs-frame-count discrepancy, a referenced token absent from the token list, naming drift
+  between generations — and **every value the skeleton marked `inferred-from-token-name`**, which
+  is a candidate for the shortlist rather than a settled fact;
 - every `legacy` / `deprecated` match from the current-state read;
 - every unresolved catalog-vs-source disagreement from Phase 3;
 - every axis reported *not computable* by story coverage;
@@ -481,8 +601,10 @@ load-bearing it is.
 
 1. **No tracker write has happened** — not a search, not a draft, not a placeholder item, on
    either tracker.
-2. **No metered extraction call has been spent.** The only metered Figma read the run has made is
-   Setup step 2's single `get_metadata` on the set root.
+2. **No per-frame extraction call has been spent.** The only Figma reads the run has made are the
+   **three set-level ones** — Setup step 2's root `get_metadata`, and step 7's root
+   `get_variable_defs` and one wide root `get_screenshot`. That is the fixed pre-checkpoint cost,
+   independent of how many frames the set draws.
 
 The user marks every candidate exactly one of:
 
@@ -536,23 +658,48 @@ Also settled here, at the same stop:
   control with no keyboard affordance, an axis that fights the APG pattern's model) — a
   checkpoint question, never silently followed *and* never silently "fixed".
 
-**What the checkpoint hands forward is a set of frames, not just a set of outcomes.** Each
-surviving `extend-tokens` and `fix-figma` candidate points at the variant frames that must
-actually be read to write it; their union is the **kept set** Phase 5 spends its calls on.
-Candidates settled as `already-expressible` need no frame, and `extend-component` is an
-API-shape question the lattice already answered. Confirm the kept set with the user in the same
-breath as the outcomes — it is the number the next phase is budgeted against.
+**What the checkpoint hands forward is a shortlist of frames, not just a set of outcomes**, and
+the shortlist is built by a rule rather than by taste:
+
+> **one frame per variant axis-value at one representative size** — **not** the cross-product —
+> **plus** every anomaly cell Phase 1.5 flagged, **minus** anything Phase 3's source read already
+> settled.
+
+One representative size is enough because the skeleton already states the size ladder once, for
+every scheme; a second size of the same scheme verifies a statement that was never in doubt.
+Candidates settled as `already-expressible` need no frame, and `extend-component` is an API-shape
+question the lattice and the source read already answered.
+
+**Target single digits.** A shortlist in the dozens is not a thorough run — it is **a triage that
+has not been done**. Say exactly that, out loud, and go back through the candidates rather than
+budgeting for it: a shortlist that size means the skeleton is being re-derived frame by frame,
+which is the engine this one replaced. **A shortlist of zero is a legitimate outcome** for a
+simple, well-tokenized component, and it produces a complete spec.
+
+Confirm the shortlist with the user in the same breath as the outcomes — it is the number the
+next phase is budgeted against.
 
 ---
 
 **Everything below runs only after that checkpoint.**
 
-## Phase 5 — Targeted extraction (`figma-tools:figma-variant-extractor`, Sonnet ×N, throttled)
+## Phase 5 — Targeted verification (`figma-tools:figma-variant-extractor`, Sonnet ×K, throttled)
 
-**Spawn only on the frames the checkpoint kept.** One agent per kept variant frame, each scoped
-to that frame's node id, driven by `../../../agents/figma-variant-extractor.md` — normative for
-the call discipline, the extraction contract, and the return schema. Each returns **structured
-findings** (the JSON schema in that file, so synthesis merges deterministically).
+**Spawn only on the frames the checkpoint shortlisted.** One agent per shortlisted variant frame,
+each scoped to that frame's node id, driven by `../../../agents/figma-variant-extractor.md` —
+normative for the call discipline, the extraction contract, and the return schema. Each returns
+**structured findings** (the JSON schema in that file, so synthesis merges deterministically).
+
+**An agent is spawned to verify the skeleton's slice for its frame, not to re-derive the frame.**
+Phase 1.5 already stated what that frame's scheme, size and state are and which tokens the dump
+attributes to them; the agent's job is to **confirm it, contradict it with evidence, or say
+nothing about it** — and to find the five things the cheap pass structurally cannot see (unbound
+raw-hex fills, per-property binding attribution, geometry, per-cell consistency, effects the dump
+did not list). An agent that returns a full re-derivation of a frame the skeleton already
+describes has spent a Sonnet context to produce a second opinion nobody asked for.
+
+**K is the shortlist size, and zero is a valid K.** A run whose triage shortlisted nothing skips
+this phase entirely, says so in one line, and writes a complete spec from the skeleton.
 
 **Nothing spawns until 5.1 has stated the projected cost against the ceiling.** That statement is
 not a note in the end-of-run report and not a caveat added afterwards — it runs first, out loud,
@@ -570,19 +717,34 @@ exists to convert that into a decision taken before the first spawn.
 an earlier engine. The page-side region agent spends a different set, and quoting its figure here
 projects the wrong number in the wrong direction.
 
-| Call | Per kept frame | Counts against the ceiling? |
+| Call | Per shortlisted frame | Counts against the ceiling? |
 |---|---|---|
 | `get_metadata` | 1, always | yes |
 | `get_variable_defs` | 1, always | yes |
 | `get_design_context` | 0 or 1 — conditional, last, only if intent is still needed | yes |
 | `use_figma` binding read | 1, or 0 in degraded color mode | **unknown — assumption 3 below** |
 
-**There is no `get_screenshot` call**, by decision (stated in the agent, under *What this agent
-deliberately does not do*), so do not project one.
+**No agent takes a screenshot**, by decision (stated in the agent, under *What this agent
+deliberately does not do*): visual evidence is the orchestrator's, and it was already spent as
+the cheap pass's one wide set-level shot. So project **no per-frame screenshot**, and count any
+targeted orchestrator shot separately, as the one-off it is.
 
-So for **K** kept frames: **floor `2K` · worst case `4K`** — `3K` where Setup step 5b put the run
-in degraded color mode, because no binding read is made at all. Setup's single root
-`get_metadata` is already spent; add it as `+1` when stating the whole run's total.
+So for **K** shortlisted frames: **floor `2K` · worst case `4K`** — `3K` where Setup step 5b put
+the run in degraded color mode, because no binding read is made at all. **The base is `+3`**, not
+`+1`: the cheap pass's three set-level reads are already spent, and they are the whole
+pre-checkpoint cost. State the whole-run total as `3 + <projection>`.
+
+**K is the shortlist size — typically single digits, and near zero for a simple, well-tokenized
+component.** A run with **`K = 0` is a valid, complete run**, not a failure and not a reason to
+widen the shortlist to have something to spend on: the skeleton was written from the three
+set-level reads, and a component whose bindings are all named and all present leaves nothing for
+verification to find. Where `K` runs into the dozens the guard's answer is **re-triage**, not a
+bigger budget — that size means the spec is being re-derived frame by frame (Phase 4.3).
+
+**Do not project as though extraction were the primary source of the spec.** It is not, and a
+projection that treats `K` as though it had to approach `N` will narrow triages that needed no
+narrowing. The question this guard answers is "can the shortlist be verified safely", not "how
+much of the set can be afforded".
 
 **Project against the worst case and state both numbers.** The floor is what an optimistic run
 costs; the worst case is what decides whether the run is safe to start. A run budgeted on the
@@ -630,14 +792,15 @@ fourth is an honest caveat:
 **The stop, and it is deliberate.** Where the worst-case projection exceeds the available
 ceiling, **stop before spawning anything** and present one block:
 
-- **K** — the kept-frame count;
-- the **floor and worst-case** projections, and the whole-run totals including Setup's `+1`;
+- **K** — the shortlist size;
+- the **floor and worst-case** projections, and the whole-run totals including the cheap pass's
+  `+3`;
 - the **ceiling**, and which of the three sources above it came from;
 - the **marginal cost per frame**, so a narrower triage can be priced;
 - **how many frames would fit**: `floor(ceiling ÷ worst-case-per-frame)`.
 
-Then go back to the Phase 4 checkpoint and re-triage narrower. **Do not extract a prefix of the
-kept set and stop half-way** — a partial extraction produces a spec whose *Token delta* and
+Then go back to the Phase 4 checkpoint and re-triage narrower. **Do not verify a prefix of the
+shortlist and stop half-way** — a partial verification produces a spec whose *Token delta* and
 *Figma fixes* silently omit whatever the budget ran out before reaching, which reads exactly like
 a component that had no findings there. A deliberate stop that names the number is recoverable in
 one round trip; a run that dies mid-fan-out costs a day.
@@ -658,24 +821,35 @@ wave size = floor(per-minute ceiling ÷ worst-case calls per frame)
 At the stated default that is `floor(20 ÷ 4)` = **5 frames in flight**, or `floor(20 ÷ 3)` = **6**
 in degraded color mode. Wait out the remainder of the minute between waves, and **state the wave
 size and the wave count before the first spawn** — a throttle nobody can see is indistinguishable
-from no throttle at all. Fewer kept frames than one wave → spawn them together; the throttle
-costs nothing when it does not bind.
+from no throttle at all. Fewer shortlisted frames than one wave → spawn them together; the
+throttle costs nothing when it does not bind.
+
+**With a single-digit shortlist the throttle usually does not bind at all**, and the run says so
+in one line — "shortlist of 3, wave size 5, one wave, throttle does not bind" — rather than
+skipping the statement. A throttle that goes unmentioned because it happened not to apply is
+indistinguishable from one that was never computed.
 
 Count each wave at the **worst case**, not the floor: the calls of one frame are sequential inside
 its own agent, but a wave's calls all land inside the same minute.
 
-### 5.3 — How to spawn (per kept frame)
+### 5.3 — How to spawn (per shortlisted frame)
 
 Agent tool, `subagent_type: figma-tools:figma-variant-extractor`
 (try the namespaced name first; a hand-placed `agents/` file registers the bare
 `figma-variant-extractor` instead), `model: 'sonnet'` passed explicitly,
 `run_in_background: false`. The extraction contract lives in the agent, so the per-call prompt
-carries **only the seven inputs** — variant frame node ID · variant frame layer name ·
+carries **only the eight inputs** — variant frame node ID · variant frame layer name ·
 source-node role (here always `variant:<name>`) · Figma file/page URL · **absolute**
 resolution-rules path · the **token list Setup assembled, pasted verbatim** · the adapter's
-**icon resolution ladder, pasted verbatim**. The agent hard-STOPs with
-`{"error": "missing input: <name>"}` if any is absent, so a malformed spawn fails loudly instead
-of inventing a design system.
+**icon resolution ladder, pasted verbatim** · **the cheap-pass skeleton slice for this frame**.
+The agent hard-STOPs with `{"error": "missing input: <name>"}` if any is absent, so a malformed
+spawn fails loudly instead of inventing a design system.
+
+**The eighth input is what turns extraction into verification**, and it is three things: the
+frame's **axis values**, the **tokens the variable dump attributes to it** (each marked verified
+or `inferred-from-token-name`), and **the specific questions this frame is on the shortlist to
+answer**. Without it the agent has no way to tell what is already known, so it re-derives the
+frame — which is the spend this engine exists to remove.
 
 **Why the token list and the ladder are pasted rather than pointed at — and why there is no
 catalog path among the inputs.** Every other input is a path or a node id; these two are project
@@ -693,7 +867,7 @@ Return only the JSON object defined in your instructions — no prose before or 
 
 **If the agent is unavailable** (Setup step 5c said so): fall back to `general-purpose` with
 `model: 'sonnet'`, and build the prompt by reading `../../../agents/figma-variant-extractor.md`
-and pasting **everything below its frontmatter**, then appending the seven inputs and the line
+and pasting **everything below its frontmatter**, then appending the eight inputs and the line
 above. Never keep a second copy of the contract — read it from the one file.
 
 **Session lifetime.** `figma-dev-mode` sessions can expire on long parallel runs. On session
@@ -702,10 +876,21 @@ idempotent.
 
 ## Phase 6 — Reconcile by concern (Opus, main thread)
 
-The variant agents extracted locally; this pass makes each *concern* consistent across the frames
-that were extracted — one color→token map (the same fill must not resolve two ways across two
-variant frames), one type/spacing picture, one icon inventory. **Extract by variant, reconcile by
-concern.** It reasons over already-extracted findings: no Figma re-traversal, no second MCP read.
+The variant agents verified locally; this pass makes each *concern* consistent across the
+skeleton and the frames that were verified — one color→token map (the same fill must not resolve
+two ways across two variant frames), one type/spacing picture, one icon inventory. **Verify by
+variant, reconcile by concern.** It reasons over the skeleton plus the returned findings: no
+Figma re-traversal, no second MCP read.
+
+**Reconciliation is skeleton-vs-findings, and where they disagree the finding wins.** A
+verification finding that contradicts the cheap-pass skeleton is **not** noise to be smoothed
+over — it is the exact thing the verification pass was spent to produce. Take the finding, and
+**record the contradiction**: what the skeleton said, what the frame actually holds, and which
+frame settled it. Two contradictions are worth carrying into the spec by name — a value the
+skeleton attributed to a token that turns out to be an **unbound raw hex** (a *Figma fixes* item),
+and a value the skeleton marked `inferred-from-token-name` that the binding read **confirms** (an
+inference that graduates to verified, and stops carrying the flag). A skeleton silently corrected
+leaves nobody able to tell whether the cheap pass is reliable.
 
 Dedup across variants by the same tuple Phase 4 used — `(property kind, resolved value, nearest
 match, axis)` — and carry the **instance count computed in Phase 2**, not a count of the frames
@@ -792,15 +977,21 @@ Two things are read from the adapter rather than decided here:
   `argTypes` mean the new value appears for free; hand-written ones mean the story edit is part
   of the change and belongs in the acceptance criteria.
 
-**A run that extracted a subset must say so on the spec's face.** Fill the template's
-*Extraction coverage* section from the checkpoint's kept set: which variant frames were
-extracted, which were **deliberately** not, and the one-line reason for each omission. And mark
-every instance count in the spec as **computed from the lattice** (Phase 2 step 5), never as
-observed from the frames that happened to be extracted. Both are the same guard: a narrow
-extraction is a **scoping decision**, and an implementer reading the spec has no other way to
-tell one from thin coverage. Never write a coverage figure derived from the extracted frames —
-the counts were computed before any frame was read, which is exactly why extracting a subset
-costs the spec nothing.
+**A run that verified a subset must say so on the spec's face.** Fill the template's *Extraction
+coverage* section from the checkpoint's shortlist: which variant frames were verified, which were
+**deliberately** not, and the one-line reason for each omission. And mark every instance count in
+the spec as **computed from the lattice** (Phase 2 step 5), never as observed from the frames that
+happened to be verified. Both are the same guard: a short shortlist is a **scoping decision**, and
+an implementer reading the spec has no other way to tell one from thin coverage. Never write a
+coverage figure derived from the verified frames — the counts were computed before any frame was
+read, which is exactly why verifying a subset costs the spec nothing.
+
+**The disclosure now has two halves, and the second is new.** Say **which sections the cheap pass
+wrote** — *Variant axes*, the color and size sections, *Props API*, all from the three set-level
+reads — and **which the verification pass touched** — *Figma fixes*, the unbound half of *Token
+delta*, the geometry rows. `0 of N` is written out honestly and read as **complete**: a
+well-tokenized component leaves nothing for verification to find, and a spec that hides a zero
+shortlist behind vague coverage language is claiming a thoroughness it did not spend.
 
 Also: carry the run's capability path into the header (degraded color mode, existence source,
 catalog staleness, research availability), keep every *not computable* story axis as its own row,
@@ -884,13 +1075,15 @@ there is a fingerprint that does not exist on the next run's search.
 
 Report the filed id and whether it was created or updated, the four-outcome triage tally, every
 open item (deferred disagreements, unresearched APIs, degraded color mode, a stale or absent
-catalog, any unresolved part of the token list), which variant frames were extracted and which
-deliberately were not, and the run directory holding the spec.
+catalog, any unresolved part of the token list), **which sections the cheap pass wrote**, which
+variant frames were verified and which deliberately were not — including a shortlist of zero,
+reported as the complete run it is — and the run directory holding the spec.
 
 **Report the metered spend too, projected against actual.** Phase 5.1's floor and worst-case
 projection, the ceiling it was measured against and where that ceiling came from, and the calls
-the run **actually** made — including Setup's root `get_metadata`, and the `use_figma` reads
-counted separately because their quota status is unknown. That comparison is the only feedback
+the run **actually** made — including the cheap pass's **three set-level reads** and any targeted
+screenshot the run justified, and the `use_figma` reads counted separately because their quota
+status is unknown. That comparison is the only feedback
 loop the projection has: a worst case that is never approached means the model over-projects and
 narrows triages it did not need to, and a projection the run overshoots is a defect in the call
 discipline that would otherwise surface as a dead run on some later component set. **Say plainly what the run did not
