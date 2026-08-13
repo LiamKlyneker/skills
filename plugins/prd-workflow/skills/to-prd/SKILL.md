@@ -17,6 +17,13 @@ different prefix, it wins. Nothing filters on it — a PRD's children are its na
 not a title match — so the prefix is a human scanning convention: it tells a parent from its
 children at a glance in the issues tab.
 
+Title the rest of it the way a branch would read: short and meaningful. `work-on-prd` slugs the
+whole title into the branch name, so a shorter, well-chosen title makes for a shorter, more
+legible branch — but this is **guidance, not enforcement**. Nothing here validates title length
+or rejects a long one, and a pathological title still gets a short, meaningful slug composed at
+branch time (`work-on-prd`'s Setup step 2) — so there's no failure mode to guard against here,
+only a nicer branch name to aim for.
+
 ## Mode: CREATE vs UPDATE
 
 - **CREATE (default):** invoked with no issue reference → publish a brand-new PRD via the Process below, titled `[PRD] …`, and apply the `needs-triage` triage label.
