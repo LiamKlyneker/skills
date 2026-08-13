@@ -100,7 +100,9 @@ machine has installed and where the session is rooted.
   form the token list is written in.
 - **Figma MCP — two distinct capability checks, do not conflate them:**
   1. **`figma-dev-mode` present (required):** `get_metadata`, `get_variable_defs`,
-     `get_screenshot`, `get_design_context`. STOP if this server is absent — no fallback.
+     `get_design_context` — the three this run actually calls. **`get_screenshot` is deliberately
+     never called** (see *Idempotency & output*), so it is not part of the check and must not be
+     projected into the extraction budget. STOP if this server is absent — no fallback.
   2. **Binding read (`use_figma`, via `/figma-use`) available (strongly preferred, separate
      server):** resolves each node's `boundVariables` → variable **name per property**. If
      unreachable, the run continues in **degraded color mode**, announced up front, with every
@@ -108,6 +110,17 @@ machine has installed and where the session is rooted.
      **normative** statement of that rule and its `bindingVerified` schema requirement.
 - **A Figma node URL** naming **one component set**. Missing → ask, never guess. What counts,
   and what is refused, is Setup's node-shape gate below.
+- **A Figma rate ceiling to project against — stated, not discovered.** Phase 5.1 budgets the
+  fan-out against it, so the run resolves one before spawning anything: a ceiling passed to the
+  run → a ceiling the adapter records, where a project records one → **the stated default,
+  `200/day · 20/min`**. Three properties of that number are carried in Phase 5.1 rather than
+  re-derived: it is **org-scoped** (a file owned by a team the seat holds only a *View* membership
+  in falls back to a **monthly** allowance in the single or low double digits — a different
+  product, not a rate to throttle around); the daily figure is a **recorded disagreement** between
+  the seat's own `whoami` (200/day) and Figma's published rate-limits page (600/day for
+  Organization), taken at the lower, live-authority value; and **`use_figma`'s quota status is
+  unknown** — it appears on that page neither as exempt nor as counted. `whoami` is itself
+  rate-limit-exempt, so confirming a seat's real ceiling is free.
 - **`figma-variant-extractor` subagent (preferred, detachable).** This skill's own agent, at
   `../../agents/figma-variant-extractor.md`, spawned as
   **`figma-tools:figma-variant-extractor`** — the plugin namespaces it, on every route,
@@ -193,10 +206,10 @@ run's Figma cost up to the checkpoint is **one `get_metadata` on the component s
 | **2 — Structure** | main thread | Derive the whole axis lattice from Setup's root response — drawn axes and values, drawn-vs-cross-product, duplicate/inconsistent Figma property values, the Figma vocabulary kept **verbatim**, and instance counts **computed, not observed**. Coverage self-check + logged tally. **Zero Figma calls.** |
 | **3 — Current state** | main thread | What the component already is — **source-first** through the variant-mechanism ladder, naming the file it resolved at; the catalog as **cross-check** with every disagreement recorded unresolved; plus computable story coverage. **No Figma calls.** |
 | **4 — Reconcile & triage** | Opus, main thread | One axis table (delta both ways, axis-name mapping as a claim) · the candidate list with every ⚠️ flag joined in and the lattice's instance counts · **four-outcome triage checkpoint, before any metered extraction**, which also settles which frames are worth extracting. |
-| **5 — Targeted extraction** | `figma-tools:figma-variant-extractor` (Sonnet) ×N parallel | One agent per **kept** variant frame → structured JSON findings, resolved against the token list pasted verbatim into each spawn. |
+| **5 — Targeted extraction** | `figma-tools:figma-variant-extractor` (Sonnet) ×N, **throttled** | **Budget guard first**: project the metered cost from the kept-frame count and the agent's call discipline, state it against the seat's daily ceiling, and **stop deliberately** rather than die mid-fan-out. Then one agent per **kept** variant frame → structured JSON findings, resolved against the token list pasted verbatim into each spawn, fanned out in **waves** sized for the per-minute cap. |
 | **6 — Reconcile by concern** | Opus, main thread | Make each concern consistent across the extracted frames — one color→token map, one type/spacing picture, one icon inventory. No Figma re-traversal. |
-| **7 — Pattern precedent** | research subagents (Sonnet) | One per **extend-component** gap: APG → headless libraries → shadcn, walked in full. |
-| **8 — The component spec** | Opus, main thread | Write **one** component spec per `references/component-spec-template.md`. |
+| **7 — Pattern precedent** | research subagents (Sonnet) | One per **extend-component** gap — **that outcome only** — APG → headless libraries → shadcn, walked in full. Spends **no Figma call**, so it runs **in parallel with Phase 5** and never enters its budget. |
+| **8 — The component spec** | Opus, main thread | Write **one** component spec per `references/component-spec-template.md`, including the **extraction-coverage disclosure**: which frames were extracted, which deliberately were not, and every instance count marked **computed from the lattice**. |
 | **9 — Filing** | main thread | Branch on the adapter's `Tracker:` line. The spec files as a plain `[SPEC]` work item (ADO) / an ordinary issue (GitHub) on **this repo's own tracker rows**, parented to the scope ticket where one was given, deduped by the component set's node id and updated in place. |
 
 (A catalog that has drifted from the design system, or a project that wants one: author or
@@ -226,6 +239,14 @@ run — the token list does.)
    **every decision records a one-line rationale** in the spec's *Triage record*. Two negatives
    hold at this gate: **no tracker write has happened** — not a search, not a draft, on either
    tracker — and **no metered extraction call has been spent**.
+7. **The projected metered cost exceeds the ceiling** (Phase 5.1) → stop **before the first
+   spawn**, naming the kept-frame count, the floor and worst-case projections, the ceiling and
+   where it came from, and how many frames would fit — then re-triage narrower. Exceeding a Figma
+   rate limit is a hard stop with **no documented retry-after**, so a run that discovers the
+   ceiling by hitting it dies mid-fan-out with a partial extraction and a day's wait. Extracting a
+   prefix of the kept set and stopping half-way is **not** an alternative: it produces a spec whose
+   *Token delta* and *Figma fixes* omit whatever the budget ran out before reaching, which is
+   indistinguishable from a component that had no findings there.
 
 The four extraction rules the regression fixtures protect apply here unchanged — **never
 resolve a fill by hex**, **never record absolute x/y coordinates**, **never match across

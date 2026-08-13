@@ -547,14 +547,126 @@ breath as the outcomes — it is the number the next phase is budgeted against.
 
 **Everything below runs only after that checkpoint.**
 
-## Phase 5 — Targeted extraction (`figma-tools:figma-variant-extractor`, Sonnet ×N parallel)
+## Phase 5 — Targeted extraction (`figma-tools:figma-variant-extractor`, Sonnet ×N, throttled)
 
 **Spawn only on the frames the checkpoint kept.** One agent per kept variant frame, each scoped
 to that frame's node id, driven by `../../../agents/figma-variant-extractor.md` — normative for
 the call discipline, the extraction contract, and the return schema. Each returns **structured
 findings** (the JSON schema in that file, so synthesis merges deterministically).
 
-**How to spawn (per variant).** Agent tool, `subagent_type: figma-tools:figma-variant-extractor`
+**Nothing spawns until 5.1 has stated the projected cost against the ceiling.** That statement is
+not a note in the end-of-run report and not a caveat added afterwards — it runs first, out loud,
+and it is allowed to stop the run.
+
+### 5.1 — The budget guard: project the spend, state it, stop rather than discover it
+
+**Exceeding a Figma rate limit is a hard stop with no documented retry-after.** A run that finds
+the ceiling by hitting it dies **mid-fan-out**: some frames extracted and some not, no spec
+written, nothing to file, and a wait measured in a day rather than in seconds. Every rule below
+exists to convert that into a decision taken before the first spawn.
+
+**The per-frame cost is the variant agent's own call discipline** — read it at
+`../../../agents/figma-variant-extractor.md` → *Figma call discipline*, and never from memory of
+an earlier engine. The page-side region agent spends a different set, and quoting its figure here
+projects the wrong number in the wrong direction.
+
+| Call | Per kept frame | Counts against the ceiling? |
+|---|---|---|
+| `get_metadata` | 1, always | yes |
+| `get_variable_defs` | 1, always | yes |
+| `get_design_context` | 0 or 1 — conditional, last, only if intent is still needed | yes |
+| `use_figma` binding read | 1, or 0 in degraded color mode | **unknown — assumption 3 below** |
+
+**There is no `get_screenshot` call**, by decision (stated in the agent, under *What this agent
+deliberately does not do*), so do not project one.
+
+So for **K** kept frames: **floor `2K` · worst case `4K`** — `3K` where Setup step 5b put the run
+in degraded color mode, because no binding read is made at all. Setup's single root
+`get_metadata` is already spent; add it as `+1` when stating the whole run's total.
+
+**Project against the worst case and state both numbers.** The floor is what an optimistic run
+costs; the worst case is what decides whether the run is safe to start. A run budgeted on the
+floor that then needs `get_design_context` on half its frames is exactly the run that dies
+part-way.
+
+**Resolve the ceiling rather than assuming it**, in this order, and **say which one you used**:
+
+1. a ceiling passed to this run;
+2. a Figma rate ceiling the adapter records, where a project has recorded one;
+3. **the stated default: `200/day · 20/min`.**
+
+`whoami` on the Figma MCP server reports the seat's own limits and is on Figma's
+**rate-limit-exempt** list, so it is free to call — that is how a seat's real ceiling gets
+confirmed rather than argued about.
+
+**Three things about that ceiling are stated here rather than rediscovered per run**, and a
+fourth is an honest caveat:
+
+1. **The ceiling is org-scoped, not account-scoped — it is a property of the org that owns the
+   Figma file being read, not of the user.** One account routinely holds several memberships at
+   different tiers. A file inside an org-tier team with a **Dev** seat gets the daily allowance
+   above; a file outside it falls back to a **View** seat's *monthly* allowance — single-digit to
+   low-tens of calls **per month**. That is not a rate limit to throttle around, it is a different
+   product, and one component set would exhaust the whole month. **So when the file's owning org
+   is not the org the ceiling was read from, do not assume the good seat** — say so, and confirm
+   with `whoami` before projecting.
+2. **The daily figure disagrees with Figma's published table, and the disagreement is recorded,
+   not resolved.** `whoami` reports **200/day · 20/min** for an org-tier Dev seat; Figma's
+   published rate-limits page lists Organization at **600/day · 20/min**. The per-minute figures
+   agree; the daily ones do not. **Take 200/day** — it is the live authority and it is the
+   conservative direction — and **write the disagreement into the run's output as an assumption
+   with both its sources**. Do not quietly pick one and present it as settled.
+3. **`use_figma`'s quota status is unknown, and that is the recorded answer.** It appears nowhere
+   on Figma's rate-limits page — neither listed as exempt nor named as counted — so the guard
+   counts it in the **worst case** and excludes it from the **floor**, and says the status is
+   unknown rather than picking one. Two further properties of that call are worth carrying: it
+   caps its output at **20kb per call**, and it is documented as beta and stated to be headed for
+   usage-based paid billing. A cost model built on it being free has an expiry date.
+4. **The run cannot read how much of the day's budget is already spent.** The ceiling is a daily
+   allowance shared with every other thing on that seat — other sessions, other skills, the user's
+   own tooling. So the projection is against the **full** ceiling, which is optimistic, and that
+   assumption gets stated with the number rather than hidden inside it.
+
+**The stop, and it is deliberate.** Where the worst-case projection exceeds the available
+ceiling, **stop before spawning anything** and present one block:
+
+- **K** — the kept-frame count;
+- the **floor and worst-case** projections, and the whole-run totals including Setup's `+1`;
+- the **ceiling**, and which of the three sources above it came from;
+- the **marginal cost per frame**, so a narrower triage can be priced;
+- **how many frames would fit**: `floor(ceiling ÷ worst-case-per-frame)`.
+
+Then go back to the Phase 4 checkpoint and re-triage narrower. **Do not extract a prefix of the
+kept set and stop half-way** — a partial extraction produces a spec whose *Token delta* and
+*Figma fixes* silently omit whatever the budget ran out before reaching, which reads exactly like
+a component that had no findings there. A deliberate stop that names the number is recoverable in
+one round trip; a run that dies mid-fan-out costs a day.
+
+### 5.2 — Throttle the fan-out for the per-minute cap
+
+**The daily figure hides this failure entirely.** Fanning N agents out at once puts the whole
+first wave's calls through the **per-minute** ceiling in the opening seconds, so a run that fits
+its daily budget comfortably can still trip the limit — and tripping it is the same hard stop,
+mid-fan-out, with the same partial state.
+
+So spawn in **waves**, not all at once:
+
+```
+wave size = floor(per-minute ceiling ÷ worst-case calls per frame)
+```
+
+At the stated default that is `floor(20 ÷ 4)` = **5 frames in flight**, or `floor(20 ÷ 3)` = **6**
+in degraded color mode. Wait out the remainder of the minute between waves, and **state the wave
+size and the wave count before the first spawn** — a throttle nobody can see is indistinguishable
+from no throttle at all. Fewer kept frames than one wave → spawn them together; the throttle
+costs nothing when it does not bind.
+
+Count each wave at the **worst case**, not the floor: the calls of one frame are sequential inside
+its own agent, but a wave's calls all land inside the same minute.
+
+### 5.3 — How to spawn (per kept frame)
+
+Agent tool, `subagent_type: figma-tools:figma-variant-extractor`
 (try the namespaced name first; a hand-placed `agents/` file registers the bare
 `figma-variant-extractor` instead), `model: 'sonnet'` passed explicitly,
 `run_in_background: false`. The extraction contract lives in the agent, so the per-call prompt
@@ -607,6 +719,15 @@ nothing: the count was never a by-product of extraction. Color tolerance is
 **Precedent is a phase, not an outcome.** The point is that a specced props API follows the
 industry's established shape instead of being invented from one variant frame — a frame shows
 what the component *looks like* in one state and says nothing about what its API should be.
+
+**Where it sits in the order, stated rather than implied by its number.** It is **gated on
+`extend-component` outcomes only** — the one outcome that invents API surface — so a run whose
+triage produced none of those skips this phase entirely and says so. And it is **numbered after
+Phase 5 but not dependent on it**: both are post-triage, both read only what the checkpoint
+settled, and neither consumes the other's output. **Run it in parallel with Phase 5.** It spends
+**no Figma call of any kind**, so it never enters Phase 5.1's projection and is never a reason to
+narrow a triage — the researcher is Figma-blind by design, and the only budget it touches is
+wall-clock.
 
 **The ladder, walked in order: ARIA APG → headless libraries → shadcn.** Unlike the icon ladder,
 this one does **not** stop at the first rung — each rung answers a different question, and a
@@ -670,6 +791,16 @@ Two things are read from the adapter rather than decided here:
 - **Whether a story edit is part of the change** is the *Story convention* row's call. Generated
   `argTypes` mean the new value appears for free; hand-written ones mean the story edit is part
   of the change and belongs in the acceptance criteria.
+
+**A run that extracted a subset must say so on the spec's face.** Fill the template's
+*Extraction coverage* section from the checkpoint's kept set: which variant frames were
+extracted, which were **deliberately** not, and the one-line reason for each omission. And mark
+every instance count in the spec as **computed from the lattice** (Phase 2 step 5), never as
+observed from the frames that happened to be extracted. Both are the same guard: a narrow
+extraction is a **scoping decision**, and an implementer reading the spec has no other way to
+tell one from thin coverage. Never write a coverage figure derived from the extracted frames —
+the counts were computed before any frame was read, which is exactly why extracting a subset
+costs the spec nothing.
 
 Also: carry the run's capability path into the header (degraded color mode, existence source,
 catalog staleness, research availability), keep every *not computable* story axis as its own row,
@@ -754,6 +885,14 @@ there is a fingerprint that does not exist on the next run's search.
 Report the filed id and whether it was created or updated, the four-outcome triage tally, every
 open item (deferred disagreements, unresearched APIs, degraded color mode, a stale or absent
 catalog, any unresolved part of the token list), which variant frames were extracted and which
-deliberately were not, and the run directory holding the spec. **Say plainly what the run did not
+deliberately were not, and the run directory holding the spec.
+
+**Report the metered spend too, projected against actual.** Phase 5.1's floor and worst-case
+projection, the ceiling it was measured against and where that ceiling came from, and the calls
+the run **actually** made — including Setup's root `get_metadata`, and the `use_figma` reads
+counted separately because their quota status is unknown. That comparison is the only feedback
+loop the projection has: a worst case that is never approached means the model over-projects and
+narrows triages it did not need to, and a projection the run overshoots is a defect in the call
+discipline that would otherwise surface as a dead run on some later component set. **Say plainly what the run did not
 verify:** that the design is right, that an inferred component identity is correct without the
 user's yes, and that the eventual code renders faithfully.
