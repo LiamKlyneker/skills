@@ -31,7 +31,7 @@ Figma read.
   vocabulary is wrong. Never offer to rewrite the row to keep the run alive — the role is an
   intent and the row is its record.
 
-This is the mirror image of `figma-component-to-spec`'s Phase 0 step 1, which refuses in a
+This is the mirror image of `figma-component-to-spec`'s Phase 1 step 1, which refuses in a
 `consumer` repo and names this skill. Exactly one of the pair runs in any given repo.
 
 1. Require the Figma node URL arg. Ask if missing. **Record the file's version id or

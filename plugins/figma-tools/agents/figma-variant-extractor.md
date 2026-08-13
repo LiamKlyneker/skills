@@ -1,12 +1,12 @@
 ---
 name: figma-variant-extractor
 description: >
-  Internal to the figma-component-to-spec skill, Phase B. Extracts ONE variant frame of a
-  Figma component set into structured JSON findings resolved against the design-system token
-  list pasted into its prompt. Requires seven inputs that only the figma-component-to-spec
-  orchestrator supplies, and assumes Phase 0 already identified the component, resolved the
-  token list and confirmed Figma capability. Never invoke it directly, and never outside a
-  figma-component-to-spec run.
+  Internal to the figma-component-to-spec skill, Phase 5 (Targeted extraction). Extracts ONE
+  variant frame of a Figma component set into structured JSON findings resolved against the
+  design-system token list pasted into its prompt. Requires seven inputs that only the
+  figma-component-to-spec orchestrator supplies, and assumes Phase 1 (Setup) already identified
+  the component, resolved the token list and confirmed Figma capability. Never invoke it
+  directly, and never outside a figma-component-to-spec run.
 model: sonnet
 disallowedTools: Write, Edit, NotebookEdit, Bash, Agent
 color: purple
@@ -147,7 +147,7 @@ For this variant frame:
   `deprecated`, the finding **resolves and carries a flag** (`flagReason: "legacy-entry"`,
   plus the entry's `successor` when the list records one). It is **never** a gap: the design
   system has this thing, and reporting "needs building" for something that ships today sends a
-  human to triage an invented gap. Match-as-is vs modernize is the Phase C checkpoint's call,
+  human to triage an invented gap. Match-as-is vs modernize is the Phase 4 checkpoint's call,
   not yours.
 - **Typography** — resolve against the token list's enumerated **typography utilities**, in
   the form the list writes them; match by name, then by the properties each utility sets when
