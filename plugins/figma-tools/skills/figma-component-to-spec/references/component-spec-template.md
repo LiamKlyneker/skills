@@ -13,6 +13,12 @@ from **this** repo, and the work of adding it is the work this spec describes. S
 and the triage rationale that would have lived in a gap file lives in *Triage record*. A second
 artifact would give the same decision two homes that can disagree.
 
+**One section is an index rather than a home, and it is the only one:** *Provisional decisions*.
+Every row in it cross-references work that stays in *Token delta* or *Figma fixes*, so a
+provisional adds an id, a replacement and an expiry without moving anything. That is deliberate —
+a provisional Figma gap that vanished from *Figma fixes* would be a designer's work deleted by a
+code-side decision, and the whole point is that a deviation stays **findable from every side**.
+
 **One thing in this template varies by project, and only one: how literal the token delta may
 be.** That is the adapter's `## Design system` → *Token pipeline* row, read in **Phase 1** and
 applied in **Phase 8** — a generator plus its source file means the spec states the **literal source
@@ -172,6 +178,10 @@ value in its story for free and this table's Action column says so; a repo with 
 triage as **extend-tokens**; a raw value that came out as **fix-figma** belongs in the next
 section and must not appear in this one.
 
+A row may also carry a **provisional** id, which changes nothing about where it lives — the entry
+stays here, and *Provisional decisions* indexes it. `extend-tokens` is provisional-eligible: a
+token value is cheap and reversible.
+
 **Shape A — the adapter's *Token pipeline* row names a generator and its source.** State the
 literal source edit; the emitted CSS and utilities are build output nobody hand-edits.
 
@@ -217,8 +227,15 @@ small shortlist is not evidence the Figma library is clean**; it is evidence tha
 verified had no raw values. State the shortlist size alongside an empty section rather than
 leaving the silence to be read as a result.
 
+**An item here may carry a provisional id, and it stays here when it does.** `fix-figma` is
+provisional-eligible: the code side ships against the nearest correct value now while the Figma
+fix stays filed as designer work. *Provisional decisions* indexes the row; it does not take it.
+**A provisional never removes an item from this section** — that would hand the designer a spec
+with their work missing from the only section they read.
+
 **Nothing in this section is code work, and no item in it may also appear in *Variant axes*,
-*Props API* or *Token delta*.** That separation is the point of the section: a raw value in the
+*Props API* or *Token delta*** — a cross-reference from *Provisional decisions* is not an
+appearance, because that section is an index and holds no work of its own. That separation is the point of the section: a raw value in the
 Figma library looks exactly like a missing token from the code side, and specced as a token it
 adds an entry the design system does not need while leaving the Figma file just as wrong. Where
 a fix genuinely has a code half too, file the halves as two rows in two sections and say which
@@ -251,11 +268,16 @@ industry standard and nobody re-checks it.
 Every Phase 4 triage decision, one line of rationale each. **Required for all four outcomes**, not just
 the ones that produce work.
 
-| Item | Outcome | Rationale | Decided |
-|---|---|---|---|
-| `variant=destructive` | extend-component | no existing value expresses a destructive action; APG + headless both model it as a variant, not a separate component | <YYYY-MM-DD, by whom> |
-| `Secondary` fill | fix-figma | unbound hex in the library file; the token it should carry already exists | <YYYY-MM-DD, by whom> |
-| `size=Medium` | already-expressible | `md` exists and matches; nothing to do | <YYYY-MM-DD, by whom> |
+The *Provisional* column carries the id where the decision also got one, and is empty otherwise.
+It is a **modifier on the outcome, not a replacement for it** — a provisional row still names the
+outcome that says where the edit eventually lands, and still appears in that outcome's own section.
+
+| Item | Outcome | Provisional | Rationale | Decided |
+|---|---|---|---|---|
+| `variant=destructive` | extend-component | — | no existing value expresses a destructive action; APG + headless both model it as a variant, not a separate component | <YYYY-MM-DD, by whom> |
+| `Secondary` fill | fix-figma | — | unbound hex in the library file; the token it should carry already exists | <YYYY-MM-DD, by whom> |
+| `size=Medium` | already-expressible | — | `md` exists and matches; nothing to do | <YYYY-MM-DD, by whom> |
+| `Positive/Positive Background Hover` | fix-figma | `prov-button-positive-bg-hover` | Figma never migrated this family to namespaced names; the bare predecessor is one line to swap later, and blocking the whole spec on two rows costs more than shipping them marked | <YYYY-MM-DD, by whom> |
 
 **Why the rationale is mandatory.** It is the entire dedup story across runs. A re-run
 re-derives every one of these from the same node and the same catalog; the rationale is what
@@ -263,6 +285,47 @@ tells the human *this was already argued out, and here is why*, so the second pa
 than the first. Without it a settled call gets re-litigated with none of the context that
 produced it, and a checkpoint that costs the same on run five as on run one is one people start
 clicking through. "Not needed" is not a rationale.
+
+## Provisional decisions
+
+*Empty is a valid answer — write "none" and keep the heading.* Every place the implementation is
+deliberately **ahead of the design**: a value chosen now because an input was missing, with what
+should replace it named exactly.
+
+**This section is an index, not a bucket.** Each row's underlying work still lives in the section
+its outcome put it in — a `fix-figma · provisional` is still an item in *Figma fixes*, an
+`extend-tokens · provisional` is still a line in *Token delta*. Nothing moves here; this section
+adds the id, the replacement and the expiry, and points at the row. That is what stops a
+provisional Figma gap disappearing from the section the designer actually reads.
+
+| id | Ships now | Should become | Outcome | Tracker | Marker site | Decided | Expires |
+|---|---|---|---|---|---|---|---|
+| `prov-button-positive-bg-hover` | `--ts-positive-bg-hover` (the pre-migration bare name) | `Positive/Positive Background Hover`, once Figma defines it | fix-figma → *Figma fixes* row 2 | `<item id/url>` | `<file>` — the hover branch of the positive scheme | `<YYYY-MM-DD, by whom>` | `<date, or "—">` |
+
+**Four surfaces, one id, and all four or none.** The id in this table is the same string as the
+marker comment at the point of use, the tracker item, and the run record. From any one of them
+you can reach the other three, and a `grep -r` on the marker syntax gives a **live inventory of
+every place the implementation is ahead of the design**. An id that exists in fewer than four
+places is the stale-comment problem this section was built to end.
+
+**The spec places no marker.** This skill writes no component code, so *Marker site* is an
+instruction to the implementer — the file and the point of use — in the syntax the adapter's
+*Provisional marker* row gives (default `PROVISIONAL(<id>): <what should replace it>`). Which is
+why this table, and not the marker, is the record that exists from run 1: a spec can be filed
+long before anybody builds it.
+
+**Rows are carried forward across runs, unchanged, with their original *Decided* date.** A re-run
+reads the markers and this table, states these decisions as settled, and **does not re-ask them**.
+A row that quietly drops out of a later spec leaves a marker in the code with nothing behind it.
+
+**"Should become" is mandatory and must name a specific thing.** A provisional with no named
+replacement is not a provisional — it is a guess with a comment on it, and it is precisely the
+shape that becomes permanent. The same goes for the *Rationale* in *Triage record*: it has to say
+why shipping beat blocking, because six months from now that sentence is the only thing separating
+a real decision from a placeholder that stayed.
+
+**A high count here is not a bad spec.** The number that should be zero is the one this section
+does not contain: deviations from the design that are **not** marked anywhere.
 
 ## Acceptance criteria
 
@@ -276,6 +339,8 @@ observable change; a reviewer must be able to check each without reading the Fig
 - [ ] `<token>` exists in <the source the token pipeline row names> and regenerates cleanly
 - [ ] A story exercises `<value>` *(where the story convention makes that a real edit)*
 - [ ] The Figma fixes above are applied in the library file *(designer)*
+- [ ] Every row in *Provisional decisions* has its marker placed at the named point of use, in the
+      adapter's *Provisional marker* syntax, carrying the same id *(where any exist)*
 - [ ] Nothing outside this component's axes changed
 
 ## Verification notes

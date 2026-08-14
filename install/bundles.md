@@ -317,9 +317,9 @@ Which skill drives which section:
 | Section | Wanted by |
 |---|---|
 | `## Repo` | `figma-to-spec` — the `Tracker:` line its filing phase branches on, plus the two filing rows inside that tracker's sub-section: the **design-spec target** (where a page spec files) and the **DS-gap backlog** (where an escalated gap files). Two rows rather than one because a design system's gaps routinely belong to a different repo or ADO project than the code being specced, and a single row would send them to whichever of the two was written down |
-| `## Design system` | `figma-to-spec` — the design-system source; the **catalog pointer**, which is the only place the catalog is ever named; the **fingerprint command** behind its soft staleness check; the **three class-prefix facts** (Tailwind class prefix, CSS variable prefix, consumer-facing emission form — separate facts, and collapsing them makes a spec recommend a class the app cannot write); and the **icon resolution ladder**, which is per-project and multi-source. Plus two optional rows that degrade silently: the usage-rules source (absent → the spec cites nothing) and the downstream implementer (absent → a human). Also the **repo role** and, where that role is `library`, the three library conventions below |
+| `## Design system` | `figma-to-spec` — the design-system source; the **catalog pointer**, which is the only place the catalog is ever named; the **fingerprint command** behind its soft staleness check; the **three class-prefix facts** (Tailwind class prefix, CSS variable prefix, consumer-facing emission form — separate facts, and collapsing them makes a spec recommend a class the app cannot write); and the **icon resolution ladder**, which is per-project and multi-source. Plus two optional rows that degrade silently: the usage-rules source (absent → the spec cites nothing) and the downstream implementer (absent → a human). Also the **repo role**; the four **provisional-decision** rows, which all default and are asked only in a `library` repo because only `figma-component-to-spec` reads them today; and, where that role is `library`, the three library conventions below |
 
-**One question in `## Design system` gates three others.** The **repo role** — `consumer` or
+**One question in `## Design system` gates the rest.** The **repo role** — `consumer` or
 `library`, and an absent row means `consumer` — is asked first, because it decides whether the
 rest of the section exists at all:
 
@@ -335,6 +335,20 @@ rest of the section exists at all:
   list), and the **story convention** (where stories live, and whether `argTypes` are generated
   from the variants or hand-written — which is what decides whether adding a variant value is
   also a story edit).
+
+**The four provisional rows are gated the same way but for a different reason, and the difference
+matters.** *Gap policy*, *Provisional marker*, *Gap tracker* and *Provisional expiry* are asked
+only in a `library` repo because `figma-component-to-spec` is the only skill reading them today —
+**not** because a consumer repo has no use for them. It has exactly the same problem, so when the
+consumer side gains the same disposition these rows are already in the right place and no adapter
+has to move. Until then, asking every consumer install four questions nothing consumes is a cost
+with no benefit.
+
+**All four default**, which is what separates them from the three above: an adapter that never
+gains them is not incomplete, it runs on the skill's stated defaults. So a "no" is a complete
+answer to any of them and nothing warns — the same doctrine as the section's two optional rows.
+The one worth actually asking is *Gap policy*, because it is the only one whose default a project
+might genuinely disagree with.
 
 The role is an **intent, not an inference**: a repo containing a `components/` directory is not
 thereby a library, so it is asked and never read off the tree. `ds-catalog` asks the same

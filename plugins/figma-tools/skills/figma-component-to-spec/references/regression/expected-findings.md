@@ -82,6 +82,23 @@ component and conventions. These guard the rules most likely to break under a ru
   (already-expressible / extend-component / extend-tokens / fix-figma) and every decision
   carries a one-line rationale in the *Triage record*. A blank rationale is a failure: it is
   what a re-run reads to avoid re-litigating the decision.
+- **The provisional modifier is offered where eligible and refused where not** — an
+  `extend-tokens` or `fix-figma` candidate may be marked provisional; an **`extend-component`
+  candidate never is**, and offering one there is a `MUST` failure, because a variant axis or a
+  props signature cannot be taken back once consumers write against it. A provisional row carries
+  a **named replacement** and a **stable derived id**; a provisional with "TBD" as its replacement
+  is a failure, since that is the shape that becomes permanent.
+- **A provisional stays in its outcome's section** — a `fix-figma · provisional` still appears in
+  *Figma fixes*, and *Provisional decisions* only indexes it. A row that moved out of the
+  designer's section because the code side deferred it is a `MUST` failure.
+- **A settled provisional is stated, never re-asked** — on a second run against the same fixture,
+  every provisional the first run recorded appears in the checkpoint's *settled by the run* list
+  and **is not put back as an open question**, and the run creates **zero** new provisional tracker
+  items. This is the assertion the whole mechanism exists for: a re-run that re-interviews settled
+  decisions has failed even if every other assertion passes.
+- **An unattributed marker is surfaced, not adopted and not deleted** — a marker id found in the
+  repo that no spec records becomes a checkpoint question with the marker quoted. Silently
+  adopting it, or recommending its removal, are both failures.
 - **Figma fixes are separated from code work** — an unbound or raw value in the Figma library
   lands in the *Figma fixes* section and is not silently specced as a code change. The two have
   different owners, and folding one into the other loses the designer-side work.

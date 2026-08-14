@@ -105,12 +105,34 @@ tree at run time, which is why every line is here rather than left to a skill.
 - Usage-rules source *(optional)*: `<the best-practices doc or skill a page spec cites by stable name>` — the HOW, kept separate from the catalog's WHAT. A page spec **cites** it and never duplicates it, so a citation stands even where the source is not loaded. **Absent is not an error**: leave the row out and a spec cites nothing. Nothing warns about it.
 - Downstream implementer *(optional)*: `<the skill or workflow that implements a filed spec>` — who picks a `[DESIGN-SPEC]` up. **Absent means a human.** Also not an error, also never warned about.
 
+Four rows about **provisional decisions** — what happens when the *inputs* to a spec are
+incomplete rather than the run being invalid. A design file that has not defined a variable yet,
+a token that does not exist on this side, a Figma-vs-code disagreement: none of those makes a run
+unable to produce anything valid, and blocking on them is what stops anyone running the skill a
+second time. Instead an eligible gap **ships with a value chosen now**, carrying one stable id
+across four surfaces — the marker comment at the point of use, the tracker item, the spec's
+`## Provisional decisions` section, and the run record — so `grep` on the marker gives a live
+inventory of every place the implementation is ahead of the design, and a later run reads those
+markers rather than re-asking about them.
+
+**All four default, so an adapter that never gains them still reads unambiguously and needs no
+edit** — the same doctrine as `Repo role:` above. Only `figma-component-to-spec` reads them today,
+so `install-skills` asks for them only in a `library` repo; they are **not library-only in
+principle** — a consumer repo has exactly the same problem — which is why they sit here rather
+than in the library block below:
+
+- Gap policy *(optional)*: `<which kinds of gap may ship provisionally, and which must stop and ask>` — the default disposition, **per kind**. Absent means the skill's own stated default: a gap that lands in the **token layer** or in the **Figma library** may ship provisionally, because a colour or a dimension is cheap and reversible — pick wrong and one line changes later. A gap that changes the **component's API** — a new variant axis, a new value on an axis, a props signature — **always stops and asks a human**, because consumers write against it and it cannot be taken back without a breaking change. Widen or narrow that here; the point of the row is that the policy is per kind rather than one global switch.
+- Provisional marker *(optional)*: `<the literal comment syntax, per file type>` — what the marker at the point of use looks like, so it is **greppable and lintable** by this project's own tooling. Absent means `PROVISIONAL(<id>): <what should replace it>` inside whatever comment syntax the file already uses. Writing the lint that enforces it is this project's job, not the skill's; this row is what makes writing one possible.
+- Gap tracker *(optional)*: `<where a provisional decision files, and under what prefix>` — the tracker and prefix a provisional's ticket is opened under, which is frequently **not** where the spec itself files: the spec is work in this repo, the gap it defers is often the design system's or the designer's. Absent means this repo's own `## Repo` rows — the same target the spec uses.
+- Provisional expiry *(optional)*: `<how long before a provisional is surfaced as overdue>` — so something provisional since eight months ago gets raised rather than quietly becoming permanent. Absent means **no expiry is surfaced**, which is a real answer and nothing warns about it; the decision is still recorded and still findable, it simply never ages into a complaint.
+
 Three rows only a **library** repo fills — the conventions of the design system itself, which
 decide how a spec written *against this repo* is allowed to phrase a change. A repo whose
-`Repo role:` is `consumer` (including one with no role row at all) **deletes all three**, the
-same way a project that never runs `figma-tools` deletes the two filing rows in `## Repo`.
-None of the three is inferable from the tree at run time, and a wrong answer here does not
-error — it produces a spec whose edits land in the wrong file:
+`Repo role:` is `consumer` (including one with no role row at all) **deletes these three**, the
+same way a project that never runs `figma-tools` deletes the two filing rows in `## Repo`. This
+applies to the three below and to nothing above it — the four provisional rows are not part of
+this block. None of the three is inferable from the tree at run time, and a wrong answer here
+does not error — it produces a spec whose edits land in the wrong file:
 
 - Variant mechanism: `<source 1 → source 2 → … → what happens when none matches>` — how this
   library declares a component's variant axes and their values, **in the order a reader tries
