@@ -595,9 +595,10 @@ load-bearing it is.
 - every part of the token list Setup step 3b could not resolve a source for — those are
   **unresolved existence**, not absences.
 
-### 4.3 — STOP: the human triage checkpoint, four outcomes
+### 4.3 — STOP: the human triage checkpoint, four outcomes, run as an interview
 
-**Present the whole candidate list and stop.** Two negatives hold at this gate:
+**This checkpoint is an interview, not a form.** Two negatives hold at this gate, exactly as
+before:
 
 1. **No tracker write has happened** — not a search, not a draft, not a placeholder item, on
    either tracker.
@@ -606,7 +607,39 @@ load-bearing it is.
    `get_variable_defs` and one wide root `get_screenshot`. That is the fixed pre-checkpoint cost,
    independent of how many frames the set draws.
 
-The user marks every candidate exactly one of:
+What changed is *how the stop runs*. Dumping the candidate table and asking the human to mark
+every row makes them do the reconciliation in their head — the exact spend Phase 4.1 and 4.2
+exist to remove. Instead:
+
+1. **Present the map first, once**: the axis table and the full candidate list, so the human
+   sees the whole picture before any question lands. This presentation is orientation, not the
+   ask.
+2. **Open with a short "settled by the run" list** — decisions the run's own reads already
+   answer, each with its evidence (the file the ladder resolved at, the dump binding, the source
+   declaration). These are **not asked**; they are stated, and the human may reopen any row if
+   the evidence is stale or wrong. A question the source read answers must never be put to the
+   human as if it were open.
+3. **Interview the open candidates one question at a time.** Each question carries three things:
+   the **evidence** (the frame, flag, or disagreement, quoted — never a bare label), the
+   **decision it needs** (which of the four outcomes, or which side of a disagreement), and a
+   **recommended answer with a one-line why**. The recommendation is a recommendation; the human
+   decides. Never batch the remainder into one "mark these" message — the answer to one question
+   routinely changes the next.
+4. **Order questions by dependency**: component-identity and catalog-vs-source disagreements
+   first (their answers reshape other rows), then per-candidate outcomes, then every
+   `legacy`/`deprecated` match-as-is-vs-modernize call, and the **shortlist confirmation as the
+   interview's last question**.
+5. **Anything the run found that this skill has no rule for is an interview question, never a
+   silent drop and never forced onto the nearest outcome.** A component the token list already
+   ships that the set redraws differently, a pattern the four outcomes don't cleanly name, a
+   surprise the current-state read surfaced — each is put to the human with the evidence and a
+   recommendation, and the answer plus rationale is recorded in the *Triage record* like any
+   other decision.
+
+The human's answer to each question **is** that decision's one-line rationale — record it as
+given, in the *Triage record*, rather than paraphrasing it into blandness.
+
+Across the interview, every candidate ends up marked exactly one of:
 
 - **already-expressible** — the library already says this, or already composes it from what it
   has. Nothing changes. The spec records *how* it is expressed so nobody reaches for a raw value
@@ -644,7 +677,8 @@ Two rules carry over from the consumer checkpoint unchanged, and they are the lo
    re-litigating a settled call; a rationale-less triage makes run five cost what run one cost.
    "Not needed" is not a rationale.
 
-Also settled here, at the same stop:
+Also settled here, at the same stop — each of these is its own interview question, with the
+evidence and a recommendation, in the dependency order above:
 
 - **Every `legacy` / `deprecated` flag: match-as-is or modernize.** Match-as-is specs the legacy
   value because it ships. Modernize specs the successor and notes that the design still draws the
@@ -676,8 +710,9 @@ budgeting for it: a shortlist that size means the skeleton is being re-derived f
 which is the engine this one replaced. **A shortlist of zero is a legitimate outcome** for a
 simple, well-tokenized component, and it produces a complete spec.
 
-Confirm the shortlist with the user in the same breath as the outcomes — it is the number the
-next phase is budgeted against.
+The shortlist is the interview's **closing question**, put to the human after every outcome is
+settled: state the rule-derived list, what each frame is on it to answer, and get an explicit
+yes — it is the number the next phase is budgeted against.
 
 ---
 
@@ -898,6 +933,19 @@ this phase happened to receive. That is the whole reason a narrow extraction cos
 nothing: the count was never a by-product of extraction. Color tolerance is
 `resolution-rules.md`'s, unchanged: ΔE `< ~1–2` auto-merges, `1–5` flags "confirm intent",
 `> 5` is off-system.
+
+**One conditional follow-up interview, and only one condition triggers it: a finding that
+creates a *new candidate* — something the Phase 4 interview never triaged.** A verification
+finding that contradicts the skeleton on an already-triaged candidate resolves as above: the
+finding wins, the contradiction is recorded, nothing is re-asked. But a finding that surfaces a
+decision no one has made — an unbound hex on a frame nobody flagged, a token the frame binds
+that the token list has never heard of, a geometry that belongs to no triaged row — is a triage
+decision, and triage decisions are the human's. Put those to the user **before Phase 8 writes
+the spec**, in the same style as Phase 4.3: one question at a time, the finding quoted as
+evidence, a recommended outcome from the same four, the answer recorded in the *Triage record*
+with its rationale. Zero new candidates → no follow-up, say so in one line. Never re-open a
+decision the Phase 4 interview already recorded, and never widen this into a second full
+checkpoint — it exists only for what verification alone could see.
 
 ## Phase 7 — Pattern precedent research, one subagent per extend-component gap
 
