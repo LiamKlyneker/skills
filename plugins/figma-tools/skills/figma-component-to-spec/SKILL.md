@@ -17,7 +17,7 @@ description: >
 disable-model-invocation: true
 metadata:
   author: liam
-  version: "4.0.0"
+  version: "4.1.0"
 ---
 
 # Figma component → Spec
@@ -226,9 +226,9 @@ That the number is **independent of N** is what makes the guarantee worth statin
 | **1.5 — Cheap pass** | Opus, main thread, **no subagents** | Turn Setup's three set-level reads into the **spec skeleton**, **decomposed by axis and never by cell**: N color schemes + M sizes + K state deltas, each stated once. Bind every value to a named token where the dump supplies one, mark anything derived from a token *name* as **inference**, and flag the anomalies the dump can see. **Zero further Figma calls, and no subagent.** |
 | **2 — Structure** | main thread | Derive the whole axis lattice from Setup's root response — drawn axes and values, drawn-vs-cross-product, duplicate/inconsistent Figma property values, the Figma vocabulary kept **verbatim**, and instance counts **computed, not observed**. Coverage self-check + logged tally. **Zero Figma calls of its own.** |
 | **3 — Current state** | main thread | What the component already is — **source-first** through the variant-mechanism ladder, naming the file it resolved at; the catalog as **cross-check** with every disagreement recorded unresolved; plus computable story coverage. **No Figma calls.** |
-| **4 — Reconcile & triage** | Opus, main thread | One axis table (delta both ways, axis-name mapping as a claim) · the candidate list with every ⚠️ flag joined in and the lattice's instance counts · **four-outcome triage checkpoint, before any per-frame extraction**, which also settles the **shortlist** of frames worth verifying. |
+| **4 — Reconcile & triage** | Opus, main thread | One axis table (delta both ways, axis-name mapping as a claim) · the candidate list with every ⚠️ flag joined in and the lattice's instance counts · **four-outcome triage checkpoint, before any per-frame extraction, run as an interview** — settled-by-the-run stated up front, then one grounded question at a time with a recommendation each, the **shortlist** of frames worth verifying as the closing question. |
 | **5 — Targeted verification** | `figma-tools:figma-variant-extractor` (Sonnet) ×K, **throttled** | **Budget guard first**: project the metered cost from the **shortlist** size and the agent's call discipline, state it against the seat's daily ceiling, and **stop deliberately** rather than die mid-fan-out. Then one agent per **shortlisted** variant frame — spawned to **verify the skeleton's slice for that frame**, not to re-derive it → structured JSON findings, resolved against the token list pasted verbatim into each spawn, fanned out in **waves** sized for the per-minute cap. A shortlist of **zero** is a valid, complete run. |
-| **6 — Reconcile by concern** | Opus, main thread | Make each concern consistent across the skeleton and the verified frames — one color→token map, one type/spacing picture, one icon inventory. Where a verification finding contradicts the skeleton, **the finding wins and the contradiction is recorded**. No Figma re-traversal. |
+| **6 — Reconcile by concern** | Opus, main thread | Make each concern consistent across the skeleton and the verified frames — one color→token map, one type/spacing picture, one icon inventory. Where a verification finding contradicts the skeleton, **the finding wins and the contradiction is recorded**. A finding that creates a **new, untriaged candidate** goes back to the user as a short follow-up interview before the spec is written; zero new candidates → no follow-up. No Figma re-traversal. |
 | **7 — Pattern precedent** | research subagents (Sonnet) | One per **extend-component** gap — **that outcome only** — APG → headless libraries → shadcn, walked in full. Spends **no Figma call**, so it runs **in parallel with Phase 5** and never enters its budget. |
 | **8 — The component spec** | Opus, main thread | Write **one** component spec per `references/component-spec-template.md`, including the **extraction-coverage disclosure**: which sections the cheap pass wrote, which frames were verified, which deliberately were not, and every instance count marked **computed from the lattice**. `0 of N` is disclosed honestly, as a complete spec rather than an empty one. |
 | **9 — Filing** | main thread | Branch on the adapter's `Tracker:` line. The spec files as a plain `[SPEC]` work item (ADO) / an ordinary issue (GitHub) on **this repo's own tracker rows**, parented to the scope ticket where one was given, deduped by the component set's node id and updated in place. |
@@ -254,10 +254,15 @@ run — the token list does.)
    stop.
 5. **No variant-mechanism ladder in the adapter** → ask the user for it; never infer the
    mechanism from the code. `ds-catalog` is what writes the row (Setup step 4).
-6. **Human triage checkpoint** (Phase 4.3) → present every candidate and flag; the user marks each
-   **already-expressible** / **extend-component** / **extend-tokens** / **fix-figma**, settles
-   every legacy flag (match-as-is vs modernize) and every catalog-vs-source disagreement, and
-   **every decision records a one-line rationale** in the spec's *Triage record*. Two negatives
+6. **Human triage checkpoint** (Phase 4.3) → **an interview, not a form**: present the candidate
+   map once, state what the run's own reads already settled (reopenable, never re-asked), then
+   ask the open questions **one at a time** — each grounded in quoted evidence, each with a
+   recommended answer — until every candidate is marked
+   **already-expressible** / **extend-component** / **extend-tokens** / **fix-figma**, every
+   legacy flag (match-as-is vs modernize) and every catalog-vs-source disagreement is settled,
+   and anything the run surfaced that this skill has no rule for has been asked, never silently
+   dropped. **Every decision records a one-line rationale** — the user's answer as given — in
+   the spec's *Triage record*, and the shortlist is the closing question. Two negatives
    hold at this gate: **no tracker write has happened** — not a search, not a draft, on either
    tracker — and **no per-frame extraction call has been spent** (the three set-level reads are
    the fixed pre-checkpoint cost).
