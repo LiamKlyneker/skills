@@ -227,6 +227,25 @@ empty is a **complete** run.
    - The two optional rows — *usage-rules source*, *downstream implementer*. **An absent
      optional row is the answer, not a warning**: no usage-rules source means the spec cites
      nothing, and no downstream implementer means a human picks the spec up.
+   - **The four provisional-decision rows** — *Gap policy*, *Provisional marker*, *Gap tracker*,
+     *Provisional expiry*. **All four default, and a missing one is never a stop and never a
+     warning.** Resolve each to its value or its default and keep it; Phase 3.4 needs the marker
+     syntax, Phase 4.3 needs the policy, Phase 9 needs the tracker, and the expiry decides only
+     whether an old provisional is surfaced as overdue. The defaults, in full, so a run with none
+     of the four rows still behaves identically on every machine:
+
+     | Row | Default when absent |
+     |---|---|
+     | *Gap policy* | `extend-tokens` and `fix-figma` may ship provisionally; `extend-component` always stops and asks |
+     | *Provisional marker* | `PROVISIONAL(<id>): <what should replace it>`, in the file's own comment syntax |
+     | *Gap tracker* | this repo's own `## Repo` rows — the same target the spec files to |
+     | *Provisional expiry* | none surfaced; provisionals are recorded and findable but never age into a complaint |
+
+     **Announce which of the four came from a row and which from the default**, once, in the same
+     breath as the other capability announcements. The distinction matters at the checkpoint: a
+     policy the project chose is a project decision, and a policy that defaulted is this skill's
+     opinion, and the human deciding whether to ship a value provisionally is entitled to know
+     which one they are agreeing with.
 
 5. **Confirm capability — three separate checks (see SKILL.md Prerequisites).**
 
@@ -525,6 +544,62 @@ free-text control, or no `argTypes` block at all — is listed **"not computable
 manually"**, per axis, with the reason. That is the honest result. A guessed coverage figure
 is worse than none, because a spec that claims an axis is covered stops anyone from checking.
 
+### 3.4 — Existing provisional markers, cross-checked against the filed spec
+
+**This is the read that stops run five costing what run one cost**, and it is free — this phase
+makes no Figma call, so re-reading every decision a prior run already settled costs nothing but a
+grep.
+
+Two records of a provisional decision can exist, and neither is complete on its own:
+
+- **The marker in code**, in whatever syntax the *Provisional marker* row names (default
+  `PROVISIONAL(<id>): <what should replace it>`). It exists only **after somebody implemented the
+  spec**, and it is the live one — it sits at the point of use, so it is what a `grep -r` inventory
+  actually finds.
+- **`## Provisional decisions` in the filed spec**, which exists **from run 1**, before any code
+  was written. Find it the way Phase 9 dedups — **searching the filing target for the component
+  set's node id**, never by title.
+
+**That search is a deliberate, named carve-out from the pre-checkpoint rule, and it is the only
+one.** Phase 4.3 states that no tracker write has happened before the gate — *not a write, not a
+draft, not a placeholder, and no search that is a step toward one*. **A read-only fetch of an item
+this run did not create is permitted, and nothing else is.** The guarantee that gate protects is
+that nothing exists on the tracker because the run decided something before the human did, and a
+read creates nothing. Making the re-read wait until after the checkpoint would defeat its entire
+purpose: the point is to *not ask* about a decision that was already settled, which is only
+possible if the answer is in hand before the questions are written.
+
+Grep the repo for the marker syntax, collect every id, and compare the two sets. **Three outcomes,
+and only one of them is silent — deliberately the same three as §3.2's catalog-vs-source rule,
+because it is the same kind of reconciliation and a second vocabulary for it would be a second
+thing to get wrong:**
+
+- **Both present and agreeing** → the ordinary case. Record once, noting it was **cross-checked**,
+  and carry the decision forward as settled.
+- **Spec has it, no marker in code** → the spec's answer stands, marked **`not yet implemented`**.
+  This is not a hole and not a drift: it is the normal state between filing a spec and building it.
+- **Both present and disagreeing** — the marker names a different replacement, a different value,
+  or a different outcome than the spec records → **record both, side by side, as a disagreement.**
+  Do not pick. Do not let the marker win because it is closer to running code, and do not let the
+  spec win because it is the decision record. One of the two is wrong, and **which one is the
+  human's call at the Phase 4 checkpoint**, exactly as a catalog-vs-source disagreement is.
+
+**A marker with an id the spec does not record at all is its own case, and it is a finding.** It
+means somebody wrote a provisional by hand, or an older spec was filed elsewhere and lost. Record
+it as an **unattributed provisional** and put it to the human at the checkpoint. Never adopt it
+silently and never delete it — an unattributed marker is precisely the "which values were a real
+decision and which were a placeholder that stayed" problem this whole mechanism exists to end.
+
+**Where the *Provisional expiry* row names a period**, flag every carried-forward provisional
+older than it as **overdue** — the age comes from the decision's date in the spec's *Triage record*,
+not from file mtime, which changes for reasons that have nothing to do with the decision. An
+overdue provisional is **not** re-asked as if it were new; it is stated as settled-but-overdue, and
+the human may reopen it. Absent row → nothing is overdue and nothing is flagged.
+
+**No provisional found under any of these headings is a complete result**, and the commonest one:
+a first run has no filed spec and no markers, so this section reports "no prior provisionals" and
+Phase 4.3 asks about every eligible candidate from scratch. That is run one, working correctly.
+
 ### End of Phase 3 — the bundle Phase 4 consumes
 
 None of it is a spec yet, and none of it cost a metered call:
@@ -534,6 +609,9 @@ None of it is a spec yet, and none of it cost a metered call:
 - the current-state read — the file the ladder resolved at, axes and values with their status
   and successor, what was cross-checked, and **every disagreement, unresolved**;
 - story coverage per axis, including every *not computable* axis;
+- **every prior provisional decision** — carried forward as settled, `not yet implemented`,
+  disagreeing, unattributed, or overdue — each with its id. This is what lets Phase 4.3 state a
+  decision instead of re-asking it;
 - and which capability path the run took (agent type resolved or fallback; degraded color mode
   or not; existence source used; catalog current, stale, unchecked, or absent). All of it
   travels into the spec's header: a spec written under degraded color mode says so on its face.
@@ -582,6 +660,15 @@ carry the computed instance count on the surviving row — the same candidate ap
 variant frames is one line in the spec, not four, and the count is what tells a reviewer how
 load-bearing it is.
 
+**Two more columns, both derived rather than asked:**
+
+- **Provisional eligibility**, read straight off the recommended outcome and the *Gap policy* row:
+  `extend-tokens` and `fix-figma` are eligible, `extend-component` is not, `already-expressible`
+  has nothing to be provisional about. Nothing here is a judgement call — the eligibility follows
+  the outcome, which is the whole reason the policy is expressible in one sentence.
+- **Already settled**, where Phase 3.4 matched this candidate to a prior provisional. Carry its id
+  onto the row. A row marked settled is **stated, not asked**, at the checkpoint.
+
 **Every ⚠️ flag joins the list too**, because each is a question only a human can close:
 
 - every duplicate or inconsistent Figma property value from Phase 2 step 4;
@@ -595,13 +682,16 @@ load-bearing it is.
 - every part of the token list Setup step 3b could not resolve a source for — those are
   **unresolved existence**, not absences.
 
-### 4.3 — STOP: the human triage checkpoint, four outcomes, run as an interview
+### 4.3 — STOP: the human triage checkpoint, four outcomes plus a provisional modifier, run as an interview
 
 **This checkpoint is an interview, not a form.** Two negatives hold at this gate, exactly as
 before:
 
-1. **No tracker write has happened** — not a search, not a draft, not a placeholder item, on
-   either tracker.
+1. **No tracker write has happened** — not a write, not a draft, not a placeholder item, and no
+   search that is a step toward one, on either tracker. **One read-only exception, named:**
+   Phase 3.4's fetch of the already-filed spec, which creates nothing and exists so this gate can
+   *stop asking* about decisions a prior run settled. Nothing else reaches the tracker before the
+   human has decided.
 2. **No per-frame extraction call has been spent.** The only Figma reads the run has made are the
    **three set-level ones** — Setup step 2's root `get_metadata`, and step 7's root
    `get_variable_defs` and one wide root `get_screenshot`. That is the fixed pre-checkpoint cost,
@@ -619,9 +709,20 @@ exist to remove. Instead:
    declaration). These are **not asked**; they are stated, and the human may reopen any row if
    the evidence is stale or wrong. A question the source read answers must never be put to the
    human as if it were open.
+
+   **Every provisional Phase 3.4 carried forward belongs in this list, and this is the rule the
+   whole mechanism turns on.** State it — the id, what was shipped, what should replace it, and
+   which run decided it — and **do not re-ask it**. A prior provisional is a decision that was
+   already argued out at a checkpoint exactly like this one; putting it back on the table makes
+   run five cost what run one cost, which is the failure this feature exists to prevent. The
+   human may reopen any of them, and an **overdue** one (per the *Provisional expiry* row) is
+   stated as settled-but-overdue so that reopening it is an obvious option rather than a fresh
+   question. **A disagreeing or unattributed marker from §3.4 is the exception** — those are not
+   settled, and they become interview questions in step 3.
 3. **Interview the open candidates one question at a time.** Each question carries three things:
    the **evidence** (the frame, flag, or disagreement, quoted — never a bare label), the
-   **decision it needs** (which of the four outcomes, or which side of a disagreement), and a
+   **decision it needs** (which of the four outcomes — plus, where the outcome is eligible,
+   provisional-or-block — or which side of a disagreement), and a
    **recommended answer with a one-line why**. The recommendation is a recommendation; the human
    decides. Never batch the remainder into one "mark these" message — the answer to one question
    routinely changes the next.
@@ -661,6 +762,47 @@ Across the interview, every candidate ends up marked exactly one of:
 > **Where does this have to change — the component's API, the token layer, the Figma library, or
 > nowhere, because the system already says it?**
 
+#### The provisional modifier — a second question, asked only of eligible candidates
+
+**`provisional` is not a fifth outcome, and the reason is the question above.** Every candidate
+still gets exactly one of the four, because the four answer *where does the edit land?*.
+`provisional` answers something else entirely — **do we ship a value now, or block?** — so it
+rides **on top of** an outcome rather than replacing one. A candidate marked
+`fix-figma · provisional` is still Figma-side work, still lands in the spec's *Figma fixes*
+section, and the designer still gets the ticket; only the code side stops waiting for it.
+
+**Which outcomes accept it — this sentence is the entire per-kind policy:**
+
+- **`extend-tokens` — eligible.** A colour, a dimension, a radius, a type step. Cheap and
+  reversible: pick wrong and one line changes later and nobody notices.
+- **`fix-figma` — eligible.** The design file is incomplete or wrong. Ship against the nearest
+  correct value now; the Figma fix is still filed and still blocks nothing but itself.
+- **`extend-component` — never eligible, and this is the stop that is still earned.** A new
+  variant axis, a new value on an axis, a props-API change. Consumers write against it and it
+  cannot be taken back without a breaking change, so a guess here is not one line to fix later —
+  it is a migration. **Ask the human, every time, and never offer a provisional as the
+  recommendation.**
+- **`already-expressible` — nothing to be provisional about.** The system already says it.
+
+The *Gap policy* row may widen or narrow that; **absent, the four lines above are the policy**.
+Say at the checkpoint which of the two is in force — a project's chosen policy and this skill's
+default are not the same thing to agree to.
+
+**Where a candidate is eligible, the interview question has two halves, asked together:** the
+outcome, *and* provisional-or-block. The second half carries its own three things — **the value
+to ship now**, quoted with what it was chosen against; **what should replace it**, named exactly;
+and **why blocking would cost more than shipping**. A provisional with no named replacement is
+not a provisional, it is a guess with a comment on it, and it is the shape that becomes permanent.
+
+**Each accepted provisional gets a stable id, derived and never counted:**
+`prov-<component>-<what it decides>`, e.g. `prov-button-positive-bg-hover`. It is **derived from
+the thing it decides so that re-deriving it on run five yields the same id** — which is what lets
+a committed marker still match and the tracker item still dedup. A sequential number would
+renumber on any re-triage and orphan every marker already in code, which is exactly the staleness
+this mechanism exists to end. The id then travels to four places, and to all four or none:
+the **marker** at the point of use, the **tracker item**, the spec's **`## Provisional decisions`**
+section, and the **run record**.
+
 `figma-to-spec`'s checkpoint asks *is this genuinely reusable across the product, or one-off to
 this design?* and marks **escalate** / **compose-from-tokens** / **build-local**
 (`../../figma-to-spec/references/resolution-rules.md` → `## Triage outcomes`, which is the
@@ -673,9 +815,12 @@ Two rules carry over from the consumer checkpoint unchanged, and they are the lo
 
 1. **No tracker write before this gate.**
 2. **Every decision records a one-line rationale** — all four outcomes, including
-   `already-expressible`, in the spec's *Triage record*. That line is what stops the next run
-   re-litigating a settled call; a rationale-less triage makes run five cost what run one cost.
-   "Not needed" is not a rationale.
+   `already-expressible`, and **the provisional half of any candidate that got one**, in the
+   spec's *Triage record*. That line is what stops the next run re-litigating a settled call; a
+   rationale-less triage makes run five cost what run one cost. "Not needed" is not a rationale.
+   For a provisional the rationale must say **why shipping beat blocking**, not merely that it
+   was chosen — six months later that is the only sentence that distinguishes a real decision
+   from a placeholder that stayed.
 
 Also settled here, at the same stop — each of these is its own interview question, with the
 evidence and a recommendation, in the dependency order above:
@@ -691,6 +836,14 @@ evidence and a recommendation, in the dependency order above:
 - **Every collision between the design and the standard** the precedent ladder will cite (a
   control with no keyboard affordance, an axis that fights the APG pattern's model) — a
   checkpoint question, never silently followed *and* never silently "fixed".
+- **Every marker-vs-spec disagreement from Phase 3.4**: which of the two is wrong, the same
+  question and the same shape as a catalog-vs-source disagreement. A deferred one stays open in
+  the *Triage record* and its provisional is marked **disputed** in `## Provisional decisions`.
+- **Every unattributed marker from Phase 3.4** — an id in the code that no spec records. Put it up
+  with the marker quoted: adopt it into this spec, supersede it, or leave it alone and say so.
+  **Never adopt it silently and never recommend deleting it**; a marker somebody wrote by hand is
+  evidence of a decision whose record got lost, which is worth more than the tidiness of removing
+  it.
 
 **What the checkpoint hands forward is a shortlist of frames, not just a set of outcomes**, and
 the shortlist is built by a rule rather than by taste:
@@ -1041,6 +1194,24 @@ delta*, the geometry rows. `0 of N` is written out honestly and read as **comple
 well-tokenized component leaves nothing for verification to find, and a spec that hides a zero
 shortlist behind vague coverage language is claiming a thoroughness it did not spend.
 
+**Write `## Provisional decisions` as an index, not as a bucket.** Every provisional accepted at
+the checkpoint gets a row there — id, what ships now, what should replace it, the outcome it
+modifies, the tracker item, the marker site, and the expiry where one applies — **and the
+underlying row stays where its outcome put it**. A `fix-figma · provisional` is still an item in
+*Figma fixes*; an `extend-tokens · provisional` is still a line in *Token delta*. That is the
+point of an index: one decision with one home and one cross-reference, rather than a fifth section
+that quietly removes the designer's work from the section they read.
+
+**Spec the marker; never place it.** This skill writes no component code, so the *marker site*
+column names the file and the point of use where the marker belongs, in the syntax the
+*Provisional marker* row gives, and the **downstream implementer places it**. That asymmetry is
+why `## Provisional decisions` — not the marker — is the record that exists from run 1, and why
+Phase 3.4 treats a missing marker as `not yet implemented` rather than as drift.
+
+Carry forward every prior provisional the run did not reopen, **unchanged and with its original
+decision date**, so the section is the full live set rather than this run's additions. A
+provisional that silently drops out of the spec is a marker in the code with nothing behind it.
+
 Also: carry the run's capability path into the header (degraded color mode, existence source,
 catalog staleness, research availability), keep every *not computable* story axis as its own row,
 and diff **spec-vs-spec** against a prior spec — the local file or the previously filed item —
@@ -1081,6 +1252,25 @@ prefer it and still verify the item exists (a run directory outlives nothing).
 That search plus the write-back is the **entire zero-new-items guarantee**: a second run on the
 same component set must create **zero** new tracker items.
 
+**Provisional decisions file as their own items, and they dedup on the slug.** One item per
+provisional, on the target the *Gap tracker* row names — which is frequently **not** where the
+spec filed, because the spec is work in this repo and the gap it defers is often the design
+system's or the designer's. Absent row → this repo's own `## Repo` rows, the same target the spec
+used.
+
+- **Search that target for the provisional's id before creating anything**, exactly as the spec
+  dedups on the node id. **The slug is the dedup key**, which is the whole reason it is derived
+  rather than counted: a sequential id would renumber on re-triage and open a duplicate every run.
+- **Found** → update in place. **Not found** → create it, and write the returned id into the
+  spec's `## Provisional decisions` row.
+- The id must ride **in the open, backticked**, in a visible line of the description — the same
+  constraint as the node-id fingerprint, and for the same reason: on Azure DevOps an HTML comment
+  is stripped out of a work item's read, so an id written as a comment is an id that does not
+  exist on the next run's search.
+- **The zero-new-items guarantee extends here unchanged**: a second run that reopens nothing must
+  create zero new provisional items too. A run that files a duplicate has broken the id, not the
+  search.
+
 **The node-id fingerprint rides differently on each tracker, and this is not cosmetic.** On
 GitHub an HTML comment survives the API read, so the fingerprint may be a comment trailer. **On
 Azure DevOps HTML comments are stripped out of a work item's read**, so it must ride **in the
@@ -1120,6 +1310,14 @@ there is a fingerprint that does not exist on the next run's search.
   there, so a `#` in front of a PR number silently points at an unrelated work item.
 
 ### End of run — report
+
+**Report the provisional ledger, and report it as a count of unmarked deviations rather than as a
+score.** New this run · carried forward unchanged · reopened and re-decided · disputed
+(marker-vs-spec) · unattributed markers found · overdue against the *Provisional expiry* row —
+each with its id and its tracker item. **A high provisional count is not a bad run.** The number
+that matters is the one that should be zero: **deviations from the design that are not marked**,
+which is every candidate that shipped without either a settled outcome or a provisional id. Say
+that number out loud, and say it is the metric.
 
 Report the filed id and whether it was created or updated, the four-outcome triage tally, every
 open item (deferred disagreements, unresearched APIs, degraded color mode, a stale or absent

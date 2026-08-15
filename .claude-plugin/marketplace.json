@@ -17,7 +17,7 @@
     {
       "name": "figma-tools",
       "description": "Figma design-to-spec extraction for Claude Code: turns a Figma page into a gap spec in a repo that consumes a design system, and a Figma component set into a component spec in the repo that is one, resolved against a per-project design-system catalog or token source that its ds-catalog skill authors, backed by the figma-region-extractor and figma-variant-extractor subagents",
-      "version": "4.1.0",
+      "version": "4.2.0",
       "keywords": ["figma", "design-to-code", "design-spec", "figma-api", "subagent"],
       "category": "design",
       "source": "./plugins/figma-tools"
@@ -41,7 +41,7 @@
     {
       "name": "install-skills",
       "description": "Bootstrap a project's `.claude/project/adapter.md` for a skill bundle, and diagnose an install that has rotted — the two jobs no distribution mechanism can do for you. Start here: the PRD and ADO workflows cannot run without the adapter it writes",
-      "version": "1.8.0",
+      "version": "1.9.0",
       "keywords": ["bootstrap", "adapter", "doctor", "install", "diagnostics"],
       "category": "development",
       "source": "./plugins/install-skills"

@@ -56,7 +56,8 @@ Headings and field names are the contract; the values are the project's.
 | **Existence source** | yes | what the run assembles its token list from: the token source the adapter's *Token pipeline* row names, plus the project catalog **where one is registered** (how it resolves — normally the adapter pointer — and the **catalog fingerprint** the case was captured against). A fixture captured with no catalog registered says so; that is a valid profile now, not a broken one |
 | **Convention profile** | yes | the adapter's three library rows as they stood: variant mechanism (including any trap), token pipeline (generator or not), story convention. A case graded against different rows is a different case |
 | **Capability profile** | yes | which Figma capabilities are present and which are absent, per capability, not as a summary — **plus the seat's plan tier and the rate ceiling the run was budgeted against** |
-| Expected triage shape | yes (`none` counts) | which of the four outcomes the run should **recommend**, and roughly how many of each. The recommendation is the skill's; the decision is the human's, and it is pinned in the row above |
+| Expected triage shape | yes (`none` counts) | which of the four outcomes the run should **recommend**, and roughly how many of each, **plus which candidates it should recommend as provisional**. The recommendation is the skill's; the decision is the human's, and it is pinned in the row above |
+| **Provisional profile** | yes (`none` counts) | the adapter's four provisional rows as they stood — *Gap policy*, *Provisional marker*, *Gap tracker*, *Provisional expiry* — saying for each whether it was **set or defaulted**, since a defaulted policy and a chosen one produce the same run but not the same case. Plus **any provisional markers already in the fixture repo**, with their ids, which is what the re-run assertion grades against. A fixture with none is a valid first-run profile |
 | Why this fixture exists | yes | the specific defect(s) it reproduces — a fixture nobody can tie to a failure is one nobody can decide to delete |
 
 **The capability profile is stated per capability, never as "full" or "degraded".**
@@ -128,7 +129,11 @@ an edit to any of:
   for every finding in the case;
 - the current-state read (**Phase 3**) — how the adapter's variant-mechanism ladder is walked,
   how a named trap is folded into the accepted set, and the catalog's role as cross-check rather
-  than answer;
+  than answer; and **3.4**'s provisional-marker read-back, whose whole job is to remove questions
+  from the checkpoint, so a change there changes what a *second* run is allowed to ask;
+- the **provisional modifier** — which outcomes accept it, what a provisional must carry, and how
+  its id is derived. An id that stops being stable across runs breaks every committed marker
+  silently, which is exactly the class of defect these fixtures exist to catch;
 - `../component-spec-template.md`, where a section's contract changes what a passing spec
   contains;
 - `../../../figma-to-spec/references/catalog-contract.md`, where a validation rule changes what a
