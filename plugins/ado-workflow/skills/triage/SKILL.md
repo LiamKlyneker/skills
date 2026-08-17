@@ -7,7 +7,8 @@ disable-model-invocation: true
 # triage
 
 The **investigate + promote** half of the Azure DevOps QA loop. `manual-qa` — the capture phase —
-drives a run's QA comment and appends each failure to that run's `[FINDINGS]` work item; `triage`
+composes a run's pass from what landed on the branch, drives it flow by flow, and appends each
+failure to that run's `[FINDINGS]` work item; `triage`
 *confirms, roots-causes, and promotes* the survivors into **cold-runnable `[BUG]` work items** — one
 per finding — then **closes the findings item**.
 
@@ -24,8 +25,8 @@ touched `CONTEXT.md` and the locked decisions — so it can tell a real defect f
 loaded with `claude --plugin-dir`: `/ado-workflow:triage`, `/ado-workflow:manual-qa`, and so on.
 There is no unprefixed form.
 
-**What the MCP does here is narrow, and stating it is the point: it reads a comment, ticks a box,
-appends a finding, and creates a work item. It never judges whether a finding is correct.** The
+**What the MCP does here is narrow, and stating it is the point: it reads a work item, creates a
+work item, and closes one. It never judges whether a finding is correct.** The
 verdict on every finding is this session's, confirmed against the code and agreed with the human —
 never inferred from the fact that a call succeeded.
 
@@ -88,40 +89,45 @@ silently suppresses the relations this walk depends on
   parent → siblings, filtered to this spec's `[TASK]`s. This is the *owning-slice* attribution map,
   and it is nearly free because the parent fetch is the same one that finds everything else.
 - **The parent work item**, read only — it is where a new `[BUG]` will be parented.
-- **Touched `CONTEXT.md`** for the area under test (use the `scoped-context` skill if available).
-- **The `[SPEC]`'s QA comments** (`wit_work_item`, `action: "list_comments"`). Identify one by the
-  two markers together — the **run-context line** and the **`## Steps` heading** — never a fragile
-  substring. Read **all** of them, newest last: each covers only the slice its run landed, so the
-  current state of the branch is the union, and an earlier one's `## Before you start` may name
-  something a later run has since fixed. Plus code comments in the touched files marked "deferred",
-  "later slice", "no resolver yet", placeholder. This is what powers the gap classification below.
+- **Touched `CONTEXT.md`** for the area under test (use the `scoped-context` skill if available),
+  plus code comments in those files marked "deferred", "later slice", "no resolver yet",
+  placeholder. Together with the `[SPEC]`'s description and its `[TASK]`s, this is what powers the
+  gap classification below.
 
-  A step `manual-qa` failed carries a terminal ` — **failed**` suffix in place, which is the
-  cheapest way to see what a pass hit. A `[SPEC]` with no QA comment at all is normal, not a gap: a
-  run whose `[TASK]`s were all refactors or bumps posts none by design. The `needs-qa` tag is worth
-  noting alongside — it signals an outstanding manual pass — but it changes no classification.
+  **There is no QA comment to read.** `work-on-spec` posts none, and `manual-qa`'s end-of-pass
+  **receipt** on the `[SPEC]` is free-form output that nothing parses — read it as context if it is
+  there, for which flows ran and where a pass stopped, never as a source of findings. The findings
+  are in the `[FINDINGS]` item. The `needs-qa` tag is worth noting — it means no pass has completed
+  yet — but it changes no classification.
 
 ## Input: the run's `[FINDINGS]` item
 
 **How this item is located is decided in [`findings-item.md`](../references/findings-item.md), and
 that is the only place it is decided.** Read it first. The short form:
 
-**Take the `[FINDINGS]` id out of the run-context line of the run's QA comment on the `[SPEC]`.**
-The line carries a ``` · findings `#<id>` ``` clause, written once by `manual-qa` on the first
-failure of that pass. Say which comment you read it from, and which run that was, before touching
-anything.
+**Scan the parent's children for the `[FINDINGS]` title prefix.** That is the lookup, and it is the
+only one — the run-context clause on a QA comment is gone with the comment itself. The prefix is
+**load-bearing on this tracker by design** (the adapter's *Title prefixes* row): every kind of child
+under this parent is the same work-item type, so the prefix is the only thing separating a findings
+item from a `[TASK]` or a `[BUG]`. You already fetched the parent with `expand: "relations"` during
+context loading, so the scan costs no extra call.
 
 Three consequences worth having in hand:
 
-- **A run-context line with no `findings` clause means that pass recorded no failure.** That is a
-  complete answer, not a lookup failure — report "nothing to triage for that run" and stop. Do not
-  fall back to scanning the parent's children for the `[FINDINGS]` prefix; the prefix says what kind
-  of item something is and can never say which run, and a scan cannot tell a clean pass from a
-  failed search.
-- **Several QA comments name several items** — one per run that found something. Say which ones
-  exist and ask which run is being triaged rather than assuming the newest.
+- **The scan cannot say *which run* on its own** — the prefix says what kind of item something is,
+  and one parent carries every `[SPEC]`'s findings items and every run's. Narrow with what the item
+  itself carries: the spec title and run date in its own title, and the `Spec: #<spec-id>` line at
+  the top of its description. Then **say which item you picked and which run it covers** before
+  touching anything. More than one candidate survives the narrowing → name them all and ask; never
+  assume the newest.
+- **No `[FINDINGS]` item for this `[SPEC]` means no pass recorded a failure** — a clean pass creates
+  none, which is the common case. Report "nothing to triage for that run" and stop rather than
+  widening the search. Unlike the run-context clause this replaces, that is an inference from an
+  absence rather than a stated fact, so say which parent you scanned and what you matched on, and
+  let the human correct you.
 - **A pasted `[FINDINGS]` id skips the lookup entirely.** A human who hands you an id has answered
-  the question. That is an input shortcut, not a second discovery route.
+  the question, and it is the shortcut worth offering when the scan is ambiguous. That is an input
+  shortcut, not a second discovery route.
 
 Then fetch the item and read `System.Description`. **Findings are the `### [FINDING] ` sections of
 that field**, numbered from 1 in the order they were appended. That marker is a **parse contract**,
@@ -148,10 +154,10 @@ A finding carries two fields worth **consuming rather than re-deriving**:
 
 | Field | Example | Use it for |
 |---|---|---|
-| `**From:**` | ``**From:** `#12805` `` | the **owning `[TASK]`**, lifted from the step's own attribution in the QA comment — no derivation needed |
-| `**Step:**` | `**Step:** 3` | which step of that run failed |
+| `**From:**` | ``**From:** `#12805` `` | the **owning `[TASK]`**, lifted by `manual-qa` from the `AB#<id>` references in the commits the failing flow exercises — no derivation needed |
+| `**Step:**` | `**Step:** flow 3 ("search and filter"), sub-step 2` | which flow of that pass, and which sub-step of it, failed. No permalink — the pass is composed in `manual-qa`'s session and posted nowhere, so there is nothing to link to |
 
-**Both are absent on a finding captured outside any step**, which has no step and no attribution.
+**Both are absent on a finding captured outside any flow**, which has no flow and no attribution.
 That is normal for an ad-hoc finding, not a defect in it: fall back to the `[TASK]` map from context
 loading for the owning slice, and say you derived it rather than reading it.
 

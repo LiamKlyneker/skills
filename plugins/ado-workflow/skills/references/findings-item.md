@@ -18,23 +18,20 @@ type**, the board states and the title prefixes. Nothing below hardcodes one.
 `[SPEC]`, `[TASK]`, `[FINDINGS]` and `[BUG]` are **shorthand for the adapter's *Title prefixes*
 row**, written out for readability. If that row names different prefixes, they win.
 
-**What the MCP does here is narrow, and worth saying out loud: it reads a comment, ticks a box,
-appends a finding, and creates a work item. It never judges whether a finding is correct.** The
-human decides a step failed; `triage` and the human decide what a finding is. Every call below is
+**What the MCP does here is narrow, and worth saying out loud: it reads a work item, appends a
+finding to it, creates it, and closes it. It never judges whether a finding is correct.** The
+human decides a flow failed; `triage` and the human decide what a finding is. Every call below is
 bookkeeping on a decision a person already made.
 
 ## One per run, created lazily
 
 **One item per *run*, never one per `[SPEC]`.** A run is the slice of `[TASK]`s a single
-`work-on-spec` loop landed, and it is the same unit the QA comment covers — one comment, one pass,
-one findings item.
+`work-on-spec` loop landed, and it is the unit a pass covers — one pass, one findings item.
 
 **It is created on the first failure of a pass and not before.** A pass that finds nothing creates
-nothing: no item, no empty item, no "no findings" placeholder. That is the rule the QA comment
-already runs on — a `[TASK]` nobody can exercise earns no step, and a run nobody can exercise earns
-no comment at all (`../work-on-spec/SKILL.md` → *Loop end* → *What earns a step*). An item created
-up front would put a work item on the board for every clean pass, and every one of them would have
-to be opened to learn it was empty.
+nothing: no item, no empty item, no "no findings" placeholder. An item created up front would put a
+work item on the board for every clean pass, and every one of them would have to be opened to learn
+it was empty.
 
 A second run against the same `[SPEC]` gets its **own** item. The first is never reopened, never
 appended to, and never edited.
@@ -75,46 +72,46 @@ not either of these.
 
 ## How `triage` finds it — decided, once, here
 
-**`triage` takes the `[FINDINGS]` id out of the run-context line of the run's QA comment on the
-`[SPEC]`.** That is the route, and it is the only automatic one.
+**`triage` scans the parent's children for the `[FINDINGS]` title prefix.** That is the route, and
+it is now the only automatic one. The prefix is **load-bearing on this tracker by design** — every
+kind of child under that parent is the same work-item type, so the prefix is the only thing that
+separates a findings item from a `[TASK]` or a `[BUG]`, and it is the adapter's *Title prefixes*
+row that supplies the literal.
 
-So `manual-qa`, on the **first failure of a pass**, does two writes in this order:
+**There is no write-back into a QA comment, and there is no QA comment.** This document used to
+name the run-context line of `work-on-spec`'s per-run QA comment as the primary lookup, with the
+first failure of a pass appending a ``` · findings `#<id>` ``` clause to it as a never-edit
+carve-out. The loop posts no such comment any more, so both halves are gone: `manual-qa` creates
+the item and appends findings to it, and writes nothing anywhere else to say the item exists.
 
-1. create the item (above);
-2. append its reference to the run-context line of the QA comment — the **third never-edit
-   carve-out** `work-on-spec`'s `## Loop end` declares, which exists for exactly this.
+So `manual-qa`, on the **first failure of a pass**, does exactly one write — it creates the item
+(above) — and names the new item's id **backticked, in the terminal and in its end-of-pass
+receipt** on the `[SPEC]`. That receipt is free-form output: it is a courtesy to a human reading
+back, **not** a lookup route, and nothing parses it.
 
-The literal, appended once to the end of the run-context line and never repeated per step:
+**What the scan cannot do, stated plainly**, because the route it replaced could:
 
-```
- · findings `#12811`
-```
+- **It cannot say which run.** One parent carries every `[SPEC]`'s findings items and every run's,
+  so a scan returns N and has to narrow. What narrows it is what the item itself carries — the spec
+  title and run date in its title, and the `Spec: #<spec-id>` line at the top of its description —
+  and `triage` says which item it picked and which run that is, rather than assuming the newest.
+- **It cannot distinguish a clean pass from a failed search.** No matching item means no failure was
+  recorded, which is the common case; but that is an inference from an absence rather than a stated
+  fact, so `triage` reports which parent it scanned and what it matched on, and lets the human
+  correct it.
 
-Space, middle dot, space, the word `findings`, space, the id **backticked**. Backticked because a
-bare id would render a full-width chip and silently wire a second `Related` relation onto the
-`[SPEC]`; the run-context line already spends this comment's one permitted bare mention on the
-`[SPEC]`'s own id.
+Both costs are accepted rather than overlooked. The alternative was a lookup that only worked
+because the loop first published a script it had no business writing.
 
-**Written once.** Every failure in a run points at the same item, so the line names it on the first
-failure and no later failure touches the line again.
+**Walking the `[SPEC]`'s relations is still not a route.** It narrows to a spec, not to a run — the
+same ambiguity one level down — and the relation set is not trustworthy: a bare `#NNNN` anywhere in
+any body silently creates a `Related` link
+([`../_shared/ado-workitem-authoring.md`](../_shared/ado-workitem-authoring.md) §2), so a `[SPEC]`'s
+relations accumulate items nobody linked on purpose.
 
-**An absent reference is a real answer, not a lookup failure.** A run-context line with no
-`findings` clause means that pass recorded no failure, so there is nothing to triage. That is the
-property the other candidate routes cannot supply, and it is what decides between them:
-
-- **Scanning the parent's children for the `[FINDINGS]` prefix.** The prefix says *what kind of
-  item this is*; it can never say *which run*. One parent carries every spec's findings items and
-  every run's, all of them the same work-item type, so a scan returns N and has to guess. And it
-  cannot tell *the pass was clean* from *I failed to find it* — a clean pass being the common case,
-  that is the outcome it would get wrong most often.
-- **Walking the `[SPEC]`'s relations.** Narrows to a spec, not to a run: the same ambiguity one
-  level down. Worse, the relation set is not trustworthy — a bare `#NNNN` anywhere in any body
-  silently creates a `Related` link (§2, and `work-on-spec`'s backticked-ids rule), so a `[SPEC]`'s
-  relations accumulate items nobody linked on purpose.
-
-A **pasted id** is still accepted: a human who hands `triage` a `[FINDINGS]` id has answered the
-question, and the lookup is skipped. That is an input shortcut, not a second discovery route — the
-comment stays the source of truth for a session given only a `[SPEC]`.
+A **pasted id** is the shortcut, and it is the input worth offering whenever the scan is ambiguous:
+a human who hands `triage` a `[FINDINGS]` id has answered the question, and the lookup is skipped
+entirely. That is an input shortcut, not a second discovery route.
 
 ## The body
 
@@ -128,7 +125,7 @@ Findings from the QA pass on the run of 2026-08-02 — PR [<repo> PR 4711](https
 
 ### [FINDING] 1 — <one-line symptom>
 
-**Step:** 3
+**Step:** flow 3 ("search and filter"), sub-step 2
 **From:** `#12805`
 
 **Symptom:** what the tester saw.
@@ -156,21 +153,21 @@ prose — instructions pasted inside a body template ship to the reader as work-
 - **Findings are numbered from 1, continuously, in the order they were appended.** The writer gets
   the next ordinal by counting `### [FINDING] ` markers in the description it just read; it has to
   read the field before appending anyway (below), so this costs nothing.
-- **`**Step:**` carries the step number and nothing else.** No permalink: the comment `add` call
-  returns a REST url rather than a page a human opens, and this plugin has no measured UI anchor
-  for a work-item comment. Run provenance is the item itself — one item, one run — so there is
-  nothing left for the field to disambiguate.
-- **`**From:**` is the backticked owning-`[TASK]` id**, lifted verbatim from the step's own
-  attribution in the QA comment (the fourth literal in `work-on-spec`'s contract table). Backticked
-  for the same reason as everywhere else. Space-separated where the step named more than one.
-- **Both fields are omitted entirely on a finding noticed outside any step** — there is no step and
+- **`**Step:**` carries the position in the pass — flow number, flow name, sub-step number.** No
+  permalink, and none is possible: `manual-qa` composes the pass in its own session and posts it
+  nowhere, so there is nothing to link to. Run provenance needs no field either — the item **is**
+  the run — so the field's whole job is saying where inside the pass it failed.
+- **`**From:**` is the backticked owning-`[TASK]` id**, lifted by `manual-qa` from the `AB#<id>`
+  references in the commits the failing flow exercises. Backticked for the same reason as
+  everywhere else. Space-separated where the flow exercises more than one.
+- **Both fields are omitted entirely on a finding noticed outside any flow** — there is no flow and
   no attribution to lift. Omit the lines; do not write "n/a".
 - **Escape angle brackets at synthesis time** (§1). A description escapes rather than strips, so
   nothing is lost either way, but pre-escaping is what makes the body survive whichever call it
   later goes through.
 - **Prefer inline code spans to fenced blocks for pasted output.** A fence in a *comment* comes back
-  **empty** (`work-on-spec`'s third authoring rule, measured). No equivalent has been measured for
-  a description — treat that as unknown rather than safe. Where a multi-line paste is genuinely
+  **empty** — measured on this tracker, and the reason the plugin puts commands in code spans. No
+  equivalent has been measured for a description — treat that as unknown rather than safe. Where a multi-line paste is genuinely
   unavoidable, read the description back after the write and confirm the block survived.
 
 ## Why the description, and not comments
@@ -183,14 +180,15 @@ worded that way.
 
 A findings body is the most markup-dense thing this plugin writes: pasted error text, element names,
 generic types, file paths. `triage` has to read it faithfully or it root-causes the wrong thing. So
-findings go where reading is lossless, and the QA comment — prose a human wrote and a driver ticks —
-stays where it is.
+findings go where reading is lossless. The only thing this plugin still posts as a *comment* on a
+work item is `manual-qa`'s free-form receipt, which nothing reads back — so a strip there costs a
+sentence's polish, not a root cause.
 
 ## Appending a finding
 
 **There is no append operation on a long-text field.** A JSON-Patch `op: "add"` against
 `/fields/System.Description` replaces the whole field, so every append is a genuine
-read-modify-write, with the same discipline as the QA comment's ticks:
+read-modify-write, and it takes the full discipline:
 
 1. **Fresh read immediately before every write.** `wit_work_item` (`action: "get"`), `expand:
    "relations"` and **no** `fields` filter — the two are mutually exclusive and a filter suppresses

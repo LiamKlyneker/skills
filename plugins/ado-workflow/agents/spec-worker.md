@@ -99,15 +99,12 @@ Report exactly these, in this order:
    Empty is a valid answer; silence is not. A `[TASK]` body is slim on purpose and its `[SPEC]`
    can have moved on since it was written — where the two disagree, say so here rather than
    quietly picking one.
-4. **Refined QA notes** — concrete steps for the run's QA comment on the `[SPEC]`, refining the
-   `[TASK]`'s `## QA notes`. Each one is an action a human takes in the running app plus the
-   observable result they should get; "it looks right" is not a result.
-
-   **Only if this `[TASK]` produced something a human can exercise.** A dependency bump, a
-   config change, a pure refactor or internal-only work earns no step — for those, write one
-   line saying what shipped and that there is nothing to exercise by hand, and stop there. Do
-   not manufacture a step to fill the section. The orchestrator drops such lines rather than
-   promoting them, and an invented step costs a tester real time discovering it tests nothing.
+4. **Testability signal** — one line: what a human can exercise in the running app as a result
+   of this `[TASK]`, or the single word `nothing`. A dependency bump, a config change, a pure
+   refactor or internal-only work answers `nothing`. This is not a QA script: the pass is
+   composed later by `ado-workflow:manual-qa` from the diff and the commits, so steps written
+   here would be discarded. The orchestrator uses this one line to decide whether the `[SPEC]`
+   gets the `needs-qa` tag.
 5. **Or** an honest "could not finish X because Y", with the attempts announced.
 
 No report theater — evidence over prose.

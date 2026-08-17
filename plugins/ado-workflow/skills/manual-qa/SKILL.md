@@ -277,8 +277,9 @@ for one run.**
 **There is no run-context line to write the reference into any more.** That write-back was the third
 never-edit carve-out on a QA comment this skill no longer reads, and a comment it never posts. The
 run's `[FINDINGS]` id is instead named **in the end-of-pass receipt**, backticked, and reported in
-the terminal at the moment of creation. `findings-item.md` already accepts a **pasted id** as
-`triage`'s input, and that is the route until its discovery half is revised.
+the terminal at the moment of creation. `findings-item.md`'s discovery half is now a **prefix scan
+of the parent's children**, with a **pasted id** as the shortcut — so naming the id in both places
+is what makes that shortcut cheap for the human to take.
 
 **One finding per turn. Never batch.** Append it, report the finding's number and a one-line recap,
 then move to the next flow.

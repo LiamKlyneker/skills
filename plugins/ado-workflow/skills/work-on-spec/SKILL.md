@@ -43,9 +43,9 @@ Every project-specific value comes from the **project adapter** at
 project**, the team, the repository, the work-item type, the **three board states**, the title
 prefixes and the **branch pattern**. From the rest of the adapter: the `## Commands` table, the
 verify ladder, and the `## Project gates` registry. The adapter carries no QA convention on
-either tracker any more and names no QA path: this loop's QA artifact is a **comment on the
-`[SPEC]` plus a `needs-qa` tag on it**, so the loop writes no file and creates no work item at
-all (see *Loop end*).
+either tracker any more and names no QA path: this loop's whole QA output is a **`needs-qa` tag on
+the `[SPEC]`** plus a printed `ado-workflow:manual-qa` invocation, so it writes no file, creates no
+work item and posts no QA comment at all (see *Loop end*).
 
 **Abort** if the adapter is missing, or if its `Tracker:` line is anything other than
 `azure-devops` (an absent line means `github` — that project wants `work-on-prd`). Guessing an
@@ -107,10 +107,11 @@ Requires the Azure DevOps MCP server (`mcp__ado__*` tools).
   of the whole spec it moves to the claimed state; after that the state is never written again —
   not advanced, not closed. The human runs QA against it and may add `[TASK]`s afterwards, and a
   spec parked in the claimed state is what says "this is being run".
-- **The `[SPEC]` takes exactly two other writes, both at loop end**: the run's **QA comment** and
-  the **`needs-qa` tag**. Together they are the whole QA artifact (*Loop end* §1), they are
-  written once per run, and they are not a status feed — nothing else is ever commented onto the
-  `[SPEC]`, and no progress or per-`[TASK]` commentary goes anywhere near it.
+- **The `[SPEC]` takes exactly one other write, at loop end**: the **`needs-qa` tag** (*Loop end*
+  §1), written once per run. **No QA comment is posted** — this loop composes no QA pass, and the
+  comment it used to write is gone with the template that shaped it; `manual-qa` composes a pass in
+  its own session, from the branch. Nothing is ever commented onto the `[SPEC]` by this loop, and
+  no progress or per-`[TASK]` commentary goes anywhere near it.
 - **No field of the parent work item is ever written.** It is read to walk the spec's siblings
   (per the eligibility mechanics), and for nothing else. Loop end used to re-read it to confirm a
   `[QA]` item's hierarchy link had landed, and before that to lift its **acceptance criteria**
@@ -119,8 +120,8 @@ Requires the Azure DevOps MCP server (`mcp__ado__*` tools).
   the way `to-spec-tasks` places a `[TASK]`. No field, no state, no comment: it belongs to
   Product.
 - **No status feed.** The loop's only writes to work items are board-state moves on `[TASK]`s, the
-  single `[SPEC]` state move above, escalation comments on failed `[TASK]`s, and the QA comment
-  plus `needs-qa` tag on the `[SPEC]` at loop end.
+  single `[SPEC]` state move above, escalation comments on failed `[TASK]`s, and the `needs-qa`
+  tag on the `[SPEC]` at loop end.
 
 ## Setup (idempotent — cold start and resume are the same code path)
 
@@ -227,9 +228,9 @@ it; it is armed unless you actively disarm it. That inverts the failure mode: an
 to this PR *will* be transitioned on completion. There used to be a rule in *Loop end* built
 around that — the `[QA]` work item was never attached, because completion would have closed the
 QA pass on the human's behalf. **That rule is retired** along with the item. The QA artifact is
-now a comment plus a `needs-qa` tag on the `[SPEC]`, and both survive the `[SPEC]` being
-transitioned untouched, so there is nothing left here to keep off the PR (*Loop end* §2 has the
-reasoning in full).
+now the `needs-qa` tag on the `[SPEC]` plus whatever `manual-qa` writes during a pass, and none of
+it is touched by the `[SPEC]` being transitioned, so there is nothing left here to keep off the PR
+(*Loop end* §2 has the reasoning in full).
 
 Then **read the PR back and confirm** — attached ids present, flag set. Do not trust the write; an
 ignored field is the cheapest thing in this whole loop to get wrong and the most expensive to
@@ -318,215 +319,32 @@ transition anything.
 
 ## Loop end (no eligible `[TASK]`s left)
 
-Three things, in order: the QA comment, the pull-request body, the final summary.
+Three things, in order: the QA handoff, the pull-request body, the final summary.
 
-### 1. The QA comment — one per *run*
+### 1. The QA handoff — the tag, then the invocation
 
-**Create no work item, and commit nothing.** The QA artifact is a **Markdown comment on the
-`[SPEC]`**, plus the **`needs-qa` tag on that same `[SPEC]`**. This loop has moved twice: it once
-wrote a markdown document to a path in the adapter, then it created a per-run `[QA]` work item
-parented beside the `[SPEC]`. It does neither now — the adapter names no QA path, and **no `[QA]`
-work item is created anywhere in this skill**. There is no longer a reference document describing
-the shape of one, either — if you find something telling you to read one, or to write a file at a
-QA path, it predates this section. Everything normative about the artifact is here.
+**Create no work item, commit nothing, and post no QA comment.** This loop no longer composes a QA
+pass. `ado-workflow:manual-qa` composes one on demand, in its own session, from what actually landed
+on the branch — the diff, the commits and the `AB#<id>` reference each one carries — so a script
+written *here*, before the code existed, could only describe what the run planned to make testable.
+The loop has moved three times: a committed markdown document, then a per-run `[QA]` work item beside
+the `[SPEC]`, then a per-run tickable comment on the `[SPEC]`. It does none of them now, and none of
+the machinery any of them needed survives here — no template, no heading rules, no step anchors, no
+never-edit rule and no carve-outs from it, no second-run link-back. Loop end's entire QA output is a
+tag and a printed line.
 
-**No one-time human precondition on this tracker.** GitHub's `needs-qa` is a **label**, which a
-human must create once before `work-on-prd` can apply it. An Azure DevOps **tag** is created
-implicitly the first time it is used, so there is nothing to arrange in advance and nothing that
-can fail because a vocabulary entry is missing.
+- **Tag the `[SPEC]`** `needs-qa` — **iff at least one `[TASK]` in this run reported something a
+  human can exercise** (worker report contract, item 4). The tag means **"not yet QA'd"** and
+  nothing else: it is the operator's queue, and `manual-qa` is what removes it. A WIQL query on
+  `[System.Tags] CONTAINS 'needs-qa'` returns every `[SPEC]` awaiting a pass **regardless of state**,
+  so an item the pull request has already transitioned is still in it — which is why the tag, and
+  not a state, is the queue. A run of nothing but bumps, config and refactors earns no tag; say so
+  in the final summary, so the absence reads as a decision and not a forgotten step.
 
-`work-on-prd` posts a comment on the PRD issue and labels it; this loop posts a comment on the
-`[SPEC]` and tags it. The two arrived at the same shape, but they are **siblings, not a shared
-file with two call sites**: every literal below is this tracker's, and none of the GitHub
-mechanics carry across — in particular that loop's `<!-- 75 80 -->` id trailer, which does not
-survive here at all.
-
-The person running QA reads this comment, but they are not its only consumer:
-**`ado-workflow:manual-qa` parses it**, so parts of the template below are load-bearing string
-contract rather than house style.
-
-**What the consumer depends on.** Five literals; each is written here, by `manual-qa`, or by both:
-
-| Literal | Written by | Read by |
-|---|---|---|
-| the **run-context line** + the **`## Steps` heading**, as a pair | loop end | identifying the QA comment among the `[SPEC]`'s comments — never a fragile substring, and `## Before you start` cannot serve because it is conditional |
-| the step anchor `- [ ] <n>. ` — bracket, space, number, dot, space | loop end | locating the single line to rewrite; continuous numbering from 0 is what makes it unique |
-| **checkbox state** `[ ]` / `[x]` | loop end, then `manual-qa` | resume position, and the end-of-pass check |
-| the **backticked owning-`[TASK]` id** on each step | loop end | lifted into the finding's attribution |
-| the terminal failure suffix ` — **failed**` | `manual-qa` | resume position; distinguishes a step nobody has run yet from one that ran and failed |
-
-Change any of those five and you must change them in `manual-qa` in the same commit. Everything
-else here — the section order, the sources, the earning rule — is normative because it is right,
-not because a parser depends on the wording.
-
-**There is no hidden id trailer, and that is not an oversight.** GitHub's mechanism does not port.
-In a **comment**, an HTML comment is stripped out of the API read entirely — write `<!-- 75 -->`
-and it is simply not in the body `manual-qa` reads back, so the attribution it exists to carry is
-gone with it. In a **description** it survives only entity-escaped, which renders visibly on
-screen. Ids therefore ride **in the open, backticked**, in the step text itself.
-
-**One per run, never one per `[SPEC]`.** A run covers exactly the slice of `[TASK]`s that just
-landed. A second run against the same `[SPEC]` posts a **second comment** and **never edits the
-first**. That is the whole point of a per-run artifact rather than a committed document: a
-document at a fixed path accumulates every run's output, goes stale silently, and gives the human
-no way to tell which half they already tested.
-
-**Why a comment, and what it buys.** The operator gets one queue from a WIQL query on
-`[System.Tags] CONTAINS 'needs-qa'` — every `[SPEC]` awaiting a manual pass, **regardless of
-state**, so an item the pull request has already transitioned is still in it. They open the
-`[SPEC]` and the steps sit in its Discussion, beside the `[TASK]`s they describe. The receipt is
-**tick state**: every box `[x]`, no failure suffix anywhere, and the tag removed. Removing
-`needs-qa` is a human action nothing enforces and nothing simulates — do not remove it yourself,
-and do not post a second comment announcing the pass is done.
-
-**Ticking is not authoring.** The never-edit rule has **exactly three carve-outs**, all records of
-a pass rather than acts of authorship, and all of them `manual-qa`'s to write:
-
-1. **Checkbox state.** Every step is a `- [ ]` item and `[ ]` ↔ `[x]` may change after posting, so
-   a tester records progress in place and resumes a partial pass instead of restarting it.
-2. **The terminal failure suffix** — ` — **failed**`, plus its pointer to the logged finding —
-   appended at the **end** of a step's line when that step failed. It is **append-only**: the step
-   text and its backticked id stay byte-identical, nothing is re-rendered or reflowed, and the box
-   stays `[ ]`. It is **reversible** — re-testing that step and passing drops the suffix and ticks
-   the box in one write, which is the only reason "every box ticked, no suffix left" can mean
-   "everything passed".
-3. **The `[FINDINGS]` reference in the run-context line, written once.** The line names the run's
-   `[FINDINGS]` item, and that item **does not exist when this comment is posted** — `manual-qa`
-   creates it lazily, on the first failure of the pass. So this contract permits exactly one
-   write-back into the run-context line: the reference to that item, the first time there is one.
-   Every failure in a run points at the same item, so per-step links would be noise; the line
-   names it once and the steps do not repeat it.
-
-**Everything else stays forbidden**, and the list is not illustrative: no rewording a step (not
-even a typo fix, not even to sharpen an expected result), no appending a new step to a posted
-comment — a step that was missed belongs to the next run's comment — no deleting a comment, no
-adding or removing a heading, no re-ordering or re-numbering steps, and no reply-comment that
-amends the script. The comment says what that run shipped and what it claimed a tester could
-exercise; the carve-outs record what a tester subsequently observed. They do not make the tester a
-second author.
-
-**What earns a step.** A landed `[TASK]` earns a step **only if a human can exercise it in the
-running app**. Dependency bumps, config changes, pure refactors, internal-only work and setup
-contribute **nothing**: no step, and **no standalone "nothing to test here" line, paragraph or
-section**. Those lines are the entire reason the committed QA documents this replaces reached 440
-lines — every landed item earned a section whether or not anybody could act on it, so the sections
-that mattered were buried among the ones that didn't. Such a `[TASK]` gets **nothing at all**: not
-a line, not a parenthetical, not a heading of its own. The single exception is a `[TASK]`
-deliberately left for a human, or a slice deferred to a later run — something a tester would
-otherwise chase as a defect. That earns **one line under `## Before you start`** and nothing more.
-Applied honestly, most runs produce a comment far shorter than the list of things they landed.
-That is the intended shape, not a sign something was missed.
-
-**Nothing testable in the whole run → post nothing and tag nothing.** If **no** `[TASK]` in the
-run produced anything a human can exercise, there is no comment and no `needs-qa` — an empty QA
-comment is worse than none, being a thing a person has to open and read in order to learn nothing,
-and a tag pointing at it puts a `[SPEC]` in the queue that has no pass to run. Say so explicitly,
-in both places the comment would otherwise have been named: the **final summary** ("no QA comment:
-nothing in this run is manually testable", plus the list of `[TASK]`s the run landed) and the
-**pull-request body**, where the `QA:` line would have gone — the same sentence. Silence in either
-place reads as a forgotten step rather than a decision.
-
-**The body:**
-
-<qa-template>
-
-Run of `[SPEC]` #<spec-id> — <n> `[TASK]`s landed <date> · PR [<repo> PR NNNN](https://dev.azure.com/<org>/<repo-project>/_git/<repo>/pullrequest/NNNN)
-
-## Before you start
-
-- <the thing that will look broken and is not, and why — or a `[TASK]` deliberately left for a human>
-
-## Steps
-
-- [ ] 0. <the setup a tester does once, before anything else> → expect <the observable result> (`#12805`)
-- [ ] 1. <action to take in the running app> → expect <the observable result> (`#12805`)
-- [ ] 2. <action> → expect <result> (`#12805` `#12810`)
-
-</qa-template>
-
-The rules governing that template are deliberately written **outside** the fence. Copy the fence,
-not this prose — instructions pasted inside a body template ship to the reader as comment text.
-
-**There are exactly two headings, one of them conditional, and there is no third heading, ever.**
-Every section this artifact has ever grown was a place for content that turned out not to change
-what the tester does — and the failure is not hypothetical: the real item this replaces grew a
-`## New tKeys to register in DCJ` section, published under its own heading, describing work that
-appears in no commit on any branch. The run invented it. A heading is an invitation to fill it.
-
-- **The run-context line** carries no heading and is the comment's first line: the `[SPEC]`, how
-  many `[TASK]`s landed, the date, the pull request, and — once `manual-qa` has created one — the
-  run's `[FINDINGS]` item. It is the top half of the identifying pair, so it is never omitted.
-- **`## Before you start` is conditional.** Include it only when something will look broken and is
-  not — a dangling symlink a later `[TASK]` repairs, a migration the tester has to run first, a
-  feature flag that is off, a `[TASK]` deliberately left for a human, a slice deferred to a later
-  run. A **run-wide** deviation lands here too. **Omit the heading entirely** otherwise; a "None"
-  under it is the 440-line habit in miniature.
-- **`## Steps` is always present** — the comment exists because at least one `[TASK]` earned a
-  step, so it has content by construction.
-- **Every step is a `- [ ]` task-list item.** The tick is how a pass records progress and how a
-  half-finished one resumes: `manual-qa` writes the box back as the human confirms each step.
-- **Steps are numbered continuously across the whole run, starting at 0**, in the order a human
-  would sit down and work through them — not grouped by `[TASK]`, not restarted per section.
-  **Step 0 is the setup** a tester does once before anything else: the branch to check out, the
-  environment to point at, the migration to run. No setup needed → the first real action is step 0.
-- **Every step states an expected observable result.** A step whose expected result is "it looks
-  right" is not a step — either name what the tester should see, or the change did not earn a step.
-- **Every step carries the `[TASK]` it came from**, backticked, space-separated when a step came
-  from more than one. The attribution is not optional: a failed step has to route back to the
-  `[TASK]` that owns it, and that is the id `manual-qa` lifts into the finding it files.
-
-**Three authoring rules, all measured, all silent when broken:**
-
-- **Ids are backticked.** `` `#12805` `` renders as compact grey code — no chip, no link. A bare
-  `#12805` becomes a **full-width chip** *and* silently creates a `Related` link between the two
-  work items, so an eight-step comment quietly wires eight relations onto the `[SPEC]` and pushes
-  the script off the page. **Exactly one bare mention is permitted**, the `[SPEC]` id in the
-  run-context line, where both effects are wanted. The **pull request is never `#NNNN` at all**:
-  that shortcut resolves to the *work item* of that number and sends the tester somewhere
-  unrelated ([`../_shared/ado-workitem-authoring.md`](../_shared/ado-workitem-authoring.md) §2).
-  Link it in full, with `<org>`, the **repo project** and `<repo>` from the adapter.
-- **Angle brackets are always `&lt;` / `&gt;`**, escaped at synthesis time, before the body is
-  sent (same reference, §1). A raw `<div className="x">` is **stripped to `<div>`** in the comment
-  API's read, and `Array<string>` loses `<string>` outright — the sanitiser does **not** respect
-  code spans, so backticks save nothing. This is the most bracket-dense body the plugin writes,
-  and because `manual-qa` reads the comment, edits one line and writes it back, raw markup in
-  *untouched* steps is destroyed on the first tick. The UI renders a comment's **sanitised** text
-  rather than its `renderedText` (§8), so the damage reads as a sentence that was always worded
-  that way — vanishing text, not visible junk.
-- **Fenced code blocks are forbidden.** A fence containing markup comes back **empty**: the step's
-  whole expected result is gone, leaving a blank grey box on screen. Put the command inline in a
-  code span with its brackets escaped, or state it in prose.
-
-**A deviation earns a place in this comment only if it changes what the tester does**, and where
-it lands follows from that: a deviation attached to **one step** folds into that step's
-expected-result clause, where the tester meets it at the moment it matters rather than twenty
-steps early; a **run-wide** one becomes a `## Before you start` line. Everything else — code-review
-notes, observations about the diff, "this table is duplicated in two skills" — goes in the
-**pull-request description**. There is deliberately no heading left to park it under.
-
-**Built from two sources, and only two:** each worker's **refined QA notes** (item 4 of the report
-contract — these are the steps; the `[TASK]`'s own `## QA notes` are what the worker refined, not a
-second source to merge back in), and each worker's **deviation log** (item 3) with the edge cases
-it flagged, filtered by the rule above. Nothing else: not the `[SPEC]`'s body, not the `[TASK]`s'
-acceptance criteria, not the diff. A QA comment assembled from the artifacts instead of the
-reports describes what was *planned*; the reports are the only record of what was actually built.
-
-Then the Azure DevOps mechanics:
-
-- **Post** with `mcp__ado__wit_work_item_comment_write` (`action: "add"`), against the adapter's
-  **work-item project** and the `[SPEC]`'s id, passing **`format: "Markdown"`**. Without that flag
-  the comment lands as HTML and the headings, checkboxes and code spans this contract is made of
-  arrive as literal text.
-- **Carry the format forward rather than probing for it.** A read never reports a stored format
-  (`../_shared/ado-workitem-authoring.md` §8), so nothing downstream can discover it — every later
-  `action: "update"` on this comment, `manual-qa`'s ticks included, must pass `format: "Markdown"`
-  again. It is stated here because the writer is the only place that knows.
-- **Then tag the `[SPEC]`** `needs-qa`. **Comment first, tag second, always**: the tag is the queue
-  signal, and a `[SPEC]` in the queue with no comment under it sends the operator looking for steps
-  that do not exist. `System.Tags` is a single semicolon-separated string, so this is a
-  read-modify-write — read the `[SPEC]`'s current tags, append `needs-qa`, write the whole list
-  back. Writing the tag on its own replaces every tag the item had. Re-tagging an item that
-  already carries it is a no-op, which is what makes a second run against the same `[SPEC]` safe.
+  `System.Tags` is a single semicolon-separated string, so this is a **read-modify-write**: read the
+  `[SPEC]`'s current tags, append `needs-qa`, write the whole list back. Writing the tag on its own
+  replaces every tag the item had. Re-tagging an item that already carries it is a no-op, which is
+  what makes a second run against the same `[SPEC]` safe.
 
   ```
   wit_work_item_write  { action: "update", project: <work-item project>,
@@ -535,30 +353,48 @@ Then the Azure DevOps mechanics:
                                       value: "<the existing tags>; needs-qa" }] }
   ```
 
-- **Read both back before reporting.** `mcp__ado__wit_work_item` (`action: "list_comments"`) for
-  the comment, and a fetch of the `[SPEC]` for `System.Tags`. Same reason every other write in this
-  loop is read back: a swallowed failure here leaves a comment nobody is queued to find, or a queue
-  entry with nothing under it, and both look exactly like a run that finished cleanly.
+  **Then read `System.Tags` back and confirm** before reporting it applied. Same reason every other
+  write in this loop is read back: a swallowed failure leaves a run nobody is queued to test, and
+  that looks exactly like a run that finished cleanly.
+
+  **No one-time human precondition on this tracker.** GitHub's `needs-qa` is a **label**, which a
+  human must create once before `work-on-prd` can apply it. An Azure DevOps **tag** is created
+  implicitly the first time it is used, so there is nothing to arrange in advance and nothing that
+  can fail because a vocabulary entry is missing.
+
+- **Print the invocation**, for the human to run when they judge the run worth a pass:
+
+  ```
+  /ado-workflow:manual-qa <spec-id>
+  ```
+
+**The loop never invokes `manual-qa` itself.** On demand is the only trigger. The developer who just
+watched the run is the one who decides whether it warrants a pass, and a driver that starts itself at
+loop end is the checklist-nobody-works failure in a new costume.
 
 ### 2. Pull-request body
 
-Replace the placeholder `QA:` line from Setup step 3 with a pointer to the QA comment — or with
-the no-QA sentence if none was posted — and bring the task checklist to its final state. Same call
-and same **repo project + repository** as every other PR-shaped call
-(`mcp__ado__repo_pull_request_write`, `action: "update"`). It stays `isDraft: true`.
+Replace the placeholder `QA:` line from Setup step 3 with the `manual-qa` invocation, and bring the
+task checklist to its final state. Same call and same **repo project + repository** as every other
+PR-shaped call (`mcp__ado__repo_pull_request_write`, `action: "update"`). It stays `isDraft: true`.
 
-**Point at the `[SPEC]`, not at a comment permalink.** The `add` call returns the comment's REST
-url, which is not the page a human opens, and this skill has no measured UI anchor for a work-item
-comment to compose one from. Name the `[SPEC]` as `AB#<spec-id>` — the same form the body skeleton
-from Setup step 3 already uses — and say where the steps are, e.g.
-`QA: steps are in the Discussion of AB#12805, which now carries needs-qa`.
+**The `QA:` line is the invocation** — literally `QA: run /ado-workflow:manual-qa <spec-id>`, the
+same line §1 printed, with the `[SPEC]` named as `AB#<spec-id>` beside it if the description wants
+the chip. Omit the line entirely when §1 applied no tag, and say in the final summary that nothing
+in this run is manually testable. **After loop end this line is `manual-qa`'s alone** — the loop
+writes it once and never touches it again.
+
+**The workers' deviation logs land here too** — code-review notes, observations about the diff,
+edge cases a reviewer should know about — in whichever part of the description takes notes on the
+change. They have nowhere else to go: §1 posts nothing.
 
 **The `[QA]` item's never-link rule is retired, and nothing replaces it.** It said: never attach
 the `[QA]` work item to the pull request, because completion options transition every linked work
 item and `transitionWorkItems` **defaults to `true`** (*Pull-request wiring*) — so a linked `[QA]`
 item would close itself the moment a human completed the PR, a QA pass that marks itself done.
-What that rule was protecting was **closure as the receipt**. It is not the receipt any more: the
-tick state in the comment is, and a comment survives its work item being closed, untouched.
+What that rule was protecting was **closure as the receipt**. It is not the receipt any more:
+`manual-qa`'s free-form receipt comment and the tag it removes are, and neither is touched by the
+`[SPEC]` being transitioned.
 
 What auto-close would still cost is the **queue** — a closed item drops off the board — and the
 tag is what solves that: a WIQL query on `[System.Tags] CONTAINS 'needs-qa'` returns the `[SPEC]`
@@ -574,18 +410,19 @@ Printed to the session — the loop writes no status feed to the tracker. Report
 - `[TASK]`s **done** (id, title) · **skipped** (id, and why: unmet `## External steps`, blocked by
   something outside this spec) · **failed** (id, and the gist of the escalation comment).
 - **Deviations worth reading** — from the workers' deviation logs, the ones that change what a
-  reviewer or tester should expect. Not every line; the QA comment carries the tester-facing ones.
+  reviewer or tester should expect. Not every line; the pull-request description carries the rest.
 - **Escalations** — anything that paused the run, and anything still waiting on a human.
-- The **QA comment** — that it was posted on the `[SPEC]`, and that the `[SPEC]` now carries
-  `needs-qa` — or the explicit "no QA comment: nothing in this run is manually testable", with the
-  reason.
+- The **QA handoff** — that the `[SPEC]` now carries `needs-qa`, plus the
+  **`/ado-workflow:manual-qa <spec-id>`** invocation for the human to run — or the explicit "no
+  `needs-qa`: nothing in this run is manually testable", with the reason.
 - The **pull request, left open and still a draft**, with its url: it is completed by hand after
   QA (verify ladder L5), and completing it is what transitions the `[TASK]`s.
 
 Everything in *What the loop must not write* still holds at the end: do not complete the pull
-request, do not close the `[SPEC]`, do not remove the `needs-qa` tag you just applied, do not
-reply to your own comment marking the pass done — the human who runs it owns both, and they are
-the only record in the tracker that it was ever run — and write no field of the parent.
+request, do not close the `[SPEC]`, do not remove the `needs-qa` tag you just applied, do not post
+a QA comment or a receipt of any kind — `manual-qa` owns the pass, its receipt and the tag's
+removal, and those are the only record in the tracker that it was ever run — and write no field of
+the parent.
 
 Then release keep-awake — mirror of Setup step 0, no-op if never started:
 
