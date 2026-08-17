@@ -30,7 +30,7 @@ runner. The only executable is
 |---|---|
 | Build | None — nothing compiles |
 | Test — **verify L2 floor** | `bash -n plugins/install-skills/skills/install-skills/scripts/doctor.sh && bash plugins/install-skills/skills/install-skills/scripts/doctor.sh --repo . --quiet` |
-| Manifest check — **also L2 floor** | `claude plugin validate --strict plugins/prd-workflow && claude plugin validate --strict plugins/figma-tools && claude plugin validate --strict plugins/ado-workflow && claude plugin validate --strict plugins/lk && claude plugin validate --strict plugins/install-skills && claude plugin validate --strict .` |
+| Manifest check — **also L2 floor** | `out=$(for p in plugins/prd-workflow plugins/figma-tools plugins/ado-workflow plugins/lk plugins/install-skills .; do claude plugin validate "$p" 2>&1 && continue; echo "VALIDATE FAILED: $p"; done); echo "$out"; ! grep -q -e '❯' -e 'VALIDATE FAILED' <(grep -v 'not read — components are read without following symlinks' <<<"$out")` |
 | Catalog + version gate — **also L2 floor** | `python3 .github/scripts/validate_skills.py --base origin/main` |
 | Boot the app (visual loop) | `claude plugin list` — the loaded-plugin inventory *is* this repo's running state |
 | App screenshot | None — terminal output is the evidence; paste it verbatim |
@@ -39,16 +39,24 @@ runner. The only executable is
 The manifest check covers both plugin manifests and the marketplace catalog (`.`).
 Any new directory carrying a `.claude-plugin/plugin.json` joins that line.
 
-**`--strict`, and zero warnings is the bar.** That row was plain `validate` on purpose
-until #57: manifests carried no `version`, the CLI warned about the missing field, and
-`--strict` is defined as treating warnings as errors, so the two decisions could not
-both hold. All five plugins now carry a `version`, mirrored in
-`.claude-plugin/marketplace.json`, which removes the only warning there was and lets
-`--strict` in. The convention that came with the old row — the missing-`version`
-warning is allowed as the *only* warning — is **gone**; under `--strict` any warning
-fails the check and there is nothing left to wave through. Why omitting `version` was
-ever the safe choice, and what enforces that discipline now instead, is the
-`version` bullet in `## Repo discipline`.
+**Zero warnings is the bar — except the packaging-symlink one.** That row was plain
+`validate` on purpose until #57: manifests carried no `version`, the CLI warned about the
+missing field, and `--strict` (warnings are errors) could not coexist with that. All five
+plugins now carry a `version`, mirrored in `.claude-plugin/marketplace.json`, and #57 turned
+`--strict` on with nothing left to wave through. Then Claude Code CLI **2.1.233** started
+warning on every plugin whose `skills/` directory contains a symlink (`directory: … symlink
+and was not read — components are read without following symlinks …`), and every plugin
+here has one by design: the **packaging symlink** `skills/_shared -> ../../../_shared`
+(`install-skills` also `skills/install -> ../../../install`), kept so a `../_shared/x.md`
+reference resolves identically from `--plugin-dir` and from an install cache — see
+`CLAUDE.md` → "One distribution, one dev mode" and ADR
+[0010](../../docs/adr/0010-one-distribution-one-dev-mode.md). `--strict` has no
+allow-list, so the row runs plain `validate` and enforces strictness itself: it drops
+that one warning line and fails on any other `❯` line or on a non-zero exit. The
+missing-`version` warning is **not** waved through — it is one of the lines that fails
+the row — and if a later CLI stops emitting the symlink warning the filter simply matches
+nothing. Why omitting `version` was ever the safe choice, and what enforces that
+discipline now instead, is the `version` bullet in `## Repo discipline`.
 
 The catalog gate is the only thing CI runs, and the only check this repo owns rather
 than borrows from the CLI: marketplace, plugin manifests, skill and agent frontmatter,
