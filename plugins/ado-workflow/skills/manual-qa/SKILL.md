@@ -1,41 +1,56 @@
 ---
 name: manual-qa
-description: Drive a `[SPEC]`'s QA comment step by step on Azure DevOps — narrate each step, wait for an explicit outcome, tick the box on a pass, and on a failure append a self-contained finding to the run's `[FINDINGS]` work item. Invoke /ado-workflow:manual-qa with a `[SPEC]` id or URL to run or resume a manual QA pass.
+description: Compose a `[SPEC]` run's manual QA pass on Azure DevOps from what actually landed on the branch — the diff, the commits and the landed `[TASK]`s — as a short list of flows, then drive it one flow at a time, taking one verdict per flow and appending a self-contained finding to the run's `[FINDINGS]` work item on a failure. Invoke /ado-workflow:manual-qa with a `[SPEC]` id or URL to run a manual QA pass.
 disable-model-invocation: true
 ---
 
 # manual-qa
 
-Drive the **QA comment** a `work-on-spec` run posted on a `[SPEC]` — one step at a time, gated on
-the human's word — and capture what fails in that run's `[FINDINGS]` work item. This is the
+**Compose the pass, then drive it.** Given a `[SPEC]`, find that run's pull request, read what
+actually landed on the branch, compose a short list of **flows**, and walk the human through them
+one flow at a time — capturing what fails in that run's `[FINDINGS]` work item. This is the
 **capture phase** of the Azure DevOps QA loop. Triage (confirm, root-cause, promote to `[BUG]`s)
 happens **later, in a separate session**, via `ado-workflow:triage`.
 
+**Nothing is read from a QA comment.** The pass is composed here, in this session, from the
+as-built record — not from a script written before the code existed. That is the whole difference:
+a planned step describes what a `[TASK]` was *supposed* to make testable; the diff describes what
+there is to test.
+
 The sibling of `prd-workflow:manual-qa`, and not a second call site of it. Same shape, different
-tracker: a work-item comment instead of an issue comment, one `[FINDINGS]` item instead of a
-`### [FINDING]` comment per failure, a tag instead of a label. Every literal below is this
-tracker's; none of the GitHub mechanics carry across, and the `<!-- 75 80 -->` id trailer does not
-exist here at all.
+tracker: a work item instead of an issue, one `[FINDINGS]` item instead of a `### [FINDING]`
+comment per failure, a tag instead of a label, a local git read instead of `gh pr diff`. Every
+literal below is this tracker's; none of the GitHub mechanics carry across.
+
+**Ids ride in the open, backticked.** There is no hidden id trailer here and there must never be
+one: in a work-item **comment** an HTML comment is stripped out of the API read entirely, so
+`<!-- 75 80 -->` is simply not in the body anyone reads back, and the attribution it exists to
+carry is gone with it. In a **description** it survives only entity-escaped, rendering visibly on
+screen. Backticked in the open is the only form that works on both surfaces.
 
 **Every skill in this plugin is namespaced**, on every route — installed from the marketplace or
 loaded with `claude --plugin-dir`: `/ado-workflow:manual-qa`, `/ado-workflow:triage`, and so on.
 There is no unprefixed form. Unprefixed names below are shorthand for whichever form your route
 provides.
 
-**What the MCP does here is narrow, and stating it is the point: it reads a comment, ticks a box,
-appends a finding, and creates a work item. It never judges whether anything is correct.** Only the
-human's observation in the running app decides an outcome.
+**What the MCP does here is narrow, and stating it is the point: it reads work items, appends a
+finding, creates a work item, drops a tag and posts one receipt. It never judges whether anything
+is correct.** Only the human's observation in the running app decides a verdict.
+
+**No `--post` flag and no second-human path.** The loop is single-developer by design: the person
+who ran it is the person testing it, in this session, on this machine.
 
 ## Project facts
 
 Every project-specific value comes from the **project adapter** at
-`<repo-root>/.claude/project/adapter.md` — read it; never hardcode one here. This skill reads four
+`<repo-root>/.claude/project/adapter.md` — read it; never hardcode one here. This skill reads five
 things and nothing else:
 
 | Adapter section | What for |
 |---|---|
-| `## Repo` → `### Azure DevOps` | organisation, **work-item project**, **work-item type**, board states, title prefixes |
-| `## Verify ladder` | the **L5** rung, which defines what a step must name to be executable at all (see *A structurally unexecutable step is a finding*) |
+| `## Repo` → `### Azure DevOps` | organisation, **work-item project**, **repo project + repository**, work-item type, board states, **branch pattern**, default branch, title prefixes, related repos |
+| `## Commands` | how to launch, build and check the thing — the sub-steps the driver can verify itself |
+| `## Verify ladder` | **L5**, which defines what a sub-step must name to be executable at all, and **L2/L3**, which define what the driver can verify without the human |
 | `## Sources of truth` | the **project explorer agent** for on-demand elaboration — `Explore` where it says None |
 | `Tracker:` line | **abort** if it is anything other than `azure-devops` (an absent line means `github` — that project wants `prd-workflow:manual-qa`) |
 
@@ -66,216 +81,185 @@ omission.
 
 ## Three non-negotiables
 
-1. **Capture, don't solve.** `<the-line>` says exactly where investigation stops. The driver adds
-   gating, not licence to debug.
+1. **Capture, don't solve.** `<the-line>` says exactly where investigation stops. It has not moved:
+   composing the pass added authorship, not licence to debug.
 2. **Every finding is self-contained.** A cold `triage` session reads the `[FINDINGS]` item, not
    this conversation. Symptom, evidence, a `path:line` pointer, a labelled root-cause *hypothesis*,
-   classification, repro — plus which step and which `[TASK]` it came from.
-3. **A `[x]` is a receipt, and it means exactly one thing**: a human executed that step and
-   observed it pass. Nothing else ever ticks it — not "probably fine", not silence, not a change of
-   subject. Tick state is the only record the pass ever happened, so a false tick is a false
-   receipt.
+   classification, repro — plus, here, which flow and sub-step and which `[TASK]`s it came from.
+3. **A pass verdict is a receipt, and it means exactly one thing**: a human executed that flow and
+   observed it work. Nothing else ever produces one — not "probably fine", not silence, not a
+   change of subject. A false pass is a false receipt, and the receipt is the only record the pass
+   ever happened.
 
 ## Input: one `[SPEC]`
 
 **One input, no branching, no selection logic.** The user passes a `[SPEC]` work-item id or URL —
 strip query strings. If they pass nothing, ask; never guess one, and never go hunting for a spec.
 Fetch it with `mcp__ado__wit_work_item` (`action: "get"`), `expand: "relations"` and **no** `fields`
-filter (the two are mutually exclusive), and confirm the type and the `[SPEC]` title prefix before
-anything else.
+filter (the two are mutually exclusive, and a filter suppresses relations), and confirm the type and
+the `[SPEC]` title prefix before anything else.
 
-### Picking the comment
+### Finding the run
 
-Load the `[SPEC]`'s comments with **one** call — `mcp__ado__wit_work_item`,
-`action: "list_comments"`, against the adapter's **work-item project**.
+The run's identity is its **pull request**, and the `[SPEC]` already points at it: `work-on-spec`
+attaches the `[SPEC]` to the PR as a linked work item in the same call that opens it, which is what
+puts the link on the item. So the relations you just fetched carry it — an **`ArtifactLink`** whose
+name is `Pull Request` and whose url is a `vstfs:///Git/PullRequestId/…` artifact id; the **last
+segment of that url is the pull-request id**. Fetch it with `mcp__ado__repo_pull_request`, against
+the **repo project + repository**, never the work-item project.
 
-A QA comment is identified by **two markers together**, never a fragile substring:
+**More than one, or none, is a stop**: say what you found and ask. If the relations carry no PR at
+all, the one permitted fallback is to list the repository's open pull requests for the source branch
+the adapter's **branch pattern** plus this `[SPEC]`'s id computes to — and a miss there is still a
+stop, not a search. A `[SPEC]` whose run cannot be located is a `[SPEC]` this skill cannot compose a
+pass for, and saying so is the correct outcome.
 
-- the **run-context line** it opens with — ``Run of `[SPEC]` #<spec-id> — <n> `[TASK]`s landed
-  <date> · PR …``
-- the **`## Steps` heading**, present in every QA comment by construction (`## Before you start` is
-  conditional, so it cannot be the marker)
+Then **say which PR you picked** — id, source branch, title — before reading anything else.
 
-Take the **newest** comment carrying both. Then **say which one you picked** — its run-context line,
-how many steps it holds, and whether it already names a `[FINDINGS]` item — *before* doing anything
-else. A driver that silently picks the wrong run walks a human through a slice they already tested.
+## Composing the pass
 
-Both markers are written by `work-on-spec`'s `## Loop end`, which is the normative writer of this
-comment; its parse-contract table lists every literal this skill reads and writes. Change one there
-and it changes here in the same commit.
+### What you read, and what it is for
 
-### The QA comment is self-sufficient
+Four reads, all of the branch that PR points at. **The diff and the commits come from the local
+checkout, not the MCP** — the server exposes no diff tool, and the branch is checked out anyway
+(see *Session hygiene*):
 
-Its run-context line carries **the pull request the run landed on** and, once there has been a
-failure, **the `[FINDINGS]` item**. That is the whole of the run context, and **nothing else is
-fetched**: no pull-request body, no diff, no `[TASK]` bodies, no search.
+| Read | How | What it is |
+|---|---|---|
+| the diff | `git diff <default-branch>...<spec-branch>` | **the as-built record** — the only authority on what there is to test |
+| the commits | `git log <default-branch>..<spec-branch> --format='%H %s%n%b'` | attribution: the `AB#<id>` reference in each commit **body** says which `[TASK]` owns that code |
+| the landed `[TASK]`s | the `[SPEC]`'s siblings per [`../_shared/ado-eligibility.md`](../_shared/ado-eligibility.md) §2–3, kept where a commit on the branch references them | which slices are in this run at all |
+| each `[TASK]`'s description | already in hand from that walk | acceptance criteria and planned `## QA notes` |
 
-**Total I/O for a pass:**
+**The reference lives in the commit body, so grep the full message, not the subject**, and keep the
+`([^0-9]|$)` guard when matching one id — a bare `AB#12` pattern also matches `AB#1234`, and
+attribution silently credited to the wrong `[TASK]` is worse than none.
 
-| Occasion | Calls |
-|---|---|
-| Load | 1 × `wit_work_item` (`get`) + 1 × `wit_work_item` (`list_comments`) |
-| Per step confirmed | 1 × `list_comments` + 1 × `wit_work_item_comment_write` (`update`) |
-| First failure only | 1 × `wit_work_item_write` (`add_child`) + 1 × parent re-fetch to verify + 1 × comment read-modify-write for the reference |
-| Per finding | 1 × `wit_work_item` (`get`) + 1 × `wit_work_item_write` (`update_batch`) + 1 × comment read-modify-write for the suffix |
+**Commits are truth, state is cache.** A `[TASK]` whose commit is on the branch is landed even
+though its board state is still non-terminal — tasks close on pull-request completion, not on
+commit. Do not filter this list by `System.State`.
 
-No subagent by default. No polling, ever.
+The last two reads are **context, not the pass**. A `[TASK]`'s `## QA notes` was written before the
+code existed and may describe something built differently or not at all; read it for intent and let
+the diff overrule it. **There is no per-task write-back to read** — the workers' refined notes went
+into a report the orchestrator consumed, and nothing durable holds them.
 
-### No upfront exploration
+### What a flow is
 
-Do **not** read the diff, the `[TASK]`s, or the code before starting. Elaboration is **on demand
-only** — when the human asks what a step means — and it is delegated, never done on this thread:
+A **flow** is a run of sub-steps that share a starting state and end somewhere the tester can safely
+walk away from. Each flow has:
+
+- a **name** — what the tester is exercising, in their words;
+- an explicit **`start from:` line** — the shared setup or precondition the sub-steps assume;
+- **sub-steps**, numbered within the flow, each naming an action and an observable result;
+- **attribution** — the `[TASK]`s whose code this flow exercises, lifted from the `AB#<id>`
+  references in the bodies of the commits that touched the files involved, and written **backticked**.
+
+**The first flow is always "get running"**: whatever the adapter's `## Commands` and L5 rung say it
+takes to have the thing in front of you — the launch command, the branch checked out, any config.
+Everything after it starts from a running system.
+
+**Cross-flow dependency is allowed, and must be named in `start from:`** — "start from: a completed
+flow 2, app still running" is a fine precondition; leaving it implicit is not. A tester who reads
+`start from:` and cannot get there has been handed a flow they cannot run.
+
+### Flow boundaries
+
+Boundaries follow **cohesion**: same screen, same config, same state. **Never "by `[TASK]`" and
+never "every N sub-steps".** A `[TASK]` that touched three unrelated surfaces earns sub-steps in
+three flows; three `[TASK]`s that all changed one screen share one.
+
+3–7 sub-steps is a smell test, not a rule. A one-sub-step flow is fine — a single dependency bump
+with one thing to look at is one flow with one sub-step, not padding to reach a quota. A flow that
+has grown past a dozen sub-steps is usually two flows whose shared starting state you have not named
+yet.
+
+**Present the whole list first** — numbered flows, each with its name and `start from:` — so the
+tester can see the shape of the pass and how long it is before committing to it.
+
+### No upfront exploration beyond the four reads
+
+The four reads above are the composition input, and that is all. Do **not** go reading the wider
+codebase to write the flows. Elaboration *during* the pass — when the human asks what a sub-step
+means — is **on demand only**, and delegated, never done on this thread:
 
 - Spawn **one throwaway subagent** per question: the **Agent** tool with the explorer agent from the
   adapter's `## Sources of truth` (`Explore` where it says None), Haiku-class, thoroughness
   "medium". Speak in tiers per [`../_shared/model-effort-heuristics.md`](../_shared/model-effort-heuristics.md).
 - Ask for a **condensed report**: paths, symbols, the one thing that answers the question. Do not
   read, grep or glob yourself — the point is to keep the QA thread clean.
-- **It must name its source.** Relay the answer in that form — *"the comment doesn't say; from the
-  diff on this branch: …"* — so the human always knows whether they are hearing the QA comment or an
-  inference from code.
+- **It must name its source**, and you relay it in that form: *"from the diff on this branch: …"* —
+  so the human always knows they are hearing an inference from code, not the pass.
 
-Three hard limits on elaboration: it **never rewrites a step**, it is **never written back into the
-comment**, and it is **never the basis for judging pass/fail**.
+Two hard limits: elaboration **never rewrites a flow mid-pass**, and it is **never the basis for
+judging a verdict**. Only the human's observation in the running app decides that.
 
-### Session hygiene: check and report, never act
+### Session hygiene: check and report, act only on the word
 
-Before step 0, confirm and say what you found:
+Before presenting flow 1, confirm and say what you found:
 
-- the branch the run landed on is the one checked out (`git branch --show-current`) — the adapter's
+- the PR's source branch is the one checked out (`git branch --show-current`) — the adapter's
   **branch pattern** plus the `[SPEC]` id says what it should be;
-- the pull request named in the run-context line is open and still a draft.
+- the pull request is open and still a draft;
+- the tree is clean (`git status --short`).
 
-If either is wrong, or anything else is unexpected — dirty tree, detached HEAD, a completed pull
-request — **say so and stop for the human**. Never `git checkout`, never `git stash`, never start
-the app. The tester owns their machine; this skill owns the bookkeeping.
-
-## `## Before you start` folds into step 0, and ticks nothing
-
-If the chosen comment has a `## Before you start` section, read it verbatim as the lead-in of the
-**same message** that presents step 0 — there is no separate acknowledgement turn to wait on. The
-human's step-0 outcome is what confirms it landed. It has no checkbox and it ticks nothing.
-
-Skipping it produces a **false finding on step 1**, because that section is the "this will look
-broken and is not" warning: the migration the tester has to run first, the flag that is off, the
-`[TASK]` deliberately left for a human. A tester who never heard it logs the known gap as a defect
-and burns a triage round-trip on it.
-
-No such section → say so in one clause and go straight to step 0.
+Anything unexpected — dirty tree, detached HEAD, a completed pull request, the wrong branch — **say
+so and stop for the human**. The driver runs read-only and verify commands from the adapter's
+`## Commands` freely; anything that changes the working tree or starts a long-lived process it
+**proposes and waits for a yes**. The tester owns their machine.
 
 ## Driving the pass
 
-Steps are read **verbatim**, never paraphrased — the wording in the comment is the wording that was
-verified against what shipped. Narrate the position on every turn: **"step 3 of 9"**. The work-item
-form renders no progress counter for a comment's task list, so the driver is the only one there is.
+**Present flow *n* whole** — name, `start from:`, every sub-step — and narrate the position: **"flow
+3 of 5"**. A flow presented a sub-step at a time is a flow the tester cannot plan a walk-away point
+in, which is the one thing flows exist to give them.
 
-Two terminal states per step, and no others:
+Within the flow, split the work:
 
-| Outcome | Effect |
+- **Sub-steps the driver can verify itself** — the adapter's L2 and L3 rungs: commands with
+  checkable output, a build, a file that must exist, a work item that must be in a given state.
+  **Run them and paste the output.** Evidence, not a claim that they passed.
+- **Sub-steps only a human can do** — anything requiring eyes on a running system. Ask for exactly
+  those, having already shown the machine half.
+
+### One verdict per flow
+
+| Verdict | Effect |
 |---|---|
-| **Pass** | `[ ]` → `[x]`, advance |
-| **Fail** | append a finding to the run's `[FINDINGS]` item, append the failure suffix, leave the box `[ ]`, advance |
+| **Pass** | record it, move to flow *n+1* |
+| **Fail at sub-step *k*** | append a finding to the run's `[FINDINGS]` item naming flow *n*, sub-step *k*; move to flow *n+1* |
 
-- **Never advance without an explicit signal.** Not from silence, not from a change of subject, not
-  from "ok". If the next thing the human says is not an outcome for the current step, answer it and
-  re-present the step.
-- **Natural language, not keywords.** Read intent — "yeah that showed up fine", "nope, nothing
-  rendered", "it did the thing" are all outcomes. There is no vocabulary to memorise.
-- **But never tick on ambiguity.** "I think so", "looks about right", "close enough" are not
-  outcomes. Ask **one** clarifying question naming the expected result the step states, and wait.
-  Asking costs a turn; a false tick costs the receipt.
+- **Partial progress inside a flow is not recorded.** A re-test reruns the whole flow — cheap by
+  construction, because flows are short and start from a named state. There is no half-passed flow
+  and no third verdict.
+- **A failed flow does not block the next one.** Unless its failure makes a later flow's
+  `start from:` unreachable, in which case say so and ask.
+- **Never advance without an explicit verdict.** Not from silence, not from a change of subject, not
+  from "ok". If the next thing the human says is not a verdict, answer it and re-present the flow.
+- **Natural language, not keywords.** "yeah all four showed up", "died on the second one", "fine
+  until the last bit" are all verdicts. There is no vocabulary to memorise.
+- **But never record a pass on ambiguity.** "I think so", "looks about right", "close enough" are
+  not verdicts. Ask **one** clarifying question naming the observable result the sub-step states,
+  and wait.
 
-### There is no "skip" state
+### A structurally unexecutable sub-step is itself a finding
 
-A step the tester cannot get to right now stays a plain `[ ]` and **resume offers it again**.
-Nothing is written. A third state would put something in the comment that means neither "passed" nor
-"failed", and the resume rule below would stop working.
-
-### A structurally unexecutable step is itself a finding
-
-A step that **cannot name an entry point, a command and an expected result** — the adapter's L5 rung
-— is not a step this project can test. That is not a skip and not a shrug: **log it as a finding**,
-classification `bug (this repo)` against the run that wrote it, so it gets a paper trail and a trip
-through triage instead of evaporating. Then advance like any other failure.
+A sub-step that **cannot name an entry point, a command and an expected result** — the adapter's L5
+rung — is not something this project can test. That is not a skip and not a shrug: **log it as a
+finding**, classification `bug (this repo)`, so it gets a paper trail and a trip through triage
+instead of evaporating. Since this skill composed the sub-step, the finding is against this skill's
+composition or against a `[TASK]` that landed nothing testable — say which. Then advance like any
+other failure.
 
 ### "Blocked" is not a step state
 
-It is the human stopping. **Record nothing.** The comment already holds the ticks, the suffixes and
-— by subtraction — the position. Say where they got to, and stop.
-
-### Resume needs nothing else
-
-One `list_comments` call. **The first step that is `[ ]` *and* carries no failure suffix is where
-you are.** No relation walk, no cross-referencing, no memory of the earlier session. A pass
-abandoned halfway resumes cold. If the run-context line already names a `[FINDINGS]` item, that is
-the run's item — reuse it; do not create a second one.
-
-## The write path
-
-Every write to the QA comment is a **strict single-line read-modify-write**. Six rules, all
-load-bearing:
-
-1. **Fresh read immediately before every write.** `wit_work_item` (`action: "list_comments"`), take
-   the comment's current body, edit that. Never write from a body held in context since the pass
-   began — a stale body written back silently reverts human edits, and violates `work-on-spec`'s
-   never-edit contract by accident rather than intent, which is the worse kind.
-2. **Substitute exactly one line, anchored on the step number.** Steps are numbered continuously
-   from 0 across the whole run, so the anchor `- [ ] 3. ` — bracket, space, number, dot, space — is
-   unique. Keep the trailing dot-space or `1.` also matches `10.`. **The step text and its
-   backticked `[TASK]` id stay byte-identical**, as does every other line. **Never re-render the
-   body from a model-held structure**; edit the one line in the body you just fetched.
-3. **Write with `wit_work_item_comment_write` (`action: "update"`), passing
-   `format: "Markdown"`.** Every time. A read never reports a stored format
-   ([`../_shared/ado-workitem-authoring.md`](../_shared/ado-workitem-authoring.md) §8), so nothing
-   downstream can discover it; `work-on-spec` set it at post time and every later write restates it.
-   Drop the flag once and the comment lands as HTML, and the headings, checkboxes and code spans
-   this contract is made of arrive as literal text.
-4. **Already-ticked is success, not an error.** The anchor matches `- [x] 3. ` instead → the step is
-   already recorded as passed. Proceed without rewriting and without complaining.
-5. **Read the comment back and verify before advancing.** Confirm the anchored line reads the way
-   you intended *and* that a step you did not touch is still intact. A write returning is not
-   evidence it landed as meant.
-6. **Never poll.** The driver advances on the user's word, full stop.
-
-**The comment API strips raw markup, and that makes a careless write destructive.** Angle brackets
-arrive as `&lt;` / `&gt;` by construction, because `work-on-spec` escapes them at synthesis time —
-so they survive a round trip *only if you preserve the bytes you fetched*. Re-render or "clean up"
-the body and every escaped token in every untouched step is stripped on the way back out, and the
-UI renders the sanitised text (§8), so the damage reads as a sentence that was always worded that
-way. Vanishing text, not visible junk. Substituting one line and touching nothing else is the whole
-mitigation.
-
-**The driver owns the boxes for the duration of a pass** — tell the tester this in as many words,
-once, at the start. There is no optimistic concurrency on a work-item comment update, so a human
-ticking in the browser mid-pass is a silent last-write-wins race. Fresh-read-per-write plus that one
-sentence is the whole of it.
-
-## The failure suffix
-
-A failed step is annotated **in place**, step text untouched:
-
-```
-- [ ] 3. search for a landed change → expect it in results (`#12805`) — **failed**
-```
-
-- **A bare ` — **failed**` and nothing more.** No link, no finding number, no note. Every failure in
-  a run points at the same `[FINDINGS]` item, and the run-context line names it once — a per-step
-  pointer would repeat the same id on every failed line for nothing.
-- **Pure append**, after the backticked id. The driver never parses a line apart and reassembles it
-  — that is the operation class that reformats things by accident.
-- **Not strikethrough.** Struck-through text reads as *cancelled / no longer applies*, which is the
-  opposite of what happened; it mutates the step text; and it has no clean undo.
-- **Reversible, and that is what makes the receipt work.** If the step is later re-tested and
-  passes, **one** write flips `[ ]` → `[x]` **and drops the suffix** — so the comment can genuinely
-  reach all-ticked, and "every box ticked, no suffix left" keeps meaning "everything passed".
-- **One write, not two.** Create or locate the `[FINDINGS]` item and append the finding **first**,
-  then write the suffix in a single substitution.
-- The box stays `[ ]`. `[x]` continues to mean exactly one thing (non-negotiable 3).
+It is the human stopping. Go to `## End of pass` and take the stopped-early branch: post the
+receipt, **leave `needs-qa` on**, say which flow they reached.
 
 ## The `[FINDINGS]` item
 
 **Its whole shape — one per run, lazy creation, the Task-under-the-parent placement, the
-`### [FINDING] ` marker, the append path, and how `triage` finds it again — is
+`### [FINDING] ` marker, the append path, and how `triage` reads it — is
 [`findings-item.md`](../references/findings-item.md). Read it before the first failure.** What
 follows is only this skill's half.
 
@@ -285,23 +269,37 @@ Then, in this order, once per run:
 
 1. Create the item (`wit_work_item_write`, `action: "add_child"`, `format: "Markdown"`), and verify
    the hierarchy link landed.
-2. **Write the reference into the run-context line** — ``` · findings `#<id>` ``` appended to the
-   end of that line, backticked, exactly once. This is the **third never-edit carve-out**
-   `work-on-spec`'s `## Loop end` declares, and it is permitted precisely because the item does not
-   exist when the comment is posted. Same write path as a tick: fresh read, one line substituted,
-   `format: "Markdown"`, read back.
-3. Append the finding to the item's description.
-4. Write the step's failure suffix.
+2. Append the finding to the item's description, by that document's read-modify-write path.
 
-Every later failure in the same pass skips 1 and 2 — the item already exists and the line already
-names it. **Never create a second item for one run**, and never write the reference twice.
+Every later failure in the same pass skips 1 — the item already exists. **Never create a second item
+for one run.**
+
+**There is no run-context line to write the reference into any more.** That write-back was the third
+never-edit carve-out on a QA comment this skill no longer reads, and a comment it never posts. The
+run's `[FINDINGS]` id is instead named **in the end-of-pass receipt**, backticked, and reported in
+the terminal at the moment of creation. `findings-item.md` already accepts a **pasted id** as
+`triage`'s input, and that is the route until its discovery half is revised.
 
 **One finding per turn. Never batch.** Append it, report the finding's number and a one-line recap,
-write the suffix, then move to the next step.
+then move to the next flow.
 
-**A finding noticed outside any step** goes into the same item, by the same path, with the
-`**Step:**` and `**From:**` lines **omitted entirely** — there is no step and no attribution to
-lift. It ticks nothing, because no step is being recorded.
+**A finding noticed outside any flow** goes into the same item, by the same path, with the
+`**Step:**` and `**From:**` lines **omitted entirely** — there is no flow and no attribution to
+lift. It records no verdict, because no flow is being recorded.
+
+### The two attribution fields
+
+`findings-item.md` owns the body template. Two of its fields are this skill's to fill, and only one
+of them has changed shape:
+
+- **`**Step:**` is the position in this pass — flow number, flow name, sub-step number**:
+  `**Step:** flow 3 ("search and filter"), sub-step 2`. **No permalink**: the pass was composed in
+  this session and posted nowhere, so there is nothing to link to. Do not invent a link and do not
+  write "n/a"; the flow name is what makes the position legible to a cold reader.
+- **`**From:**` is unchanged** — the **backticked** owning-`[TASK]` ids, space-separated where the
+  flow exercises more than one, lifted from the `AB#<id>` references in the commits that touched the
+  files involved. Backticked because a bare `#NNNN` silently wires a `Related` relation onto the
+  work item; the description's one permitted bare mention is already spent on the `Spec: #<id>` line.
 
 <the-line>
 ### Where investigation stops
@@ -325,8 +323,8 @@ lift. It ticks nothing, because no step is being recorded.
 - Writing or testing a fix.
 - Spawning code-exploration subagents. If a finding needs a deep code dive just to be *understood*,
   that is the signal it belongs in `triage`. (The on-demand elaboration subagent is not an
-  exception: it answers "what does this step mean", never "why did it break", and never decides an
-  outcome.)
+  exception: it answers "what does this sub-step mean", never "why did it break", and never decides
+  a verdict.)
 </the-line>
 
 <routing>
@@ -338,35 +336,31 @@ lift. It ticks nothing, because no step is being recorded.
   decisive probe where feasible and say so explicitly — `triage` investigates over there and files
   in that repo, cross-linked back. Do **not** fix or file across the boundary from here.
 - **Deferred-by-design** → not a bug. Say what was deferred, cite the code comment or `[SPEC]` note,
-  and what the follow-up slice needs. (If it was in `## Before you start`, it should not have
-  reached a finding at all.)
+  and what the follow-up slice needs.
 - **Works-as-intended / enhancement** → capture the desire, mark it as not-a-defect.
 
 If the adapter says "None" for related repos, there is no contract boundary to route to —
 everything is a this-repo finding.
 </routing>
 
-## End of pass, and the `needs-qa` tag
+## End of pass: the receipt, and the `needs-qa` tag
 
-**Tick state is the whole record. Never post a second comment** — not a summary, not a "pass
-complete", not a count. End-of-pass output goes to the **terminal only**: how many steps passed,
-which failed and their finding numbers, and which are still outstanding.
+Two artifacts, in this order:
 
-**The skill *offers* to remove `needs-qa`; it never removes it unprompted.** Both conditions are
-readable from the comment already in hand — no extra call:
+1. **The receipt** — one **free-form** comment on the **`[SPEC]`**: which flows ran, the verdict on
+   each, the run's `[FINDINGS]` id backticked if one was created, and — if the pass stopped early —
+   which flow they got to. Free-form means free-form: **nothing parses it**, it is output rather
+   than input, and it has no template. Post it with `mcp__ado__wit_work_item_comment_write`
+   (`action: "add"`), against the adapter's **work-item project**, carrying **`format: "Markdown"`**
+   — a comment posted without it lands as HTML and its headings and code spans arrive as literal
+   text. **Escape angle brackets at synthesis time**, and **prefer inline code spans to fenced
+   blocks**: a fence in a comment comes back empty (measured).
+2. **The tag.** A pass that ran every flow to a verdict → offer to remove `needs-qa`, and on a yes,
+   remove it. A pass that **stopped early** → post the receipt and **leave `needs-qa` on**, saying
+   so in as many words. The tag is the queue signal; an unfinished pass is still in the queue.
 
-| Condition | Read from |
-|---|---|
-| every step is `[x]` | the body |
-| no failure suffix anywhere | the body |
-
-- **Both hold** → offer, and on a yes, remove the tag.
-- **Either fails** → do **not** offer at all. Report what is outstanding and leave the tag alone.
-
-**There are two conditions here, not three.** The GitHub sibling has a third — an
-`Earlier QA pass still outstanding:` first line. **That line does not exist on this tracker**, it
-was deliberately not ported, and it is not among the literals `work-on-spec`'s loop end writes. Do
-not read for it and do not reintroduce it.
+Findings do **not** hold the tag on. A pass that ran every flow and found three bugs is a completed
+pass — the findings are `triage`'s queue, not QA's.
 
 Removing the tag is a **read-modify-write on `System.Tags`**, which is a single semicolon-separated
 string: read the `[SPEC]`'s current tags, drop `needs-qa`, write the whole remaining list back.
@@ -382,31 +376,33 @@ wit_work_item_write  { action: "update", project: <work-item project>,
 
 Then **read `System.Tags` back and confirm** before reporting it removed.
 
-**The driver drives exactly one QA comment and never touches another.** No chain-walking, no
-aggregate state across passes. A second run against the same `[SPEC]` has its own comment, its own
-findings item, and its own pass.
+**A re-run composes fresh.** It reads the branch again — which has usually moved — and builds new
+flows rather than reconstructing the old ones. Then it **asks the human where to start**, offering
+the earlier receipt's stopping point as the obvious answer. There is no resume state to read, and
+that is deliberate: the alternative is a stored pass that drifts out of date against the branch it
+describes. A second run against the same `[SPEC]` gets its own pass, its own receipt and its own
+`[FINDINGS]` item.
 
-**Never**: complete the pull request, close the `[SPEC]`, edit a step's text, add or delete a step,
-delete a comment, or write any field of the parent work item. The three carve-outs in
-`work-on-spec`'s `## Loop end` — checkbox state, the failure suffix, the `[FINDINGS]` reference —
-are the complete list of what this skill may write into that comment.
+**Never**: complete the pull request, close the `[SPEC]`, edit an earlier receipt, delete a comment,
+or write any field of the parent work item. Tag removal and the receipt are the complete list of
+what this skill writes to the `[SPEC]`.
 
 ## The terseness floor
 
-**This driver does not license further compression of the QA comment.** Every step must stay
-executable by a human with no skill available:
+**Composing the pass does not license compressing it.** Every sub-step must be executable by a human
+reading it cold:
 
-- the comment outlives any version of this skill;
-- anyone installing `ado-workflow` may never invoke the driver;
-- and the driver reads steps **verbatim**, so a step too terse for a human to act on is exactly as
-  useless read aloud.
+- a receipt or a finding outlives this session;
+- a sub-step that only works because a model is there to interpret it is not a sub-step;
+- and the driver reads sub-steps out as written.
 
-The driver adds **gating and bookkeeping, not comprehension**. If a step only works because a model
-is there to interpret it, the step is wrong — that is a finding, not a feature.
+The driver adds gating and bookkeeping, **not comprehension**. If you cannot write a sub-step that
+names an entry point, a command and an observable result, the honest output is a flow with fewer
+sub-steps — or the note that this `[TASK]` has nothing a human can exercise.
 
 ## Handoff to triage
 
-The `[FINDINGS]` item is this skill's only output to the tracker besides the ticks and suffixes on
-the comment. A later `/ado-workflow:triage` session reads that item, confirms each finding,
-root-causes it, and promotes the survivors into `[BUG]` work items. **This skill never fixes
-anything and never files a `[BUG]`.**
+The `[FINDINGS]` item is this skill's only output to the tracker besides the receipt on the `[SPEC]`
+and the tag it removes; nothing reads the receipt back. A later `/ado-workflow:triage` session reads
+that item, confirms each finding, root-causes it, and promotes the survivors into `[BUG]` work
+items. **This skill never fixes anything and never files a `[BUG]`.**
