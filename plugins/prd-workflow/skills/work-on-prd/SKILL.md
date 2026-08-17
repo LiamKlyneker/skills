@@ -219,7 +219,7 @@ State lives in git + GitHub only (branch commits, issue labels, PR body). Zero s
 
 One collapsed block, appended as the last thing in the PR body, holding everything the loop needs from that body and nothing a reviewer has to read. Everything above it belongs to the team.
 
-**It is a parse contract, on the same doctrine as the QA comment (ADR 0009), and every literal in it is hardcoded here.** The adapter shapes the body *around* the block — the branch pattern, the PR template — and has no say inside it. There is no adapter row for any string below and there must never be one: the project free to edit the resume key is the project whose next resume finds nothing, cold-starts, and opens a second branch and a second PR over live work. That is the failure this whole design was built to remove, and handing it back to the adapter would be handing it back one row at a time.
+**It is a parse contract — now the only one this loop writes — on the doctrine ADR 0009 stated for the QA comment and ADR 0012 kept after retiring it: a string two skills must agree on byte-for-byte is hardcoded, never registered in the adapter. Every literal in it is hardcoded here.** The adapter shapes the body *around* the block — the branch pattern, the PR template — and has no say inside it. There is no adapter row for any string below and there must never be one: the project free to edit the resume key is the project whose next resume finds nothing, cold-starts, and opens a second branch and a second PR over live work. That is the failure this whole design was built to remove, and handing it back to the adapter would be handing it back one row at a time.
 
 | Literal | Parsed by | For what |
 |---|---|---|
@@ -256,7 +256,7 @@ Copy what is inside the fence, not the prose around it. The rules are deliberate
 - **The blank line after `</summary>` is load-bearing.** Without it GitHub renders no markdown inside the element and the checklist arrives as literal text with no checkboxes.
 - **Appended last, always.** After everything the template contributed, so a reviewer meets the team's PR first and the bookkeeping only if they open it.
 - **One block per body.** Before appending one — at PR open, or at a legacy retrofit — check whether the body already carries a `<summary>` with that text. Two blocks is two `Closes` lines and two checklists disagreeing in the same body, and the retrofit is the path that would produce it, since it is the one place a block is appended to a body somebody else wrote.
-- **Nothing else goes in.** Not the QA permalink — loop end §2 places that in the body proper — not deviations, not the run's summary. Three things: the pointer, the checklist, the `Closes` line.
+- **Nothing else goes in.** Not the `QA:` line — loop end §2 places that in the body proper — not deviations, not the run's summary. Three things: the pointer, the checklist, the `Closes` line.
 
 ## Loop (per issue)
 
@@ -280,88 +280,20 @@ Copy what is inside the fence, not the prose around it. The rules are deliberate
 
 ## Loop end (no eligible children left)
 
-Three things, in order: the QA comment, the PR body, the final summary.
+Three things, in order: the QA handoff, the PR body, the final summary.
 
-### 1. The QA comment — one per *run*
+### 1. The QA handoff — the label, then the invocation
 
-**Commit nothing, and create no issue.** The QA artifact is a **comment on the PRD issue**, plus the **`needs-qa` label on the PRD**. This loop has moved twice: it once wrote a markdown document to a path in the adapter and committed it to the branch, then it filed a standalone `[QA]` issue. It does neither now — the adapter names no path, and **no `[QA]` issue is created on GitHub any more**. Everything below is normative and is this skill's own — the shape of the comment and the GitHub mechanics both. `work-on-spec` posts its own QA comment against Azure DevOps, on the `[SPEC]`, with a `needs-qa` **tag**; the two loops are siblings that arrived at the same shape, not a shared file and two call sites, and every mechanic below is GitHub's alone — none of it carries across, and none of theirs carries back. The person running QA is the comment's *reader*, but they are no longer its only consumer: **two skills parse this comment**, so parts of the template below are load-bearing string contract and not merely house style.
+**Commit nothing, create no issue, and post no QA comment.** This loop no longer composes a QA pass. `manual-qa` composes one on demand, in its own session, from what actually landed on the branch — the diff, the commits and their `(#N)` attribution — so a script written *here*, before the code existed, could only describe what the run planned to make testable. The loop has moved three times: a committed markdown document, then a standalone `[QA]` issue, then a per-run comment on the PRD. It does none of them now, and none of the machinery any of them needed survives here — no template, no heading rules, no id trailers, no never-edit rule, no second-run link-back. Loop end's entire QA output is a label and a printed line.
 
-**What the two consumers depend on.** `manual-qa` drives a pass against this comment and `triage` reads it back at triage time. Between them they parse:
+- **Apply `needs-qa` to the PRD** — `gh issue edit <prd-number> --add-label needs-qa` — **iff at least one child in this run reported something a human can exercise** (worker report contract, item 4). The label means **"not yet QA'd"** and nothing else: it is the operator's queue, and `manual-qa` is what removes it. A run of nothing but bumps, config and refactors earns no label — say so in the final summary, so the absence reads as a decision and not a forgotten step. The label must already exist in the repo: the loop applies it and cannot create it, and `gh issue edit --add-label` against a missing label fails loudly. One-time human precondition — see the adapter.
+- **Print the invocation**, for the human to run when they judge the run worth a pass:
 
-| Literal | Parsed by | For what |
-|---|---|---|
-| the **run-context line** + the **`## Steps` heading**, together | both | identifying a QA comment among the PRD's comments — never a fragile substring, and `## Before you start` cannot serve because it is conditional |
-| the step anchor `- [ ] <n>. ` — bracket, space, number, dot, space | `manual-qa` | locating the one line to rewrite; continuous numbering from 0 is what makes it unique |
-| **checkbox state** (`[ ]` / `[x]`) | `manual-qa` | resume position, and the end-of-pass `needs-qa` offer |
-| the **`<!-- 75 80 -->` id trailer** | `manual-qa` directly, `triage` downstream | `manual-qa` lifts it into a finding's `**From:**` line; `triage` takes that field as its card's `Owning slice:` instead of re-deriving from the PR's Closes map |
-| the **`Earlier QA pass still outstanding:`** first line | `manual-qa`, and this skill's second-run link below | one outstanding pass never buried under a fresher one |
+  ```
+  /prd-workflow:manual-qa #<prd-number>
+  ```
 
-Change any of those five and you must change them in `manual-qa` and `triage` too. Everything else here — the section order, the sources, the earning rule — is normative because it is right, not because a parser depends on the wording.
-
-**Why a comment, and what it costs.** The operator filters the issue list on `needs-qa` and gets one queue: every PRD awaiting a manual pass. They open the PRD, and the steps sit directly beneath the natively-rendered sub-issue list — next to the children they describe, in the one place a reader of the PRD already is. What that costs is the **closable receipt**. A closed `[QA]` issue was proof the pass had been run; a comment has no closable state, so nothing in the tracker records completion. That loss is accepted deliberately, not overlooked: **removing `needs-qa` is what "done" looks like**, a human action nothing enforces, and the operator may reply to the comment to record the pass — convention, not machinery, and no skill checks for it. Do not add anything to simulate the receipt.
-
-**One per run, never one per PRD.** A run covers exactly the slice of children that just landed. A second run against the same PRD posts a **second comment** and **never edits the first**. That is the whole point of a per-run artifact rather than a committed document: a document at a fixed path accumulates every run's output, goes stale silently, and gives the human no way to tell which half they already tested. A per-run comment describes one testable slice.
-
-**Ticking is not authoring.** The never-edit rule has **exactly two carve-outs**, both records of a pass rather than acts of authorship, and both available to a human or to a later skill (`manual-qa` writes both):
-
-1. **Checkbox state.** Every step is a `- [ ]` task-list item, and `[ ]` ↔ `[x]` may change after posting. A tester ticks boxes as they work and resumes a partial pass later.
-2. **The terminal failure suffix** — ` — **failed**, see [FINDING](<permalink>)`, appended **after** the step's `<!-- 75 80 -->` id trailer, at the end of the line, when that step failed and the failure was logged as a `### [FINDING]` comment on the run's PR. It is **append-only**: the step text and its trailer stay byte-identical, nothing is re-rendered or reflowed, and the box stays `[ ]`. It is **reversible** — re-testing that step and passing drops the suffix and ticks the box in one write, so "every box ticked, no suffix left" keeps meaning "everything passed". `manual-qa`'s `## The failure suffix` is the normative writer of its exact text; it is not strikethrough, and nothing else may be appended to a step line.
-
-**Everything else stays forbidden**, and the list is not illustrative: **no rewording a step** (not even a typo fix, not even to sharpen an expected result), **no appending a new step** to an already-posted comment — a step that was missed belongs to the next run's comment — **no deleting or editing away a comment**, no adding or removing a heading, no re-ordering or re-numbering steps, and no reply-comment that amends the script. The prohibition is on the run's *content*: the comment says what that run shipped and what it claimed a tester could exercise, and both carve-outs record what a tester subsequently observed. A tick and a failure suffix are the pass's receipt, not a second author.
-
-**Posting while `needs-qa` is still applied → link back first.** The label already being on the PRD means an earlier pass is **outstanding** — nobody has worked it yet. The new comment's **first line is a permalink to that earlier comment**, so an outstanding pass is never silently buried under a fresher one. Still one comment per run, still never edit or delete the earlier one, and leave the label where it is (re-applying it is a no-op). Find the earlier one with the newest comment carrying the template's `## Steps` heading, which is present in every QA comment by construction:
-
-```bash
-gh api repos/<owner>/<repo>/issues/<n>/comments --jq '[.[] | select(.body | contains("## Steps"))] | last | .html_url'
-```
-
-**What earns a step.** A landed child earns a step **only if a human can exercise it in the running app**. Dependency bumps, config changes, pure refactors, internal-only work and setup contribute **nothing**: no step, and **no standalone "nothing to test here" line, paragraph or section**. Those lines are the entire reason the committed documents this replaces reached 440 lines — every landed issue earned a section whether or not anybody could act on it, so the sections that mattered were buried among the ones that didn't. Such a child gets **nothing at all**: not a line, not a parenthetical, not a heading of its own. The PRD's **native sub-issue list** renders directly above this comment with every child, its title and its completion state, so a reader who wants the manifest already has one, and repeating it here only pushes the steps further down the page. The single exception is a child **deliberately left for a human**, or a slice deferred to a later run — something a tester would otherwise chase as a defect. That earns **one line under `## Before you start`** and nothing more. Applied honestly, most runs produce a comment far shorter than the list of things they landed. That is the intended shape, not a sign something was missed.
-
-**Nothing testable in the whole run → post nothing and label nothing.** If **no** child in the run produced anything a human can exercise, there is no comment and no `needs-qa` — an empty QA comment is worse than none, being a thing a person has to open and read in order to learn nothing, and a label pointing at it puts a PRD in the queue that has no pass to run. Say so explicitly, in both places the comment would otherwise have been linked: the **final summary** ("no QA comment: nothing in this run is manually testable", plus the list of children the run landed), and the **pull request body**, where the `QA:` line would have gone — the same sentence. Silence in either place reads as a forgotten step rather than a decision.
-
-**The body:**
-
-<qa-template>
-
-<first line only when `needs-qa` is already applied: Earlier QA pass still outstanding: <permalink to it>>
-
-<one line of run context: the branch, the pull request, how many children landed>
-
-## Before you start
-
-- <the thing that will look broken and is not, and why — or a child deliberately left for a human>
-
-## Steps
-
-- [ ] 0. <the setup a tester does once, before anything else> → expect <the observable result> <!-- 76 -->
-- [ ] 1. <action to take in the running app> → expect <the observable result> <!-- 75 -->
-- [ ] 2. <action> → expect <result> <!-- 75 80 -->
-
-</qa-template>
-
-The rules governing that template are deliberately written **outside** the fence. Copy the fence, not this prose — instructions pasted inside a body template ship to the reader as comment text.
-
-**There are exactly two headings, and one of them is conditional.** Do not add a third — every section this template has ever grown was a place for content that turned out not to change what the tester does.
-
-- **`## Before you start` is conditional.** Include it only when something will look broken and is not — a dangling symlink a later child repairs, a migration the tester has to run first, a feature flag that is off, a child deliberately left for a human, a slice deferred to a later run. A **run-wide** deviation lands here too. **Omit the heading entirely** otherwise. A "None" under it is the 440-line habit in miniature.
-- **`## Steps` is always present** — a QA comment exists because at least one child earned a step, so it always has content by construction.
-- **Every step is a `- [ ]` task-list item.** GitHub renders those as live checkboxes in an issue comment, so the tester records progress in place and can resume a partial pass instead of restarting it. See *Ticking is not authoring* above for how that squares with never editing a posted comment.
-- **Steps are numbered continuously across the whole run, starting at 0**, in the order a human would sit down and work through them, not grouped by child and not restarted per section. **Step 0 is the setup** a tester does once before anything else — the config dir to launch under, the branch to check out, the migration to run. It used to be a floating `Setup, once:` paragraph above the list, which made the one instruction a tester must do first the only one with no checkbox and no completion gate. No setup needed → the first real action is step 0.
-- **Every step states an expected observable result.** A step whose expected result is "it looks right" is not a step — either name what the tester should see, or the change did not earn a step in the first place.
-- **Every step carries the child it came from, as a trailing HTML comment** — `<!-- 75 -->`, space-separated numbers when a step came from more than one child, no `#`. The attribution is not optional: a failed step has to route back to the slice that owns it, and `triage`'s card has an `Owning slice:` field that wants exactly this. What changed is only the rendering — the comment is invisible to the reader and survives in the body a later skill reads back.
-- **No bare `#N` anywhere in a step — trailer or prose.** GitHub expands any `#N` it can render inline into the full issue or PR title, wherever it appears in the line, not only in an attribution position; a step whose action or expected-result text names a PR or issue by number gets the same title-inflation the trailer did. Write it wrapped in backticks, which GitHub does not expand — this file already relies on that escape at `:96` for the same reason. The run-context line below is the only place a **rendered** `#N` is wanted; everywhere else in a step, backtick it.
-
-**A deviation earns a place in this comment only if it changes what the tester does.** Where it then lands follows from that: a deviation attached to **one step** folds into that step's expected-result clause, where the tester meets it at the moment it matters rather than twenty steps early; a **run-wide** one becomes a `## Before you start` line. Everything else — code-review notes, observations about the diff, "this table is duplicated in two skills" — belongs in the **PR body**, not in the QA script. There is deliberately no heading left to park it under: in the run that produced this rule, five bullets were collected under one and exactly one of them was something a tester could act on.
-
-**Built from two sources, and only two:** each worker's **refined QA notes** (item 4 of the report contract — these are the steps; the child's own `## QA notes` are what the worker refined, not a second source to merge back in), and each worker's **deviation log** (item 3) with the edge cases it flagged — filtered by the rule above, these become either part of a step's expected result or a `## Before you start` line, and the rest go to the PR body. Nothing else: not the PRD's body, not the children's acceptance criteria, not the diff. A QA comment assembled from the artifacts instead of the reports describes what was *planned*; the reports are the only record of what was actually built.
-
-Then the GitHub mechanics:
-
-- **Post** with `gh issue comment <prd-number> --body-file <path>` against the adapter's issue-tracker repo. Write the body to a file first — `--body` on a shell line mangles a multi-line markdown body, and this one is all headings and lists.
-- **Capture the permalink it prints.** `gh issue comment` writes the new comment's url to stdout; that url is what §2 puts in the PR body and §3 reports, and what a later run links back to.
-- **Then label the PRD** `needs-qa` — `gh issue edit <prd-number> --add-label needs-qa`. Comment first, label second, always: the label is the queue signal, and a PRD in the queue with no comment under it sends the operator looking for steps that do not exist. Applying a label the PRD already carries is a no-op, which is what makes the second-run path above safe.
-- **The label must already exist in the repo.** The loop applies it and cannot create it; `gh issue edit --add-label` against a missing label fails loudly, but a run that swallows that failure leaves a comment nobody is queued to find. It is a one-time human precondition — see the adapter.
-- **Run context line**: the branch **as Setup resolved it** (step 1's PR head, or step 2's created name), the PR, and how many issues landed — e.g. ``Branch `prd/52-extract-lk-plugin` · PR #63 · 9 issues landed``, which is what the default pattern yields; a project whose adapter names its own pattern gets that shape here instead. The PR number here is the one place a `#N` is wanted in rendered form; nothing inside a step is (see *No bare `#N` anywhere in a step* above).
+**The loop never invokes `manual-qa` itself.** On demand is the only trigger. The developer who just watched the run is the one who decides whether it warrants a pass, and a driver that starts itself at loop end is the checklist-nobody-works failure in a new costume.
 
 ### 2. PR body
 
@@ -370,15 +302,15 @@ Then the GitHub mechanics:
 The same pass, four more things:
 
 - **Tick the team's own checkboxes** that actually became true, and only those. One left unticked with a reason beside it is a fine outcome; one ticked because the template offered it is a false claim made in the team's own words.
-- **The `QA:` permalink** — the url §1 captured, not an issue number, or the no-QA sentence if no comment was posted. It goes in the template's own testing or QA section if it has one; absent that, a `QA: <permalink>` line directly above the machine block. Not *inside* the block: the block holds three things and this is not one of them.
-- **The deviations §1 filtered out** — code-review notes, observations about the diff, everything that did not change what a tester does — land here, in whichever section of the template takes notes on the change. §1 sends them to the PR body; this is the pass that receives them.
+- **The `QA:` line** — literally `QA: run /prd-workflow:manual-qa #<prd-number>`, the same invocation §1 printed. It goes in the template's own testing or QA section if it has one; absent that, on its own line directly above the machine block. Not *inside* the block: the block holds three things and this is not one of them. Omit the line entirely when §1 applied no label, and say in the final summary that nothing in this run is manually testable. **After loop end this line is `manual-qa`'s alone** — the loop writes it once and never touches it again; a completed pass replaces it with the link to its receipt on the PRD.
+- **The workers' deviation logs** — code-review notes, observations about the diff, edge cases a reviewer should know about — land here, in whichever section of the template takes notes on the change. They have nowhere else to go — §1 posts nothing — so this is where a worker's deviation log lands.
 - **The machine block's final state** — every landed child ticked, the `Closes` line complete. Loop step 8 has been maintaining both, so this is a check and not a rewrite; where it disagrees with the commits on the branch, the commits win (Setup step 4).
 
 The PR stays a **draft**.
 
 ### 3. Final summary
 
-To the human: issues done / skipped / failed · deviations worth reading · escalations · the **QA comment permalink** and the note that the PRD now carries `needs-qa`, or the explicit "no QA comment: nothing in this run is manually testable" with the reason. Leave the PR open (still draft) for human QA (verify ladder L5: work the QA comment start-to-finish against the branch, then merge manually). The PRD issue is **not** closed by the loop — `Closes` keywords fire on merge. Do not remove `needs-qa` and do not reply to your own comment marking the pass done: the human who runs it owns both, and those are the only signals that it was ever run.
+To the human: issues done / skipped / failed · deviations worth reading · escalations · whether the PRD now carries `needs-qa` and the **`/prd-workflow:manual-qa #<prd-number>` invocation**, or the explicit "no `needs-qa`: nothing in this run is manually testable" with the reason. Leave the PR open (still draft) for human QA (verify ladder L5: run `manual-qa` against the branch, work its flows, then merge manually). The PRD issue is **not** closed by the loop — `Closes` keywords fire on merge. Do not remove `needs-qa` and do not post a receipt of your own: `manual-qa` owns both, and they are the only signals that a pass was ever run.
 
 Then release keep-awake — mirror of Setup step 0, no-op if never started:
 
@@ -392,4 +324,4 @@ Normative home for the label vocabulary — `to-issues` and `next-prd-issue` app
 
 `ready-to-start` (pickable) → `state:in-progress` (claimed) → `state:done-on-branch` (committed, awaiting merge). Merge auto-closes via the PR's Closes line. One state per axis; always remove-before-add. Precondition (one-time, human): the repo setting "auto-close issues with merged linked pull requests" must be on — see the adapter.
 
-Two families, and the difference is who clears the label. **`state:*` is machine state**: the loop applies it, the loop removes it, and a human touching one only confuses the reconstruction in Setup step 4. **`needs-*` means a human owes something** and only a human clears it — `needs-triage` on an untriaged issue, and **`needs-qa` on a PRD whose run has posted a QA comment** (Loop end §1). That is why `needs-qa` is not `state:qa-pending`: the loop applies it and then has no further business with it, and the operator's queue is exactly the set of PRDs carrying it. The loop never removes `needs-qa`, on this run or any later one.
+Two families, and the difference is who clears the label. **`state:*` is machine state**: the loop applies it, the loop removes it, and a human touching one only confuses the reconstruction in Setup step 4. **`needs-*` means a human owes something** and only a human clears it — `needs-triage` on an untriaged issue, and **`needs-qa` on a PRD whose run landed something a human can exercise** (Loop end §1), where it means *not yet QA'd*. That is why `needs-qa` is not `state:qa-pending`: the loop applies it and then has no further business with it, and the operator's queue is exactly the set of PRDs carrying it. The loop never removes `needs-qa`, on this run or any later one — `manual-qa` does, at the end of a completed pass.

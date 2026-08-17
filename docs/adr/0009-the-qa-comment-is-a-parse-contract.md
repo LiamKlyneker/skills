@@ -1,9 +1,10 @@
 # ADR 0009 — The QA comment is a parse contract, and the receipt comes back
 
-- **Status**: Accepted
+- **Status**: Superseded by ADR 0012
 - **Date**: 2026-08-01
 - **Context**: PRD #85, implemented by #89 (`manual-qa`) and #90 (`triage-prd`, and `work-on-prd`'s loop-end contract)
 - **Supersedes**: ADR 0006
+- **Superseded by**: ADR 0012 — **on the QA-artifact half only.** The comment is no longer a parse contract and is no longer posted at all; the pass is composed on demand from the branch. **What still stands**: the sub-issues half this record inherited from ADR 0006 (a PRD's children are native sub-issues, nothing keys on a title), and the inversion below that keeps `### [FINDING]` hardcoded in both skills and out of the adapter.
 
 ## Read this first: the sub-issues half of 0006 is untouched
 

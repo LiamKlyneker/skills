@@ -191,7 +191,9 @@ Deliberately slim, and **slice-local only** — facts that belong to this slice 
 ## QA notes
 
 2–3 lines for the human QA pass: what to do in the running app, what they should see, one edge
-case worth poking.
+case worth poking. These are **context for the QA pass, not the pass itself** — `manual-qa`
+composes the pass from the branch later and lets the diff overrule them — so write each as
+"start from X, then …", naming the state to be in before the action.
 
 ## Acceptance criteria
 

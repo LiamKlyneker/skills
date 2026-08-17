@@ -6,23 +6,26 @@ in two halves: the loop — `to-spec` → `to-spec-tasks` →
 `work-on-spec` spawns per `[TASK]` — and the QA pair, `manual-qa` → `triage`.
 
 All six and the agent have landed, loop end included: `work-on-spec` ends a run
-by posting a **tickable Markdown comment on the `[SPEC]`**, tagging it
-`needs-qa`, and printing a final summary. It commits **no** QA document and
-**creates no `[QA]` work item** — that type is retired here, and `work-on-prd`
-files no `[QA]` issue either, which is the convergence that removed the
-adapter's QA-path convention from both trackers. The shape of that comment is
-`work-on-spec`'s own `## Loop end`; `work-on-prd` states the GitHub shape inside
-its own.
+by tagging the `[SPEC]` `needs-qa`, printing the `/ado-workflow:manual-qa`
+invocation, and printing a final summary. It **composes no QA pass**, commits
+**no** QA document and **creates no `[QA]` work item** — that type is retired
+here, and `work-on-prd` files no `[QA]` issue either, which is the convergence
+that removed the adapter's QA-path convention from both trackers.
 
-The QA pair is why the plugin outgrew its bundle. `manual-qa` drives that
-comment step by step and appends each failure to the run's **`[FINDINGS]` work
-item**; `triage` reads that one item, files a `[BUG]` per survivor under the
-same parent, and closes it. They sit here rather than in `prd-workflow` or `lk`
-for ADR 0008's surviving reason — writer and readers of a parse contract ship in
-one version-bumped plugin — and they answer to the **`ado-qa`** bundle, not to
+The QA pair is why the plugin outgrew its bundle. `manual-qa` **composes** the
+pass on demand from what actually landed on the run's branch — the diff, the
+commits, the landed `[TASK]`s — as a short list of flows, drives it one flow at a
+time, and appends each failure to the run's **`[FINDINGS]` work item**; `triage`
+reads that one item, files a `[BUG]` per survivor under the same parent, and
+closes it. They sit here rather than in `prd-workflow` or `lk` for ADR 0008's
+surviving reason — the writer and readers of a tracker's literals ship in one
+version-bumped plugin — and they answer to the **`ado-qa`** bundle, not to
 `ado-workflow`. ADR
 [0011](../../docs/adr/0011-azure-devops-qa-is-a-tickable-comment.md) is the
-argument, including which of 0008's claims about this tracker were wrong.
+argument, including which of 0008's claims about this tracker were wrong; ADR
+[0012](../../docs/adr/0012-the-qa-pass-is-composed-from-the-branch.md) supersedes
+it **on the QA-artifact half only** — the tickable comment is gone, the plugin
+membership and the board reasoning behind the title prefixes are not.
 
 ## Layout
 

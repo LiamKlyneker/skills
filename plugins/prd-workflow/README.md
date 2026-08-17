@@ -5,9 +5,11 @@ The PRD-to-merge workflow, packaged as a Claude Code plugin: `to-prd` →
 `prd-worker` agent that `work-on-prd` spawns per child issue.
 
 `manual-qa` and `triage` close the loop from the other end. `manual-qa`
-drives the QA comment a run posted on the PRD — one step per turn, ticking each
-box as the human confirms it and posting a `### [FINDING]` comment to the PR for
-each failure. `triage` then takes those findings and promotes the survivors
+**composes** the pass on demand from what actually landed on the run's branch —
+the diff, the commits and their `(#N)` attribution — as a short list of flows,
+then drives it one flow at a time, taking one verdict per flow and posting a
+`### [FINDING]` comment to the PR for each failure. The loop posts no QA comment
+for it to read. `triage` then takes those findings and promotes the survivors
 back into cold-runnable children that `work-on-prd` picks up with no new
 machinery. Both lived in the `lk` plugin until they didn't — `lk` is the skills
 that talk to the user and the codebase, and a skill that files GitHub issues was
@@ -21,7 +23,7 @@ plugins/prd-workflow/
   skills/
     _shared -> ../../../_shared        # symlink, see below
     to-prd/  to-issues/  next-prd-issue/  work-on-prd/  work-on-issue/
-    manual-qa/                         # drive the QA comment, capture findings
+    manual-qa/                         # compose the pass from the branch, drive it, capture findings
     triage/                            # QA findings back into children
   agents/prd-worker.md
 ```

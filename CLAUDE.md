@@ -65,49 +65,52 @@ own docs.
 ## QA lands differently per tracker, and so do title prefixes
 
 Both orchestrators still **commit nothing** for QA, and the adapter names no QA path on either
-tracker — but the artifact itself has diverged, deliberately. `work-on-prd` posts the run's QA
-steps as a **comment on the PRD issue** and labels the PRD **`needs-qa`**; the human works the
-comment and removes the label when the pass is done. **No `[QA]` issue is created on GitHub.**
-The GitHub chain from there is `manual-qa` → `triage`, both in `prd-workflow` and neither in
-`lk` — a skill that parses the loop's own template belongs in the plugin that writes it, ADR
-[0008](docs/adr/0008-prd-qa-skills-belong-to-prd-workflow.md): `manual-qa`
-takes a PRD URL, drives that comment's steps one at a time, ticks each box as the human
-confirms it, and posts a `### [FINDING]` comment to the PR for each failure; `triage`
-promotes the survivors into children. **That marker is a parse contract, not a title prefix** —
-it is hardcoded in both skills and deliberately absent from the adapter, because a project free
-to edit it would get a triage pass that silently finds nothing. The tick state in the comment is
-the only record a pass happened; neither skill writes a session log, and only a human removes
-`needs-qa`. **Azure DevOps now has the same shape and its own drivers.** `work-on-spec` posts a
-tickable Markdown comment on the `[SPEC]` and puts a `needs-qa` **tag** on it — **no `[QA]` work
-item is created any more**, and the type is retired on that tracker. The chain from there is
-`ado-workflow:manual-qa` → `ado-workflow:triage`, both in `ado-workflow` for the same
-parse-contract reason: `manual-qa` drives the comment and appends each failure to **one
-`[FINDINGS]` work item per run**, `triage` reads that item, files a `[BUG]` per survivor and
-closes it. **GitHub's `Triaged:` back-annotation does not exist on that side and must not be
-added** — a fresh findings item per run means "already handled" is simply "that item is closed",
-one field read in the same fetch that loads the findings. The two loops are
-**siblings that arrived at the same shape, not a shared file with two call sites**: every literal
-is its own tracker's, and GitHub's `<!-- 75 80 -->` id trailer does not survive on ADO at all
-(HTML comments are stripped out of a comment's API read), so ids ride in the open, backticked.
-Each loop owns the whole shape of its own artifact — `work-on-prd`'s `## Loop end` for GitHub,
-`work-on-spec`'s `## Loop end` plus
-`plugins/ado-workflow/skills/references/findings-item.md` for ADO. There was a shared
-QA-item reference under `_shared/`; it was dissolved into two per-tracker halves, and they are
-now free to differ — the ADO half is itself deleted now, its `[QA]` work item having gone with
-it. The reasoning for moving QA out of the repo at all is ADR
+tracker — and **neither loop composes the pass any more.** `work-on-prd` labels the PRD
+**`needs-qa`** and prints `/prd-workflow:manual-qa #<prd>`; `work-on-spec` puts a `needs-qa`
+**tag** on the `[SPEC]` and prints `/ado-workflow:manual-qa`. Each applies its label iff a child
+reported something a human can exercise, and **neither ever invokes the driver** — on demand is
+the only trigger. **No `[QA]` issue on GitHub and no `[QA]` work item on ADO**; that type is
+retired on both. Everything the loops used to post is gone with the comment that carried it: no
+template, no `## Steps` headings, no step anchors, no `<!-- 75 80 -->` id trailers, no
+never-edit rule, no failure suffix.
+`manual-qa` **composes the pass itself, in its own session, from what actually landed** — it
+finds the run's PR (GitHub by the PR body's `PRD: #<n>` resume key, ADO by the `[SPEC]`'s
+ArtifactLink), reads the branch diff, the commits and the landed children, and lays the pass out
+as **flows**: a name, an explicit `start from:` line, numbered sub-steps, and attribution from
+the `(#N)` suffixes on the commits. The diff is the authority; a child's planned `## QA notes` is
+context the diff overrules. Driving takes **one verdict per flow** from a human. A failure posts
+`### [FINDING]` on the PR (GitHub) or appends to **one `[FINDINGS]` work item per run** (ADO);
+`triage` then promotes the survivors — into children on GitHub, into an unscheduled `[BUG]` on
+ADO, closing the findings item. **GitHub's `Triaged:` back-annotation does not exist on that side
+and must not be added** — a fresh findings item per run means "already handled" is simply "that
+item is closed", one field read in the same fetch that loads the findings. **The receipt is
+output, never input**: a free-form comment on the PRD / `[SPEC]` saying which flows ran and how
+they went, which nothing parses and no skill reads back, plus the `needs-qa` removal a human
+still authorises. **Exactly three QA literals survive anywhere**: `### [FINDING]`, the
+`[FINDINGS]` title prefix (triage's input on ADO), and `PRD: #<n>` in the PR body's machine block
+— and that last one was already the PR body's, not a new one. `### [FINDING]` **is a parse
+contract, not a title prefix** — hardcoded in both skills and deliberately absent from the
+adapter, because a project free to edit it would get a triage pass that silently finds nothing.
+Both QA pairs are **siblings that arrived at the same shape, not a shared file with two call
+sites**: every literal is its own tracker's, GitHub's HTML-comment id trailers never survived on
+ADO at all (they are stripped out of a comment's API read, so ids ride in the open, backticked),
+and the ADO findings item has its own shape in
+`plugins/ado-workflow/skills/references/findings-item.md`. There was a shared QA-item reference
+under `_shared/`; it was dissolved into two per-tracker halves, and both are gone now with the
+`[QA]` artifacts they described. The reasoning for moving QA out of the repo at all is ADR
 [0005](docs/adr/0005-qa-is-an-issue-not-a-committed-document.md) — whose two 440-line
 evidence documents under `docs/qa/` were retired by ADR
 [0010](docs/adr/0010-one-distribution-one-dev-mode.md), two supersessions after the loop
-stopped producing them. The reasoning for the comment
-being a **contract** rather than prose — its load-bearing literals, the second never-edit
-carve-out, and "all boxes ticked, no failure suffix, label removed" as the receipt — is ADR
-[0009](docs/adr/0009-the-qa-comment-is-a-parse-contract.md), which supersedes ADR 0006 **on the
-QA half only**: a PRD's children are still native sub-issues. The reasoning for the ADO half —
-the three claims ADR 0008 made about that tracker and got wrong, what it got right, and why the
-prefixes diverge — is ADR
-[0011](docs/adr/0011-azure-devops-qa-is-a-tickable-comment.md), which supersedes 0008 **on the
-platform half only**: its plugin-membership rule stands, and is exactly what put both new skills
-in `ado-workflow`.
+stopped producing them. The reasoning for the pass being **composed from the branch rather than
+planned into a contract** — why a pass written before the code existed tested the plan, what the
+three surviving literals are, and why the loop must not invoke the driver — is ADR
+[0012](docs/adr/0012-the-qa-pass-is-composed-from-the-branch.md), which supersedes ADR
+[0009](docs/adr/0009-the-qa-comment-is-a-parse-contract.md) and ADR
+[0011](docs/adr/0011-azure-devops-qa-is-a-tickable-comment.md) **on the QA-artifact half of each
+only**. Both surviving halves are load-bearing here: 0009's, that a PRD's children are still
+native sub-issues; and 0011's plugin-membership rule, which is why `manual-qa` and `triage` sit
+in `prd-workflow` and `ado-workflow` — beside the loop whose literals they share — and never in
+`lk`.
 
 GitHub titles carry `[PRD]` · `[TASK]` · `[BUG]`, registered in the adapter's `## Repo` →
 *Title prefixes* row, never hardcoded in a skill. **On GitHub they are a human scanning

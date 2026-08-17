@@ -6,7 +6,7 @@ disable-model-invocation: true
 
 # triage
 
-The **investigate + promote** half of the PRD QA loop. `manual-qa` — the capture phase — drives a run's QA comment and logs each failure as a self-contained `### [FINDING]` comment on a PRD's PR; `triage` *confirms, roots-causes, and promotes* the survivors into **cold-runnable issues** — one per finding — that `work-on-prd` (or `work-on-issue`) executes later with zero re-research. It is the PRD-scoped specialization of the generic triage pattern: it never reads a deploy-preview comment stream, it reads a PRD.
+The **investigate + promote** half of the PRD QA loop. `manual-qa` — the capture phase — composes a run's pass from what landed on the branch, drives it flow by flow, and logs each failure as a self-contained `### [FINDING]` comment on a PRD's PR; `triage` *confirms, roots-causes, and promotes* the survivors into **cold-runnable issues** — one per finding — that `work-on-prd` (or `work-on-issue`) executes later with zero re-research. It is the PRD-scoped specialization of the generic triage pattern: it never reads a deploy-preview comment stream, it reads a PRD.
 
 Its edge over a generic triage is **decision context**: it loads the PRD, its child issues, the touched `CONTEXT.md`, and the locked decisions — so it can tell a real defect from a gap that was **deferred on purpose**, and route a finding to the repo that actually owns it.
 
@@ -21,15 +21,10 @@ Project facts (repos, commands, verify ladder) come from the **project adapter**
 
 Establish PRD scope before the first finding, and hold it for the whole session:
 
-- **Which PRD / PR.** Resolve the PR (`gh pr list` / branch's PR) and the PRD issue it runs (PR body's `Runs PRD #N` + `## Children`). Ask if not given.
-- **PRD issue** (`gh issue view <n> --json body,comments`) — the body for its cross-repo dependencies, deferred / out-of-scope notes, and explicit locked decisions; the same call's `comments` array is what the QA comments below are read from.
+- **Which PRD / PR.** Resolve the PRD, then its run's PR via the machine block's `PRD: #<n>` resume key in the PR body — the same key `manual-qa` uses to locate a run, matched as a whole line (`PRD: #12` is a prefix of `PRD: #127`). Ask if not given.
+- **PRD issue** (`gh issue view <n> --json body,comments`) — the body for its cross-repo dependencies, deferred / out-of-scope notes, and explicit locked decisions. The same call's `comments` array carries `manual-qa`'s **receipt** from any pass that has run — which flows it walked and where it stopped. Read it as **context only, never matched**: it is free-form by design, nothing parses it, and it is not a source of findings. The findings are on the PR.
 - **Child issues** + the PR's **Closes map** (#c1…#cN → their file areas) — this is the *owning-slice* attribution map, near-free.
-- **Touched `CONTEXT.md`** for the feature dir(s) under test (use the `scoped-context` skill if available).
-- **The PRD's QA comments** — `work-on-prd` posts one **comment** on the PRD issue per run (no `[QA]` issue any more); read them from the `comments` array the first bullet already fetched, rather than a second search. A QA comment is identified by two markers together, never a fragile substring: the **run-context line** it opens with (e.g. ``Branch `prd/52-extract-lk-plugin` · PR #63 · 9 issues landed``) and the **`## Steps` heading**, the one heading present in every QA comment by construction (`## What landed` is conditional, so it can't be the marker). Read **all** of them, newest last: each covers only the slice its run landed, so the current state of the branch is the union, and an earlier one's `## Before you start` may name something a later run has since fixed. Plus code comments in the touched files marked "deferred", "later slice", "no resolver yet", placeholder. This is what powers the gap classification below.
-
-  A finding's `**Step:**` field permalinks the exact comment it came from, so on a multi-run PRD you can go straight to the right one rather than guessing among them; a step `manual-qa` failed carries a ` — **failed**, see [FINDING](…)` suffix in place, which is the cheapest way to see what a pass hit without re-reading every PR comment.
-
-  A PRD with no QA comment at all is normal, not a gap: a run whose children were all refactors or bumps creates none by design. And a QA comment is *never* a finding — it is the checklist the findings came from. The PRD's `needs-qa` label is worth noting alongside this — it signals an outstanding manual pass — but it does not change the classification above.
+- **Touched `CONTEXT.md`** for the feature dir(s) under test (use the `scoped-context` skill if available), plus code comments in those files marked "deferred", "later slice", "no resolver yet", placeholder. Together with the PRD body and the children, this is what powers the gap classification below — there is no QA comment to read, and a PRD whose run landed only refactors or bumps has no QA artifact at all, which is normal rather than a gap. The PRD's `needs-qa` label is worth noting — it means no pass has completed yet — but it does not change the classification.
 
 ## Input
 
@@ -61,10 +56,10 @@ A finding written by the driver carries two fields worth **consuming rather than
 
 | Field | Example | Use it for |
 |---|---|---|
-| `**From:**` | `**From:** #75 #80` | the **owning slice**, direct from the step's id trailer — no derivation from the Closes map |
-| `**Step:**` | `**Step:** 3 — <permalink>` | **run provenance**: which QA comment, and which step of it, on a PR that has had more than one run |
+| `**From:**` | `**From:** #75 #80` | the **owning slice**, lifted by `manual-qa` from the `(#N)` suffixes on the commits the flow exercises — no derivation from the Closes map |
+| `**Step:**` | `**Step:** flow 3 ("search and filter"), sub-step 2` | **pass provenance**: which flow of the pass, and which sub-step of it, failed. No permalink — the pass is composed in `manual-qa`'s session and posted nowhere, so there is nothing to link to |
 
-**Both are absent on an ad-hoc finding**, which has no step and no trailer. That is the normal case for a pasted finding, not a defect in it: fall back to the PR's Closes map for the owning slice (step 3), and say the finding has no run provenance rather than inventing one.
+**Both are absent on an ad-hoc finding**, which has no flow and no attribution. That is the normal case for a pasted finding, not a defect in it: fall back to the PR's Closes map for the owning slice (step 3), and say the finding has no pass provenance rather than inventing one.
 
 ## Cadence (one finding per turn — clone of grill / `manual-qa`)
 
@@ -74,7 +69,7 @@ For each finding: **capture → validate (gap classification) → investigate (s
 
 ### 1. Capture
 
-Record the finding + its source (PR comment permalink, `file:line`, author). **`manual-qa` already did the classification + hypothesis + evidence — inherit them as the warm start; do not re-derive.** Same for the two handover fields: `**From:**` is the owning slice and `**Step:**` is the run provenance, both taken as written. Hold the comment's **permalink** for the whole finding — publishing writes `**Triaged:** #N` back to it.
+Record the finding + its source (PR comment permalink, `file:line`, author). **`manual-qa` already did the classification + hypothesis + evidence — inherit them as the warm start; do not re-derive.** Same for the two handover fields: `**From:**` is the owning slice and `**Step:**` is the pass provenance, both taken as written. Hold the comment's **permalink** for the whole finding — publishing writes `**Triaged:** #N` back to it.
 
 ### 2. Validate + gap classification (HARD GATE — before filing anything)
 
@@ -98,7 +93,7 @@ Spawn **one read-only subagent per finding** (the token-saver: the main session 
 - **Warm start:** hand it `manual-qa`'s hypothesis + `file:line`. Its job is **confirm + plan**, not discover-from-scratch.
 - **Job:**
   1. **Confirm the root cause** on the current branch — trace the call path; for a contract-boundary finding, re-run the decisive `curl` against the live endpoint.
-  2. **Attribute to the owning child slice** — always. **Where the finding carries `**From:**`, that *is* the attribution**: it was lifted from the step's own id trailer by the skill that wrote the step, so take it as given and say you took it from the field. Derive from the PR's **Closes map** only when the field is absent (an ad-hoc finding), and say that too — the two are not equally authoritative, and a silent re-derivation can disagree with the trailer without anyone noticing.
+  2. **Attribute to the owning child slice** — always. **Where the finding carries `**From:**`, that *is* the attribution**: `manual-qa` lifted it from the `(#N)` suffixes on the commits the failing flow exercises, so take it as given and say you took it from the field. Derive from the PR's **Closes map** only when the field is absent (an ad-hoc finding), and say that too — the two are not equally authoritative, and a silent re-derivation can disagree with the field without anyone noticing.
   3. **Introducing commit `@<sha>` — only when it earns its place:** run `git blame` / `git bisect run <repro>` **only for a regression** (worked before, broke) or when the diff reveals deliberate intent. For a never-worked / net-new-feature bug or a deferred gap, **skip the archaeology** — the `file:line` + owning slice already localize it.
   4. **Author the fix plan** — exact files, prior art to copy, the change, and testable acceptance criteria. This is what makes the issue cold-runnable.
 - **Return contract:** confirmed root cause · owning slice · `@sha` (only if a regression) · fix plan · files/prior-art · acceptance criteria · which repo owns the fix.
@@ -185,7 +180,7 @@ One line, appended to the `### [FINDING]` comment, naming the issue it became:
 
 **This is the only place in the chain where the finding → issue link is written down.** `triage` links the issue *up* to the PRD as a sub-issue, and nothing else links back down to the finding that produced it — so without this line a second pass has no way to tell a fresh finding from one it promoted last week.
 
-**No contract amendment is needed for it.** The finding comment is `manual-qa`'s own artifact, authored by the same user, and carries no never-edit rule — unlike the QA comment on the PRD, which does and whose two carve-outs are `work-on-prd`'s to define.
+**No contract amendment is needed for it.** The finding comment is `manual-qa`'s own artifact, authored by the same user, and carries no never-edit rule. Nothing on the PRD does either any more: the loop posts no QA comment, and `manual-qa`'s receipt is free-form output that nothing reads back.
 
 Mechanics — the same operation class as `manual-qa`'s failure suffix, and the same rules apply:
 

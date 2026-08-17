@@ -167,7 +167,7 @@ Everything a cold, isolated worker session needs to implement this slice without
 
 ## QA notes
 
-2–3 lines for the human QA pass: what to do in the running app, what they should see, edge cases worth poking. The worker refines these into the steps of the run's QA comment on the PRD, so write them as something a person could actually do — and where this slice is a refactor, a bump or config that nobody can exercise by hand, say that instead of inventing a step.
+2–3 lines for the human QA pass: what to do in the running app, what they should see, edge cases worth poking. These are **context for the QA pass, not the pass itself** — `manual-qa` composes the pass from the branch later and lets the diff overrule them — so write each as "start from X, then …", naming the state to be in before the action, and where this slice is a refactor, a bump or config that nobody can exercise by hand, say that instead of inventing a step.
 
 ## Acceptance criteria
 
