@@ -219,7 +219,7 @@ State lives in git + GitHub only (branch commits, issue labels, PR body). Zero s
 
 One collapsed block, appended as the last thing in the PR body, holding everything the loop needs from that body and nothing a reviewer has to read. Everything above it belongs to the team.
 
-**It is a parse contract, on the same doctrine as the QA comment (ADR 0009), and every literal in it is hardcoded here.** The adapter shapes the body *around* the block — the branch pattern, the PR template — and has no say inside it. There is no adapter row for any string below and there must never be one: the project free to edit the resume key is the project whose next resume finds nothing, cold-starts, and opens a second branch and a second PR over live work. That is the failure this whole design was built to remove, and handing it back to the adapter would be handing it back one row at a time.
+**It is a parse contract — now the only one this loop writes — on the doctrine ADR 0009 stated for the QA comment and ADR 0012 kept after retiring it: a string two skills must agree on byte-for-byte is hardcoded, never registered in the adapter. Every literal in it is hardcoded here.** The adapter shapes the body *around* the block — the branch pattern, the PR template — and has no say inside it. There is no adapter row for any string below and there must never be one: the project free to edit the resume key is the project whose next resume finds nothing, cold-starts, and opens a second branch and a second PR over live work. That is the failure this whole design was built to remove, and handing it back to the adapter would be handing it back one row at a time.
 
 | Literal | Parsed by | For what |
 |---|---|---|

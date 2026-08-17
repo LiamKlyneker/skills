@@ -1,9 +1,10 @@
 # ADR 0011 — Azure DevOps QA is a tickable comment, and 0008's three platform claims were false
 
-- **Status**: Accepted
+- **Status**: Superseded by ADR 0012
 - **Date**: 2026-08-02
 - **Context**: PRD #87, implemented by #95–#99
 - **Supersedes**: ADR 0008
+- **Superseded by**: ADR 0012 — **on the QA-artifact half only.** `work-on-spec` posts no comment for `manual-qa` to tick; the pass is composed on demand from the branch, and the tick-state receipt is gone with it. **What still stands**: the plugin-membership rule this record inherited from ADR 0008 and applied to put both ADO QA skills in `ado-workflow`; the board reasoning that makes ADO title prefixes load-bearing, `[FINDINGS]` included; and the measured platform facts about comment writes and the sanitiser.
 
 ## Read this first: 0008's plugin-membership half stands, and this record depends on it
 
