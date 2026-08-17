@@ -1,162 +1,138 @@
 ---
 name: manual-qa
-description: Drive a PRD's QA comment step by step — narrate each step, wait for an explicit outcome, tick the box on a pass, and on a failure post a self-contained [FINDING] comment to the PR and annotate the step. Also the ad-hoc capture path for a finding noticed outside any step. Invoke /prd-workflow:manual-qa with a PRD URL to run or resume a manual QA pass.
+description: Compose a PRD run's manual QA pass from what actually landed on the branch — the diff, the commits and the landed children — as a short list of flows, then drive it one flow at a time, taking one verdict per flow and posting a self-contained [FINDING] comment to the PR on a failure. Also the ad-hoc capture path for a finding noticed outside any flow. Invoke /prd-workflow:manual-qa with a PRD URL to run a manual QA pass.
 disable-model-invocation: true
 ---
 
 # manual-qa
 
-Drive the **QA comment** a `work-on-prd` run posted on a PRD — one step at a time, gated on the human's word — and capture what fails as findings on that run's PR. This is the **capture phase** of the PRD QA loop. Triage (confirm, root-cause, promote to issues) happens **later, in a separate session**, via `triage`.
+**Compose the pass, then drive it.** Given a PRD, find that run's PR, read what actually landed on the branch, compose a short list of **flows**, and walk the human through them one flow at a time — capturing what fails as findings on that PR. This is the **capture phase** of the PRD QA loop. Triage (confirm, root-cause, promote to issues) happens **later, in a separate session**, via `triage`.
 
-It **supersedes `qa-prd-log`**. Capture is not a separate skill: it is what this driver does when a step fails, and ad-hoc capture is this same skill invoked with nothing to drive (see `## Ad-hoc capture`). `qa-prd-log`'s two load-bearing blocks — `<the-line>` and `<comment-template>` — live here now, as sections of this skill.
+**Nothing is read from a QA comment.** The pass is composed here, in this session, from the as-built record — not from a script written before the code existed. That is the whole difference: a planned step describes what a slice was *supposed* to make testable; the diff describes what there is to test.
 
-Project facts come from the **project adapter** at `<repo-root>/.claude/project/adapter.md` — read it; never hardcode them here. This skill reads three of its sections and nothing else:
+It supersedes `qa-prd-log`. Capture is not a separate skill: it is what this driver does when a flow fails, and ad-hoc capture is this same skill invoked with nothing to drive (see `## Ad-hoc capture`). `qa-prd-log`'s two load-bearing blocks — `<the-line>` and `<comment-template>` — live here, as sections of this skill.
+
+**No `--post` flag and no second-human path.** The loop is single-developer by design: the person who ran it is the person testing it, in this session, on this machine.
+
+## Project facts
+
+Every project-specific value comes from the **project adapter** at `<repo-root>/.claude/project/adapter.md` — read it; never hardcode one here. This skill reads four things and nothing else:
 
 | Adapter section | What for |
 |---|---|
-| `## Repo` | the issue tracker and PR repo — where the QA comment lives and where findings are posted |
-| `## Verify ladder` | the **L5** rung, which defines what a step must name to be executable at all (see *A structurally unexecutable step is a finding*) |
+| `## Repo` | the issue tracker and PR repo — where the PRD lives and where findings are posted |
+| `## Commands` | how to launch, build and check the thing — the sub-steps the driver can verify itself |
+| `## Verify ladder` | **L5**, which defines what a sub-step must name to be executable at all, and **L2/L3**, which define what the driver can verify without the human |
 | `## Sources of truth` | the **project explorer agent** for on-demand elaboration — `Explore` where it says None |
 
 ## Three non-negotiables
 
-1. **Capture, don't solve.** `<the-line>` says exactly where investigation stops. It has not moved: the driver added gating, not licence to debug.
-2. **Every comment is self-contained.** A cold `triage` session reads the comment, not this conversation. Symptom, evidence, a `file:line` pointer, a labelled root-cause *hypothesis*, classification, repro — plus, here, which step and which children it came from.
-3. **A `[x]` is a receipt, and it means exactly one thing**: a human executed that step and observed it pass. Nothing else ever ticks it — not "probably fine", not silence, not a change of subject. A false tick is a false receipt, and the comment is the only record the pass ever happened.
+1. **Capture, don't solve.** `<the-line>` says exactly where investigation stops. It has not moved: composing the pass added authorship, not licence to debug.
+2. **Every comment is self-contained.** A cold `triage` session reads the comment, not this conversation. Symptom, evidence, a `file:line` pointer, a labelled root-cause *hypothesis*, classification, repro — plus, here, which flow and sub-step and which children it came from.
+3. **A pass verdict is a receipt, and it means exactly one thing**: a human executed that flow and observed it work. Nothing else ever produces one — not "probably fine", not silence, not a change of subject. A false pass is a false receipt, and the receipt is the only record the pass ever happened.
 
 ## Input: one PRD URL
 
 **One input, no branching, no selection logic.** The user passes a PRD URL (or issue number). If they pass nothing, this is ad-hoc capture — see that section — not a prompt to go hunting for a PRD.
 
-### Picking the comment
+### Finding the run
 
-Load the PRD's comments with **one** call:
+The run's identity is its **pull request**, found by the machine block's resume key in the PR body — the same key `work-on-prd` uses, and no new literal:
 
 ```bash
-gh issue view <prd-number> --json comments --jq '.comments[] | {url, createdAt, body}'
+gh pr list --repo <owner>/<repo> --state open --json number,headRefName,body \
+  --jq '[.[] | select(.body | test("(^|\n)PRD: #<n>[ \t\r]*(\n|$)"))] | .[] | {number, headRefName}'
 ```
 
-A QA comment is identified by **two markers together**, never a fragile substring:
+**Match the whole line, never a substring** — `PRD: #12` is a prefix of `PRD: #127`, and a bare substring match hands you somebody else's run. More than one hit, or none, is a **stop**: say what you found and ask. A PR that predates the machine block carries no such line; that is a run this skill cannot locate, and saying so is the correct outcome.
 
-- the **run-context line** it opens with — ``Branch `<branch>` · PR #<n> · <count> issues landed``. Match the *line*, not the branch: `prd/<n>-<slug>` is only the default shape, and a project whose adapter names its own branch pattern opens with that instead.
-- the **`## Steps` heading**, present in every QA comment by construction (`## Before you start` is conditional, so it cannot be the marker)
+Then **say which PR you picked** — number, head branch, title — before reading anything else.
 
-Take the **newest** comment carrying both. Then **say which one you picked** — its permalink, its run-context line, and how many steps it holds — *before* doing anything else. A driver that silently picks the wrong run walks a human through a slice they already tested.
+## Composing the pass
 
-### Deriving the comment id (the trap)
+### What you read, and what it is for
 
-`gh issue view --json comments` returns `id` as the **GraphQL node id** (`IC_kwDO…`), not the REST id the read-modify-write path needs. Do not pass it to `gh api`; it does not 400, it 404s, which reads as "no such comment".
+Four reads, all of the branch that PR points at:
 
-The REST id is the numeric tail of the comment's own permalink — `…/issues/85#issuecomment-5078204371` → `5078204371`. Take it from the `url` field you already fetched. Measured against this repo's API, not assumed.
+| Read | Command | What it is |
+|---|---|---|
+| the diff | `gh pr diff <n>` | **the as-built record** — the only authority on what there is to test |
+| the commits | `gh pr view <n> --json commits` | attribution: the `(#N)` suffix on each subject says which child owns that code |
+| the landed children | the machine block's checklist, or issues labelled `state:done-on-branch` | which slices are in this run at all |
+| each child's body | `gh issue view <c>` | acceptance criteria and planned `## QA notes` |
 
-### The QA comment is self-sufficient
+The last two are **context, not the pass**. A child's `## QA notes` was written before the code existed and may describe something that was built differently or not at all; read it for intent and let the diff overrule it. **There is no per-child write-back to read** — the workers' refined notes went into a report the orchestrator consumed, and nothing durable holds them.
 
-Its run-context line carries **the branch to check out and the PR to post findings to**. That is the whole of the run context, and **nothing else is fetched**: no PR body, no diff, no child issues, no search.
+### What a flow is
 
-**Total I/O for a pass:**
+A **flow** is a run of sub-steps that share a starting state and end somewhere the tester can safely walk away from. Each flow has:
 
-| Occasion | Calls |
-|---|---|
-| Load | 1 × `gh issue view <prd> --json comments` |
-| Per step confirmed | 1 × `GET` + 1 × `PATCH` on the comment |
-| Per finding | 1 × `POST` (PR comment) + 1 × `PATCH` (the suffix) |
+- a **name** — what the tester is exercising, in their words;
+- an explicit **`start from:` line** — the shared setup or precondition the sub-steps assume;
+- **sub-steps**, numbered within the flow, each naming an action and an observable result;
+- **attribution** — the children whose code this flow exercises, lifted from the `(#N)` suffixes on the commits that touched the files involved.
 
-No subagent by default. No PR fetch. No polling, ever.
+**The first flow is always "get running"**: whatever the adapter's `## Commands` and L5 rung say it takes to have the thing in front of you — the launch command, the config dir, the branch checked out. Everything after it starts from a running system.
 
-### No upfront exploration
+**Cross-flow dependency is allowed, and must be named in `start from:`** — "start from: a completed flow 2, app still running" is a fine precondition; leaving it implicit is not. A tester who reads `start from:` and cannot get there has been handed a flow they cannot run.
 
-Do **not** read the diff, the children, or the code before starting. Elaboration is **on demand only** — when the human asks what a step means — and it is delegated, never done on this thread:
+### Flow boundaries
+
+Boundaries follow **cohesion**: same screen, same config, same state. **Never "by child" and never "every N sub-steps".** A child that touched three unrelated surfaces earns sub-steps in three flows; three children that all changed one screen share one.
+
+3–7 sub-steps is a smell test, not a rule. A one-sub-step flow is fine — a single dependency bump with one thing to look at is one flow with one sub-step, not padding to reach a quota. A flow that has grown past a dozen sub-steps is usually two flows whose shared starting state you have not named yet.
+
+**Present the whole list first** — numbered flows, each with its name and `start from:` — so the tester can see the shape of the pass and how long it is before committing to it.
+
+### No upfront exploration beyond the four reads
+
+The four reads above are the composition input, and that is all. Do **not** go reading the wider codebase to write the flows. Elaboration *during* the pass — when the human asks what a sub-step means — is **on demand only**, and delegated, never done on this thread:
 
 - Spawn **one throwaway subagent** per question: the **Agent** tool with the explorer agent from the adapter's `## Sources of truth` (`Explore` where it says None), `model: "haiku"`, thoroughness "medium". Same shape as `pinpoint`.
 - Ask for a **condensed report**: paths, symbols, the one thing that answers the question. Do not read, grep or glob yourself — the point is to keep the QA thread clean.
-- **It must name its source.** Relay the answer in that form: *"the comment doesn't say; from the diff on this branch: …"* — so the human always knows whether they are hearing the QA comment or an inference from code.
+- **It must name its source**, and you relay it in that form: *"from the diff on this branch: …"* — so the human always knows they are hearing an inference from code, not the pass.
 
-Three hard limits on elaboration: it **never rewrites a step**, it is **never appended to the comment**, and it is **never the basis for judging pass/fail**. Only the human's observation in the running app decides that.
+Two hard limits: elaboration **never rewrites a flow mid-pass**, and it is **never the basis for judging a verdict**. Only the human's observation in the running app decides that.
 
-### Session hygiene: check and report, never act
+### Session hygiene: check and report, act only on the word
 
-Before step 0, confirm two things and say what you found:
+Before presenting flow 1, confirm and say what you found:
 
-- the branch from the run-context line is the one checked out (`git branch --show-current`)
-- the PR from the run-context line is open (`gh pr view <n> --json state,isDraft`)
+- the PR's head branch is the one checked out (`git branch --show-current`);
+- the PR is open (`gh pr view <n> --json state,isDraft`);
+- the tree is clean (`git status --short`).
 
-If either is wrong, or anything else is unexpected — dirty tree, detached HEAD, a closed PR — **say so and stop for the human**. Never `git checkout`, never `git stash`, never start the app. The tester owns their machine; this skill owns the bookkeeping.
-
-## `## Before you start` folds into step 0, and ticks nothing
-
-If the chosen comment has a `## Before you start` section, read it verbatim as the lead-in of the **same message** that presents step 0 — there is no separate acknowledgement turn to wait on. The human's step-0 outcome is what confirms it landed. It has no checkbox and it ticks nothing — there is nothing to record on its own.
-
-Skipping it produces a **false finding on step 1**, because that section is the "this will look broken and is not" warning: the dangling symlink a later child repairs, the flag that is off, the child deliberately left for a human. A tester who never heard it logs the known gap as a defect and burns a triage round-trip on it.
-
-No such section → say so in one clause and go straight to step 0.
+Anything unexpected — dirty tree, detached HEAD, closed PR, wrong branch — **say so and stop for the human**. The driver runs read-only and verify commands from the adapter's `## Commands` freely; anything that changes the working tree or starts a long-lived process it **proposes and waits for a yes**. The tester owns their machine.
 
 ## Driving the pass
 
-Steps are read **verbatim**, never paraphrased — the wording in the comment is the wording that was verified against what shipped. Narrate the position on every turn: **"step 3 of 9"**. GitHub renders its "3 of 7 tasks" counter for issue *bodies* only, never comments, so the artifact carries no visible progress indicator and the driver is the only one there is.
+**Present flow *n* whole** — name, `start from:`, every sub-step — and narrate the position: **"flow 3 of 5"**. A flow presented a sub-step at a time is a flow the tester cannot plan a walk-away point in, which is the one thing flows exist to give them.
 
-Two terminal states per step, and no others:
+Within the flow, split the work:
 
-| Outcome | Effect |
+- **Sub-steps the driver can verify itself** — the adapter's L2 and L3 rungs: commands with checkable output, a build, a file that must exist, a plugin that must appear in a listing. **Run them and paste the output.** Evidence, not a claim that they passed.
+- **Sub-steps only a human can do** — anything requiring eyes on a running system. Ask for exactly those, having already shown the machine half.
+
+### One verdict per flow
+
+| Verdict | Effect |
 |---|---|
-| **Pass** | `[ ]` → `[x]`, advance |
-| **Fail** | post a `[FINDING]` comment to the PR, append the failure suffix, leave the box `[ ]`, advance |
+| **Pass** | record it, move to flow *n+1* |
+| **Fail at sub-step *k*** | post a `[FINDING]` comment to the PR naming flow *n*, sub-step *k*; move to flow *n+1* |
 
-- **Never advance without an explicit signal.** Not from silence, not from a change of subject, not from "ok". If the next thing the human says is not an outcome for the current step, answer it and re-present the step.
-- **Natural language, not keywords.** Read intent — "yeah that showed up fine", "nope, nothing rendered", "it did the thing" are all outcomes. There is no vocabulary to memorise and no magic word.
-- **But never tick on ambiguity.** "I think so", "looks about right", "close enough" are not outcomes. Ask **one** clarifying question naming the expected result the step states, and wait. Asking costs a turn; a false tick costs the receipt.
+- **Partial progress inside a flow is not recorded.** A re-test reruns the whole flow — cheap by construction, because flows are short and start from a named state. There is no half-passed flow and no third verdict.
+- **A failed flow does not block the next one.** Unless its failure makes a later flow's `start from:` unreachable, in which case say so and ask.
+- **Never advance without an explicit verdict.** Not from silence, not from a change of subject, not from "ok". If the next thing the human says is not a verdict, answer it and re-present the flow.
+- **Natural language, not keywords.** "yeah all four showed up", "died on the second one", "fine until the last bit" are all verdicts. There is no vocabulary to memorise.
+- **But never record a pass on ambiguity.** "I think so", "looks about right", "close enough" are not verdicts. Ask **one** clarifying question naming the observable result the sub-step states, and wait.
 
-### There is no "skip" state
+### A structurally unexecutable sub-step is itself a finding
 
-A step the tester cannot get to right now stays a plain `[ ]` and **resume offers it again**. Nothing is written. Adding a third state would put something in the comment that means neither "passed" nor "failed", and the resume rule below would stop working.
+A sub-step that **cannot name a config dir, a command and an expected result** — the adapter's L5 rung — is not something this project can test. That is not a skip and not a shrug: **log it as a finding**, classification `bug (this repo)`, so it gets a paper trail and a trip through triage. Since this skill composed the sub-step, the finding is against this skill's composition or against a slice that landed nothing testable — say which.
 
-### A structurally unexecutable step is itself a finding
+### "Blocked" is not a verdict
 
-A step that **cannot name a config dir, a command and an expected result** — the adapter's L5 rung — is not a step this project can test. That is not a skip and not a shrug: **log it as a finding**, classification `bug (this repo)` against the run that wrote it, so it gets a paper trail and a trip through triage instead of evaporating. Then advance like any other failure.
-
-### "Blocked" is not a step state
-
-It is the human stopping. **Record nothing.** The comment already holds the ticks, the suffixes, and — by subtraction — the position. Say where they got to, and stop.
-
-### Resume needs nothing else
-
-One `GET` of the one comment. **The first step that is `[ ]` *and* carries no failure suffix is where you are.** No PR comment scan, no cross-referencing, no memory of the earlier session. A pass abandoned halfway resumes cold.
-
-## The write path
-
-Every write to the QA comment is a **strict single-line read-modify-write**. Six rules, all load-bearing:
-
-1. **Fresh `GET` immediately before every write.** Never `PATCH` from a body held in context since the pass began. A stale body written back silently reverts human edits — and violates `work-on-prd`'s never-edit contract by accident rather than intent, which is the worse kind.
-
-   ```bash
-   gh api repos/<owner>/<repo>/issues/comments/<comment-id> --jq .body > <scratch>/qa.md
-   ```
-
-2. **Substitute exactly one line, anchored on the step number.** Steps are numbered continuously from 0 across the whole run, so the anchor `- [ ] 3. ` — bracket, space, number, dot, space — is unique. Keep the trailing dot-space in the anchor or `1.` also matches `10.`. The **step text and its `<!-- 75 80 -->` trailer stay byte-identical**, as does every other line and the trailing newline. **Never re-render the body from a model-held structure**; edit the one line in the file you just fetched.
-
-   ```bash
-   gh api repos/<owner>/<repo>/issues/comments/<comment-id> -X PATCH -F body=@<scratch>/qa.md
-   ```
-
-3. **Already-ticked is success, not an error.** The anchor matches `- [x] 3. ` instead → the step is already recorded as passed. Proceed without rewriting and without complaining.
-4. **Verify from the `PATCH` response before advancing.** The response carries the new `body`; confirm the anchored line reads the way you intended. `PATCH` returning is not evidence the write landed as meant — reading it back is. A denied write must surface, never be assumed.
-5. **A `403` with `x-ratelimit-remaining: 0` stops the pass and says so.** Re-run with `gh api -i` to see the headers if the failure is unclear. Never retry-loop into a secondary rate limit; tell the human what happened and where they got to.
-6. **Never poll.** The driver advances on the user's word, full stop. There is no waiting on GitHub for anything.
-
-**The driver owns the boxes for the duration of a pass** — tell the tester this in as many words, once, at the start. GitHub offers no `If-Match` and no optimistic concurrency on comment `PATCH`, so a human ticking in the browser mid-pass is a silent last-write-wins race. Fresh-GET-per-write plus that one sentence is the whole mitigation, and there is no better one available.
-
-## The failure suffix
-
-A failed step is annotated **in place**, step text untouched:
-
-```
-- [ ] 3. search for a landed change → expect it in results <!-- 75 --> — **failed**, see [FINDING](<permalink>)
-```
-
-- **Pure append**, after the id trailer. The driver never parses a line apart and reassembles it — that is the operation class that reformats things by accident.
-- **Not strikethrough.** Struck-through text reads as *cancelled / no longer applies*, which is the opposite of what happened; it mutates the step text; and it has no clean undo.
-- **Reversible, and that is what makes the receipt work.** If the step is later re-tested and passes, **one** write flips `[ ]` → `[x]` **and drops the suffix** — so the comment can genuinely reach all-ticked, and "every box ticked" keeps meaning "everything passed".
-- **One `PATCH`, not two.** Post the finding **first**, so the permalink exists, then write the suffix in a single substitution.
-- The box stays `[ ]`. `[x]` continues to mean exactly one thing (non-negotiable 3).
+It is the human stopping. Go to `## End of pass` and take the stopped-early branch: post the receipt, **leave `needs-qa` on**, say which flow they reached.
 
 ## Findings
 
@@ -164,7 +140,7 @@ A failed step is annotated **in place**, step text untouched:
 
 It is deliberately **not** registered in the adapter's *Title prefixes* row. Those prefixes are a decorative human scanning convention; this is a **parse contract** — `triage` reads the PR's comments looking for exactly this string. Making it project-configurable would let a project edit it and get a `triage` that silently finds zero findings and reports a clean PR.
 
-**One finding per turn. Never batch.** Post it, report the permalink and a one-line recap, write the suffix, then move to the next step.
+**One finding per turn. Never batch.** Post it, report the permalink and a one-line recap, then move to the next flow.
 
 <the-line>
 ### Where investigation stops
@@ -184,7 +160,7 @@ It is deliberately **not** registered in the adapter's *Title prefixes* row. Tho
 - Reproducing many permutations beyond the one that decides routing or severity.
 - Reading another repo's handler to find the precise fix.
 - Writing or testing a fix.
-- Spawning code-exploration subagents. If a finding needs a deep code dive just to be *understood*, that is the signal it belongs in `triage`. (The on-demand elaboration subagent is not an exception: it answers "what does this step mean", never "why did it break", and never decides an outcome.)
+- Spawning code-exploration subagents. If a finding needs a deep code dive just to be *understood*, that is the signal it belongs in `triage`. (The on-demand elaboration subagent is not an exception: it answers "what does this sub-step mean", never "why did it break", and never decides a verdict.)
 </the-line>
 
 <routing>
@@ -192,7 +168,7 @@ It is deliberately **not** registered in the adapter's *Title prefixes* row. Tho
 
 - **This-repo bug** → a real defect in the code of the repo under test. Post to the PR; `triage` will open an issue here.
 - **Contract-boundary bug** → the symptom is in this app but the cause sits on the other side of the API boundary, in the repo named by the adapter's `## Repo` → *Related repos*. Prove it with the one decisive probe where feasible and say so explicitly — `triage` investigates over there and files the issue in that repo, cross-linked back. Do **not** fix or file across the boundary from here.
-- **Deferred-by-design** → not a bug. Say what was deferred, cite the code comment or PRD note, and what the follow-up slice needs. (If it was in `## Before you start`, it should not have reached a finding at all.)
+- **Deferred-by-design** → not a bug. Say what was deferred, cite the code comment or PRD note, and what the follow-up slice needs.
 - **Works-as-intended / enhancement** → capture the desire, mark it as not-a-defect.
 
 If the adapter says "None" for related repos, there is no contract boundary to route to — everything is a this-repo finding.
@@ -206,7 +182,7 @@ Keep it lean — the canonical minimum is repro / expected / actual; the rest ea
 ```
 ### [FINDING] <one-line symptom>
 
-**Step:** 3 — <permalink to the QA comment>
+**Step:** flow 3 ("search and filter"), sub-step 2
 **From:** #75 #80
 
 **Symptom:** what the user sees.
@@ -223,50 +199,43 @@ Keep it lean — the canonical minimum is repro / expected / actual; the rest ea
 **Repro:** numbered, exact steps.
 ```
 
-- `**Step:**` is run provenance — the step number plus a permalink to the QA comment it came from. A PR that has had more than one run carries more than one QA comment, and without this a finding cannot be traced back to the slice being tested when it was found.
-- `**From:**` is the child issues that earned the step, lifted from its `<!-- 75 80 -->` trailer and written with the `#`. The rendered `#N` is wanted **here** — one line, in one comment, where the expansion is useful — and forbidden in a step trailer, where two expanded titles inline turn an instruction into a citation.
-- **Both fields are absent in ad-hoc mode**, where there is no step and no trailer. Omit the lines entirely; do not write "n/a".
+- `**Step:**` is the position in this pass — **flow number, flow name, sub-step number**. **No permalink**: the pass was composed in this session and posted nowhere, so there is nothing to link to. Do not invent a link and do not write "n/a"; the flow name is what makes the position legible to a cold reader.
+- `**From:**` is the child issues whose code the flow exercises, written with the `#`, lifted from the `(#N)` suffixes on the commits that touched the files involved. The rendered `#N` is wanted here — one line, in one comment, where the expansion is useful.
+- **Both fields are absent in ad-hoc mode**, where there is no flow and no attribution. Omit the lines entirely; do not write "n/a".
 - Screenshots the user pastes cannot be embedded via `gh` (they are local) — describe them in words instead. If the user wants the image inline, they drag it into the comment on GitHub themselves.
-- Post with `gh pr comment <n> --body-file <path>` (write the body to the scratchpad first; avoids shell-escaping issues), against the PR named in the run-context line.
+- Post with `gh pr comment <n> --body-file <path>` (write the body to the scratchpad first; avoids shell-escaping issues), against the PR this pass is running on.
 </comment-template>
 
-## End of pass, and `needs-qa`
+## End of pass: the receipt, and `needs-qa`
 
-**Tick state is the whole record. Never post a session-log comment** — not a summary, not a "pass complete", not a count. End-of-pass output goes to the **terminal only**: how many steps passed, which failed with their finding permalinks, and which are still outstanding.
+Two artifacts, in this order:
 
-**The skill *offers* to remove `needs-qa`; it never removes it unprompted.** All three conditions are readable from the comment already in hand — no extra call:
+1. **The receipt** — one **free-form** comment on the **PRD**: which flows ran, the verdict on each, links to any findings, and — if the pass stopped early — which flow they got to. Free-form means free-form: **nothing parses it**, it is output rather than input, and it has no template. `gh issue comment <prd-number> --body-file <path>`.
+2. **The label.** A pass that ran every flow to a verdict → offer to remove it, and on a yes: `gh issue edit <prd-number> --remove-label needs-qa`. A pass that **stopped early** → post the receipt and **leave `needs-qa` on**, saying so in as many words. The label is the queue signal; an unfinished pass is still in the queue.
 
-| Condition | Read from |
-|---|---|
-| every step is `[x]` | the body |
-| no failure suffix anywhere | the body |
-| no `Earlier QA pass still outstanding:` first line | the body |
+Findings do **not** hold the label on. A pass that ran every flow and found three bugs is a completed pass — the findings are `triage`'s queue, not QA's.
 
-- **All three hold** → offer, and on a yes: `gh issue edit <prd-number> --remove-label needs-qa`.
-- **First two hold, third does not** → **still offer, and say so in the same sentence**. That line is a snapshot from posting time; only the human knows whether the earlier pass has since been worked.
-- **Either of the first two fails** → do **not** offer at all. Report what is outstanding and leave the label alone.
-
-**The driver drives exactly one QA comment and never touches another.** No chain-walking, no aggregate state across passes. If the chosen comment links an earlier outstanding pass, mention it once and carry on — re-invoking on that permalink is the human's call, not this skill's.
+**A re-run composes fresh.** It reads the branch again — which has usually moved — and builds new flows rather than reconstructing the old ones. Then it **asks the human where to start**, offering the earlier receipt's stopping point as the obvious answer. There is no resume state to read, and that is deliberate: the alternative is a stored pass that drifts out of date against the branch it describes.
 
 ## The terseness floor
 
-**This driver does not license further compression of the QA comment.** Every step must stay executable by a human with no skill available:
+**Composing the pass does not license compressing it.** Every sub-step must be executable by a human reading it cold:
 
-- the comment outlives any version of this skill;
-- anyone installing `prd-workflow` may never invoke the driver;
-- and the driver reads steps **verbatim**, so a step too terse for a human to act on is exactly as useless read aloud.
+- a receipt or a finding outlives this session;
+- a sub-step that only works because a model is there to interpret it is not a sub-step;
+- and the driver reads sub-steps out as written.
 
-The driver adds **gating and bookkeeping, not comprehension**. If a step only works because a model is there to interpret it, the step is wrong — that is a finding, not a feature.
+The driver adds gating and bookkeeping, **not comprehension**. If you cannot write a sub-step that names a command, a place and an observable result, the honest output is a flow with fewer sub-steps — or the note that this slice has nothing a human can exercise.
 
 ## Ad-hoc capture
 
-Invoked with no PRD URL, or a finding noticed outside any step, this skill is just the capture half:
+Invoked with no PRD URL, or a finding noticed outside any flow, this skill is just the capture half:
 
 - Ask which PR the finding belongs to, if it is not obvious. That is the only context needed.
 - Run the same cadence — confirm it is real, classify per `<routing>`, one decisive probe at most per `<the-line>`, post one self-contained comment per turn.
-- **Omit** `**Step:**` **and** `**From:**` — there is no step and no trailer to lift.
-- Tick nothing. There is no comment being driven, so there is nothing to record but the finding itself.
+- **Omit** `**Step:**` **and** `**From:**` — there is no flow and no attribution to lift.
+- Record nothing else. There is no pass being driven, so the finding is the whole output.
 
 ## Handoff to triage
 
-The PR's `### [FINDING]` comments are this skill's only committed-to-the-tracker output; the ticks and suffixes on the QA comment are its only record of the pass. A later `/prd-workflow:triage` session confirms each finding, roots it out, and promotes the survivors into cold-runnable children of the PRD. This skill never fixes anything and never files an issue.
+The PR's `### [FINDING]` comments are this skill's only committed-to-the-tracker output; the receipt on the PRD is a human-readable record of the pass and nothing reads it back. A later `/prd-workflow:triage` session confirms each finding, roots it out, and promotes the survivors into cold-runnable children of the PRD. This skill never fixes anything and never files an issue.
