@@ -16,8 +16,9 @@ The QA pair is why the plugin outgrew its bundle. `manual-qa` **composes** the
 pass on demand from what actually landed on the run's branch — the diff, the
 commits, the landed `[TASK]`s — as a short list of flows, drives it one flow at a
 time, and appends each failure to the run's **`[FINDINGS]` work item**; `triage`
-reads that one item, files a `[BUG]` per survivor under the same parent, and
-closes it. They sit here rather than in `prd-workflow` or `lk` for ADR 0008's
+reads that one item, files a **`[TASK]`** under the same parent for each finding
+being fixed now — eligible immediately, so the next run picks it up — writes
+everything else up as **one human comment on the parent**, and closes it. They sit here rather than in `prd-workflow` or `lk` for ADR 0008's
 surviving reason — the writer and readers of a tracker's literals ship in one
 version-bumped plugin — and they answer to the **`ado-qa`** bundle, not to
 `ado-workflow`. ADR

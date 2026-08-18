@@ -1,6 +1,6 @@
 ---
 name: triage
-description: Spec-scoped triage on Azure DevOps — take the findings `ado-workflow:manual-qa` logged in a run's `[FINDINGS]` work item, confirm each against the `[SPEC]`, its `[TASK]`s and the code, pinpoint root cause via a cheap subagent, then file cold-runnable `[BUG]` work items under the same parent and close the findings item. Invoke /ado-workflow:triage with a `[SPEC]` id to promote a run's QA findings into executable work items.
+description: Spec-scoped triage on Azure DevOps — take the findings `ado-workflow:manual-qa` logged in a run's `[FINDINGS]` work item, confirm each against the `[SPEC]`, its `[TASK]`s and the code, pinpoint root cause via a cheap subagent, then file the ones that are being fixed now as cold-runnable `[TASK]` work items the loop picks up, write everything else up as one human comment on the parent, and close the findings item. Invoke /ado-workflow:triage with a `[SPEC]` id to promote a run's QA findings into executable work items.
 disable-model-invocation: true
 ---
 
@@ -8,9 +8,21 @@ disable-model-invocation: true
 
 The **investigate + promote** half of the Azure DevOps QA loop. `manual-qa` — the capture phase —
 composes a run's pass from what landed on the branch, drives it flow by flow, and appends each
-failure to that run's `[FINDINGS]` work item; `triage`
-*confirms, roots-causes, and promotes* the survivors into **cold-runnable `[BUG]` work items** — one
-per finding — then **closes the findings item**.
+failure to that run's `[FINDINGS]` work item; `triage` *confirms, roots-causes, and disposes of*
+each one, then **closes the findings item**.
+
+**Two outputs, and only two.** A finding that is being fixed becomes a **cold-runnable `[TASK]`**
+under the same parent — immediately eligible, picked up by the next `work-on-spec` run with no
+further action. Everything else — deferred, already planned, out of scope, rejected, owned by
+another team — becomes **one human-readable comment on the parent work item**, and no work item at
+all. There is no third thing, and `triage` no longer files `[BUG]`s.
+
+**Why the board is not the place for a decision.** Azure DevOps has no labels, no issue states worth
+the name, and no cheap way to park something visibly-but-not-actively. So the GitHub sibling's
+`deferred` label has no analogue here, and the previous answer — file it as a `[BUG]` and let a
+human retitle it later — filled the board with items nobody was going to work, to carry information
+that was really just a sentence for a person to read. The sentence is now a comment, and the board
+holds only work.
 
 The sibling of `prd-workflow:triage`, and not a second call site of it. Same cadence and the same
 two non-negotiables; different tracker, and one structural difference that changes the shape of the
@@ -36,16 +48,20 @@ Every project-specific value comes from the **project adapter** at
 `<repo-root>/.claude/project/adapter.md` — read it; hardcode none of it here. From `## Repo` →
 `### Azure DevOps`: the organisation, the **work-item project**, the **work-item type**, the board
 states and the title prefixes; plus `## Repo` → *Related repos* for the contract boundary,
-`## Commands` and `## Verify ladder` for what a filed `[BUG]` must tell a worker, and
+`## Commands` and `## Verify ladder` for what a filed `[TASK]` must tell a worker, and
 `## Sources of truth` for the explorer agents.
 
 **Abort** if the adapter is missing, or if its `Tracker:` line is anything other than
 `azure-devops` (an absent line means `github` — that project wants `prd-workflow:triage`).
 
-`[SPEC]`, `[TASK]`, `[FINDINGS]` and `[BUG]` are **shorthand for the adapter's *Title prefixes*
-row**. If that row names different prefixes, they win — here, and in every title filter this skill
-applies. On this tracker the prefix is load-bearing rather than decorative; `## A [BUG] is filed,
-not scheduled` below is where that matters most.
+`[SPEC]`, `[TASK]` and `[FINDINGS]` are **shorthand for the adapter's *Title prefixes* row**. If
+that row names different prefixes, they win — here, and in every title filter this skill applies. On
+this tracker the prefix is load-bearing rather than decorative, and `## What this skill files is
+immediately eligible` below is where that matters most.
+
+The adapter also registers `[BUG]`, and **this skill never writes it.** It stays registered for
+bugs a human files by hand outside the loop; `../_shared/ado-eligibility.md` drops those from a
+run exactly as before. Nothing here produces one.
 
 ## Readiness: the ADO MCP server
 
@@ -68,13 +84,19 @@ stop, never a silent omission.
 
 ## Two non-negotiables
 
-1. **Every `[BUG]` is a cold-runnable fix plan.** A future `work-on-spec` run or a fresh session
-   (no memory of this chat) must fix it with **no plan mode and no re-investigation**. So each one
-   carries root cause (confirmed, not hypothesized), exact files plus prior art, the fix approach,
-   and testable acceptance criteria — mirroring `to-spec-tasks`'s `[TASK]` body so a `spec-worker`
-   consumes a bug identically to a planned slice.
-2. **Never fix.** `triage` stops at filed work items. No code changes, no fix-tests. The fix belongs
-   to a later run. (Mirror of `manual-qa`'s `<the-line>`, one phase later.)
+1. **Every filed `[TASK]` is a cold-runnable fix plan.** A future `work-on-spec` run or a fresh
+   session (no memory of this chat) must fix it with **no plan mode and no re-investigation**. So
+   each one carries root cause (confirmed, not hypothesized), exact files plus prior art, the fix
+   approach, and testable acceptance criteria — mirroring `to-spec-tasks`'s `[TASK]` body so a
+   `spec-worker` consumes a triaged fix identically to a planned slice. **This one bites harder than
+   it used to**: what you file is eligible immediately, so an under-specified `[TASK]` reaches a
+   worker on the next run rather than waiting for someone to schedule it.
+2. **Never fix.** `triage` stops at filed work items and one comment. No code changes, no fix-tests.
+   The fix belongs to a later run. (Mirror of `manual-qa`'s `<the-line>`, one phase later.)
+3. **The comment is for a human, and owes them nothing else.** It is the artifact a product owner or
+   an engineer who was not in the run will read to make a call, so it carries no tracker plumbing —
+   see `## The parent comment`. A comment they cannot act on without opening three other work items
+   has failed, however accurate it is.
 
 ## Context loading (once, up front)
 
@@ -88,7 +110,8 @@ silently suppresses the relations this walk depends on
 - **Its `[TASK]`s**, per [`../_shared/ado-eligibility.md`](../_shared/ado-eligibility.md) — spec →
   parent → siblings, filtered to this spec's `[TASK]`s. This is the *owning-slice* attribution map,
   and it is nearly free because the parent fetch is the same one that finds everything else.
-- **The parent work item**, read only — it is where a new `[BUG]` will be parented.
+- **The parent work item**, read only — it is both where a new `[TASK]` gets parented and where
+  this session's one human comment lands.
 - **Touched `CONTEXT.md`** for the area under test (use the `scoped-context` skill if available),
   plus code comments in those files marked "deferred", "later slice", "no resolver yet",
   placeholder. Together with the `[SPEC]`'s description and its `[TASK]`s, this is what powers the
@@ -185,14 +208,20 @@ code before asking the user:
 
 | Verdict | Evidence | Action |
 |---|---|---|
-| **Real defect** | behavior deviates from intent, still reproduces on the branch | → bug track (investigate + file) |
-| **Already planned** | an open `[TASK]` or a future-slice note already covers it | link it, **do not** dup |
-| **Intentionally deferred / out-of-scope** | a `[SPEC]` decision or code comment says so | cite it — **not a bug** |
-| **Genuine unplanned gap** | nothing in the `[SPEC]` / `[TASK]`s / decisions covers it | **propose a follow-up and ASK the user** before creating |
+| **Real defect** | behavior deviates from intent, still reproduces on the branch | → fix track (investigate + file a `[TASK]`) |
+| **Already planned** | an open `[TASK]` or a future-slice note already covers it | → comment; name the existing work in plain words, **do not** dup |
+| **Intentionally deferred / out-of-scope** | a `[SPEC]` decision or code comment says so | → comment; cite the decision — **not a bug** |
+| **Genuine unplanned gap** | nothing in the `[SPEC]` / `[TASK]`s / decisions covers it | **ASK the user**: fix now (`[TASK]`) or write it up (comment) |
 
-- **Bugs** go to the board and are confirmed at publish time.
-- **Follow-ups / enhancements / deferred gaps always ask first** — never auto-file a new feature
-  slice. State the scope and let the user say create / link-existing / leave-noted.
+**The question at every fork is one question: is this being fixed in this run?** Yes → a `[TASK]`,
+which the next run picks up. No → a line in the comment. Never file work nobody has agreed to do —
+what you file gets worked.
+
+- **Filing is the user's call, not a classification outcome.** Even a confirmed real defect can be a
+  comment if the user says it is not for this run. Severity informs the recommendation; it does not
+  decide it.
+- **Follow-ups, enhancements and unplanned gaps always ask first** — never auto-file a new feature
+  slice, and now less than ever, since filing it schedules it.
 
 ### 3. Investigate — one subagent per finding
 
@@ -222,52 +251,58 @@ only, never greps or blames itself). Use the project explorer agent named in the
      a never-worked or net-new-feature bug, **skip the archaeology** — the `path:line` plus the
      owning `[TASK]` already localize it.
   4. **Author the fix plan** — exact files, prior art to copy, the change, and testable acceptance
-     criteria. This is what makes the `[BUG]` cold-runnable.
+     criteria. This is what makes the filed `[TASK]` cold-runnable.
 - **Return contract:** confirmed root cause · owning `[TASK]` · `@sha` (only if a regression) · fix
   plan · files/prior-art · acceptance criteria · which repo owns the fix.
 
 <cross-repo>
-### Contract-boundary findings — investigate and file in the related repo
+### Contract-boundary findings — investigate here, route via the comment
 
 The adapter names both halves: `## Repo` → *Related repos* says which repo owns the other side of the
 API boundary, and `## Sources of truth` → *Contract-boundary explorer agent* names the read-only
 agent that owns it. For a finding whose root cause is across that boundary:
 
 - **Spawn that explorer agent** instead of the project one. It reads the actual handler code to
-  confirm the cause, plus that repo's scoped `CONTEXT.md` and its own conventions.
-- It files the issue **in the related repo**, native to **their** house style, with a
-  **"Discovered via `<this org>/<spec-id>`"** back-link.
-- **This side:** carry a pointer `[BUG]` naming the external dependency under its `## Blocked by`,
-  so the chain is visible from the board. Nothing on this tracker closes an item in another repo;
-  the pointer is closed by hand when the other fix ships.
-- If the adapter says "None" for either field, there is no boundary to route across: file here and
-  say plainly that the boundary is unmodelled, rather than guessing a repo.
+  confirm the cause, plus that repo's scoped `CONTEXT.md` and its own conventions. **Confirming the
+  cause is the whole of its job here** — it files nothing.
+- **The finding then goes in the comment**, described so a human can route it: what breaks, which
+  system owns it, and what someone on this side would have to ask for. No work item is filed on
+  either tracker — not here, and not in the related repo.
+- **This is a deliberate narrowing.** Filing into another team's tracker from inside a QA pass
+  created an item nobody here could close, tracked by a pointer nobody here would work. Routing is a
+  human act, and the comment is what it needs to happen.
+- If the adapter says "None" for either field, there is no boundary to model: say plainly in the
+  comment that the ownership is unclear, rather than guessing a repo.
 </cross-repo>
 
 ### 4. Dispose + dedupe
 
 - **Dedupe against the tracker** — `mcp__ado__search_workitem` (or a WIQL query via
   `mcp__ado__wit_query`) on the symptom's keywords, in the **work-item project**, before filing. A
-  match makes this a `reject (duplicate)` pointing at it. This catches a finding that duplicates
-  something filed by *another* route — a planned `[TASK]`, a hand-filed bug, a finding from a
-  different `[SPEC]`. It is **not** what catches a re-triage; the closed-item skip in `## Input`
+  match makes this a comment line pointing at existing work, not a second work item. This catches
+  a finding that duplicates something filed by *another* route — a planned `[TASK]`, a hand-filed
+  bug, a finding from a different `[SPEC]`. It is **not** what catches a re-triage; the closed-item skip in `## Input`
   does that, with no call at all.
 - **Route** per the table below.
-- **Know which id each disposition will carry**, because the `[BUG]` body names the finding it came
-  from and the report groups by disposition.
 
 <dispositions>
-| Kind | Title | Where | State | Picked up by a later run? |
-|---|---|---|---|---|
-| **Merge-blocker** | `[BUG] …` | this org, **child of the same parent** as the `[SPEC]` | the adapter's **pickable** state | **no — not automatically.** See *A `[BUG]` is filed, not scheduled* |
-| **Deferred / follow-up** *(after user OK)* | `[BUG] …` | same | the adapter's **pickable** state | no |
-| **Contract boundary** | their style | **related repo**, "Discovered via …" | their style; local pointer `[BUG]` here | no — closed by hand |
-| **Reject** (WAD / dup / invalid) | `[BUG] …` | this org, same parent | **file-then-close**, with a one-line rationale citing the decision | — |
+| Kind | Lands as | Where | Picked up by a later run? |
+|---|---|---|---|
+| **Fixing it now** *(user said yes)* | `[TASK] …`, the body below | this org, **child of the same parent** as the `[SPEC]`, in the adapter's **pickable** state | **yes — the next run picks it up with no further action** |
+| **Deferred / follow-up** | a line in the parent comment | the parent work item | no |
+| **Already planned** | a line in the parent comment, naming the existing work in plain words | same | no |
+| **Contract boundary** | a line in the parent comment, describing what breaks and who owns it | same | no |
+| **Reject** (WAD / dup / invalid) | a line in the parent comment, carrying the rationale | same | no |
 </dispositions>
 
-A reject is **filed and then closed**, not skipped. The rejection reasoning is the thing that stops
-the same false finding being re-investigated next quarter, and a work item is where a human will look
-for it.
+**A reject is written down, not filed.** The rejection reasoning is still the thing that stops the
+same false finding being re-investigated next quarter — it just no longer needs a closed work item
+to live in. A closed item on the board was a worse home for it than a paragraph the next person
+reads without clicking anything.
+
+**The first row is one work item per finding; the other four share a single comment.** That is the
+whole routing decision, and it is why the comment is written once at publish rather than per
+finding.
 
 ### 5. Show the card, confirm, next
 
@@ -277,8 +312,11 @@ Finding: <one-line symptom>          (finding <n> of #<findings-id>)
 Owning [TASK]: #<id> (<what that slice built>)
 Root cause: CONFIRMED — <cause>; <path>:<lines>
 Commit: <sha — only if a regression; else "n/a (introduced by the feature slice)">
-Disposition: <where it lands, under which parent, with which prefix>
+Lands as: [TASK] under #<parent> — RUNS NEXT PASS   |   comment line on #<parent>
 ```
+
+**Say which of the two it is, in those words, every time.** `[TASK]` means the next `work-on-spec`
+run will implement it, and that is the one thing the human is really approving.
 
 Print the card plus the recommended disposition, get confirm/correct, ask for the next finding.
 
@@ -286,35 +324,41 @@ Print the card plus the recommended disposition, get confirm/correct, ask for th
 
 When the user says done:
 
-1. **Board** — every finding with verdict / owning `[TASK]` / disposition / target. Get approval
-   before publishing.
-2. **Publish.** For each `[BUG]` in this org, **one at a time**:
+1. **Board** — every finding with verdict / owning `[TASK]` / disposition / target, split into the
+   two groups: **what gets filed and therefore worked next run**, and **what goes in the comment**.
+   Get approval before publishing. The filed group is the one to read back explicitly.
+2. **Publish the `[TASK]`s.** For each one, **one at a time**:
 
    - `mcp__ado__wit_work_item_write`, **`action: "add_child"`**, against the adapter's **work-item
-     project**, with the **parent work item the `[SPEC]` hangs off** as the parent — so the `[BUG]`
-     is a **sibling of the `[SPEC]`**, never a child of it. That one call sets `System.Parent` and
+     project**, with the **parent work item the `[SPEC]` hangs off** as the parent — so the
+     `[TASK]` is a **sibling of the `[SPEC]`**, never a child of it. That one call sets `System.Parent` and
      writes the hierarchy relation (§0, §3), so no follow-up link write is needed.
    - `workItemType`: the adapter's **work-item type** — the same one `[SPEC]`s and `[TASK]`s use. Not
      a Bug-type item: under `bugsBehavior: 1` that is requirement-level and renders as its own
      sibling swimlane instead of a child.
-   - `title`: the `[BUG]` prefix followed by the one-line symptom.
+   - `title`: the `[TASK]` prefix followed by the one-line symptom.
    - `description`: the body below, with **`format: "Markdown"`** and angle brackets escaped at
      synthesis time (§1). If the running server's `add_child` will not take a `format` argument, fall
      back to `action: "create"` plus the `type: "parent"` link from §3 — never drop the flag.
    - **Verify the hierarchy** (§5): re-fetch the parent with `expand: "relations"` and confirm the
-     new `[BUG]` appears as `Hierarchy-Forward`. A write returning is not evidence it is parented.
+     new `[TASK]` appears as `Hierarchy-Forward`. A write returning is not evidence it is parented.
+     **A `[TASK]` that failed to parent is invisible to the next run**, which reads as a finding
+     silently dropped rather than as an error.
    - Assign it to the current user (§6).
 
    Then start the next one. Filing them one at a time, each verified, is what keeps a silently
-   unparented bug from being invisible on the board.
-3. **Close the `[FINDINGS]` item** — see below. This is the last write of the session.
-4. **Report** created ids grouped by disposition, e.g.
-   `filed: #12840 #12841 · deferred: #12842 · <related repo>: 1 · closed as duplicate: #12843`,
-   plus the findings item and the state it now carries. Say explicitly which findings ended with
-   **no** work item at all — intentionally deferred, cited from the `[SPEC]` or a code comment —
-   because those leave no trace outside the closed item's description.
-5. **Remind** the human of what this skill cannot do: complete the pull request, close the `[SPEC]`,
-   remove the `needs-qa` tag, or schedule a `[BUG]` into a run (next section).
+   unparented task from being invisible to the next run.
+3. **Post the parent comment** — one comment, covering every finding that did not become a `[TASK]`.
+   Written per `## The parent comment` below. `mcp__ado__wit_work_item_comment_write` against the
+   **parent work item**, never the `[SPEC]` and never the `[FINDINGS]` item. Skip this step entirely
+   when every finding was filed; an empty comment is worse than none.
+4. **Close the `[FINDINGS]` item** — see below. This is the last write of the session.
+5. **Report** back to *this session*, which is the one place tracker shorthand is fine: created ids,
+   e.g. `filed and scheduled: #12840 #12841 · written up on #12799: 3 findings`, plus the findings
+   item and the state it now carries. **Name the filed ids as work that will run**, because that is
+   the consequence the human is carrying away.
+6. **Remind** the human of what this skill cannot do: complete the pull request, close the `[SPEC]`,
+   or remove the `needs-qa` tag.
 
 ### Closing the `[FINDINGS]` item
 
@@ -326,33 +370,91 @@ in [`findings-item.md`](../references/findings-item.md). Announce which terminal
 **This is `triage`'s only write to the findings item.** Nothing is appended to it, no finding is
 annotated, and its description is left exactly as `manual-qa` wrote it.
 
-## A `[BUG]` is filed, not scheduled
+## What this skill files is immediately eligible
 
-**A `[BUG]` is not picked up automatically by a later run, and that is the design.**
+**A `[TASK]` filed here is picked up by the next `work-on-spec` run, with no further action.** That
+is the design, and it is the difference that matters most against the GitHub sibling.
 
-[`../_shared/ado-eligibility.md`](../_shared/ado-eligibility.md) keeps a sibling only when its title
-starts with `[TASK]` **and** it carries the spec back-reference. A `[BUG]` fails the first test on
-purpose, so `next-task-to-implement` will not recommend it and `work-on-spec` will not pick it. That
-is what the adapter's *Title prefixes* row means when it says the prefix is **load-bearing** on this
-tracker and decorative on GitHub — all four kinds are the same work-item type under one parent, so
-the prefix is the only thing telling a `[BUG]` from a `[TASK]`.
+[`../_shared/ado-eligibility.md`](../_shared/ado-eligibility.md) keeps a sibling when its title
+starts with `[TASK]` **and** it carries the spec back-reference. The body below carries the `Spec:
+#<spec-id>` line, so a filed item satisfies both tests the moment it is written:
+`next-task-to-implement` will recommend it and `work-on-spec` will pick it.
 
-**Do not "fix" this by titling a bug `[TASK]`.** That silently enrolls an untriaged, unscheduled fix
-into whatever run comes next, which is the outcome the split exists to prevent.
+**So the gate is the conversation, not the board.** Nothing downstream will ask again whether this
+should be worked — the user's confirm at the card, and their approval of the filed group at the
+board, are the whole of it. File only what the human has agreed is being fixed.
 
-**Promotion is a deliberate act, and it is a one-field retitle.** The body below already carries the
-`Spec: #<spec-id>` line and the `Related` link back to the `[SPEC]`, so the prefix is the *only*
-thing standing between a `[BUG]` and eligibility. When Product schedules it, retitling `[BUG]` →
-`[TASK]` puts it in the set with no other edit. Until then it sits on the board as a triaged,
-unscheduled finding.
+**Everything else is a comment, and a comment is not a lesser work item.** It is a different kind of
+artifact for a different reader: a decision record a person acts on, rather than an instruction a
+worker executes. A deferred finding parked on the board as an item nobody will pick is not
+information, it is clutter that outlives the run — which is what this skill used to produce and no
+longer does.
 
-This is the ADO analogue of the GitHub side's `deferred` → `ready-to-start` relabel: the same gate,
-carried by the title instead of a label. **`next-task-to-implement` therefore needs no change** —
-not because the prefix is inert, but because its filter already drops `[BUG]`s deliberately.
+**On this tracker there is no third state, and that is a platform fact rather than a preference.**
+GitHub's `triage` files deferred work as an issue with a `deferred` label, because a label parks
+something visibly without scheduling it. Azure DevOps offers no equivalent that a project can rely
+on, so the honest options are "on the board and therefore worked" or "written down for a human".
+Do not port the GitHub shape across; it does not have anywhere to land.
 
-## The `[BUG]` body (mirror `to-spec-tasks`'s `[TASK]` so a worker eats it identically)
+## The parent comment
 
-<bug-template>
+One comment, on the **parent work item**, at the end of the session — covering every finding that
+did not become a `[TASK]`. Not one comment per finding, and never on the `[SPEC]` or the
+`[FINDINGS]` item.
+
+### Who it is for
+
+**A product owner, or an engineer who was not in this run.** They have not read the `[SPEC]`, do not
+know what a `[FINDINGS]` item is, and will not open one. Whatever they need in order to act has to
+be in the words in front of them.
+
+### The rule that shapes everything else: no tracker plumbing
+
+**Never point a human at the machinery.** The comment carries **no** reference to the `[FINDINGS]`
+item, the `[SPEC]`, finding numbers, flow numbers, sub-step numbers, `[TASK]` ids, the QA pass, this
+skill, or any other skill by name. Those artifacts exist to make the loop run. To the reader they
+are dead ends — an id they cannot interpret, attached to a document written for a robot.
+
+An existing `[TASK]` or a filed fix is named in **plain words** — *"the fix for this is already
+scheduled"* — not as `#12840`. The reader who wants the id can find it on the board; the reader who
+just needs the decision is not made to go looking.
+
+### What each finding needs
+
+Four things, in prose, per finding. No headings-as-contract, no template, no disposition labels
+leaking through — *"reject (WAD)"* and *"contract boundary"* are this session's vocabulary, not
+theirs.
+
+- **What was observed**, in product terms. What a user would see, not a stack trace and not a
+  `path:line`.
+- **Why it is not being fixed in this run** — the actual reason, and the decision it rests on, said
+  outright rather than cited by reference.
+- **What it means for the reader**: nothing to do, a call someone has to make, or work someone will
+  need to schedule.
+- **Who owns it**, where that is not this team.
+
+Group them so the comment reads as one write-up rather than a list of tickets, and lead with
+anything that needs a decision.
+
+### Tone
+
+**Write it as a person would write it to a colleague.** Plain, concrete, and readable start to
+finish by someone with no context on the run. No skill jargon, no bracket prefixes, no id soup, no
+status-report register.
+
+**This skill deliberately does not name a way to achieve that.** If the session has a voice or
+writing skill available, this is where it earns its place — that is the human's call at the time,
+not a dependency of this plugin. What is specified here is the outcome and the content, which is
+what stays true whether or not any such skill is loaded.
+
+## The filed `[TASK]` body (mirror `to-spec-tasks`'s so a worker eats it identically)
+
+Everything in this section is **robot-facing and stays that way.** A `[TASK]` is read by a
+`spec-worker`, so the ids, the `Spec:` line and the findings reference all belong here. The
+no-plumbing rule in `## The parent comment` governs the comment and nothing else — do not strip
+these.
+
+<task-template>
 
 Spec: #<spec-id>
 Findings: #<findings-id> (finding <n>)
@@ -390,7 +492,7 @@ Introduced by: `<sha>` — &lt;one line&gt;.   ← ONLY if a regression; omit ot
 
 None — can start immediately.
 
-</bug-template>
+</task-template>
 
 Rules governing that template, deliberately outside the fence:
 
@@ -398,7 +500,7 @@ Rules governing that template, deliberately outside the fence:
   the `Spec:` line, `## External steps`, `## Blocked by` (all three parsed verbatim by
   `../_shared/ado-eligibility.md`), and `## Worker context` / `## QA notes` (which `work-on-spec`
   briefs a `spec-worker` from). Reword one there and it changes here in the same commit. That is
-  what makes a promoted `[BUG]` runnable without a second template.
+  what makes a triaged fix runnable without a second template.
 - `## What to fix` and `## Root cause` replace the `[TASK]` template's `## What to build`. Nothing
   parses either; they exist because a bug has a cause and a slice does not.
 - **The two "None…" sentinels are parsed verbatim** — `None — fully implementable from the editor.`
@@ -407,19 +509,22 @@ Rules governing that template, deliberately outside the fence:
   `AcceptanceCriteria` field (§9); criteria aimed at that field land nowhere and read back as a bug
   authored without any.
 - **`Findings: #<findings-id>` is deliberately bare**, unlike every other id in this plugin. The
-  chip and the `Related` link it creates are both wanted: that link is the only thing tying a
-  `[BUG]` back to the finding it came from, since nothing is written back onto the findings item.
-  The owning `[TASK]` id in `## Root cause` stays **backticked** — that relation is noise.
+  chip and the `Related` link it creates are both wanted: that link is the only thing tying a filed
+  fix back to the finding it came from, since nothing is written back onto the findings item. The
+  owning `[TASK]` id in `## Root cause` stays **backticked** — that relation is noise.
 - **Severity is technical impact, independent of priority**; both live in the body, not in tags.
 
-Title: **`[BUG] <one-line symptom>`**, taken from the adapter's *Title prefixes* row.
+Title: **`[TASK] <one-line symptom>`**, taken from the adapter's *Title prefixes* row. The `[TASK]`
+prefix is what makes it eligible — see *What this skill files is immediately eligible*.
 
 ## Boundary / handoff
 
-- `triage` = **investigate + decide + file**. It does **not** fix, does **not** complete the pull
-  request, does **not** close the `[SPEC]`, and does **not** remove the `needs-qa` tag — that tag is
-  removed by the human who ran the pass, via `manual-qa`'s offer, and it is the only record in the
-  tracker that a pass happened.
+- `triage` = **investigate + decide + file + write up**. It does **not** fix, does **not** complete
+  the pull request, does **not** close the `[SPEC]`, and does **not** remove the `needs-qa` tag —
+  that tag is removed by the human who ran the pass, via `manual-qa`'s offer, and it is the only
+  record in the tracker that a pass happened.
 - The one work item it closes is the `[FINDINGS]` item it just emptied.
-- A filed `[BUG]` waits for a human to schedule it (*A `[BUG]` is filed, not scheduled*).
-- Related-repo issues are executed by that repo's own workflow, and nothing here closes them.
+- **A filed `[TASK]` is scheduled by the act of filing it** (*What this skill files is immediately
+  eligible*). There is no later promotion step, and no `[BUG]` is written at any point.
+- **Contract-boundary findings are described in the comment, not filed anywhere.** Routing them to
+  the owning team is a human act; nothing here opens or closes an item in another repo.

@@ -5,7 +5,8 @@ that says how it is found again.
 
 Two skills share it: **`ado-workflow:manual-qa` is its only writer** — it creates the item and
 appends each finding — and **`ado-workflow:triage` is its only reader**, which walks the findings,
-files a `[BUG]` per survivor, and closes the item. Neither owns the shape alone, so it lives here.
+files a `[TASK]` for each one being fixed, writes the rest up as a comment on the parent, and closes
+the item. Neither owns the shape alone, so it lives here.
 
 The plugin carries this file so the pointer resolves from inside any of its skills
 (`../references/findings-item.md`) and from a marketplace install cache alike — no skill borrows a
@@ -239,8 +240,9 @@ the item being **closed** — one field, read in the same fetch that loads the f
 to keep in sync. So:
 
 - `triage`'s only write to this item is the state move that closes it.
-- The finding → `[BUG]` link is written **downward**, on the bug, as a `Findings: #<findings-id>
-  (finding <n>)` line in its body. The bare id is deliberate there — it is the second place the chip
-  and the `Related` link are both wanted.
+- The finding → fix link is written **downward**, on the filed `[TASK]`, as a `Findings:
+  #<findings-id> (finding <n>)` line in its body. The bare id is deliberate there — it is the second
+  place the chip and the `Related` link are both wanted. A finding that became a comment rather than
+  a work item writes no link at all, in either direction: the comment names no ids by design.
 - A closed item a human chooses to reopen does not become a queue again: the next pass writes a new
   item.

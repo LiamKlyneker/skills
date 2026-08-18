@@ -68,3 +68,4 @@ or the adapter, and stops there.
 | [0010](0010-one-distribution-one-dev-mode.md) | One distribution, one dev mode | Accepted |
 | [0011](0011-azure-devops-qa-is-a-tickable-comment.md) | Azure DevOps QA is a tickable comment, and 0008's three platform claims were false | Superseded by ADR 0012 |
 | [0012](0012-the-qa-pass-is-composed-from-the-branch.md) | The QA pass is composed from the branch, not planned into a contract | Accepted |
+| [0013](0013-ado-triage-files-work-or-writes-to-a-human.md) | On Azure DevOps, triage either files work or writes to a human | Accepted |

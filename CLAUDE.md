@@ -80,8 +80,15 @@ as **flows**: a name, an explicit `start from:` line, numbered sub-steps, and at
 the `(#N)` suffixes on the commits. The diff is the authority; a child's planned `## QA notes` is
 context the diff overrules. Driving takes **one verdict per flow** from a human. A failure posts
 `### [FINDING]` on the PR (GitHub) or appends to **one `[FINDINGS]` work item per run** (ADO);
-`triage` then promotes the survivors — into children on GitHub, into an unscheduled `[BUG]` on
-ADO, closing the findings item. **GitHub's `Triaged:` back-annotation does not exist on that side
+`triage` then promotes the survivors — into children on GitHub, and on ADO into a **`[TASK]` the
+next run picks up**, closing the findings item. **ADO's `triage` has two outputs and only two**: a
+`[TASK]` for what is being fixed now, and **one human-readable comment on the parent** for
+everything else — deferred, already planned, rejected, owned by another team. It files no `[BUG]`,
+files nothing into a related repo, and that comment carries **no tracker plumbing at all** — no
+`[FINDINGS]`/`[SPEC]` ids, no finding or flow numbers, no work-item ids — because its reader is a
+product owner who will not open any of them. ADR
+[0013](docs/adr/0013-ado-triage-files-work-or-writes-to-a-human.md) has the argument, including
+why GitHub keeps the `deferred` label and ADO cannot. **GitHub's `Triaged:` back-annotation does not exist on that side
 and must not be added** — a fresh findings item per run means "already handled" is simply "that
 item is closed", one field read in the same fetch that loads the findings. **The receipt is
 output, never input**: a free-form comment on the PRD / `[SPEC]` saying which flows ran and how
@@ -131,10 +138,12 @@ loop creates is the same work-item type — a Task under one parent User Story**
 Task parenting is API-legal and product-hostile (it removes the parent from the taskboard and
 disables reordering board-wide) and Bug-type items are requirement-level there, rendering as a
 sibling swimlane rather than a child. So the prefix is the *only* thing separating a `[BUG]`
-from a `[TASK]`, and `triage` filing a `[BUG]` is filing it **unscheduled** on purpose:
-promotion is a one-field retitle to `[TASK]`, the ADO analogue of GitHub's `deferred` →
-`ready-to-start` relabel. Never "fix" an ADO filter by retitling a bug, and never assume the
-GitHub rule holds on both sides — a mistyped prefix there returns an empty set, not an error.
+from a `[TASK]`. **`[BUG]` is now a purely human prefix** — hand-filed work, still registered in the
+adapter, still dropped by every eligibility filter. No skill writes one. `triage` files a QA fix as
+a `[TASK]`, which means **filing it schedules it**: there is no promotion step on this side, and the
+user's approval during the pass is the only gate. Never assume the GitHub rule holds on both sides —
+a mistyped prefix there returns an empty set, not an error, and a `[TASK]` prefix on something
+nobody agreed to work puts it in the next run.
 
 ## Git workflow
 
