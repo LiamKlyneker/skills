@@ -43,9 +43,12 @@ Keep a sibling only when **both** hold:
 - Its description carries the spec reference (`Spec: #<spec-id>`) **or** a `Related` link
   points back at this `[SPEC]`.
 
-The parent collects every kind of child — other specs, their tasks, `[FINDINGS]` items, the
-`[BUG]`s triaged out of them, ordinary work someone filed by hand. All of them are the same
+The parent collects every kind of child — other specs, their tasks, `[FINDINGS]` items,
+`[BUG]`s someone filed by hand, ordinary work filed the same way. All of them are the same
 work-item type as the `[TASK]`s, so the title prefix is the only thing telling them apart.
+
+**A fix that `ado-workflow:triage` promoted out of a QA pass is a `[TASK]`, not a `[BUG]`**, and is
+picked up here like any other. `[BUG]` is left to hand-filed work and is dropped by this filter.
 Sitting under the same parent is not membership, and picking such a sibling means working
 something this spec never scoped.
 

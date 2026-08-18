@@ -1,7 +1,7 @@
 {
   "name": "lk",
-  "description": "Liam Klyneker's personal Claude Code skills: the grills that interview a plan until every branch is resolved, plus pinpoint, scoped-context and his writing voice — the ones that talk to the user and the codebase rather than to a tracker",
-  "version": "1.6.1",
+  "description": "Liam Klyneker's personal Claude Code skills: the grills that interview a plan until every branch is resolved, plus pinpoint, scoped-context and his writing voice \u2014 the ones that talk to the user and the codebase rather than to a tracker",
+  "version": "1.6.2",
   "author": {
     "name": "Liam Klyneker",
     "url": "https://github.com/LiamKlyneker"

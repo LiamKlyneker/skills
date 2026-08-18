@@ -255,10 +255,12 @@ higher-stakes than its GitHub counterpart. `[SPEC]`, `[TASK]`, `[FINDINGS]` and 
 the same work-item type under one parent, so the prefix is the only thing telling them apart —
 a wrong answer here returns an empty set rather than an error. Read it back to the human.
 
-**Pairs with `ado-workflow`, doesn't replace it.** `triage` files `[BUG]`s shaped like
-`to-spec-tasks`' `[TASK]`s, so a later `work-on-spec` run executes one with no new machinery
-once a human retitles it — and `manual-qa` drives the QA **comment** a `work-on-spec` run
-posted, so adopting `ado-qa` without the loop that writes one leaves it with nothing to drive.
+**Pairs with `ado-workflow`, doesn't replace it.** `triage` files the findings that are being
+fixed as `[TASK]`s shaped like `to-spec-tasks`' own, so a later `work-on-spec` run executes one
+with no new machinery and no promotion step; everything it is *not* fixing becomes one human
+comment on the parent instead of a work item. And `manual-qa` composes its pass from what a
+`work-on-spec` run landed on the branch, so adopting `ado-qa` without the loop that produces one
+leaves it with nothing to drive.
 The asymmetry `prd-qa` notes holds here too: the two bundles are separate adoptions but arrive
 in **one plugin**, so installing `ado-workflow` puts both skills on the machine whether or not
 `ado-qa` was adopted. A skill being present is not the same as its adapter questions having
