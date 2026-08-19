@@ -44,17 +44,17 @@ Mark the issue **NOT ready** if any of these hold:
 
 ### 4a. If NOT ready
 
-Print concisely (sacrifice grammar per CLAUDE.md):
+Print concisely (sacrifice grammar per CLAUDE.md), filtered per `../_shared/final-prints.md`:
 
 ```
-Issue: #<n> <title>  [<state>]
-
-Not ready to start. Need:
+Not ready — #<n> <title>. Need:
   - <missing thing 1>
   - <missing thing 2>
 ```
 
-Then ask the user how to proceed. Do not enter plan mode.
+The id carries its title here because the human has to decide what to do about **this** issue now — that is exactly the case the filter keeps ids for. What it does not get is a state echo or a recap of the body; each `Need:` line names a specific gap and nothing else.
+
+Then ask the user how to proceed. Do not enter plan mode. **This is the one final print in the plugin with no closing command line**, and deliberately so: the next move is the human's answer, not a skill.
 
 ### 4b. If ready
 
@@ -65,10 +65,10 @@ Then ask the user how to proceed. Do not enter plan mode.
 5. Print the block below — including the model/effort call and, when step 3 resolved anything, the branch/PR-template line — **before** `EnterPlanMode`. Entering plan mode commits the session model, so the operator needs the recommendation in hand first; if it differs from their current session they can switch before continuing.
 6. `EnterPlanMode` and draft the implementation plan there.
 
-```
-Issue: #<n> <title>  [open]
+Filter: `../_shared/final-prints.md`. Everything below is a **judgement the issue does not contain** — the readiness call, the scope you understood, the model call, the branch a run would use. None of it is on GitHub, so none of it is an echo. What the filter cuts is the issue header restating the title and state the user just handed you.
 
-Ready. Scope: <one line>. Touches: <dir(s)>.
+```
+Ready — <one-line scope>. Touches: <dir(s)>.
 Branch: <resolved-name>   PR template: <path-or-"snapshot">
 
 Model/effort: <tier> · <effort>   (<downgrade from default | stay on default | borderline>)
@@ -78,6 +78,8 @@ Entering plan mode. Switch model/effort first if it differs from your current se
 ```
 
 Omit the `Branch:`/`PR template:` line entirely when both rows are absent — that is today's behaviour, unchanged. When only one row is present, print only that half of the line.
+
+No command line closes this one: **this print is not a final print at all** — `EnterPlanMode` runs immediately after it and the session carries straight on. The filter's closing-command rule is for a skill that hands the human back the keyboard.
 
 ## Conventions
 

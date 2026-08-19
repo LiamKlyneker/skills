@@ -219,11 +219,18 @@ not the architecture, so the spec changing underneath them cannot falsify them.
 
 ### 7. Report
 
-List each created `[TASK]` with id + URL in dependency order, then:
+Filter: `../_shared/final-prints.md`. §5 showed the slice list and the human approved it; the `[TASK]`s are now children on the board in dependency order. Listing them back is the same list a third time.
 
 ```
-Run /next-task-to-implement <spec-url> to pick the first one.
+Done — <k> tickets created.
+/ado-workflow:work-on-spec <spec-id>
 ```
+
+**No per-`[TASK]` ids, titles or URLs, and no URL at all** — the `[SPEC]` the human already has open carries every one of them. The count stays because it is the one fact the approval gate could not: how many actually landed.
+
+The hierarchy verification in §6 is **not** this print and is not trimmed by it — that is spoken as each child lands, and a `[TASK]` that failed to parent is an escalation that gets its own line here, above the command.
+
+The handoff is `work-on-spec`, the orchestrated loop over the whole `[SPEC]` — the same shape `to-issues` → `work-on-prd` has on the GitHub side. `next-task-to-implement` is still the right command when a human wants one ticket picked rather than the run driven, but it is theirs to reach for, not the default this skill points at.
 
 ## Stops here
 

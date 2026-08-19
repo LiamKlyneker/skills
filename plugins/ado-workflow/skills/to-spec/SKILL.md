@@ -206,14 +206,16 @@ sidebar. Skip in UPDATE mode unless the grill introduced a new follower.
 
 ### 7. Report
 
-Print:
+Filter: `../_shared/final-prints.md`. The `[SPEC]` is one click away and carries its own scope, its own sections and its own Related Work sidebar, so print the link and the next command and stop.
 
 ```
 [SPEC] #<id> created: <url>          — or "updated: <url>" in UPDATE mode
-Scope: <one-line summary>
-(Sections merged: <names>)           — UPDATE mode only
-(Followers linked: #<id>, #<id>)     — if applicable
+/ado-workflow:to-spec-tasks <id>
 ```
+
+**No scope line, no list of sections merged, no roll-call of the followers linked** — the sidebar shows every one of them, and §5 already verified each link as it landed.
+
+Above the command line, a line per **deviation**: something merged, dropped or reshaped in a way the human would not predict from the conversation they just had — an UPDATE that superseded existing content, a section left deliberately empty, a follower that could **not** be linked. That last one is an escalation and prints even when nothing else does; the protected class in the shared filter is never a conciseness cut.
 
 ## Stops here
 

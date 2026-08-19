@@ -353,12 +353,26 @@ When the user says done:
    **parent work item**, never the `[SPEC]` and never the `[FINDINGS]` item. Skip this step entirely
    when every finding was filed; an empty comment is worse than none.
 4. **Close the `[FINDINGS]` item** — see below. This is the last write of the session.
-5. **Report** back to *this session*, which is the one place tracker shorthand is fine: created ids,
-   e.g. `filed and scheduled: #12840 #12841 · written up on #12799: 3 findings`, plus the findings
-   item and the state it now carries. **Name the filed ids as work that will run**, because that is
-   the consequence the human is carrying away.
+5. **Report** back to *this session* — the disposition facts, filtered per
+   `../_shared/final-prints.md`. Every card was confirmed one at a time, the board in step 1 was
+   approved, and the `[TASK]`s are now children on it, so this is not a re-listing of what was just
+   filed:
+
+   ```
+   2 fixes filed into the next run; the other 3 written up on the parent.
+   [FINDINGS] item closed.
+   /ado-workflow:work-on-spec <spec-id>
+   ```
+
+   **Say the consequence in words, not in ids** — *filed into the next run* is the thing the human
+   is carrying away, and it survives them not knowing a single work-item number. No id soup: an id
+   appears only where they must act on that specific thing now, and the one case that reliably
+   qualifies is a `[TASK]` whose **filing or parenting failed**, which is an escalation and prints
+   its own line however tidy the rest looks. A `[TASK]` that failed to parent is invisible to the
+   next run, so silence about it reads as a finding dropped.
 6. **Remind** the human of what this skill cannot do: complete the pull request, close the `[SPEC]`,
-   or remove the `needs-qa` tag.
+   or remove the `needs-qa` tag. One line, above the command — three things it will not do is a
+   fact about this session, not something the board shows.
 
 ### Closing the `[FINDINGS]` item
 
