@@ -405,18 +405,43 @@ it.
 
 ### 3. Final summary to the human
 
-Printed to the session — the loop writes no status feed to the tracker. Report:
+Printed to the session — the loop writes no status feed to the tracker. Filter:
+`../_shared/final-prints.md`. Every `[TASK]` that landed is a child on the board and a commit on
+the pull request the human is about to open, so the print is **the exceptions plus the handoff**,
+never a roll-call of the tickets that worked:
 
-- `[TASK]`s **done** (id, title) · **skipped** (id, and why: unmet `## External steps`, blocked by
-  something outside this spec) · **failed** (id, and the gist of the escalation comment).
-- **Deviations worth reading** — from the workers' deviation logs, the ones that change what a
-  reviewer or tester should expect. Not every line; the pull-request description carries the rest.
-- **Escalations** — anything that paused the run, and anything still waiting on a human.
-- The **QA handoff** — that the `[SPEC]` now carries `needs-qa`, plus the
-  **`/ado-workflow:manual-qa <spec-id>`** invocation for the human to run — or the explicit "no
-  `needs-qa`: nothing in this run is manually testable", with the reason.
-- The **pull request, left open and still a draft**, with its url: it is completed by hand after
-  QA (verify ladder L5), and completing it is what transitions the `[TASK]`s.
+```
+Done — 7/9 landed. PR: <url>
+Skipped   #12840 — blocked: needs the staging connection string set (your move)
+Failed    #12843 — tests never green after 2 attempts; not on branch
+Deviated  #12841 — reused the existing export job instead of a new queue; reviewer: check the retry path
+Escalation — migration touches prod data, wants sign-off before completion
+needs-qa tagged — something exercisable landed.
+/ado-workflow:manual-qa <spec-id>
+```
+
+Rules for it:
+
+- **Sections print only when non-empty.** A clean run is three lines: the tally, the `needs-qa`
+  line, the command.
+- **The mapping is exhaustive by contract.** Every worker report carrying a skip, a failure, a
+  deviation or an escalation produces exactly **one line** here — one line each, fixed left-edge
+  label column. Dropping one because the list ran long is never a conciseness move; that is the
+  protected class in the shared filter.
+- **The deviation lines are the alert, not the detail.** The workers' full deviation logs are
+  already in the pull-request description (§2) — a line here says a reviewer needs to look, and
+  where.
+- **One URL, and it is the pull request.** Not the `[SPEC]`, not a `[TASK]`, not the branch: the PR
+  is what the human opens next, it is left open and still a draft, and completing it by hand after
+  QA (verify ladder L5) is what transitions the `[TASK]`s.
+- **The QA handoff is a fact plus the command** — `needs-qa tagged`, or the explicit
+  `no needs-qa — nothing in this run is manually testable`, with the reason. Then the invocation on
+  its own clean line, last thing on screen.
+
+This is a **sibling of `work-on-prd`'s summary, not a shared template**: same shape, ADO's own
+dialect throughout — work-item ids where the other has issue numbers, *tagged* where it says
+*applied*, `<spec-id>` where it says `#<prd-number>`. Nothing here is generated from the other side
+and neither reads the other.
 
 Everything in *What the loop must not write* still holds at the end: do not complete the pull
 request, do not close the `[SPEC]`, do not remove the `needs-qa` tag you just applied, do not post

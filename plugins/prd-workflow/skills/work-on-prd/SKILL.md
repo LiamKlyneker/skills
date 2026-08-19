@@ -310,7 +310,27 @@ The PR stays a **draft**.
 
 ### 3. Final summary
 
-To the human: issues done / skipped / failed · deviations worth reading · escalations · whether the PRD now carries `needs-qa` and the **`/prd-workflow:manual-qa #<prd-number>` invocation**, or the explicit "no `needs-qa`: nothing in this run is manually testable" with the reason. Leave the PR open (still draft) for human QA (verify ladder L5: run `manual-qa` against the branch, work its flows, then merge manually). The PRD issue is **not** closed by the loop — `Closes` keywords fire on merge. Do not remove `needs-qa` and do not post a receipt of your own: `manual-qa` owns both, and they are the only signals that a pass was ever run.
+Filter: `../_shared/final-prints.md`. Everything that landed is on the PR the human is about to open, so the print is **the exceptions plus the handoff** — never a roll-call of the children that worked.
+
+```
+Done — 7/9 landed. PR: <url>
+Skipped   #12 — blocked: needs STRIPE_KEY set (your move)
+Failed    #15 — tests never green after 2 attempts; not on branch
+Deviated  #13 — reused ExportJob instead of new queue; reviewer: check retry path
+Escalation — migration touches prod data, wants sign-off before merge
+needs-qa applied — something exercisable landed.
+/prd-workflow:manual-qa #<prd-number>
+```
+
+Rules for it:
+
+- **Sections print only when non-empty.** A clean run is three lines: the tally, the `needs-qa` line, the command.
+- **The mapping is exhaustive by contract.** Every worker report carrying a skip, a failure, a deviation or an escalation produces exactly **one line** here — one line each, fixed left-edge label column. Dropping one because the list ran long is never a conciseness move; that is the protected class in the shared filter.
+- **The deviation lines are the alert, not the detail.** The workers' full deviation logs are already in the PR description (§2) — a line here says a reviewer needs to look, and where.
+- **One URL, and it is the PR.** Not the PRD, not the branch, not a child issue: the PR is what the human opens next and everything else is one click from it.
+- **The QA handoff is a fact plus the command** — `needs-qa applied`, or the explicit `no needs-qa — nothing in this run is manually testable`, with the reason. Then the invocation on its own clean line, last thing on screen.
+
+Leave the PR open (still draft) for human QA (verify ladder L5: run `manual-qa` against the branch, work its flows, then merge manually). The PRD issue is **not** closed by the loop — `Closes` keywords fire on merge. Do not remove `needs-qa` and do not post a receipt of your own: `manual-qa` owns both, and they are the only signals that a pass was ever run.
 
 Then release keep-awake — mirror of Setup step 0, no-op if never started:
 

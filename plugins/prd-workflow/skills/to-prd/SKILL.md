@@ -149,3 +149,16 @@ A description of the things that are out of scope for this PRD.
 Any further notes about the feature.
 
 </prd-template>
+
+## Final print
+
+Filter: `../_shared/final-prints.md`. The PRD body is one click away and more current than any recap of it, so print the link and the next command, and nothing that restates what was just published.
+
+```
+[PRD] #<n> created: <url>
+/prd-workflow:to-issues #<n>
+```
+
+`created:` becomes `updated:` in UPDATE mode. **No scope summary, no list of the sections written or merged** — the human is about to open the issue.
+
+Above the command line, add a line per **deviation**: something merged, dropped or reshaped in a way the human would not predict from the conversation they just had. An UPDATE that superseded an existing row, a section the grill deliberately left empty, a decision taken because the conversation never settled it. These are the protected class in the shared filter — print every one, even when it makes the print longer than the two lines above.

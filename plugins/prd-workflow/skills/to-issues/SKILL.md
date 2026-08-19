@@ -188,3 +188,16 @@ Or "None - can start immediately" if no blockers. <!-- parsed verbatim — do no
 </issue-template>
 
 Once all child issues are published, transition the parent PRD's triage label from `needs-triage` to `ready-to-start` (it has now been broken down and is ready to be picked up). Do NOT close the parent issue or modify anything else about it.
+
+### 6. Final print
+
+Filter: `../_shared/final-prints.md`. The slice list was approved in step 4 and the issues are now on the board — printing them back is the same list a third time.
+
+```
+Done — <k> issues created.
+/prd-workflow:work-on-prd #<prd-number>
+```
+
+**No per-issue numbers, titles or urls, and no url at all** — the PRD the human already has open now carries every child as a sub-issue. The count stays because it is the one fact the approval gate could not tell them: how many actually landed.
+
+The per-child link confirmation from *Link each child to the PRD* is **not** this print and is not trimmed by it — that is verification during the run, spoken as each link lands, and a child whose link failed is an escalation that gets its own line here.

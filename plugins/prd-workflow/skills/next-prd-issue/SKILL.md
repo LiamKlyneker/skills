@@ -41,11 +41,11 @@ Read `../_shared/model-effort-heuristics.md` and apply it to the recommended iss
 
 ### 7. Print the recommendation
 
+Filter: `../_shared/final-prints.md`. Nearly everything here **is** the reasoning — the pick, why it won, the size call, the model call — and none of it exists on the board, so it stays. What the filter cuts is the PRD header line restating counts the human can see, and any recap of an issue body they are about to open.
+
 Use this exact structure (omit empty sections):
 
 ```
-PRD: #<n> <title>     [<open> open / <closed> closed children]
-
 Recommended next: #<n> <title>
 
 Why: <one-line reason>
@@ -72,9 +72,11 @@ Model/effort: <tier> · <effort>   (<downgrade from default | stay on default | 
   Why: <matched signals from the heuristics — no score>
 Plan mode: <yes | optional> — <one-line reason>
 
-Suggested next step:
-  Switch to the recommended model/effort if it differs from your current session, then enter plan mode and implement #<n>. After the PR merges and you've verified in prod, close the issue on GitHub and re-run /next-prd-issue.
+Switch model/effort first if it differs from your current session.
+/prd-workflow:work-on-issue #<n>
 ```
+
+The three id-carrying lists each earn their ids: every one names something the human must **decide** on now — what to pick instead, what is waiting on what, what needs a body fixed. `Other eligible` and `Blocked` are the eligible and blocked sets, not the child set, and neither is a column on the board.
 
 ## Edge cases
 

@@ -165,10 +165,20 @@ When the user says done:
    Then the `**Triaged:** #N` line **goes back onto the finding comment** the issue came from — see
    *Marking the finding comment triaged* below. That happens for every finding that came off
    the PR, including a reject; a pasted ad-hoc finding has no comment to write to.
-3. **Report** created issue numbers grouped by disposition + repo, e.g.
-   `ready-to-start: #61 #62 · deferred: #63 · <related repo>#NNN · closed: —`, plus a line for
-   anything **skipped** as already-triaged and the issue each already points at.
-4. **Remind** the human of the one external step triage can't do: the related-repo issue is tracked but **not** auto-closed by this repo's PR. Marking findings triaged is no longer on this list — step 2 writes `**Triaged:** #N` itself, and that line is what makes the next pass skip them. What is still worth saying out loud is any finding that ends with **no** issue at all (deferred-by-design, cited): it carries no marker, so the next pass will surface it again.
+3. **Report** — the disposition facts, filtered per `../_shared/final-prints.md`. Every card was
+   already confirmed one at a time and every issue is now on the board, so this is **not** a
+   re-listing of what was just filed:
+
+   ```
+   Filed — 2 blockers, 1 deferred, 1 in <related repo>. 1 closed as rejected.
+   2 skipped — already triaged.
+   /prd-workflow:work-on-prd #<prd-number>
+   ```
+
+   **No id soup.** Ids appear only where the human must act on that specific thing now — the
+   related-repo issue below, and any finding whose filing **failed**, which is an escalation and
+   gets its own line however tidy the rest of the print looks.
+4. **Remind** the human of the one external step triage can't do: the related-repo issue is tracked but **not** auto-closed by this repo's PR. That one carries its id, in full `<owner>/<repo>#NNN` form — it is the human's next action and it is not on this board at all. Marking findings triaged is no longer on this list — step 2 writes `**Triaged:** #N` itself, and that line is what makes the next pass skip them. What is still worth saying out loud is any finding that ends with **no** issue at all (deferred-by-design, cited): it carries no marker, so the next pass will surface it again.
 
 ### Marking the finding comment triaged
 
