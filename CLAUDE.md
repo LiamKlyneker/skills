@@ -79,7 +79,10 @@ ArtifactLink), reads the branch diff, the commits and the landed children, and l
 as **flows**: a name, an explicit `start from:` line, numbered sub-steps, and attribution from
 the `(#N)` suffixes on the commits. The diff is the authority; a child's planned `## QA notes` is
 context the diff overrules. Driving takes **one verdict per flow** from a human. A failure posts
-`### [FINDING]` on the PR (GitHub) or appends to **one `[FINDINGS]` work item per run** (ADO);
+`### [FINDING]` to a disposable, per-run `[FINDINGS]` issue on GitHub — find-or-created lazily on
+the first failure, located by the same `PRD: #<n>` resume key the PR finder uses, and never
+linked as a sub-issue of the PRD — or appends to **one `[FINDINGS]` work item per run** on ADO.
+The PR itself gets nothing from QA: no comment, no label.
 `triage` then promotes the survivors — into children on GitHub, and on ADO into a **`[TASK]` the
 next run picks up**, closing the findings item. **ADO's `triage` has two outputs and only two**: a
 `[TASK]` for what is being fixed now, and **one human-readable comment on the parent** for
@@ -88,18 +91,23 @@ files nothing into a related repo, and that comment carries **no tracker plumbin
 `[FINDINGS]`/`[SPEC]` ids, no finding or flow numbers, no work-item ids — because its reader is a
 product owner who will not open any of them. ADR
 [0013](docs/adr/0013-ado-triage-files-work-or-writes-to-a-human.md) has the argument, including
-why GitHub keeps the `deferred` label and ADO cannot. **GitHub's `Triaged:` back-annotation does not exist on that side
-and must not be added** — a fresh findings item per run means "already handled" is simply "that
-item is closed", one field read in the same fetch that loads the findings. **The receipt is
+why GitHub keeps the `deferred` label and ADO cannot. On both trackers "already handled" is
+simply "that item is closed" — one field read in the same fetch that loads the findings, since
+each run gets a fresh findings issue rather than a queue. **The receipt is
 output, never input**: a free-form comment on the PRD / `[SPEC]` saying which flows ran and how
 they went, which nothing parses and no skill reads back, plus the `needs-qa` removal a human
 still authorises. **Exactly three QA literals survive anywhere**: `### [FINDING]`, the
-`[FINDINGS]` title prefix (triage's input on ADO), and `PRD: #<n>` in the PR body's machine block
-— and that last one was already the PR body's, not a new one. `### [FINDING]` **is a parse
+`[FINDINGS]` title prefix (registered in both adapters — triage's input on ADO, a human scanning
+convention on GitHub, since the findings issue there is located by the PR finder's existing
+`PRD: #<n>` resume key, not by its title), and `PRD: #<n>` in the PR body's machine block — and
+that last one was already the PR body's, not a new one. `### [FINDING]` **is a parse
 contract, not a title prefix** — hardcoded in both skills and deliberately absent from the
 adapter, because a project free to edit it would get a triage pass that silently finds nothing.
 Both QA pairs are **siblings that arrived at the same shape, not a shared file with two call
-sites**: every literal is its own tracker's, GitHub's HTML-comment id trailers never survived on
+sites** — and now more literally so: both file findings to a disposable, per-run
+`[FINDINGS]` issue rather than commenting on the run's PR/`[SPEC]`, both find-or-create it
+lazily on the first failure, and both close it in `triage`. Every literal is still its own
+tracker's, GitHub's HTML-comment id trailers never survived on
 ADO at all (they are stripped out of a comment's API read, so ids ride in the open, backticked),
 and the ADO findings item has its own shape in
 `plugins/ado-workflow/skills/references/findings-item.md`. There was a shared QA-item reference
@@ -119,13 +127,14 @@ native sub-issues; and 0011's plugin-membership rule, which is why `manual-qa` a
 in `prd-workflow` and `ado-workflow` — beside the loop whose literals they share — and never in
 `lk`.
 
-GitHub titles carry `[PRD]` · `[TASK]` · `[BUG]`, registered in the adapter's `## Repo` →
-*Title prefixes* row, never hardcoded in a skill. **On GitHub they are a human scanning
-convention and nothing more — no skill filters on them. Azure DevOps is the opposite, so read
-the next paragraph before carrying this rule across.** A PRD's children are its **native GitHub
+GitHub titles carry `[PRD]` · `[TASK]` · `[BUG]` · `[FINDINGS]`, registered in the adapter's
+`## Repo` → *Title prefixes* row, never hardcoded in a skill. **On GitHub they are a human
+scanning convention and nothing more — no skill filters on them. Azure DevOps is the opposite, so
+read the next paragraph before carrying this rule across.** A PRD's children are its **native GitHub
 sub-issues**, read back from the sub-issues API (`_shared/prd-eligibility.md`), so an unprefixed
 issue linked to a PRD is a full child while a perfectly prefixed one that was never linked is
-invisible. The one place a prefix is still mechanical is `work-on-prd` stripping a leading
+invisible — a `[FINDINGS]` issue is deliberately never linked, so it never shows up as one. The
+one place a prefix is still mechanical is `work-on-prd` stripping a leading
 `[…]` group before slugging the branch. Don't reintroduce a title filter, and don't write a body
 `## Parent` section to stand alongside the link — two sources of truth that can disagree is
 exactly what the links removed.
