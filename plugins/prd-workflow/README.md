@@ -8,8 +8,9 @@ The PRD-to-merge workflow, packaged as a Claude Code plugin: `to-prd` →
 **composes** the pass on demand from what actually landed on the run's branch —
 the diff, the commits and their `(#N)` attribution — as a short list of flows,
 then drives it one flow at a time, taking one verdict per flow and posting a
-`### [FINDING]` comment to the PR for each failure. The loop posts no QA comment
-for it to read. `triage` then takes those findings and promotes the survivors
+`### [FINDING]` comment for each failure to a disposable, per-run `[FINDINGS]`
+issue — never to the PR. The loop posts no QA comment for it to read. `triage`
+then takes those findings and promotes the survivors
 back into cold-runnable children that `work-on-prd` picks up with no new
 machinery. Both lived in the `lk` plugin until they didn't — `lk` is the skills
 that talk to the user and the codebase, and a skill that files GitHub issues was

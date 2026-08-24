@@ -1,9 +1,16 @@
 # ADR 0012 — The QA pass is composed from the branch, not planned into a contract
 
-- **Status**: Accepted
+- **Status**: Superseded by ADR 0014
 - **Date**: 2026-08-17
 - **Context**: PRD #140, implemented by #141–#145
 - **Supersedes**: ADR 0009 and ADR 0011, **on the QA-artifact half of each only**
+- **Superseded by**: ADR [0014](0014-github-findings-move-off-the-pr.md) — **on the
+  findings-location half only.** A GitHub finding no longer lands as a `### [FINDING]` comment on
+  the run's pull request; it goes to a disposable, per-run `[FINDINGS]` issue instead, found by
+  the same `PRD: #<n>` resume key. **What still stands**: everything else in this record —
+  composing the pass from the branch as flows, driving one verdict per flow, the receipt being
+  output-only, and the three surviving QA literals (only their `[FINDINGS]` entry gained a
+  GitHub-side use, as a title convention rather than a new literal).
 
 ## Read this first: what still stands in 0009 and 0011
 
