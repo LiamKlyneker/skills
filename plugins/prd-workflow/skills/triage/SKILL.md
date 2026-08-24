@@ -1,12 +1,12 @@
 ---
 name: triage
-description: PRD-scoped triage — take the [FINDING] comments manual-qa logged on a PRD's PR, confirm each against the PRD/issues/decision-lock and the code, pinpoint root cause via a cheap subagent, then file cold-runnable GitHub issues (in this repo, or in the related repo that owns the contract boundary) that work-on-prd/work-on-issue can execute with no plan mode. Invoke /prd-workflow:triage to promote a PRD's PR QA findings into executable issues.
+description: PRD-scoped triage — take the [FINDING] comments manual-qa logged on a run's [FINDINGS] issue, confirm each against the PRD/issues/decision-lock and the code, pinpoint root cause via a cheap subagent, then file cold-runnable GitHub issues (in this repo, or in the related repo that owns the contract boundary) that work-on-prd/work-on-issue can execute with no plan mode, and close the [FINDINGS] issue once every finding is disposed. Invoke /prd-workflow:triage to promote a PRD run's QA findings into executable issues.
 disable-model-invocation: true
 ---
 
 # triage
 
-The **investigate + promote** half of the PRD QA loop. `manual-qa` — the capture phase — composes a run's pass from what landed on the branch, drives it flow by flow, and logs each failure as a self-contained `### [FINDING]` comment on a PRD's PR; `triage` *confirms, roots-causes, and promotes* the survivors into **cold-runnable issues** — one per finding — that `work-on-prd` (or `work-on-issue`) executes later with zero re-research. It is the PRD-scoped specialization of the generic triage pattern: it never reads a deploy-preview comment stream, it reads a PRD.
+The **investigate + promote** half of the PRD QA loop. `manual-qa` — the capture phase — composes a run's pass from what landed on the branch, drives it flow by flow, and logs each failure as a self-contained `### [FINDING]` comment on the run's disposable `[FINDINGS]` issue; `triage` *confirms, roots-causes, and promotes* the survivors into **cold-runnable issues** — one per finding — that `work-on-prd` (or `work-on-issue`) executes later with zero re-research, then closes the `[FINDINGS]` issue once every finding on it is disposed. It is the PRD-scoped specialization of the generic triage pattern: it never reads a deploy-preview comment stream, it reads a PRD.
 
 Its edge over a generic triage is **decision context**: it loads the PRD, its child issues, the touched `CONTEXT.md`, and the locked decisions — so it can tell a real defect from a gap that was **deferred on purpose**, and route a finding to the repo that actually owns it.
 
@@ -22,33 +22,34 @@ Project facts (repos, commands, verify ladder) come from the **project adapter**
 Establish PRD scope before the first finding, and hold it for the whole session:
 
 - **Which PRD / PR.** Resolve the PRD, then its run's PR via the machine block's `PRD: #<n>` resume key in the PR body — the same key `manual-qa` uses to locate a run, matched as a whole line (`PRD: #12` is a prefix of `PRD: #127`). Ask if not given.
-- **PRD issue** (`gh issue view <n> --json body,comments`) — the body for its cross-repo dependencies, deferred / out-of-scope notes, and explicit locked decisions. The same call's `comments` array carries `manual-qa`'s **receipt** from any pass that has run — which flows it walked and where it stopped. Read it as **context only, never matched**: it is free-form by design, nothing parses it, and it is not a source of findings. The findings are on the PR.
+- **PRD issue** (`gh issue view <n> --json body,comments`) — the body for its cross-repo dependencies, deferred / out-of-scope notes, and explicit locked decisions. The same call's `comments` array carries `manual-qa`'s **receipt** from any pass that has run — which flows it walked and where it stopped. Read it as **context only, never matched**: it is free-form by design, nothing parses it, and it is not a source of findings. The findings are on the run's `[FINDINGS]` issue — see `## Input`.
 - **Child issues** + the PR's **Closes map** (#c1…#cN → their file areas) — this is the *owning-slice* attribution map, near-free.
 - **Touched `CONTEXT.md`** for the feature dir(s) under test (use the `scoped-context` skill if available), plus code comments in those files marked "deferred", "later slice", "no resolver yet", placeholder. Together with the PRD body and the children, this is what powers the gap classification below — there is no QA comment to read, and a PRD whose run landed only refactors or bumps has no QA artifact at all, which is normal rather than a gap. The PRD's `needs-qa` label is worth noting — it means no pass has completed yet — but it does not change the classification.
 
 ## Input
 
-**The `### [FINDING]` comments on the PRD's PR.** That marker is a **parse contract**, hardcoded in both skills and deliberately absent from the adapter: `manual-qa`'s `## Findings` is its normative writer, this is the only matcher, and there is **no fallback for any older marker** — a comment predating it is pasted in by hand, which is what ad-hoc input already handles at zero cost.
+**The `### [FINDING]` comments on the run's `[FINDINGS]` issue.** That marker is a **parse contract**, hardcoded in both skills and deliberately absent from the adapter: `manual-qa`'s `## Findings` is its normative writer, this is the only matcher, and there is **no fallback for any older marker** — a comment predating it is pasted in by hand, which is what ad-hoc input already handles at zero cost.
 
-Read them in one call, and keep each `url` — *Marking the finding comment triaged* needs it to write back:
+**Locate the findings issue** the same way `manual-qa` finds it — matching the whole `PRD: #<n>` line, `--state all` so a closed one is visible, `--limit 500` since the `gh issue list` default of 30 silently truncates:
 
 ```bash
-gh pr view <pr-number> --json comments --jq '.comments[] | {url, body}'
+gh issue list --repo <owner>/<repo> --state all --limit 500 --json number,title,body,state \
+  --jq '[.[] | select(.body | test("(^|\n)PRD: #<n>[ \t\r]*(\n|$)"))]'
 ```
 
-Take **one per turn**; if the user pastes several, queue the rest. Ad-hoc paste (a finding not yet on the PR) is allowed — treat it identically.
+- **Exactly one open hit** → that is the run's findings issue.
+- **None open** (no hit at all, or every hit closed) → nothing to triage. A closed hit is a previous pass's issue, already fully disposed — say so and stop; it is never reopened or appended to.
+- **More than one open** → stop and ask which.
 
-### Skip anything already triaged
+**Warn up front if the run's PR is merged** — a merged PR means the branch this triage would investigate against no longer exists as a live diff; say so in one line before starting the cadence.
 
-**A `### [FINDING]` comment whose body contains `**Triaged:**` is skipped outright** — before the cadence, before any subagent, before any tracker search. Publishing writes that line onto the comment as soon as the issue exists (*Marking the finding comment triaged*), so its presence means a previous pass already promoted this one.
+Then read the comments, keeping each `url` — the `[BUG]` body's `Findings:` line needs it as a permalink:
 
-- **A skip is not a reject.** It is not filed, not closed, not carded, and not reported as a duplicate. Say in one line which findings were skipped and which issues they already point at (the line carries the number), then move on.
-- It is a plain **substring check on a body you already fetched** — no API call, no fuzzy matching, no title comparison, so no false positives.
-- It **replaces** the per-finding `gh issue list --search` for already-promoted findings rather than running alongside it; see step 4 for what that search is still for.
+```bash
+gh issue view <findings-number> --json comments --jq '.comments[] | {url, body}'
+```
 
-Without this, every finding surviving on the PR from an earlier pass gets a brand-new `[BUG]` filed and immediately closed as a duplicate — of the issue it produced itself — and the noise compounds each cycle.
-
-<!-- Rejected alternatives, recorded so they are not re-proposed. (a) A reaction on the finding comment: one call and no edit, but it carries no *which issue*, so triage's own output would be unreadable without a hover, and re-triage could not report the link. (b) GitHub's "Resolve conversation": it exists only on **review** threads anchored to a file and line. `gh pr comment` posts to the conversation timeline, which has no resolve state and no threading at all, and plenty of findings have no owning line to anchor to. Neither is a substitute for a line in the body. -->
+Take **one per turn**; if the user pastes several, queue the rest. Ad-hoc paste (a finding not yet on the issue) is allowed — treat it identically.
 
 ### Two fields `manual-qa` hands over
 
@@ -69,7 +70,7 @@ For each finding: **capture → validate (gap classification) → investigate (s
 
 ### 1. Capture
 
-Record the finding + its source (PR comment permalink, `file:line`, author). **`manual-qa` already did the classification + hypothesis + evidence — inherit them as the warm start; do not re-derive.** Same for the two handover fields: `**From:**` is the owning slice and `**Step:**` is the pass provenance, both taken as written. Hold the comment's **permalink** for the whole finding — publishing writes `**Triaged:** #N` back to it.
+Record the finding + its source (findings-issue comment permalink, `file:line`, author). **`manual-qa` already did the classification + hypothesis + evidence — inherit them as the warm start; do not re-derive.** Same for the two handover fields: `**From:**` is the owning slice and `**Step:**` is the pass provenance, both taken as written. Hold the comment's **permalink** for the whole finding — the filed `[BUG]`'s `## Root cause` carries it as the `Findings:` line.
 
 ### 2. Validate + gap classification (HARD GATE — before filing anything)
 
@@ -113,9 +114,8 @@ Both repos work in synergy; the issue just lands where the fix lands.
 
 ### 4. Dispose + dedupe
 
-- **Dedupe against the tracker** — `gh issue list --search "<keywords>" --state all` (right repo) before filing; a match makes this a `reject (duplicate)` pointing at it. **This search is no longer what catches a finding an earlier triage pass already promoted** — the `**Triaged:**` skip in `## Input` does that, without an API call, before this finding ever reaches the cadence. What is left for the search is the genuine case: a finding that duplicates an issue filed by some *other* route (a planned child, a hand-filed bug, a finding from a different PR).
+- **Dedupe against the tracker** — `gh issue list --search "<keywords>" --state all` (right repo) before filing; a match makes this a `reject (duplicate)` pointing at it. This catches a finding that duplicates an issue filed by some *other* route (a planned child, a hand-filed bug, a finding from a different run) — it is not what catches a re-triage of this same findings issue, since a closed findings issue is skipped outright in `## Input` before any finding on it reaches the cadence.
 - **Route** per the table below.
-- **Mark the finding comment triaged.** Every disposition that ends in an issue number — a new bug, a deferred follow-up, an existing issue linked under *already planned*, a filed-then-closed reject, or a contract-boundary issue in the related repo — writes `**Triaged:** #N` back onto the finding comment once that number exists. That happens at publish (see *Marking the finding comment triaged*); what step 4 owes is knowing **which number** the line will carry. The one disposition that writes nothing is a finding closed out with no issue anywhere — *intentionally deferred, cited from the PRD or a code comment* — which has no number to point at and will surface again on the next pass. That is deliberate: a marker with nothing to link to would be worse than re-reading a one-line citation.
 
 <dispositions>
 | Kind | Title | Where | Labels | Picked by work-on-prd? |
@@ -125,8 +125,6 @@ Both repos work in synergy; the issue just lands where the fix lands.
 | **Contract boundary** | their style | **related repo**, "Discovered via …#PR" | `bug` (their style); local `blocked-external` pointer under the affected child's `## Blocked by` | n/a — no cross-repo auto-close; closed by hand |
 | **Reject** (WAD / dup / invalid) | `[BUG] …` | this repo | file-then-close `duplicate`/`wontfix`/`invalid` + one-line rationale (cite the decision) | — |
 </dispositions>
-
-**An already-triaged finding gets no row here, because it never reaches this table.** The skip in `## Input` happens before the cadence: nothing is filed, nothing is closed, and it is not a `reject (duplicate)` — a reject is a *disposition of a finding being triaged*, and a skipped one is not being triaged at all.
 
 Two things make a this-repo issue pickable, and both are required: the **sub-issue link** to
 the PRD (what makes it a child at all) and the `ready-to-start` label (eligibility). A deferred
@@ -162,50 +160,31 @@ When the user says done:
    related-repo issues: an issue in another repo is not a sub-issue of a PRD here, and not to
    rejects, which are closed rather than parented.
 
-   Then the `**Triaged:** #N` line **goes back onto the finding comment** the issue came from — see
-   *Marking the finding comment triaged* below. That happens for every finding that came off
-   the PR, including a reject; a pasted ad-hoc finding has no comment to write to.
-3. **Report** — the disposition facts, filtered per `../_shared/final-prints.md`. Every card was
+   Every filed `[BUG]`'s `## Root cause` carries the `Findings:` line — see the issue template
+   below — pointing back at the finding comment's permalink, held since step 1.
+3. **Close the findings issue** — the **last** publish step, once every finding on it is disposed:
+
+   ```bash
+   gh issue close <findings-number> --reason completed
+   ```
+
+   **Closed, never deleted** — rejection reasoning lives in the finding comments and the closed
+   issue is the permanent record. This is `triage`'s only write to the findings issue itself:
+   nothing is appended to it, no comment is annotated.
+4. **Report** — the disposition facts, filtered per `../_shared/final-prints.md`. Every card was
    already confirmed one at a time and every issue is now on the board, so this is **not** a
    re-listing of what was just filed:
 
    ```
    Filed — 2 blockers, 1 deferred, 1 in <related repo>. 1 closed as rejected.
-   2 skipped — already triaged.
+   [FINDINGS] issue #<n> closed.
    /prd-workflow:work-on-prd #<prd-number>
    ```
 
    **No id soup.** Ids appear only where the human must act on that specific thing now — the
    related-repo issue below, and any finding whose filing **failed**, which is an escalation and
    gets its own line however tidy the rest of the print looks.
-4. **Remind** the human of the one external step triage can't do: the related-repo issue is tracked but **not** auto-closed by this repo's PR. That one carries its id, in full `<owner>/<repo>#NNN` form — it is the human's next action and it is not on this board at all. Marking findings triaged is no longer on this list — step 2 writes `**Triaged:** #N` itself, and that line is what makes the next pass skip them. What is still worth saying out loud is any finding that ends with **no** issue at all (deferred-by-design, cited): it carries no marker, so the next pass will surface it again.
-
-### Marking the finding comment triaged
-
-One line, appended to the `### [FINDING]` comment, naming the issue it became:
-
-```
-**Triaged:** #92
-```
-
-**This is the only place in the chain where the finding → issue link is written down.** `triage` links the issue *up* to the PRD as a sub-issue, and nothing else links back down to the finding that produced it — so without this line a second pass has no way to tell a fresh finding from one it promoted last week.
-
-**No contract amendment is needed for it.** The finding comment is `manual-qa`'s own artifact, authored by the same user, and carries no never-edit rule. Nothing on the PRD does either any more: the loop posts no QA comment, and `manual-qa`'s receipt is free-form output that nothing reads back.
-
-Mechanics — the same operation class as `manual-qa`'s failure suffix, and the same rules apply:
-
-1. **Get the REST comment id from the permalink, not from the API's `id` field.** `--json comments` returns the **GraphQL node id** (`IC_kwDO…`); passing it to `gh api` does not 400, it **404s**, which reads as "no such comment". The REST id is the numeric tail of the `url` you already have — `…/pull/91#issuecomment-5078204371` → `5078204371`. A PR's conversation comments are **issue** comments, so the endpoint is `…/issues/comments/<id>`.
-2. **Fresh `GET` immediately before the write** — never `PATCH` from a body held in context since the session began.
-3. **Pure append**: the fetched body, then a blank line, then the one line. Nothing else is touched, nothing is re-rendered from a model-held structure, and the existing fields keep their exact text.
-4. **Read the `PATCH` response back** and confirm the line is there before moving to the next finding. `PATCH` returning is not evidence the write landed.
-
-```bash
-gh api repos/<owner>/<repo>/issues/comments/<comment-id> --jq .body > <scratch>/finding.md
-printf '\n**Triaged:** #92\n' >> <scratch>/finding.md
-gh api repos/<owner>/<repo>/issues/comments/<comment-id> -X PATCH -F body=@<scratch>/finding.md --jq .body
-```
-
-For a contract-boundary finding the number is the related repo's, written in full — `**Triaged:** <owner>/<repo>#123` — plus the local `blocked-external` pointer if one was filed. The skip in `## Input` keys on `**Triaged:**` alone, so any of those forms suppresses a re-triage.
+5. **Remind** the human of the one external step triage can't do: the related-repo issue is tracked but **not** auto-closed by this repo's PR. That one carries its id, in full `<owner>/<repo>#NNN` form — it is the human's next action and it is not on this board at all.
 
 ### Linking a bug to its PRD
 
@@ -273,6 +252,7 @@ None — fully fixable from the editor.   (or the `- [ ]` steps a human must do)
 Confirmed: <the actual cause, traced — not a hypothesis>.
 Owning slice: #<child> (<what that slice built>).
 Introduced by: `<sha>` — <one line>.   ← ONLY if a regression / reveals intent; omit otherwise.
+Findings: #<findings-issue> — <comment permalink>
 
 ## Worker context
 
