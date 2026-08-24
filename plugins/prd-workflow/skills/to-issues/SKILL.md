@@ -84,7 +84,7 @@ Iterate until the user approves the breakdown.
 
 ### 5. Publish the issues to the issue tracker
 
-For each approved slice, publish a new issue to the issue tracker, titled `[TASK] …` per `## Titles` above. Use the issue body template below. Apply the `ready-to-start` triage label so each issue is immediately pickable (label vocabulary is normative in `work-on-prd`'s `## Label vocabulary`).
+For each approved slice, publish a new issue to the issue tracker, titled `[TASK] …` per `## Titles` above. Use the issue body template below. Apply the `ready-to-start` triage label to record the issue as filed-and-unclaimed (label vocabulary is normative in `work-on-prd`'s `## Label vocabulary`). What makes it pickable is the sub-issue link to the PRD, not the label — nothing in the pick path reads a label.
 
 Publish issues in dependency order (blockers first) so you can reference real issue identifiers in the "Blocked by" field.
 
