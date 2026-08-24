@@ -1,6 +1,6 @@
 ---
 name: manual-qa
-description: Compose a PRD run's manual QA pass from what actually landed on the branch — the diff, the commits and the landed children — as a short list of flows, then drive it one flow at a time, taking one verdict per flow and posting a self-contained [FINDING] comment to the PR on a failure. Also the ad-hoc capture path for a finding noticed outside any flow. Invoke /prd-workflow:manual-qa with a PRD URL to run a manual QA pass.
+description: Compose a PRD run's manual QA pass from what actually landed on the branch — the diff, the commits and the landed children — as a short list of flows, then drive it one flow at a time, taking one verdict per flow and posting a self-contained [FINDING] comment to a disposable per-run [FINDINGS] issue on a failure. Also the ad-hoc capture path for a finding noticed outside any flow. Invoke /prd-workflow:manual-qa with a PRD URL to run a manual QA pass.
 disable-model-invocation: true
 ---
 
@@ -118,7 +118,7 @@ Within the flow, split the work:
 | Verdict | Effect |
 |---|---|
 | **Pass** | record it, move to flow *n+1* |
-| **Fail at sub-step *k*** | post a `[FINDING]` comment to the PR naming flow *n*, sub-step *k*; move to flow *n+1* |
+| **Fail at sub-step *k*** | post a `[FINDING]` comment to the run's `[FINDINGS]` issue (find-or-create it first if this is the first failure) naming flow *n*, sub-step *k*; move to flow *n+1* |
 
 - **Partial progress inside a flow is not recorded.** A re-test reruns the whole flow — cheap by construction, because flows are short and start from a named state. There is no half-passed flow and no third verdict.
 - **A failed flow does not block the next one.** Unless its failure makes a later flow's `start from:` unreachable, in which case say so and ask.
@@ -136,9 +136,36 @@ It is the human stopping. Go to `## End of pass` and take the stopped-early bran
 
 ## Findings
 
+Findings go to a **disposable, per-run `[FINDINGS]` issue** — never to the PR. The PR gets nothing from QA: no comment, no label.
+
 **The marker is `### [FINDING] <one-line symptom>`, hardcoded here.**
 
-It is deliberately **not** registered in the adapter's *Title prefixes* row. Those prefixes are a decorative human scanning convention; this is a **parse contract** — `triage` reads the PR's comments looking for exactly this string. Making it project-configurable would let a project edit it and get a `triage` that silently finds zero findings and reports a clean PR.
+It is deliberately **not** registered in the adapter's *Title prefixes* row. Those prefixes are a decorative human scanning convention; this is a **parse contract** — `triage` reads the findings issue's comments looking for exactly this string. Making it project-configurable would let a project edit it and get a `triage` that silently finds zero findings and reports a clean run.
+
+### Find-or-create the findings issue
+
+Run this **lazily, on the first failed flow** — a clean pass creates nothing.
+
+Search, matching the whole `PRD: #<n>` line with the same regex `## Finding the run` uses — never a substring, since `PRD: #12` is a prefix of `PRD: #127`:
+
+```bash
+gh issue list --repo <owner>/<repo> --state all --json number,title,body,state \
+  --jq '[.[] | select(.body | test("(^|\n)PRD: #<n>[ \t\r]*(\n|$)"))]'
+```
+
+- **Exactly one open hit** → append to it. A stopped-early pass that resumed is the same pass.
+- **None open** (no hit at all, or every hit closed) → create a new one.
+- **More than one open** → **stop and ask** which. This only happens when a human did something by hand; handle it gracefully, don't design around it.
+- A **reopened** hit is not a queue. `gh issue view <n> --json state,stateReason` — if `state` is open and `stateReason` is `"REOPENED"`, say so out loud before appending: the developer is expected to have closed it after triage, and a reopened issue getting silent new findings appended is a surprise worth naming.
+
+**Creating it:**
+
+- Title: `[FINDINGS] <PRD title, prefix stripped> — run of <YYYY-MM-DD>`. `[FINDINGS]` is shorthand for the adapter's *Title prefixes* row — a human scanning convention, nothing filters on it.
+- Body, exactly: one human sentence naming the PRD and the PR the findings were exercised against, then the machine line `PRD: #<n>`, then the human line `PR: #<m>`. No findings ever go in the body — they arrive as comments, below.
+- **Free-standing** — never linked as a sub-issue of the PRD. A PRD's sub-issues are its work; a findings issue linked there would show up to eligibility as an implementable child.
+- **No labels.** A label is project-side state a fresh repo may not have; the body's `PRD:` line is the finder, not a label.
+
+`gh issue create --repo <owner>/<repo> --title "<title>" --body-file <path>` — write the body to the scratchpad first.
 
 **One finding per turn. Never batch.** Post it, report the permalink and a one-line recap, then move to the next flow.
 
@@ -166,7 +193,7 @@ It is deliberately **not** registered in the adapter's *Title prefixes* row. Tho
 <routing>
 ### Routing (which repo/owner)
 
-- **This-repo bug** → a real defect in the code of the repo under test. Post to the PR; `triage` will open an issue here.
+- **This-repo bug** → a real defect in the code of the repo under test. Post to the `[FINDINGS]` issue; `triage` will open an issue here.
 - **Contract-boundary bug** → the symptom is in this app but the cause sits on the other side of the API boundary, in the repo named by the adapter's `## Repo` → *Related repos*. Prove it with the one decisive probe where feasible and say so explicitly — `triage` investigates over there and files the issue in that repo, cross-linked back. Do **not** fix or file across the boundary from here.
 - **Deferred-by-design** → not a bug. Say what was deferred, cite the code comment or PRD note, and what the follow-up slice needs.
 - **Works-as-intended / enhancement** → capture the desire, mark it as not-a-defect.
@@ -203,14 +230,14 @@ Keep it lean — the canonical minimum is repro / expected / actual; the rest ea
 - `**From:**` is the child issues whose code the flow exercises, written with the `#`, lifted from the `(#N)` suffixes on the commits that touched the files involved. The rendered `#N` is wanted here — one line, in one comment, where the expansion is useful.
 - **Both fields are absent in ad-hoc mode**, where there is no flow and no attribution. Omit the lines entirely; do not write "n/a".
 - Screenshots the user pastes cannot be embedded via `gh` (they are local) — describe them in words instead. If the user wants the image inline, they drag it into the comment on GitHub themselves.
-- Post with `gh pr comment <n> --body-file <path>` (write the body to the scratchpad first; avoids shell-escaping issues), against the PR this pass is running on.
+- Post with `gh issue comment <findings-number> --body-file <path>` (write the body to the scratchpad first; avoids shell-escaping issues), against the run's `[FINDINGS]` issue — find-or-create it first per the section above if this is the first failure of the pass.
 </comment-template>
 
 ## End of pass: the receipt, and `needs-qa`
 
 Two artifacts, in this order:
 
-1. **The receipt** — one **free-form** comment on the **PRD**: which flows ran, the verdict on each, links to any findings, and — if the pass stopped early — which flow they got to. Free-form means free-form: **nothing parses it**, it is output rather than input, and it has no template. `gh issue comment <prd-number> --body-file <path>`.
+1. **The receipt** — one **free-form** comment on the **PRD**: which flows ran, the verdict on each, the `[FINDINGS]` issue this pass wrote to (if any) by number, and — if the pass stopped early — which flow they got to. Free-form means free-form: **nothing parses it**, it is output rather than input, and it has no template. `gh issue comment <prd-number> --body-file <path>`.
 2. **The label.** A pass that ran every flow to a verdict → offer to remove it, and on a yes: `gh issue edit <prd-number> --remove-label needs-qa`. A pass that **stopped early** → post the receipt and **leave `needs-qa` on**, saying so in as many words. The label is the queue signal; an unfinished pass is still in the queue.
 
 Findings do **not** hold the label on. A pass that ran every flow and found three bugs is a completed pass — the findings are `triage`'s queue, not QA's.
@@ -231,11 +258,13 @@ The driver adds gating and bookkeeping, **not comprehension**. If you cannot wri
 
 Invoked with no PRD URL, or a finding noticed outside any flow, this skill is just the capture half:
 
-- Ask which PR the finding belongs to, if it is not obvious. That is the only context needed.
-- Run the same cadence — confirm it is real, classify per `<routing>`, one decisive probe at most per `<the-line>`, post one self-contained comment per turn.
+- Ask which **PRD** the finding belongs to, if it is not obvious — not which PR. Then derive the PR exactly as the driven path does (`## Finding the run`'s whole-line `PRD: #<n>` match against open PRs).
+- **If the PR is found only among merged/closed PRs**, warn and ask before writing anything — e.g. "this PR is merged — capture against it anyway?". Only proceed on a yes.
+- **If no PR is found at all**, that's fine: find-or-create the findings issue with the `PRD:` line as usual, and say the `PR:` line is absent from its body — the finder does not need it.
+- Run the find-or-create from `## Findings` → *Find-or-create the findings issue*, then the same capture cadence — confirm it is real, classify per `<routing>`, one decisive probe at most per `<the-line>`, post one self-contained comment per turn.
 - **Omit** `**Step:**` **and** `**From:**` — there is no flow and no attribution to lift.
 - Record nothing else. There is no pass being driven, so the finding is the whole output.
 
 ## Handoff to triage
 
-The PR's `### [FINDING]` comments are this skill's only committed-to-the-tracker output; the receipt on the PRD is a human-readable record of the pass and nothing reads it back. A later `/prd-workflow:triage` session confirms each finding, roots it out, and promotes the survivors into cold-runnable children of the PRD. This skill never fixes anything and never files an issue.
+The findings issue's `### [FINDING]` comments are this skill's only committed-to-the-tracker output; the receipt on the PRD is a human-readable record of the pass — naming which findings issue it wrote to — and nothing reads that receipt back. A later `/prd-workflow:triage` session reads the findings issue, confirms each finding, roots it out, and promotes the survivors into cold-runnable children of the PRD. This skill never fixes anything and never files an issue itself beyond the findings issue.
