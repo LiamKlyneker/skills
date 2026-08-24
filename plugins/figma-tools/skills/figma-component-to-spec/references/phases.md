@@ -719,17 +719,30 @@ exist to remove. Instead:
    stated as settled-but-overdue so that reopening it is an obvious option rather than a fresh
    question. **A disagreeing or unattributed marker from §3.4 is the exception** — those are not
    settled, and they become interview questions in step 3.
-3. **Interview the open candidates one question at a time.** Each question carries three things:
+3. **Interview the open candidates in rounds.** Each question carries three things:
    the **evidence** (the frame, flag, or disagreement, quoted — never a bare label), the
    **decision it needs** (which of the four outcomes — plus, where the outcome is eligible,
    provisional-or-block — or which side of a disagreement), and a
    **recommended answer with a one-line why**. The recommendation is a recommendation; the human
-   decides. Never batch the remainder into one "mark these" message — the answer to one question
-   routinely changes the next.
-4. **Order questions by dependency**: component-identity and catalog-vs-source disagreements
+   decides.
+
+   **A round is every open question whose prerequisites are already settled** — the ones whose
+   answers cannot move each other. Ask that whole set in one message, numbered, each carrying its
+   own evidence and recommendation; wait; then recompute what those answers unblocked and ask the
+   next round. Step 4's ordering is what defines the rounds: a question that reshapes other rows
+   is an *earlier* round, never a peer of the rows it reshapes. Two candidates that decide
+   independently — the usual case once identity and the disagreements are settled — are one
+   round, not two turns.
+
+   **A round is numbered questions; it is never a form.** Batching is about *when* questions go
+   out, never about replacing them with something to fill in. Presenting the candidate list as a
+   table for the human to mark up is the exact failure this checkpoint exists to prevent — it
+   hands back the reconciliation Phases 4.1 and 4.2 just did — and it stays forbidden however
+   many questions a round carries.
+4. **Order the rounds by dependency**: component-identity and catalog-vs-source disagreements
    first (their answers reshape other rows), then per-candidate outcomes, then every
    `legacy`/`deprecated` match-as-is-vs-modernize call, and the **shortlist confirmation as the
-   interview's last question**.
+   interview's last question, alone in its own round**.
 5. **Anything the run found that this skill has no rule for is an interview question, never a
    silent drop and never forced onto the nearest outcome.** A component the token list already
    ships that the set redraws differently, a pattern the four outcomes don't cleanly name, a
@@ -1094,9 +1107,10 @@ finding wins, the contradiction is recorded, nothing is re-asked. But a finding 
 decision no one has made — an unbound hex on a frame nobody flagged, a token the frame binds
 that the token list has never heard of, a geometry that belongs to no triaged row — is a triage
 decision, and triage decisions are the human's. Put those to the user **before Phase 8 writes
-the spec**, in the same style as Phase 4.3: one question at a time, the finding quoted as
+the spec**, in the same style as Phase 4.3: numbered questions, the finding quoted as
 evidence, a recommended outcome from the same four, the answer recorded in the *Triage record*
-with its rationale. Zero new candidates → no follow-up, say so in one line. Never re-open a
+with its rationale. **New candidates are independent of each other by construction, so this is
+one round** — ask them together and wait once. Zero new candidates → no follow-up, say so in one line. Never re-open a
 decision the Phase 4 interview already recorded, and never widen this into a second full
 checkpoint — it exists only for what verification alone could see.
 

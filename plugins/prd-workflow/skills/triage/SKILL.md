@@ -61,9 +61,9 @@ A finding written by the driver carries two fields worth **consuming rather than
 
 **Both are absent on an ad-hoc finding**, which has no flow and no attribution. That is the normal case for a pasted finding, not a defect in it: fall back to the PR's Closes map for the owning slice (step 3), and say the finding has no pass provenance rather than inventing one.
 
-## Cadence (one finding per turn — clone of grill / `manual-qa`)
+## Cadence (one finding per turn — shared with `manual-qa`)
 
-For each finding: **capture → validate (gap classification) → investigate (subagent) → dispose → show card → user confirm/correct → next.** Loop until the user says done, then **board → publish**. Never batch.
+For each finding: **capture → validate (gap classification) → investigate (subagent) → dispose → show card → user confirm/correct → next.** Loop until the user says done, then **board → publish**. Never batch — this is a write path, not an interview: each finding gets its own subagent investigation and its own filed artifact, so a batched confirmation is a batched filing. The grill skills work their questions in rounds; that is a property of interviewing a design tree, and it does not transfer here.
 
 ## Per-finding process
 

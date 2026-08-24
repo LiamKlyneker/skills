@@ -10,11 +10,29 @@ disable-model-invocation: true
 
 # Deep Grill
 
-Interview me relentlessly about every aspect of this plan until we reach a shared understanding. Walk down each branch of the decision tree, resolving dependencies between decisions one-by-one. For each question, provide your recommended answer.
+Interview me relentlessly about every aspect of this plan until we reach a shared understanding. Map it as a **design tree**: every decision branches into the decisions that hang off it.
 
-Ask the questions one at a time.
+## Rounds and the frontier
 
-If a question can be answered by exploring the codebase, explore the codebase instead — and for anything beyond a single known file, **don't explore on this (the main) thread**: fan the exploration out to recon subagents first (below). This thread is the orchestrator and the interviewer; it does not do the raw digging.
+Work the tree in **rounds**. The **frontier** is every decision whose prerequisites are already settled — the questions you can ask *now* without guessing at answers you haven't heard yet. Ask the whole frontier in one round, then wait for my answers before the next.
+
+A question whose answer depends on another question still open in this round belongs to a **later** round. Each round of answers reshapes the tree: recompute the frontier and ask again.
+
+**A round is numbered questions, never a form.** Each carries its own recommended answer. Asking me to fill in a table or mark up a list is not a round — that hands back the reconciliation the recon fan-out below exists to do for me.
+
+```
+❓ **Q1** — **<question title>**: <question body — may be several paragraphs, and may offer choices>
+
+➡️ <your recommended answer, and one line on why>
+
+---
+
+❓ **Q2** — **<question title>**: <question body>
+
+➡️ <your recommended answer, and one line on why>
+```
+
+**Facts are your job, never mine.** If a question can be answered by exploring the codebase, explore instead of asking — and for anything beyond a single known file, **don't explore on this (the main) thread**: fan the exploration out to recon subagents (below). This thread is the orchestrator and the interviewer; it does not do the raw digging.
 
 Project facts (repo names, explorer agents, access-policy source) come from the **project adapter** at `<repo-root>/.claude/project/adapter.md` — read it first; never hardcode project specifics in this skill. Its `## Project gates` table also tells you which **extra hard gates** this project runs alongside the Data & Access Manifest below; run each one whose trigger this plan matches, following the adapter's pointer to it. Never assume a gate file's name — a project that registers none has none.
 
@@ -28,11 +46,13 @@ Before anything else, ask what already exists and read it. A grill that re-deriv
 
 Carry the spec pointers through the interview — whatever this grill feeds downstream should be able to reference the design spec by URL/node rather than restating it.
 
-## Recon fan-out (run FIRST — always)
+## Recon fan-out (spawn FIRST — always; don't block on it)
 
-Before interviewing, delegate exploration to a small set of **read-only Sonnet-class subagents**, each scoped to one area, each returning a **condensed brief (~1–2K tokens, never raw file dumps)**. This keeps this thread's context full of *dialogue*, not code — the fix for both recurring failures: shallow exploration that misses details on bigger repos or across a service boundary, and asking me questions the code already answers.
+Delegate exploration to a small set of **read-only Sonnet-class subagents**, each scoped to one area, each returning a **condensed brief (~1–2K tokens, never raw file dumps)**. This keeps this thread's context full of *dialogue*, not code — the fix for both recurring failures: shallow exploration that misses details on bigger repos or across a service boundary, and asking me questions the code already answers.
 
 **This step is unconditional.** Invoking this skill *is* the request for grounded questions, so there is no path that skips recon and interviews from guesses. A narrow plan scales the fan-out **down**, never to zero.
+
+**Spawning the batch is a barrier; *finishing* it is not.** A running explorer is one unsettled prerequisite, not a stop-the-world. So spawn every lane, then open the first round immediately with whatever is already askable — the plan's framing, scope and intent, the decisions no explorer could settle anyway. Only the questions downstream of a given area wait for that area's brief. Fold each brief in as it lands and recompute the frontier.
 
 **Decompose** the plan into **1–5** areas (one per decision-tree branch / codebase area) — do **not** over-split; over-spawning is the top anti-pattern, and a single-area plan is one explorer, not three. Map each area to a lane and spawn all lanes in **one parallel batch** (one message, multiple `Agent` calls):
 
@@ -47,7 +67,7 @@ Before interviewing, delegate exploration to a small set of **read-only Sonnet-c
 
 **Each brief returns fixed sections**: (1) patterns/conventions found (`file:line`), (2) **already answered by the code** — questions this area settles, with the precedent as evidence, (3) genuinely-open questions, (4) manifest feedstock (contract/access rows from the boundary lane — tables touched, clients used, policies observed).
 
-**Consolidate on this thread** before interviewing:
+**Consolidate on this thread** as each brief lands — before the round that depends on it, not before the interview starts:
 - **Surface a short "Resolved by the code" list up-front** — the questions recon settled, each with its precedent. Do **not** silently drop them: I can reopen any row if a precedent is stale or wrong. Everything on this list is a question you will *not* ask.
 - The **open-questions** set drives the interview.
 - The **manifest feedstock** pre-populates the Data & Access Manifest below, so that gate *confirms* rather than builds from scratch.
@@ -88,3 +108,7 @@ Status ∈ ✅ covered / ⚠️ gap (needs a policy change or code fix) / ❌ un
 ## Project gates (HARD GATES — whatever the adapter registers)
 
 The manifest above is the gate every project gets. A project may register **its own** gates in the adapter's `## Project gates` table — the same shape, catching a silent-failure class specific to that stack (an API contract the app can drift from, a platform review rule). Read that table, run every gate whose trigger this plan matches, and treat each exactly like the one above: enumerate rows, resolve each, don't conclude the grill while any row is ⚠️/❌. The gate file itself carries its row schema; this skill never names one.
+
+## Done
+
+The interview is done when the frontier is empty **and** every gate row above is ✅ — every branch of the design tree visited, every store/operation resolved, nothing left silently assumed. A ⚠️ or ❌ row is an unsettled decision like any other: it keeps the frontier non-empty. **Do not act on the plan until I confirm we have reached shared understanding.**
