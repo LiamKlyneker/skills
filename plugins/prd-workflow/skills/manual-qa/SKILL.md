@@ -149,9 +149,11 @@ Run this **lazily, on the first failed flow** — a clean pass creates nothing.
 Search, matching the whole `PRD: #<n>` line with the same regex `## Finding the run` uses — never a substring, since `PRD: #12` is a prefix of `PRD: #127`:
 
 ```bash
-gh issue list --repo <owner>/<repo> --state all --json number,title,body,state \
+gh issue list --repo <owner>/<repo> --state all --limit 500 --json number,title,body,state \
   --jq '[.[] | select(.body | test("(^|\n)PRD: #<n>[ \t\r]*(\n|$)"))]'
 ```
+
+`gh issue list` defaults to `--limit 30`. Raise `--limit` above the repo's issue count: a truncated list is a silent miss, and a silent miss here is the duplicate findings issue this section exists to prevent.
 
 - **Exactly one open hit** → append to it. A stopped-early pass that resumed is the same pass.
 - **None open** (no hit at all, or every hit closed) → create a new one.
