@@ -84,7 +84,7 @@ Record the finding + its source (findings-issue comment permalink, `file:line`, 
 | **Genuine unplanned gap** | nothing in PRD/issues/decisions covers it | **propose a follow-up issue and ASK the user** before creating |
 
 - **Bugs** go to the board and are confirmed at publish time.
-- **Follow-ups / enhancements / deferred gaps always ask first** — never auto-file a new feature slice. State the follow-up scope and let the user say create / link-existing / leave-noted.
+- **Follow-ups / enhancements / deferred gaps always ask first** — never auto-file a new feature slice. State the follow-up scope and let the user say create-standalone / link-existing / leave-noted. **"Create" here means a standalone issue, never a sub-issue of the PRD** — filing it as a child is what schedules it, so that option is the merge-blocker track and belongs to a different answer.
 
 ### 3. Investigate — one subagent per finding
 
@@ -121,18 +121,28 @@ Both repos work in synergy; the issue just lands where the fix lands.
 | Kind | Title | Where | Labels | Picked by work-on-prd? |
 |---|---|---|---|---|
 | **Merge-blocker** | `[BUG] …` | this repo, linked as a sub-issue of PRD `#N` | `bug` + `ready-to-start` | yes — on the PRD branch, before merge |
-| **Deferred / follow-up** *(after user OK)* | `[BUG] …` | this repo, linked as a sub-issue of PRD `#N` | `bug`/`enhancement` + `deferred` | no (not `ready-to-start`) — a known follow-up |
+| **Deferred / follow-up** *(after user OK)* | `[BUG] …` | this repo, **standalone — never linked to the PRD**, naming PRD `#N` in prose | `bug`/`enhancement` + `deferred` | no — unlinked, and the link is the only route in |
 | **Contract boundary** | their style | **related repo**, "Discovered via …#PR" | `bug` (their style); local `blocked-external` pointer under the affected child's `## Blocked by` | n/a — no cross-repo auto-close; closed by hand |
 | **Reject** (WAD / dup / invalid) | `[BUG] …` | this repo | file-then-close `duplicate`/`wontfix`/`invalid` + one-line rationale (cite the decision) | — |
 </dispositions>
 
-Two things make a this-repo issue pickable, and both are required: the **sub-issue link** to
-the PRD (what makes it a child at all) and the `ready-to-start` label (eligibility). A deferred
-follow-up still gets the link — it is a real child, just not yet pickable, and an unlinked bug
-is invisible to the promotion path however it is titled. The `[BUG]` prefix is a scanning
-convention on top of that, not a filter. A related-repo issue takes **that** repo's title
-convention, not this one's; the prefixes are a per-adapter fact and the other side has its
-own.
+**The sub-issue link is the schedule bit, and it is the only one.** Eligibility is *open ∧ every
+blocker done* (`../_shared/eligibility-policy.md`) and reads no label at all — neither
+`ready-to-start` nor `deferred` is consulted on the way in. So linking a bug to the PRD **is** the
+act of putting it in the next `work-on-prd` run; there is no second axis holding it back
+afterwards.
+
+That is why the two rows above route differently. A merge-blocker gets the link because it is being
+fixed in this run. A deferred follow-up gets **no link** — it is filed standalone, naming the PRD in
+prose, which cross-references it from the PRD's timeline without putting it on the pick path. Being
+unlinked is what parks it; the `deferred` label is a scanning convention for humans and stops
+nothing. Promoting it later is one call: link it as a sub-issue.
+
+**Never file a deferred follow-up as a sub-issue "just to keep it visible".** It will be picked —
+sorted by unmet external steps and then lowest id, so a freshly filed follow-up can even sort ahead
+of the real blocker filed beside it. The `[BUG]` prefix is a scanning convention on top of all of
+this, not a filter. A related-repo issue takes **that** repo's title convention, not this one's; the
+prefixes are a per-adapter fact and the other side has its own.
 
 ### 5. Show the card, confirm, next
 
@@ -142,7 +152,7 @@ Finding: <one-line symptom>
 Owning slice: #<child> (<what that slice built>)
 Root cause: CONFIRMED — <cause>; <path>:<lines>
 Commit: <sha — only if a regression; else "n/a (introduced by the feature slice)">
-Disposition: <repo + the PRD it links under + title prefix>
+Disposition: <repo + linked to PRD #N | standalone + title prefix>
 ```
 
 Print the card + recommended disposition, get confirm/correct, ask for the next finding.
@@ -154,11 +164,11 @@ When the user says done:
 1. **Board** — every finding with verdict / owning slice / disposition / target repo. Get approval before publishing.
 2. **Publish** with `gh` (let it resolve the repo; use `--repo` for related-repo issues). Open issues for bugs/follow-ups; file-then-close for rejects. Follow-ups only if the user already said yes in step 2 of that finding.
 
-   Every `[BUG]` filed **in this repo against a PRD** is then linked to that PRD as a **native
-   GitHub sub-issue** — see *Linking a bug to its PRD* below. This applies to
-   merge-blockers and deferred follow-ups alike (both are real children), and **not** to
-   related-repo issues: an issue in another repo is not a sub-issue of a PRD here, and not to
-   rejects, which are closed rather than parented.
+   Every `[BUG]` filed **in this repo as a merge-blocker** is then linked to that PRD as a
+   **native GitHub sub-issue** — see *Linking a bug to its PRD* below. **Only merge-blockers are
+   linked.** A deferred follow-up is filed standalone, because the link is what schedules it; a
+   related-repo issue is not a sub-issue of a PRD here; and a reject is closed rather than
+   parented.
 
    Every filed `[BUG]`'s `## Root cause` carries the `Findings:` line — see the issue template
    below — pointing back at the finding comment's permalink, held since step 1.
@@ -227,10 +237,11 @@ Two rules, both non-negotiable:
 Use `gh api` for this. Do **not** use `gh issue create --parent`: that flag needs
 `gh >= 2.94.0`, this machine runs `2.89.0`, and `gh api` works on both.
 
-**Scope: this repo's PRD children only.** A contract-boundary issue filed in a related repo is
-not a sub-issue of a PRD here — skip the link entirely and leave the `blocked-external` pointer
-issue as the only local trace. A reject is filed-then-closed, not parented, so it gets no link
-either.
+**Scope: merge-blockers in this repo only.** A deferred follow-up is filed standalone and gets no
+link — being unlinked is the whole of what keeps it out of the next run. A contract-boundary issue
+filed in a related repo is not a sub-issue of a PRD here — skip the link entirely and leave the
+`blocked-external` pointer issue as the only local trace. A reject is filed-then-closed, not
+parented, so it gets no link either.
 
 ## Issue template (mirror the `to-issues` child so work-on-prd eats it identically)
 
@@ -285,6 +296,6 @@ labels for them).
 
 ## Boundary / handoff
 
-- triage = **investigate + decide + file**. It does **not** fix, and it does **not** need a separate "fix the bugs" skill: a bug filed in this repo, **linked to that PRD as a native sub-issue** and labelled `ready-to-start`, **is a PRD child** — `work-on-prd` (re-entrant, cold-start) discovers it from the PRD's sub-issue list and works it on the PRD branch with no new machinery. Those two are the whole requirement; the `[BUG]` title prefix is a scanning convention and changes nothing about discovery. The link is what makes it a child at all: a bug filed but never linked is invisible before eligibility ever runs. See `../_shared/prd-eligibility.md`.
-- Deferred (`deferred` label) issues sit as known follow-ups until promoted (relabel `ready-to-start`).
+- triage = **investigate + decide + file**. It does **not** fix, and it does **not** need a separate "fix the bugs" skill: a bug filed in this repo and **linked to that PRD as a native sub-issue** **is a PRD child** — `work-on-prd` (re-entrant, cold-start) discovers it from the PRD's sub-issue list and works it on the PRD branch with no new machinery. The link is the whole requirement — no label is consulted, and the `[BUG]` title prefix is a scanning convention that changes nothing about discovery. A bug filed but never linked is invisible before eligibility ever runs. See `../_shared/prd-eligibility.md`.
+- Deferred follow-ups are filed **standalone**, carrying the `deferred` label as a human scanning convention and naming the PRD in prose. They are not children, so nothing picks them up and nothing needs to skip them. Promoting one is a single call — link it to the PRD as a sub-issue.
 - Related-repo issues are executed by that repo's own `work-on-issue`.

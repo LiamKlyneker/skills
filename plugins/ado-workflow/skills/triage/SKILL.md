@@ -405,10 +405,12 @@ information, it is clutter that outlives the run — which is what this skill us
 longer does.
 
 **On this tracker there is no third state, and that is a platform fact rather than a preference.**
-GitHub's `triage` files deferred work as an issue with a `deferred` label, because a label parks
-something visibly without scheduling it. Azure DevOps offers no equivalent that a project can rely
-on, so the honest options are "on the board and therefore worked" or "written down for a human".
-Do not port the GitHub shape across; it does not have anywhere to land.
+GitHub's `triage` files deferred work as a **standalone** issue — unlinked from its PRD, which is
+what keeps it off the pick path there, since the sub-issue link is the only input to discovery.
+Azure DevOps has nowhere equivalent: everything the loop creates is one work-item type under one
+parent, so an item exists on the board or not at all. The honest options here are "on the board and
+therefore worked" or "written down for a human". Do not port the GitHub shape across; it does not
+have anywhere to land.
 
 ## The parent comment
 

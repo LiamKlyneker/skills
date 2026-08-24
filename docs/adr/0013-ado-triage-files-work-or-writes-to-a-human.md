@@ -5,6 +5,14 @@
 - **Context**: Observed on a live `ado-workflow` run — triaged findings sat on the board unworked
 - **Supersedes**: nothing. **Narrows** ADR [0012](0012-the-qa-pass-is-composed-from-the-branch.md)'s
   ADO half by changing what `triage` emits, not how the pass is composed.
+- **Amended**: 2026-08-24 — this ADR credited GitHub's `deferred` label with parking an issue.
+  It never did: eligibility reads no label, so a `deferred` issue linked as a sub-issue of its PRD
+  is picked like any other run
+  ([#152](https://github.com/LiamKlyneker/skills/issues/152), found on a live run). GitHub's real
+  park is **not linking the issue to the PRD at all**, and `prd-workflow:triage` now files deferred
+  follow-ups standalone. The decision below is unaffected — what ADO lacks is an off-the-board place
+  to put a decision, whichever mechanism GitHub uses to reach one — but two passages arguing from
+  the wrong premise are corrected in place and marked.
 
 ## Decision
 
@@ -34,9 +42,13 @@ promotion was a manual one-field retitle from `[BUG]` to `[TASK]`.
 That design was ported from `prd-workflow:triage`, where it works. It did not survive contact with
 the platform.
 
-**GitHub has a label; Azure DevOps has nothing equivalent.** On GitHub a `deferred` label parks an
-issue visibly without scheduling it — it is cheap, reversible, greppable, and invisible to the
-eligibility filter. ADO offers no analogue a project can rely on. Everything the loop creates is
+**GitHub has somewhere off the board; Azure DevOps has nothing equivalent.** On GitHub an issue that
+is not linked to its PRD as a sub-issue is invisible to discovery outright — it can be filed,
+labelled, and left where a human will find it, without ever reaching a run, and promoting it later
+is one link call. *(Amended 2026-08-24: this originally credited the `deferred` label with the
+parking. The label parks nothing — see the amendment note above. The distinction this paragraph
+draws survives the correction, because what ADO lacks is the off-the-board place itself.)* ADO
+offers no analogue a project can rely on. Everything the loop creates is
 one work-item type under one parent, because Task → Task parenting is product-hostile and Bug-type
 items are requirement-level. So the title prefix had to carry the schedule gate, and the prefix is
 the item's name — the one field a human reads when scanning a board.
@@ -86,11 +98,17 @@ group at the board, are the only gate — nothing downstream asks again. `triage
 non-negotiable (every filed item is cold-runnable) bites harder, because an under-specified `[TASK]`
 reaches a worker on the next run instead of waiting for a human to notice it.
 
-**The GitHub sibling does not move.** `prd-workflow:triage` keeps filing `deferred`-labelled issues
-and filed-then-closed rejects, because the label makes that cheap and correct there. The two skills
-were already siblings that arrived at a shape rather than a shared implementation
-(ADR [0011](0011-azure-devops-qa-is-a-tickable-comment.md)'s surviving half), and this widens the
-divergence deliberately. Do not port either direction.
+**The GitHub sibling moves halfway.** *(Amended 2026-08-24 — this paragraph originally read "does
+not move", on the strength of the label premise corrected above.)* `prd-workflow:triage` keeps
+filed-then-closed rejects, and it still files deferred follow-ups as issues — but **standalone,
+never as sub-issues of the PRD**, since the sub-issue link is what schedules a child there just as
+filing schedules one here. The `deferred` label stays as a human scanning convention and gates
+nothing. What remains genuinely divergent is that GitHub keeps a written-down-but-unscheduled
+*artifact* and ADO does not, because an ADO work item has nowhere to sit that is not the board
+while an unlinked GitHub issue sits on no pick path at all. The two skills were already siblings
+that arrived at a shape rather than a shared implementation
+(ADR [0011](0011-azure-devops-qa-is-a-tickable-comment.md)'s surviving half); that is still true,
+and the divergence is narrower than this ADR first claimed. Do not port either direction.
 
 **Contract-boundary findings stop being filed at all**, on either tracker's side of the boundary.
 Filing into another team's repo from inside a QA pass created an item nobody here could close,

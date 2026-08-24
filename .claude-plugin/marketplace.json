@@ -9,7 +9,7 @@
     {
       "name": "prd-workflow",
       "description": "PRD-to-merge workflow for Claude Code: turn context into a PRD, slice it into tracer-bullet issues, pick the next one, run the whole thing end-to-end with a per-issue worker subagent, and triage the QA findings that come back into cold-runnable issues",
-      "version": "1.8.0",
+      "version": "1.9.0",
       "keywords": [
         "prd",
         "github-issues",
@@ -39,7 +39,7 @@
     {
       "name": "ado-workflow",
       "description": "The PRD-to-merge workflow brought to Azure DevOps for Claude Code: publish a spec, slice it into tasks, pick the next one, and run the whole thing end-to-end with a per-task worker subagent",
-      "version": "1.6.1",
+      "version": "1.6.2",
       "keywords": [
         "azure-devops",
         "ado",

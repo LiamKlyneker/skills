@@ -84,14 +84,22 @@ the first failure, located by the same `PRD: #<n>` resume key the PR finder uses
 linked as a sub-issue of the PRD — or appends to **one `[FINDINGS]` work item per run** on ADO.
 The PR itself gets nothing from QA: no comment, no label.
 `triage` then promotes the survivors — into children on GitHub, and on ADO into a **`[TASK]` the
-next run picks up**, closing the findings item. **ADO's `triage` has two outputs and only two**: a
+next run picks up**, closing the findings item. **On GitHub only a merge-blocker is linked to the
+PRD as a sub-issue**, because that link is the sole input to discovery and therefore the schedule
+bit itself: a deferred follow-up is filed **standalone**, naming the PRD in prose, and nothing
+picks it up. No label gates a pick on either tracker — eligibility is *open ∧ every blocker done*
+and reads none of them — so `deferred` and `ready-to-start` are scanning and bookkeeping
+conventions, never filters. Never add a label check to the pick path, and never file a deferred
+follow-up as a sub-issue to keep it visible; it will be worked. **ADO's `triage` has two outputs and only two**: a
 `[TASK]` for what is being fixed now, and **one human-readable comment on the parent** for
 everything else — deferred, already planned, rejected, owned by another team. It files no `[BUG]`,
 files nothing into a related repo, and that comment carries **no tracker plumbing at all** — no
 `[FINDINGS]`/`[SPEC]` ids, no finding or flow numbers, no work-item ids — because its reader is a
 product owner who will not open any of them. ADR
 [0013](docs/adr/0013-ado-triage-files-work-or-writes-to-a-human.md) has the argument, including
-why GitHub keeps the `deferred` label and ADO cannot. On both trackers "already handled" is
+why GitHub has somewhere off the board to park a decision and ADO does not — amended 2026-08-24,
+since it originally credited GitHub's `deferred` label with that parking and the label parks
+nothing. On both trackers "already handled" is
 simply "that item is closed" — one field read in the same fetch that loads the findings, since
 each run gets a fresh findings issue rather than a queue. **The receipt is
 output, never input**: a free-form comment on the PRD / `[SPEC]` saying which flows ran and how
