@@ -46,13 +46,17 @@ Before anything else, ask what already exists and read it. A grill that re-deriv
 
 Carry the spec pointers through the interview — whatever this grill feeds downstream should be able to reference the design spec by URL/node rather than restating it.
 
-## Recon fan-out (spawn FIRST — always; don't block on it)
+## Recon fan-out (spawn FIRST — always; the interview waits for it)
 
 Delegate exploration to a small set of **read-only Sonnet-class subagents**, each scoped to one area, each returning a **condensed brief (~1–2K tokens, never raw file dumps)**. This keeps this thread's context full of *dialogue*, not code — the fix for both recurring failures: shallow exploration that misses details on bigger repos or across a service boundary, and asking me questions the code already answers.
 
 **This step is unconditional.** Invoking this skill *is* the request for grounded questions, so there is no path that skips recon and interviews from guesses. A narrow plan scales the fan-out **down**, never to zero.
 
-**Spawning the batch is a barrier; *finishing* it is not.** A running explorer is one unsettled prerequisite, not a stop-the-world. So spawn every lane, then open the first round immediately with whatever is already askable — the plan's framing, scope and intent, the decisions no explorer could settle anyway. Only the questions downstream of a given area wait for that area's brief. Fold each brief in as it lands and recompute the frontier.
+**The whole batch is a barrier — spawning it *and* finishing it.** Spawn every lane at once, then wait: **Round 1 does not open until every brief has landed and been folded in**, and the "Resolved by the code" list below is built. There is no pre-recon round, not even for framing, scope or intent.
+
+That costs you a couple of minutes of my time with nothing to answer, and it is worth it. The alternative — opening with "whatever is already askable" — assumes you can tell which questions recon is about to settle, and you can't: knowing a question is code-answerable means already knowing what the code says, which is the thing you spawned the explorers to find out. A round that guesses wrong has to be retracted, and I get two rounds where one would have done. Real instance: 6 questions went out before the briefs landed, 3 came back settled by the code and a 4th changed shape entirely, so the whole round was superseded.
+
+Once the briefs are in, fold them all in at once and compute the frontier from the consolidated picture.
 
 **Decompose** the plan into **1–5** areas (one per decision-tree branch / codebase area) — do **not** over-split; over-spawning is the top anti-pattern, and a single-area plan is one explorer, not three. Map each area to a lane and spawn all lanes in **one parallel batch** (one message, multiple `Agent` calls):
 
@@ -67,7 +71,7 @@ Delegate exploration to a small set of **read-only Sonnet-class subagents**, eac
 
 **Each brief returns fixed sections**: (1) patterns/conventions found (`file:line`), (2) **already answered by the code** — questions this area settles, with the precedent as evidence, (3) genuinely-open questions, (4) manifest feedstock (contract/access rows from the boundary lane — tables touched, clients used, policies observed).
 
-**Consolidate on this thread** as each brief lands — before the round that depends on it, not before the interview starts:
+**Consolidate on this thread** once every brief is in, before Round 1:
 - **Surface a short "Resolved by the code" list up-front** — the questions recon settled, each with its precedent. Do **not** silently drop them: I can reopen any row if a precedent is stale or wrong. Everything on this list is a question you will *not* ask.
 - The **open-questions** set drives the interview.
 - The **manifest feedstock** pre-populates the Data & Access Manifest below, so that gate *confirms* rather than builds from scratch.
