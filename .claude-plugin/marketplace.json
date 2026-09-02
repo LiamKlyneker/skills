@@ -39,7 +39,7 @@
     {
       "name": "ado-workflow",
       "description": "The PRD-to-merge workflow brought to Azure DevOps for Claude Code: publish a spec, slice it into tasks, pick the next one, and run the whole thing end-to-end with a per-task worker subagent",
-      "version": "1.6.2",
+      "version": "1.7.0",
       "keywords": [
         "azure-devops",
         "ado",
@@ -67,7 +67,7 @@
     {
       "name": "install-skills",
       "description": "Bootstrap a project's `.claude/project/adapter.md` for a skill bundle, and diagnose an install that has rotted \u2014 the two jobs no distribution mechanism can do for you. Start here: the PRD and ADO workflows cannot run without the adapter it writes",
-      "version": "1.9.3",
+      "version": "1.9.4",
       "keywords": [
         "bootstrap",
         "adapter",
