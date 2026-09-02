@@ -159,7 +159,26 @@ discarded by design.
    branch — **repo project + repository, not the work-item project**. If one exists, adopt it;
    **never open a second**. If none exists, push (empty commit `spec AB#<id>: loop start` if the
    branch has no commits ahead) and create it with `isDraft: true`, targeting the adapter's
-   default branch. Body skeleton:
+   default branch.
+
+   **The body is the team's template plus the loop's own block, from the first push.** There is
+   no later presentation step: what the loop opens is what the team reviews.
+
+   **Resolving the template** — the adapter's optional **`PR template:`** row, in the
+   `### Azure DevOps` sub-section of `## Repo`:
+
+   - **A path**, the preferred and common case — repo-relative, or `../`-prefixed where sibling
+     repos share one template. Read that file **at PR-open time, from the working tree**, so the
+     body tracks the live template instead of a copy of it; a shared template is routinely
+     untracked, so the working tree rather than the branch is what holds it. Row present but the
+     file missing → say so and fall through to the skeleton; never guess at another path.
+   - **The literal word `snapshot`**, with the template body fenced directly beneath the row in
+     the adapter. Use it, and note in the final summary that the PR was built from a snapshot
+     nothing can tell you is still current.
+   - **Absent** — no template, and the body is the loop's own block alone.
+
+   **The loop's own block** goes last in the body either way, so loop end finds its lines in one
+   place rather than hunting them out of the team's prose:
 
    ```
    Runs [SPEC] AB#<id>: <title>
@@ -175,8 +194,31 @@ discarded by design.
    🤖 Generated with [Claude Code](https://claude.com/claude-code)
    ```
 
+   **Instantiating the template honestly.** Nothing has landed at PR-open time, so every prose
+   section is genuinely unknown and the body has to say so rather than describe work that has not
+   happened:
+
+   - **Keep every heading the template has.** A section you cannot fill gets a one-line
+     `_In progress — filled at loop end._` beneath it — never a deletion, never an invented
+     summary. A reviewer who opens the PR on day one is owed an honest empty, and loop end §2
+     needs the heading to fill into.
+   - **Leave the team's own checkboxes unticked.** They are the team's claims and the run has made
+     none of them yet. Loop end ticks the ones that actually became true, and only those.
+   - **Drop the template's own closing-keyword line** (`Closes #`, `Fixes #`, `Resolves #`). Work
+     items close here through the PR's completion options, not a keyword, so such a line is inert
+     text that reads like mechanics — and on this tracker `#<n>` links a *work item*, so a stray
+     one silently links whatever item carries that id.
+   - **Leave instructional HTML comments alone.** They are the team's, they render as nothing, and
+     stripping them makes the body diverge from the template it claims to be.
+   - **The template never decides mechanics.** Draft state, the target branch, the completion
+     options and the loop's own block are the orchestrator's whatever the template says about any
+     of them. A template asking for a ready-for-review PR, or a different base, does not get one.
+
    Then wire it per *Pull-request wiring* below. On a resume, re-run that wiring against the
    adopted PR: it is idempotent, and it repairs a PR whose completion options a human toggled.
+   **A resume never re-reads the template** — the body it finds is the run's, template sections
+   and all, and re-instantiating one would overwrite whatever loop end or a human has since
+   written into those headings.
 4. **Reconstruct**: a `[TASK]` is done ⇔ a commit referencing it exists on the branch. **Board
    state is cache; commits are truth.** The reference lives in the commit *body* (normative form
    in [`../../agents/spec-worker.md`](../../agents/spec-worker.md) mandate 5), so grep the full
@@ -384,9 +426,15 @@ the chip. Omit the line entirely when §1 applied no tag, and say in the final s
 in this run is manually testable. **After loop end this line is `manual-qa`'s alone** — the loop
 writes it once and never touches it again.
 
+**Fill the template's headings, where the PR was opened from one.** Every section still carrying
+Setup step 3's `_In progress — filled at loop end._` gets its real content now, from what actually
+landed; a heading the run genuinely has nothing to say under keeps a one-line honest answer rather
+than the placeholder. Tick the team's own checkboxes that became true in this run, and only those.
+
 **The workers' deviation logs land here too** — code-review notes, observations about the diff,
-edge cases a reviewer should know about — in whichever part of the description takes notes on the
-change. They have nowhere else to go: §1 posts nothing.
+edge cases a reviewer should know about — in whichever section of the template takes notes on the
+change, or beneath the loop's own block where there is no template. They have nowhere else to go:
+§1 posts nothing.
 
 **The `[QA]` item's never-link rule is retired, and nothing replaces it.** It said: never attach
 the `[QA]` work item to the pull request, because completion options transition every linked work

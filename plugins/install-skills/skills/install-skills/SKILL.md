@@ -183,9 +183,10 @@ carries two optional rows — the usage-rules source and the downstream implemen
 leaving each out is what makes a spec cite nothing and hands the spec to a human. `## Repo`'s
 GitHub sub-section carries two more — `Branch pattern:` and `PR template:` — and leaving each
 out is what keeps a run on `prd/<n>-<slug>` with the loop's own PR skeleton, which is what
-every project got before those rows existed. Ask once, accept "no" as a complete answer,
-delete the row, and record no warning anywhere. An install that ends with an adapter carrying
-none of the four is finished, not half-filled.
+every project got before those rows existed. The Azure DevOps sub-section carries
+`PR template:` on the same terms; its `Branch pattern:` is not optional. Ask once, accept "no"
+as a complete answer, delete the row, and record no warning anywhere. An install that ends with
+an adapter carrying none of them is finished, not half-filled.
 
 ### 5. Gates
 

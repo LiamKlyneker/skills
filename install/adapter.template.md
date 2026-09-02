@@ -66,6 +66,13 @@ Tracker `azure-devops`. Work items are reached through the Azure DevOps MCP serv
   Change the words here if this org uses different ones; never in a skill.
 - Branch pattern: `<ado-branch-pattern>` — e.g. `spec/<id>-<slug>`, where `<id>` is the `[SPEC]` work-item id
 
+One row that decides what a run's pull request looks like **to the team**. It is **optional**,
+and read by `ado-workflow` alone. An adapter that omits it behaves exactly as it did before the
+row existed — so leaving it out is a finished answer, not a gap, and nothing warns about an
+absent row:
+
+- PR template *(optional)*: `<path-to-pr-template>` — this project's pull-request template, as a **repo-relative path to one file** (`.azuredevops/pull_request_template.md`, the `.vsts/` and `docs/` variants Azure Repos also honours, or a single file inside a `.azuredevops/pull_request_template/` directory). **A path is strongly preferred**, because the loop then reads the team's live file and the PR body keeps tracking it as the team edits it. A `../` path is legal and names the case where several sibling repos in one working folder share one template — the file is then outside the repo, so it exists only where that folder does, and an adapter carrying such a path is meaningful on the machines that have it and nowhere else. Only when the project has no template file anywhere does this row instead carry a **content snapshot**: write the literal word `snapshot` as the value and the template body fenced beneath the row. `doctor` reports a snapshot as possibly stale on every run, deliberately — nothing can tell it when the real template moved on. **Absent → the loop's own PR skeleton.** The loop takes the template's *structure* only; draft state, target branch and its own bookkeeping stay the orchestrator's.
+
 Two filing rows only `figma-tools` reads. A project that never runs it deletes both; a project that does fills both, because they answer different questions:
 
 - Design-spec target: `<ado-designspec-project>` — the ADO project a `figma-to-spec` page spec files into, as a `[DESIGN-SPEC]` work item. When Phase 0 was given a scope work item, the spec is filed as its **child**.
