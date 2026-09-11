@@ -3,7 +3,7 @@
 Fill this from the synthesized region findings. It is the primary artifact — filed as a
 `[DESIGN-SPEC]` against the adapter's **design-spec target**, on whichever tracker the
 adapter's `Tracker:` line names. It tells an implementer HOW to build the page on-system,
-cites the adapter's **usage-rules source** for usage rules (never duplicates them, cites
+cites the adapter's **usage-rules sources** for usage rules (never duplicates them, cites
 nothing when no such row exists), and marks every DS gap inline as `⚠ blocked on gap-NNN`.
 
 **The `Extracted against:` line is required, and it is not decoration.** A spec is a snapshot
@@ -78,8 +78,10 @@ heading so the implementer skips integration.
   empty / loading / error — what changes (copy, illustration, CTA, layout) per state. A
   page/region content state, not a DS component state.
 - **Best-practices rules to follow:** cite the relevant rule(s) of the adapter's
-  **usage-rules source**, by the stable name that source gives them. Cite, don't restate —
-  a citation stands even where the source isn't loaded. No such row → omit this line.
+  **usage-rules sources**, by the stable name that source gives them **and the source it came
+  from** — the row may name several, and two of them may name a rule the same thing. Cite,
+  don't restate — a citation stands even where the source isn't loaded. No such row → omit
+  this line.
   *(Screenshots aren't persisted under `figma-dev-mode` — the region agent viewed the
   canvas inline during extraction; the layout tree above is the source of truth.)*
 - **Blocked on:** `⚠ gap-NNN` (list any gaps this region depends on).

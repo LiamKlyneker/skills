@@ -51,11 +51,18 @@ that the type resolved. Read the type name in a fresh session.
 `install-skills` is **its own plugin**, at `plugins/install-skills/` — not a plain
 skill and not part of a personal bundle. It is the one thing here a stranger needs,
 because `prd-workflow` and `ado-workflow` cannot run without the adapter it writes, so
-reaching it must not require installing anything else. It is also the only skill in the
-repo that ships an executable
+reaching it must not require installing anything else. It also ships an executable
 (`plugins/install-skills/skills/install-skills/scripts/doctor.sh`) — the mechanical
 checks have to be deterministic, and a check that gets paraphrased differently on each
-run isn't one. Everything else here stays prose.
+run isn't one.
+
+**A skill ships a script for that reason and no other: the job is mechanical and must produce
+the same answer twice.** Two do, today. The second is
+`plugins/figma-tools/skills/ds-catalog/scripts/generate_catalog.py`, which enumerates a design
+system's declarations into the generated half of a catalog — an enumeration that differed
+between two runs would make "absent from the catalog means it does not exist" untrue. Prose is
+still the default and the rest of the repo is prose; a script is the exception that has to earn
+itself, and a script whose output is a judgement never does.
 
 `INSTALL.md` is the guide for getting any of it onto a machine — marketplace, config
 directories, scopes, the dev mode, and the traps. Keep it accurate; it is written

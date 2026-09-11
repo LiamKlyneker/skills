@@ -1,11 +1,18 @@
 # figma-tools
 
-The two Figma-to-spec skills, packaged as a Claude Code plugin, plus **an
-extraction agent each** — `figma-region-extractor` for pages,
+The design-to-spec skills, packaged as a Claude Code plugin, plus **an
+extraction agent each** for the two Figma ones — `figma-region-extractor` for pages,
 `figma-variant-extractor` for component sets — and `ds-catalog`, which authors
-the per-project design-system catalog.
+the per-project design-system catalog every one of them resolves against.
 
-Three skills:
+**Two design sources, one slot in the flow.** A Figma canvas and a designer-authored
+code prototype produce the same downstream artifact — something `deep-grill` can
+grill from — by different routes, and the difference is what each source *is*: a
+canvas moves under the spec written from it, so that spec is filed and frozen; a
+prototype at a commit SHA is already frozen, so what comes out is a disposable brief
+and the only persisted copy is the PRD.
+
+Four skills:
 
 - **`figma-to-spec`** — one Figma **page** node → a page-implementation spec plus
   DS gap tickets. Runs in a **consumer** repo. Fans every region out to
@@ -25,7 +32,20 @@ Three skills:
   see (unbound raw hex above all). A shortlist of **zero** is a complete run. Its
   existence source is a **token list** assembled from the adapter's *Token
   pipeline* row, which a catalog contributes to where one is registered.
-- **`ds-catalog`** — writes the catalog, and the adapter rows that go with it.
+- **`prototype-to-spec`** — one preview URL plus one ticket → a **design brief** at
+  `.claude/briefs/<ticket>.md`. Runs in a **consumer** repo, reads the designers'
+  committed spec at a pinned SHA, filters it to the ticket, renders the ticket's
+  overrides on top, and resolves every element and token against the catalog at three
+  confidences. **It asks nothing and files nothing**: every judgement becomes a row,
+  and `deep-grill` is where a human answers it. No subagents — the prototype's spec is
+  already structured, so there is nothing to extract.
+- **`ds-catalog`** — writes the catalog, and the adapter rows that go with it. Its
+  output is **two files**: a `generated` half enumerated by
+  `scripts/generate_catalog.py` from the design system's own declarations, stamped with
+  the installed version, and an `overlay` a human owns — conventions, every `status:`,
+  and the idiom mapping that says which design-system component a hand-rolled popover
+  or chip row should have been. A design-system bump re-runs the script and diffs;
+  it re-runs the interview only where something was removed or renamed.
 
 What is genuinely shared is the **contracts**, not the pipeline:
 `figma-to-spec/references/resolution-rules.md` and
@@ -71,6 +91,8 @@ plugins/figma-tools/
     figma-component-to-spec/
       references/regression/                       # fixture format + assertion style
     ds-catalog/
+      scripts/generate_catalog.py                  # the enumerated half; no skill-specific input
+    prototype-to-spec/
   agents/figma-region-extractor.md                 # figma-to-spec's, per region
   agents/figma-variant-extractor.md                # figma-component-to-spec's, per variant frame
 ```
@@ -79,7 +101,8 @@ plugins/figma-tools/
 relative path, `../figma-to-spec/references/catalog-contract.md` — as
 `figma-component-to-spec` also reaches `resolution-rules.md`. All three skills
 ship in one plugin, so those paths resolve identically in this working tree and
-in an install cache copy — and they need no symlink, because nothing about them
+in an install cache copy — and so does `prototype-to-spec`, which reaches the same
+contract the same way — and they need no symlink, because nothing about them
 decides whether a skill loads. `figma-component-to-spec` addresses **its own**
 agent at the plugin root instead — `../../agents/figma-variant-extractor.md` from
 `SKILL.md`, `../../../` from its `references/`, and `../../../../` from

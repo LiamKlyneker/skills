@@ -150,11 +150,11 @@ A concise description of this vertical slice. Describe the end-to-end behavior, 
 
 ## Design reference
 
-For UI issues only. Carry the design node(s) from the PRD's `## Design reference` so a cold implementation session has the target with no prior context. Omit for non-UI issues.
+For UI issues only. Carry the design ref(s) from the PRD's `## Design reference` so a cold implementation session has the target with no prior context. Omit for non-UI issues.
 
-| Area | Design node | Node name |
-|------|-------------|-----------|
-| <area> | <url#node-id> | "<node name>" |
+| Area | Design ref | Label |
+|------|------------|-------|
+| <area> | <design ref url> | "<label>" |
 
 ## Worker context
 
@@ -174,8 +174,8 @@ Everything a cold, isolated worker session needs to implement this slice without
 - [ ] Criterion 1
 - [ ] Criterion 2
 - [ ] Criterion 3
-- [ ] (UI issues) Implementation matches the design node 1:1
-- [ ] (UI issues) The node URL + name recorded in the page's `CONTEXT.md` `## Design reference` table
+- [ ] (UI issues) Implementation matches the design ref 1:1
+- [ ] (UI issues) The design ref + label recorded in the page's `CONTEXT.md` `## Design reference` table
 - [ ] (Issues introducing a new write on an existing store — from the PRD's `## Data & Access`) An access policy for that specific operation exists for the acting user, and the write path surfaces a denied write instead of swallowing it
 
 ## Blocked by

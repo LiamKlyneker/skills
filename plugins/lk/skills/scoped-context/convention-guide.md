@@ -49,19 +49,22 @@ Patterns specific to this area that differ from or extend the project-wide patte
 
 ## Design reference (for pages built from a visual design)
 
-A page's `CONTEXT.md` can carry a `## Design reference` table pointing at the design node(s) that are its visual source of truth. This is the durable home a UI-verification pass reads from; populate it when a UI feature ships (acceptance criterion on UI issues).
+A page's `CONTEXT.md` can carry a `## Design reference` table pointing at the design ref(s) that are its visual source of truth — a design-tool node URL, or a screenshot / state-page URL pinned at a commit. This is the durable home a UI-verification pass reads from; populate it when a UI feature ships (acceptance criterion on UI issues).
 
 ```markdown
 ## Design reference
 
-> ⚠️ Design nodes live in a file we don't control — designers may reorganize. Validate before trusting.
+> ⚠️ Live design refs point into a file we don't control — designers may reorganize. Validate before trusting.
 
-| Area | Design node | Node name | Verified |
-|------|-------------|-----------|----------|
+| Area | Design ref | Label | Verified |
+|------|------------|-------|----------|
 | Manage Photos modal | <url#node-id> | "Manage Photos / Modal" | 2026-05-28 |
+| Date range step | <screenshot url @ sha> | "uc1-s4 range picker" | 2026-05-28 |
 ```
 
-**Staleness hard-stop:** any skill consuming a node pointer must first validate it via the design tool's MCP (`get_metadata`). If the node 404s **or** its live name no longer matches the recorded `Node name`, STOP and ask for a fresh URL — never build or verify against a drifted node. The `Node name` is the anchor; the `Verified` date is the staleness signal.
+**Staleness hard-stop, for a live ref only:** a design-tool node URL names a node that can be renamed or deleted under it, so any skill consuming one must first validate it via the design tool's MCP (`get_metadata`). If the node 404s **or** its live name no longer matches the recorded `Label`, STOP and ask for a fresh URL — never build or verify against a drifted ref. The `Label` is the anchor; the `Verified` date is the staleness signal.
+
+A ref **pinned at a commit** — a prototype screenshot or state page at a SHA — is frozen by construction and needs no validation. It can go stale in the other direction, the prototype having moved on since, which a `Verified` date surfaces and a hard stop would not.
 
 ## What NOT to Include
 

@@ -62,8 +62,8 @@ dependency is detachable:
   `## Design system` carries the catalog pointer, the fingerprint command, the class-prefix
   facts and the icon ladder; `## Repo` carries the `Tracker:` line Phase D branches on plus the
   **design-spec target** and **DS-gap backlog** rows it files against. Two of that section's
-  rows are optional and their absence is the answer, never a warning: no *usage-rules source*
-  means the spec cites nothing, and no *downstream implementer* means a human picks the spec
+  rows are optional and their absence is the answer, never a warning: no *usage-rules sources*
+  row means the spec cites nothing, and no *downstream implementer* means a human picks the spec
   up. `install-skills` writes both sections — the `figma-tools` bundle asks for them.
 - **Figma MCP — two distinct capability checks, do not conflate them:**
   1. **`figma-dev-mode` present (required):** `get_metadata`, `get_variable_defs`,
@@ -86,11 +86,14 @@ dependency is detachable:
   into a `general-purpose` agent. One source of truth either way — but a freshly installed
   agent does not register until the next session, so Phase 0 checks and announces which
   path the run takes.
-- **A usage-rules source (optional).** Whatever the adapter's *usage-rules source* row names —
-  the HOW, kept out of the catalog's WHAT. The page spec **cites** its rules by stable name and
-  never duplicates them, so a citation stands even when the source isn't loaded. Load it to
-  enrich HOW-guidance only if reachable; **no row means the spec cites nothing**, which is an
-  answer rather than a warning.
+- **Usage-rules sources (optional).** Whatever the adapter's *usage-rules sources* row names —
+  the HOW, kept out of the catalog's WHAT. **The row may name several**, and a project with UI
+  rules in a design-system skill and a local-components skill is the ordinary case rather than
+  the exception; where it names an index file, follow it to the sources it lists. The page spec
+  **cites** rules by stable name **and the source they came from**, and never duplicates them, so
+  a citation stands even when the source isn't loaded and two sources that name a rule the same
+  thing stay distinguishable. Load what is reachable to enrich HOW-guidance; **no row means the
+  spec cites nothing**, which is an answer rather than a warning.
 
 ## Resolution sources (what "does it exist?" reads)
 
@@ -99,8 +102,9 @@ dependency is detachable:
   ONLY source for "does the DS have this?".
 - **Catalog shape** → `references/catalog-contract.md` (bundled) — the required sections, the
   `status: current|legacy|deprecated|unused` schema, and the Phase 0 validation rules.
-- **Usage / HOW** → the adapter's *usage-rules source*, **cited by stable name**. The page spec
-  cites; never duplicates; cites nothing when no row is registered.
+- **Usage / HOW** → the adapter's *usage-rules sources* — one or several — **cited by stable
+  name plus the source it came from**. The page spec cites; never duplicates; cites nothing when
+  no row is registered.
 - **Resolution + tolerance rules** → `references/resolution-rules.md` (bundled).
 
 **Component detection infers**, by layer-name convention + visual confirmation, because a design

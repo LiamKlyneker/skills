@@ -224,9 +224,10 @@ empty is a **complete** run.
      prefixes are **three separate facts and are not interchangeable**; collapsing them is how
      a spec recommends a class the design system never emits, and the consumer-facing one is the
      form step 3a writes the token list in.
-   - The two optional rows — *usage-rules source*, *downstream implementer*. **An absent
-     optional row is the answer, not a warning**: no usage-rules source means the spec cites
-     nothing, and no downstream implementer means a human picks the spec up.
+   - The two optional rows — *usage-rules sources*, *downstream implementer*. **An absent
+     optional row is the answer, not a warning**: no usage-rules sources row means the spec cites
+     nothing, and no downstream implementer means a human picks the spec up. The first may name
+     several sources; cite a rule by name and by the source it came from.
    - **The four provisional-decision rows** — *Gap policy*, *Provisional marker*, *Gap tracker*,
      *Provisional expiry*. **All four default, and a missing one is never a stop and never a
      warning.** Resolve each to its value or its default and keep it; Phase 3.4 needs the marker

@@ -41,10 +41,26 @@ Project facts (repo names, explorer agents, access-policy source) come from the 
 Before anything else, ask what already exists and read it. A grill that re-derives a document someone already wrote wastes the interview on settled questions.
 
 - **Design spec.** If the work implements from a design and a spec already exists, **read it and grill from it**. The variants, states, tokens, primitives and design-system gaps are resolved there — treat those rows as answers, not as questions, and quote the spec when a decision leans on one. Do **not** re-enumerate variants or rebuild primitive/token manifests on this thread; that is the spec's job and duplicating it invites two conflicting sources of truth.
-- **No spec, but the work is design-driven?** Say so and recommend producing the design spec first rather than improvising the design side mid-interview. Grill the engineering decisions that don't depend on it in the meantime.
+- **Design brief.** A path to a design brief is the same kind of input, produced from a designer's code prototype rather than from a canvas. Read it the same way, with one addition: **its `## Element → DS mapping` rows carry a confidence, and the confidence decides what happens to the row.**
+
+  | Confidence | Treated as | In the interview |
+  |---|---|---|
+  | `exact` | resolved by the brief | **never asked.** It goes on the "Resolved by the code" list with the brief as its precedent, exactly like a recon finding. |
+  | `likely` | a proposal | **one confirm question each, batched into a single round-one item.** Not one question per row — a table of proposals confirmed in one exchange. |
+  | `OPEN` | a real decision | **a round-one question**, with the three standard answers below. |
+
+  Rows under `## DS gaps (proposed, not filed)` are round-one questions on the same terms. Nothing in a brief has been filed anywhere, so every one of them is still open.
+
+  The three standard answers to an `OPEN` element or a proposed gap, and they are the same three either way:
+  1. **Build it local**, colocated, per the primitive-home ladder.
+  2. **Extend or build it in the design system**, and file the gap on the adapter's DS-gap backlog **as a blocker** — which is what makes it a ❌/⚠️ row in the PRD's `## UI Primitives`, and therefore a blocking issue when `to-issues` runs.
+  3. **Override the prototype** — the ticket is allowed to disagree with it, and frequently should.
+
+  A brief's `## Overrides` section is **facts, not questions**. The ticket already won there; re-asking hands back a decision that was made before the brief was written.
+- **No spec or brief, but the work is design-driven?** Say so and recommend producing one first rather than improvising the design side mid-interview — `figma-to-spec` from a canvas, `prototype-to-spec` from a designer's code prototype. Grill the engineering decisions that don't depend on it in the meantime.
 - **Prior PRDs, issues, ADRs.** Ask for pointers and read them; a decision already recorded is not an open question.
 
-Carry the spec pointers through the interview — whatever this grill feeds downstream should be able to reference the design spec by URL/node rather than restating it.
+Carry the pointers through the interview — whatever this grill feeds downstream should be able to reference the design source rather than restating it. From a spec that means the URL and node; **from a brief it means its `Source: <repo>@<sha>` line and its screenshot URLs**, which are pinned at that SHA and are what lets the PRD's `## Design reference` point at something that cannot move.
 
 ## Recon fan-out (spawn FIRST — always; the interview waits for it)
 
