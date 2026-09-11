@@ -41,14 +41,14 @@ If the project has a test vehicle that every primitive ships with (a snapshot ba
 
 ## Token Manifest
 
-Build a manifest of **every** Figma variable/token the design uses and resolve each to an **existing semantic code token**:
+Build a manifest of **every** token the design source uses — a Figma variable, or a custom property read off a code prototype — and resolve each to an **existing semantic code token**:
 
 - **Never improvise a token.** A Figma value with no code equivalent is a *finding to surface* — not a license to drop in a raw palette value (a `gray-300`-style class, a system color, an arbitrary hex).
 - Resolve via the project's **Figma → code map** (its ui-profile skill, or a `building-<x>-ui`-style project skill) and its token definitions, wherever this stack keeps them. Watch any traps the map documents — near-identical token names, and gradient/composite tokens that map to a component variant rather than a raw value.
 - Any token that won't resolve gets a ⚠️ row with options: closest semantic token, mint a new token, or confirm an intentional one-off. Decide per the consumer's ask policy — never silently invent.
 
-| Figma token | Code token | Status |
-|-------------|-----------|--------|
+| Design token | Code token | Status |
+|--------------|-----------|--------|
 | base/foreground | the semantic foreground token | ✅ resolves |
 | brand/gradient | the brand-gradient token / a Button `gradient` variant | ✅ resolves |
 | gray-300 (raw) | — | ⚠️ no equivalent — flag, do not invent |

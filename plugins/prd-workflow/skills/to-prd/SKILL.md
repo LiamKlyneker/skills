@@ -102,11 +102,12 @@ Omit this section (or write "None — no new/changed UI primitives") for non-vis
 
 ## Design reference
 
-The design node pointers, carried through from the **design spec** (or recorded during the grill if there is no spec), so a cold implementation or verify session can find the target. Omit for non-visual PRDs.
+The design pointers, carried through from the **design source** — a design spec, a design brief, or recorded during the grill where there is neither — so a cold implementation or verify session can find the target. A `Design ref` is whatever that source pins: a design-tool node URL, a screenshot or state-page URL at a pinned commit, either one. The `Label` is what a human calls it. Omit for non-visual PRDs.
 
-| Area | Design node | Node name |
-|------|-------------|-----------|
+| Area | Design ref | Label |
+|------|------------|-------|
 | Edit dialog | <url#node-id> | "Edit / Options" |
+| Date range step | <screenshot url @ sha> | "uc1-s4 range picker" |
 
 ## Migration risk
 

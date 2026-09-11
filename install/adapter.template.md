@@ -30,10 +30,10 @@ Two rows that decide what a run's branch and pull request look like **to the tea
 - Branch pattern *(optional)*: `<gh-branch-pattern>` — the branch a run creates, written in this file's own placeholder notation. The only tokens anything substitutes are `<n>` (the PRD's issue number) and `<slug>` (its title, slugged, with the leading `[…]` group stripped), and **every placeholder is optional** — a pattern that uses neither, like `release`, is legal. E.g. `feat/<slug>`. **Absent → `prd/<n>-<slug>`.** Purely cosmetic: nothing resolves a run *by* this name, so changing it mid-flight costs nothing.
 - PR template *(optional)*: `<path-to-pr-template>` — this project's pull-request template, as a **repo-relative path to one file** (`.github/pull_request_template.md`, or a single file inside a `.github/PULL_REQUEST_TEMPLATE/` directory). **A path is strongly preferred**, because the loop then reads the team's live file and the PR body keeps tracking it as the team edits it. Only when the project has no template file anywhere does this row instead carry a **content snapshot**: write the literal word `snapshot` as the value and the template body fenced beneath the row. `doctor` reports a snapshot as possibly stale on every run, deliberately — nothing can tell it when the real template moved on. **Absent → the loop's own PR skeleton.** The loop takes the template's *structure* only; draft state, target branch and its own bookkeeping stay the orchestrator's.
 
-Two filing rows only `figma-tools` reads. A project that never runs it deletes both; a project that does fills both, because they answer different questions:
+Two filing rows only `figma-tools` reads, and they are read by different skills in it. A project that never runs the bundle deletes both; a project that does fills both, because they answer different questions:
 
 - Design-spec target: `<owner>/<repo>` — where a `figma-to-spec` page spec files, as a `[DESIGN-SPEC]` issue. When Phase 0 was given a scope issue, the spec is linked as that issue's **native sub-issue** — the link is what makes it a child, so its body carries no `## Parent` section.
-- DS-gap backlog: `<owner>/<design-system-repo>` — where an **escalated** design-system gap files, one issue per gap. **Routinely a different repo from the row above**, because a gap belongs to the design system rather than to the code being specced. Where the two genuinely are the same repo, write the same value twice — never leave one implied.
+- DS-gap backlog: `<owner>/<design-system-repo>` — where an **escalated** design-system gap files, one issue per gap. `figma-to-spec` files against it; `prototype-to-spec` only **names** it, proposing gaps in its brief and filing none. **Routinely a different repo from the row above**, because a gap belongs to the design system rather than to the code being specced. Where the two genuinely are the same repo, write the same value twice — never leave one implied.
 
 ### Azure DevOps
 
@@ -73,10 +73,10 @@ absent row:
 
 - PR template *(optional)*: `<path-to-pr-template>` — this project's pull-request template, as a **repo-relative path to one file** (`.azuredevops/pull_request_template.md`, the `.vsts/` and `docs/` variants Azure Repos also honours, or a single file inside a `.azuredevops/pull_request_template/` directory). **A path is strongly preferred**, because the loop then reads the team's live file and the PR body keeps tracking it as the team edits it. A `../` path is legal and names the case where several sibling repos in one working folder share one template — the file is then outside the repo, so it exists only where that folder does, and an adapter carrying such a path is meaningful on the machines that have it and nowhere else. Only when the project has no template file anywhere does this row instead carry a **content snapshot**: write the literal word `snapshot` as the value and the template body fenced beneath the row. `doctor` reports a snapshot as possibly stale on every run, deliberately — nothing can tell it when the real template moved on. **Absent → the loop's own PR skeleton.** The loop takes the template's *structure* only; draft state, target branch and its own bookkeeping stay the orchestrator's.
 
-Two filing rows only `figma-tools` reads. A project that never runs it deletes both; a project that does fills both, because they answer different questions:
+Two filing rows only `figma-tools` reads, and they are read by different skills in it. A project that never runs the bundle deletes both; a project that does fills both, because they answer different questions:
 
 - Design-spec target: `<ado-designspec-project>` — the ADO project a `figma-to-spec` page spec files into, as a `[DESIGN-SPEC]` work item. When Phase 0 was given a scope work item, the spec is filed as its **child**.
-- DS-gap backlog: `<ado-ds-backlog-project>` — the ADO project whose backlog an **escalated** design-system gap files into, one item per gap. **Routinely a different project from the row above**, because a gap belongs to the design system rather than to the code being specced. Where the two genuinely are the same project, write the same value twice — never leave one implied.
+- DS-gap backlog: `<ado-ds-backlog-project>` — the ADO project whose backlog an **escalated** design-system gap files into, one item per gap. `figma-to-spec` files against it; `prototype-to-spec` only **names** it, proposing gaps in its brief and filing none. **Routinely a different project from the row above**, because a gap belongs to the design system rather than to the code being specced. Where the two genuinely are the same project, write the same value twice — never leave one implied.
 
 ## Commands
 
@@ -111,7 +111,7 @@ tree at run time, which is why every line is here rather than left to a skill.
   - CSS variable prefix: `<prefix, or "None">` — what the design tokens' custom properties are named with.
   - Consumer-facing emission form: `<the form an app actually writes, spelled out with one example>` — the form the catalog is written in and the form a spec must recommend. Where it differs from the library-internal form, say which is which and say it here rather than in a skill.
 - Icon resolution ladder: `<source 1 → source 2 → … → what happens when none matches>` — the icon sources this project tries, **in order**. Multi-source by default: an in-house set plus a third-party library used by consuming apps is the common shape, and where a source may be used (app layer only, design system only, both) is part of the answer. The catalog says what each source *contains*; this row says which order they are tried in and what a no-match becomes.
-- Usage-rules source *(optional)*: `<the best-practices doc or skill a page spec cites by stable name>` — the HOW, kept separate from the catalog's WHAT. A page spec **cites** it and never duplicates it, so a citation stands even where the source is not loaded. **Absent is not an error**: leave the row out and a spec cites nothing. Nothing warns about it.
+- Usage-rules sources *(optional)*: `<one or more best-practices docs or skills a spec cites rules from, by stable name>` — the HOW, kept separate from the catalog's WHAT. A spec **cites** them and never duplicates them, so a citation stands even where the source is not loaded. **Several pointers are normal**, because UI rules routinely sit in more than one place — a design-system skill and a local-components skill, say. Write them as a list, or as one index file that names the rest; either is a finished answer, and a consumer that has exactly one writes exactly one. A rule is cited by **name plus the source it came from**, so two sources that happen to name a rule the same thing stay distinguishable. **Absent is not an error**: leave the row out and a spec cites nothing. Nothing warns about it.
 - Downstream implementer *(optional)*: `<the skill or workflow that implements a filed spec>` — who picks a `[DESIGN-SPEC]` up. **Absent means a human.** Also not an error, also never warned about.
 
 Four rows about **provisional decisions** — what happens when the *inputs* to a spec are
@@ -159,6 +159,31 @@ does not error — it produces a spec whose edits land in the wrong file:
   root · `argTypes` hand-written per story, so a new axis value needs the story updated too".
   A spec that adds a variant value has to say whether a story edit is part of the change, and
   this row is the only thing that can tell it.
+
+### Prototype source
+
+Read by `prototype-to-spec` and by nothing else. **The whole sub-section is optional, and
+absent is a finished answer**: it means this project's designers do not ship code prototypes,
+and `prototype-to-spec` stops on being invoked rather than degrading. Nothing warns about it,
+and no other skill notices it is gone.
+
+It describes a repo where designers ship running prototypes alongside a committed, structured
+spec — deployed as previews, one per pull request. That spec is the upstream source of truth and
+it **stays upstream**: the brief a run writes is disposable, and the PRD is the one persisted
+copy on this side. A prototype at a commit SHA is already frozen, which is why nothing here
+files a `[DESIGN-SPEC]` the way a Figma canvas does.
+
+| Row | Meaning |
+|---|---|
+| `Repo:` | `<owner>/<name>` of the prototype repo — routinely not this repo, and routinely not the design-system repo either |
+| `URL → path:` | how a preview URL resolves to a **ref** and a **path in that repo**, written as a pattern against the real preview host. Say what each captured segment becomes, including any casing rule — a host segment is lowercased and a path segment often is not, and getting it wrong returns a 404 that reads like a missing spec |
+| `Spec files:` | the files that together form the spec at that path, named exactly — e.g. a typed spec module, a handoff document, a types file |
+| `Schema:` | pointer to the spec's **shape**: a type file in the prototype repo, or a reference on this side. This is the row that lets a second prototype shape exist later without touching the skill |
+| `Screenshots:` | the path rule for a step's screenshot, relative to the resolved path — e.g. `<path>/spec/screenshots/<step-id>.png`. Screenshots are **linked at the pinned SHA, never embedded** |
+
+Only one prototype shape is implemented: a typed spec module plus a handoff document. The
+`Schema:` row is what makes a second one possible without a skill edit — it is not a reason to
+build for one now.
 
 ## Verify ladder
 

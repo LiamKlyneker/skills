@@ -25,6 +25,45 @@ report so the next project gets the probe for free.
 
 ---
 
+## What a generated half can be trusted for
+
+Phase 1 enumerates a bundled declaration file and a theme stylesheet into the catalog's
+generated half. That output is evidence about some questions and about no others, and knowing
+which is which is what stops a probe being skipped because a table already looks populated.
+
+**Trustworthy, and not worth re-reading:**
+
+- **Which names are exported, and under what spelling.** An `export { … }` list is the public
+  surface, stated rather than inferred.
+- **Which props each component accepts**, where its props type is declared in the same file.
+- **A variant axis whose type is a union of string literals.** The set is closed and written
+  down; it is the one axis shape that parses to the truth.
+- **Which CSS custom properties exist, and their values.**
+- **Which class rules set typographic properties**, where the utilities are declared as rules.
+
+**Not evidence, whatever the generated half shows:**
+
+- **A component row reading `—`.** It means *no literal-union prop was found*, which is shape
+  1's signature, not an absence of variants. The generator lists the unbounded props it saw
+  under `## Unresolved`; a component with axes declared entirely in a stylesheet leaves no
+  trace there at all.
+- **An empty `## Typography`.** Shape 2 looks exactly like this from inside a parser.
+- **A complete-looking component list.** Shape 3 filters in both directions: an export map can
+  hide something that ships and expose something internal, and a bundled declaration reflects
+  the map rather than correcting it.
+- **A single icon source.** Shape 4 is two sources, one of them outside the design system, and
+  nothing in a declaration file mentions the second one.
+- **Any entry's status, and every `successor:`.** Shape 5 — a value that still works through a
+  runtime remap — parses as an ordinary current value, because that is what it is at runtime.
+- **The token tier names.** The generator groups by the first segment of a custom property's
+  name. That is arithmetic on strings; the project's real tiers come from the interview.
+
+The rule that follows: **probe all five shapes against the generated half, every time.** Four
+of them are cases where a declaration parses cleanly and answers wrongly, so a populated table
+is the thing being examined rather than the reason to skip examining it.
+
+---
+
 ## 1 — Variant axes declared away from the component's signature
 
 **Shape.** The component's own signature says nothing useful: `variant?: string`, or a

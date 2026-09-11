@@ -179,8 +179,10 @@ leave every existing line exactly as the project wrote it, and add nothing the b
 ask for — that is gap-fill, not the re-templating step 3 forbids.
 
 **A row whose absence is the answer is not a question to press on.** `## Design system`
-carries two optional rows — the usage-rules source and the downstream implementer — and
-leaving each out is what makes a spec cite nothing and hands the spec to a human. `## Repo`'s
+carries two optional rows — the usage-rules sources and the downstream implementer — and
+leaving each out is what makes a spec cite nothing and hands the spec to a human. Its
+`### Prototype source` sub-section is optional on the same terms: leaving it out is what makes
+`prototype-to-spec` stop when invoked, and nothing warns about it. `## Repo`'s
 GitHub sub-section carries two more — `Branch pattern:` and `PR template:` — and leaving each
 out is what keeps a run on `prd/<n>-<slug>` with the loop's own PR skeleton, which is what
 every project got before those rows existed. The Azure DevOps sub-section carries

@@ -15,8 +15,8 @@ Three parties, one contract:
 
 The catalog answers exactly one question: **does this exist in the design system, and in what
 consumer-facing form?** It is an *existence* source, not a usage guide. HOW to use a component
-is a separate concern, cited by the page spec from whatever usage-rules source the adapter
-registers (absent → cited from nothing, which is fine).
+is a separate concern, cited by the page spec from whatever usage-rules sources the adapter
+registers — one, several, or none, and absent means cited from nothing, which is fine.
 
 ## Where the catalog lives — a pointer, never a filename
 
@@ -31,6 +31,12 @@ in that order and no further. There is no fallback beyond *ask*: never resolve a
 inside this plugin, and never reconstruct one by reading the design system's source at run
 time. A run without a valid catalog stops.
 
+**The pointer may name a directory, and routinely does.** A catalog is one *document* and may
+be more than one *file* — see the next section. Where the pointer names a directory, every
+markdown file directly inside it is part of the catalog; where it names a file, that file is the
+whole catalog. Both shapes are valid, and nothing outside the pointer decides which this project
+uses.
+
 Two adapter rows this contract defers to rather than duplicating, both referenced by role and
 never by literal value:
 
@@ -39,6 +45,55 @@ never by literal value:
 - **the icon resolution ladder** — which icon source a project prefers, and what happens when
   none matches. The catalog says what *exists*; the adapter says which order to try. One
   source of truth each.
+
+## One document, two files — generated and overlay
+
+A catalog has two kinds of content, and they have different authors, different lifetimes and
+different failure modes. Keeping them in one file means every design-system bump either
+re-runs an interview or silently loses its answers.
+
+- **The generated half** — the enumeration. `## Components` with their props and the variant
+  axes a declaration file actually states, `## Tokens` by tier, `## Typography`, `## Icons`.
+  Produced mechanically from the design system's own bundled declarations and theme
+  stylesheet. It is **regenerated, never hand-edited**, and its fingerprint is the installed
+  version of the design system.
+- **The overlay** — the judgement. `## Conventions`, every `status:` line and its
+  `successor:`, and the **idiom mapping** below. None of it is readable from source: the five
+  shapes in `ds-catalog`'s `references/static-reading-failures.md` are exactly the places
+  where a parser reports a confident wrong answer. Hand-authored, seeded by an interview, and
+  it changes rarely — a design-system bump usually touches it not at all.
+
+**Validation reads the union.** A section satisfies a rule below if it is present in either
+file; a `successor:` in the overlay resolves against entries in the generated half, and the
+other way round. Neither file is required to pass the rules alone, and neither is the
+*primary* one. Where both files carry the same section — a project that annotates a whole
+tier, say — **the overlay wins**, because the overlay is the half that knows things the
+generator cannot see.
+
+Splitting is **optional**. One file carrying everything is a valid catalog and always was;
+the split is what a project adopts when it got tired of re-interviewing on every bump.
+
+### `## Idiom mapping` — overlay only
+
+The one section that is neither an existence fact nor a usage rule: a table whose left column
+is an idiom a **design source** expresses — an absolute-positioned popover with a click-away
+overlay, a row of removable value chips, a hand-rolled date-range editor — and whose right
+column is the design-system component and props that already do it.
+
+| Column | Contents |
+|---|---|
+| Idiom | what the design source draws or builds, in the design source's own terms |
+| Resolves to | the component a consumer should render instead, with the props that make it match |
+| Notes | what the idiom has that the component does not, where anything |
+
+It exists because both design sources produce the same failure: a canvas draws a popover out
+of a frame and a rectangle, a code prototype hand-rolls one out of a `div` and a listener, and
+an implementer reading either one faithfully reproduces the hand-rolled thing rather than
+rendering the component that ships. The table is what turns that into a lookup.
+
+It is **optional**, and a catalog without it resolves idioms by name similarity alone, which
+is the state every catalog was in before the section existed. Rows accumulate: each one is
+something a run got wrong once.
 
 ## Scope: Tailwind-first, and that is a licence, not a hedge
 
@@ -72,6 +127,10 @@ project's vocabulary.
 | `## Typography` | yes | the text utilities in consumer-facing form, with the properties each sets | matching a Figma text style |
 | `## Icons` | yes | every icon **source** (plural), each enumerated or bounded | the icon ladder has something to walk |
 
+**Sections beyond this list are legal and are never validated.** A generated half listing what
+it read but could not settle, an overlay's idiom mapping, a project's own notes — none of them
+is a violation, and nothing reads them as one.
+
 A section whose answer is genuinely "this project has none of these" is written as
 `None — <what is used instead>`. **An explicit `None` is a real answer; an absent section is
 not**, because absence and "nobody wrote it down" are indistinguishable to a reader, and
@@ -87,6 +146,11 @@ Line 1 carries the name, the fingerprint value, and the generation date:
 
 Immediately below it, a short source note: which repo or package the catalog was read from,
 and **what the fingerprint covers** — the set of files whose contents produce the hash.
+
+**In a split catalog the stamp lives on the generated half**, and the overlay carries its own
+title line with no stamp. The stamp measures whether the *enumeration* is current, which is a
+fact about the design system's version; the overlay ages against nothing mechanical, and giving
+it a second stamp would create two answers to one question.
 
 Two rules about the stamp:
 
@@ -322,7 +386,8 @@ nothing consumes is precisely the one a new design is most likely to be the firs
 
 ## Validation — Phase 0, loud failure only
 
-Phase 0 validates the resolved catalog **before** any Figma read. Every rule below is a hard
+Phase 0 validates the resolved catalog **before** any Figma read — **the union of its files**,
+where the pointer named a directory, exactly as described above. Every rule below is a hard
 STOP. There is no partial acceptance, no degraded mode, and no inferring a missing section
 from the design system's source: a catalog that is wrong in one section is not evidence of
 anything in the others, and a run that proceeds on partial data produces a spec that *looks*

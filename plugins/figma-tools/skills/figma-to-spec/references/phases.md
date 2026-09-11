@@ -50,10 +50,15 @@ This is the mirror image of `figma-component-to-spec`'s Phase 1 step 1, which re
    registered the same way a gate is registered in `## Project gates` — **that registry is the
    only place the catalog is named.** Never hardcode a catalog filename or path here, and
    never reconstruct one by reading the design system's source at run time. Read the resolved
-   file in.
+   file in — or, where the pointer names a **directory**, every markdown file directly inside
+   it, which is one catalog in two halves and is read as one document. Where both halves carry
+   the same section, the hand-owned overlay wins; `catalog-contract.md`'s *One document, two
+   files* section is normative for all of it.
 
    **2b — Validate against `catalog-contract.md`. Hard STOP on failure.** Run that file's
-   numbered validation rules **before any Figma read**. A malformed catalog fails **loudly and
+   numbered validation rules **before any Figma read**, against the **union** of whatever 2a
+   resolved — never against one half of a split catalog, which fails rules the other half
+   satisfies. A malformed catalog fails **loudly and
    specifically**: name the resolved path, the rule that failed, and what to change, then offer
    the two ways forward (fix the catalog, or point the run at a different one). Never degrade,
    never proceed on partial data, and never infer a missing section from the design system's
@@ -61,7 +66,8 @@ This is the mirror image of `figma-component-to-spec`'s Phase 1 step 1, which re
    failure this gate exists to prevent.
 
    **2c — Staleness: soft, never fatal.** If the adapter registers a **fingerprint command**
-   for this design system, run it and compare the result to the catalog's line-1 stamp. Match
+   for this design system, run it and compare the result to the line-1 stamp — the generated
+   half's, in a split catalog, since the overlay carries none. Match
    → note "catalog current". Mismatch → **soft-warn** ("catalog may lag the live design system
    — regenerate it") and **continue**. No fingerprint command registered, or the design-system
    source unreachable → note "staleness unchecked" and continue. **Never hard-fail on
@@ -71,8 +77,10 @@ This is the mirror image of `figma-component-to-spec`'s Phase 1 step 1, which re
    **2d — While the adapter is open, read the rest of `## Design system` and keep it.** The
    *icon resolution ladder* is needed verbatim by every Phase B spawn (the region agent never
    reads the adapter itself), the three *class-prefix* rows settle what form a spec may
-   recommend, and the two optional rows — *usage-rules source*, *downstream implementer* —
-   decide what the page spec cites and who picks it up. **An absent optional row is the answer,
+   recommend, and the two optional rows — *usage-rules sources*, *downstream implementer* —
+   decide what the page spec cites and who picks it up. The first may name **several** sources,
+   or one index file naming the rest; keep all of them, since a rule is cited alongside the
+   source it came from. **An absent optional row is the answer,
    not a warning.** A missing icon ladder is different: with icon sources in the catalog and no
    stated order, ask the user rather than picking one.
 3. **Confirm capability — three separate checks (see SKILL.md Prerequisites).** (a) Ensure
@@ -302,8 +310,8 @@ region agent** — extraction is per-region and idempotent.
    (containment tree + auto-layout intent)**, **data states** where state nodes were given,
    component states **only for new/unknown components**, responsive notes, and the
    **Changelog** from step 5 up top; gaps marked inline as `⚠ blocked on gap-NNN`; cite the
-   relevant rules of the adapter's *usage-rules source* for HOW, by stable name, and cite
-   nothing where no such row exists. Record the **Scope dispositions** (in-scope / spec-only /
+   relevant rules of the adapter's *usage-rules sources* for HOW, by stable name and source, and
+   cite nothing where no such row exists. Record the **Scope dispositions** (in-scope / spec-only /
    excluded); prefix every `spec-only` region's heading with a **`spec-only — not integrated
    this pass`** banner so the implementer skips it.
 7. **Write `gaps/gap-NNN-*.md`** per `gap-spec-template.md`, one per deduped gap.
