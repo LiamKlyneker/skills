@@ -97,8 +97,9 @@ Every command a worker or the orchestrator runs. Keep the **Purpose** column sta
 
 ## Design system
 
-Read by `figma-tools` and by nothing else — delete the whole section in a project that never
-runs it. It carries the facts that decide whether a value drawn in Figma **exists** in this
+Read by `figma-tools`, plus the `Fixed scorecard:` row that the fidelity skills in
+`prd-workflow` read. Delete the whole section in a project that runs neither. It carries
+the facts that decide whether a value drawn in Figma **exists** in this
 project's design system, and in what form an app writes it. None of it is inferable from the
 tree at run time, which is why every line is here rather than left to a skill.
 
@@ -113,6 +114,7 @@ tree at run time, which is why every line is here rather than left to a skill.
 - Icon resolution ladder: `<source 1 → source 2 → … → what happens when none matches>` — the icon sources this project tries, **in order**. Multi-source by default: an in-house set plus a third-party library used by consuming apps is the common shape, and where a source may be used (app layer only, design system only, both) is part of the answer. The catalog says what each source *contains*; this row says which order they are tried in and what a no-match becomes.
 - Usage-rules sources *(optional)*: `<one or more best-practices docs or skills a spec cites rules from, by stable name>` — the HOW, kept separate from the catalog's WHAT. A spec **cites** them and never duplicates them, so a citation stands even where the source is not loaded. **Several pointers are normal**, because UI rules routinely sit in more than one place — a design-system skill and a local-components skill, say. Write them as a list, or as one index file that names the rest; either is a finished answer, and a consumer that has exactly one writes exactly one. A rule is cited by **name plus the source it came from**, so two sources that happen to name a rule the same thing stay distinguishable. **Absent is not an error**: leave the row out and a spec cites nothing. Nothing warns about it.
 - Downstream implementer *(optional)*: `<the skill or workflow that implements a filed spec>` — who picks a `[DESIGN-SPEC]` up. **Absent means a human.** Also not an error, also never warned about.
+- Fixed scorecard *(optional)*: `<path to the file that carries a per-ticket scorecard and polish checklist>` — the verify checklist a fidelity ticket is scored against, when this project keeps one written down. Read by `to-task`, `work-on-task`, `to-issues` and `work-on-issue`, and only for the ticket the file names; any other ticket derives its rows from the design brief's fidelity ledger instead. **Absent means derive** — the default path, per `_shared/fidelity-ledger.md` §5. Not an error, never warned about.
 
 Four rows about **provisional decisions** — what happens when the *inputs* to a spec are
 incomplete rather than the run being invalid. A design file that has not defined a variable yet,

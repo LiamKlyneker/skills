@@ -59,16 +59,29 @@ Then ask the user how to proceed. Do not enter plan mode. **This is the one fina
 ### 4b. If ready
 
 1. Identify the directories/routes the issue touches. Read their `CONTEXT.md` (use the `scoped-context` skill if cross-feature imports are involved — it walks up to the route-group root).
-2. Apply `../_shared/model-effort-heuristics.md` to the issue → plan-mode y/n, model tier, effort. Downgrade detector against the Opus-high default; tiers not versioned ids (defer to `claude-api` for ids); hedge borderline.
-3. **Branch and PR, advisory only** — this skill still does not branch, push, or open anything. Read the adapter's optional **`Branch pattern:`** and **`PR template:`** rows, in the `### GitHub` sub-section of `## Repo`, the same two rows and the same substitution rule `work-on-prd`'s Setup steps 2–3 use, but for this one issue and with **no machine block**: no pointer, no child checklist, no resume search — there is no loop here to resume. `<n>` is this issue's number, `<slug>` its title slugged (strip a leading `[…]` bracket group first, then lowercase, collapse non-alphanumerics to hyphens, keep every word — the same pathological-title exception `work-on-prd` uses if the title runs long). **Either row absent → today's behaviour: say nothing about it.** The two rows are independent — resolve whichever is present, both, or neither.
-4. One-line confirm what you understood the issue to be.
-5. Print the block below — including the model/effort call and, when step 3 resolved anything, the branch/PR-template line — **before** `EnterPlanMode`. Entering plan mode commits the session model, so the operator needs the recommendation in hand first; if it differs from their current session they can switch before continuing.
-6. `EnterPlanMode` and draft the implementation plan there.
+2. **Evidence gate — before any code, and before plan mode.** When the issue carries a
+   `## Fidelity ledger (in scope)` table, run the implementer contract in
+   `../_shared/fidelity-ledger.md` §6: read the brief's ledger in full, run every screenshot fetch
+   line and read each PNG as an image, run every source-slice fetch line and read each slice. An
+   issue with no ledger table skips this step.
+
+   The plan drafted in step 7 must end with the per-ledger-row self-audit table
+   (`../_shared/fidelity-ledger.md` §6) **before** the verify gate. The gate ticks the issue's
+   scorecard rows in the §6 vocabulary, and a row the issue derived from the ledger (§5, for a
+   ticket with no fixed scorecard in the file the adapter's `Fixed scorecard`
+   row names) counts like a fixed one.
+
+3. Apply `../_shared/model-effort-heuristics.md` to the issue → plan-mode y/n, model tier, effort. Downgrade detector against the Opus-high default; tiers not versioned ids (defer to `claude-api` for ids); hedge borderline.
+4. **Branch and PR, advisory only** — this skill still does not branch, push, or open anything. Read the adapter's optional **`Branch pattern:`** and **`PR template:`** rows, in the `### GitHub` sub-section of `## Repo`, the same two rows and the same substitution rule `work-on-prd`'s Setup steps 2–3 use, but for this one issue and with **no machine block**: no pointer, no child checklist, no resume search — there is no loop here to resume. `<n>` is this issue's number, `<slug>` its title slugged (strip a leading `[…]` bracket group first, then lowercase, collapse non-alphanumerics to hyphens, keep every word — the same pathological-title exception `work-on-prd` uses if the title runs long). **Either row absent → today's behaviour: say nothing about it.** The two rows are independent — resolve whichever is present, both, or neither.
+5. One-line confirm what you understood the issue to be.
+6. Print the block below — including the model/effort call and, when step 4 resolved anything, the branch/PR-template line — **before** `EnterPlanMode`. Entering plan mode commits the session model, so the operator needs the recommendation in hand first; if it differs from their current session they can switch before continuing.
+7. `EnterPlanMode` and draft the implementation plan there.
 
 Filter: `../_shared/final-prints.md`. Everything below is a **judgement the issue does not contain** — the readiness call, the scope you understood, the model call, the branch a run would use. None of it is on GitHub, so none of it is an echo. What the filter cuts is the issue header restating the title and state the user just handed you.
 
 ```
 Ready — <one-line scope>. Touches: <dir(s)>.
+Evidence: read ledger (N rows), N screenshots, N source slices.
 Branch: <resolved-name>   PR template: <path-or-"snapshot">
 
 Model/effort: <tier> · <effort>   (<downgrade from default | stay on default | borderline>)
@@ -76,6 +89,10 @@ Model/effort: <tier> · <effort>   (<downgrade from default | stay on default | 
 
 Entering plan mode. Switch model/effort first if it differs from your current session.
 ```
+
+Omit the `Evidence:` line entirely when the issue carries no ledger table; otherwise it carries the
+real counts, and a count the gate could not reach is printed as the deviation it is rather than as
+a zero.
 
 Omit the `Branch:`/`PR template:` line entirely when both rows are absent — that is today's behaviour, unchanged. When only one row is present, print only that half of the line.
 

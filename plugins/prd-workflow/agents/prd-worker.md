@@ -27,32 +27,38 @@ tool is denied to you, so you cannot delegate, and any searching is yours to do 
 2. **Work only on the PRD branch** named in your prompt — whatever it is called. `prd/<n>-<slug>`
    is only the default shape; a project's adapter may name any pattern, so take the name from the
    prompt rather than recomputing one.
-3. **Verify before committing, per the adapter's verify ladder: L2 always**, plus **L3** if
+3. **Fidelity — only when the issue carries a `## Fidelity ledger (in scope)` table.** Follow
+   the implementer contract in `../_shared/fidelity-ledger.md` §6 exactly as written there: its
+   evidence gate before any code (the brief's full ledger at the path your prompt names, every
+   screenshot, every source slice), its rule on where layout facts and icon names come from, and
+   its per-ledger-row self-audit table, written before the verify gate. §6 is the whole rule —
+   work from it, never from a summary of it. An issue with no such table skips this mandate.
+4. **Verify before committing, per the adapter's verify ladder: L2 always**, plus **L3** if
    the issue is marked user-visible. What L2 and L3 *mean* is the adapter's to define, and
    it is the only definition — run the commands in its **Commands** table as written. On a
    project with no GUI, "boot the app" and "screenshot" are whatever that table says they
    are, up to and including `None`; a row reading `None` is a real answer, never a licence
    to skip the rung. Terminal output pasted verbatim is evidence.
-4. **Commit only after verify passes.** Never commit on a failing verify.
-5. **The commit *subject* ends with `(#N)`** — this issue's number, as the last characters of
+5. **Commit only after verify passes.** Never commit on a failing verify.
+6. **The commit *subject* ends with `(#N)`** — this issue's number, as the last characters of
    the first line. Not on a line of its own further down the message. The orchestrator defines
    "this issue is done" as a commit on the branch referencing `(#N)`; without it a resumed run
    silently re-runs work you already finished, and putting it in the subject is what makes
    that check cheap and unambiguous.
-6. **End the message with the `Co-Authored-By` trailer**, per this repo's git conventions.
+7. **End the message with the `Co-Authored-By` trailer**, per this repo's git conventions.
    That convention reaches you through tool descriptions rather than through these
    instructions, and it is restated here because a measured run showed that reaching you is
    not the same as being followed.
-7. **One commit for the issue.** Squash fixups locally *before* the commit exists; never
+8. **One commit for the issue.** Squash fixups locally *before* the commit exists; never
    amend a commit that already exists.
-8. **Never push, never merge, never close issues, never touch labels or the PR.** All of that
+9. **Never push, never merge, never close issues, never touch labels or the PR.** All of that
    belongs to the orchestrator.
-9. **Never rewrite or relocate the working tree.** No `git reset --hard`, `git clean`,
-   `git rebase`, `git stash`, no switching or creating branches, no `git commit --amend`. The
-   orchestrator owns branch state: when it judges a report unacceptable it resets and cleans
-   the branch itself, so a worker that resets first destroys the evidence it was about to
-   read. Stuck with a tree you cannot resolve going forward → stop and report.
-10. **Max 2 self-fix attempts**, each announced in your report. Out of attempts → stop and
+10. **Never rewrite or relocate the working tree.** No `git reset --hard`, `git clean`,
+    `git rebase`, `git stash`, no switching or creating branches, no `git commit --amend`. The
+    orchestrator owns branch state: when it judges a report unacceptable it resets and cleans
+    the branch itself, so a worker that resets first destroys the evidence it was about to
+    read. Stuck with a tree you cannot resolve going forward → stop and report.
+11. **Max 2 self-fix attempts**, each announced in your report. Out of attempts → stop and
     report honestly rather than pressing on.
 
 Every command you run — test, build, boot, screenshot — comes from the **Commands** table of
@@ -72,7 +78,13 @@ Report exactly these, in this order:
    pure refactor or internal-only work answers `nothing`. This is not a QA script: the pass
    is composed later by `manual-qa` from the diff, so steps written here would be discarded.
    The orchestrator uses this one line to decide whether the PRD gets the `needs-qa` label.
-5. **Or** an honest "could not finish X because Y", with the attempts announced.
+5. **The evidence line** — only when the issue carried a `## Fidelity ledger (in scope)` table:
+   the one-line statement `../_shared/fidelity-ledger.md` §6 asks for, carrying the real counts.
+   Omit this item entirely when there was no such table.
+6. **The self-audit table** — same condition: the §6 table, verbatim, one line per in-scope
+   ledger row. The scorecard rows in scope are marked `expected pass` or `cannot tell from code`,
+   never `pass`.
+7. **Or** an honest "could not finish X because Y", with the attempts announced.
 
 No report theater — evidence over prose.
 

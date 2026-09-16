@@ -37,12 +37,24 @@ only a nicer branch name to aim for.
    - `## Implementation Decisions`
    - `## UI Primitives`
    - `## Design reference`
+   - `## Fidelity ledger`
    - `## Migration risk`
    - `## Data & Access`
    When you update one, replace its **body in place under the exact heading text** — never rename, remove, duplicate, or change the level of these headings. If a contract heading doesn't exist yet and this grill produced content for it, insert it in template order.
 4. Sections are **append/replace by ownership**: tables like `## UI Primitives` and `## Design reference` accumulate **rows** (merge new rows in, don't drop existing ones unless this grill supersedes a specific row); narrative sections this grill owns are replaced wholesale. Anything outside this grill's scope is untouched.
 5. **Do not re-apply triage labels** in UPDATE mode — leave the issue's labels exactly as they are. (Only CREATE applies `needs-triage`.)
-6. **Never re-prefix an already-prefixed title.** UPDATE enriches a PRD that already exists, so its title normally already starts with `[PRD]` and must be left alone. Add the prefix here only when the title genuinely lacks one — a PRD that predates the convention. `[PRD] [PRD] …` is the failure to avoid, and it is silent: nothing rejects the title, and `work-on-prd` slugs the branch from it.
+6. **Merge `## Fidelity ledger` rows by `Element` + `States` key, later grill wins.** A row whose
+   key already stands in the PRD is replaced wholesale by the newer row — every column, including
+   Decision. A row with a new key is appended. A row the newer grill did not cover is left
+   byte-intact. Never merge two rows into one and never keep two rows under the same key.
+7. **Never re-prefix an already-prefixed title.** UPDATE enriches a PRD that already exists, so its title normally already starts with `[PRD]` and must be left alone. Add the prefix here only when the title genuinely lacks one — a PRD that predates the convention. `[PRD] [PRD] …` is the failure to avoid, and it is silent: nothing rejects the title, and `work-on-prd` slugs the branch from it.
+
+## Hard rules
+
+Hard rules 5–9 of `../_shared/fidelity-ledger.md` §2 apply to the PRD body: never translate a ledger
+fact into a utility class, never name a DS component the ledger did not name, never rename an icon,
+never add a layout fact that neither a ledger row nor a grill decision holds, and never take a
+layout fact from repo recon.
 
 ## Process
 
@@ -108,6 +120,19 @@ The design pointers, carried through from the **design source** — a design spe
 |------|------------|-------|
 | Edit dialog | <url#node-id> | "Edit / Options" |
 | Date range step | <screenshot url @ sha> | "uc1-s4 range picker" |
+
+## Fidelity ledger
+
+Only for PRDs whose design source was a **design brief** with a `## Fidelity ledger`. The brief's
+rows for everything this PRD covers, pasted verbatim with every column, plus the Decision column —
+built per `../_shared/fidelity-ledger.md` §1. The three-column `## Design reference` table above is
+a pointer; this table is the facts, and the two are not substitutes for each other.
+
+One line above the table pins what the rows are true at:
+
+Pinned at `<owner>/<repo>@<sha>` · path `<proto-path>` · brief `<brief-path>`.
+
+Omit the section for PRDs with no brief.
 
 ## Migration risk
 

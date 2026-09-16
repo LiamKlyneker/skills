@@ -4,6 +4,13 @@ The PRD-to-merge workflow, packaged as a Claude Code plugin: `to-prd` →
 `to-issues` → `next-prd-issue` → `work-on-prd` / `work-on-issue`, plus the
 `prd-worker` agent that `work-on-prd` spawns per child issue.
 
+`to-task` and `work-on-task` are the single-issue route past the PRD ceremony.
+`to-task` publishes one implementation issue straight from a `deep-grill`
+consensus, carrying the design brief's fidelity ledger rows as build
+instructions and a screenshot-pair verify checklist. `work-on-task` implements
+one such issue: evidence first, then code, then a per-ledger-row self-audit
+before the verify gate.
+
 `manual-qa` and `triage` close the loop from the other end. `manual-qa`
 **composes** the pass on demand from what actually landed on the run's branch —
 the diff, the commits and their `(#N)` attribution — as a short list of flows,
@@ -21,9 +28,11 @@ never one of those.
 ```
 plugins/prd-workflow/
   .claude-plugin/plugin.json
+  _shared -> ../../_shared             # symlink, see below
   skills/
     _shared -> ../../../_shared        # symlink, see below
     to-prd/  to-issues/  next-prd-issue/  work-on-prd/  work-on-issue/
+    to-task/  work-on-task/            # the single-issue route, fidelity-ledger aware
     manual-qa/                         # compose the pass from the branch, drive it, capture findings
     triage/                            # QA findings back into children
   agents/prd-worker.md
@@ -78,6 +87,16 @@ and re-measured on each skill added, which is why the count is a number and not
 Keeping the same link at the same depth in every plugin is also what let
 `triage` move here from `lk` without editing one of its `../_shared/…`
 references.
+
+`agents/prd-worker.md` sits one level higher than a skill does, so its own
+`../_shared/…` references resolve at the plugin root rather than under
+`skills/`. That is what the second link, `plugins/prd-workflow/_shared ->
+../../_shared`, is for: same canonical target, same no-rewrite rule.
+
+`_shared/fidelity-ledger.md` is the shared fidelity contract both links reach.
+`to-task`, `work-on-task`, `to-prd`, `to-issues` and `work-on-issue` cite its
+numbered sections rather than restating them, and `prd-worker.md` follows §6.
+`figma-tools`' `prototype-to-spec` writes the ledger those sections consume.
 
 ### Compat shims — gone (#26)
 
