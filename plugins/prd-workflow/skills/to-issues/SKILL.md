@@ -9,6 +9,11 @@ Break a plan into independently-grabbable issues using vertical slices (tracer b
 
 The issue tracker and triage label vocabulary should have been provided in context — ask the user to share them if not.
 
+Hard rules 5–9 of `../_shared/fidelity-ledger.md` §2 apply to every issue body this skill writes:
+never translate a ledger fact into a utility class, never name a DS component the ledger did not
+name, never rename an icon, never add a layout fact that neither a ledger row nor a grill decision
+holds, and never take a layout fact from repo recon.
+
 ## Titles
 
 Every child issue is titled `[TASK] <the title>`.
@@ -58,6 +63,11 @@ Read the PRD's `## Data & Access` section if present. For each ⚠️ row (an op
 - The access-policy change must land **in the same slice as — or as a `Blocked by` of — the slice that first introduces that operation**, never a slice later. A user-scoped write with no policy is silently denied, so the write and its policy cannot ship apart.
 - This matters most for a **new operation on an already-used store** (e.g. the first update or delete on something only ever read from and appended to): there's no creation step to hang the policy off, so it's easy to slice the write into a feature issue and lose the policy entirely. Call it out explicitly in that issue's acceptance criteria (see the template note below).
 - ✅ rows need nothing — they're already covered.
+
+Read the PRD's `## Fidelity ledger` section if present. Every slice marked **User-visible: y**
+carries the rows for its own elements into its `## Fidelity ledger (in scope)` section, plus the
+screenshot blocks and source slices those rows need (see the template). A row belongs to exactly one
+slice; a row two slices both touch is the signal the seam is wrong, not a licence to duplicate it.
 
 Read the PRD's `## Project gates` section if present — one sub-section per extra gate this project registers in its adapter, each carrying that gate's table. Slice its ⚠️ rows the same way: the fix lands **in, or as a `Blocked by` of**, the slice that first introduces the offending operation, never a slice later. A gate row that resolves in another repo becomes a cross-repo dependency, listed under the slice's `## External steps` or `## Blocked by` as appropriate. Never assume which gates exist — the PRD section and the adapter registry are the only sources.
 
@@ -156,12 +166,20 @@ For UI issues only. Carry the design ref(s) from the PRD's `## Design reference`
 |------|------------|-------|
 | <area> | <design ref url> | "<label>" |
 
+## Fidelity ledger (in scope)
+
+For **User-visible: y** slices whose PRD carries a `## Fidelity ledger`. The PRD's rows for this
+slice's elements, pasted verbatim with every column plus Decision and Instruction, per
+`../_shared/fidelity-ledger.md` §1. Then the screenshot blocks for those rows' states, per §3, and
+the source slices for their `local component` / `DS with overrides` rows, per §4. Omit the whole
+section for a slice with no ledger rows.
+
 ## Worker context
 
 Everything a cold, isolated worker session needs to implement this slice without plan mode. The PRD stays path-free (paths rot over months); this section gets real paths because issues are consumed within days.
 
 - **Files**: real paths the slice touches (create/edit), plus the scoped `CONTEXT.md`(s) to read first.
-- **Prior art**: concrete in-repo examples to copy the pattern from (path + one line on what to imitate).
+- **Prior art**: concrete in-repo examples to copy the pattern from (path + one line on what to imitate). Prior art is an **engineering** source only; never a layout-fact source (`../_shared/fidelity-ledger.md` §2 rule 9).
 - **Verify**: exact commands, taken from the project adapter at `<repo-root>/.claude/project/adapter.md` (L2 test command; L3 app/boot command if applicable).
 - **User-visible**: y/n — y means the verify ladder's L3 (app boot + screenshot) applies.
 
@@ -174,7 +192,7 @@ Everything a cold, isolated worker session needs to implement this slice without
 - [ ] Criterion 1
 - [ ] Criterion 2
 - [ ] Criterion 3
-- [ ] (UI issues) Implementation matches the design ref 1:1
+- [ ] (UI issues) One checkbox per scorecard row and per polish-checklist item in this slice's scope, each carrying its pass condition verbatim, per `../_shared/fidelity-ledger.md` §5 — and where the file the adapter's `Fixed scorecard` row names has no `## Scorecard` for this ticket, or the adapter registers no such row, the derived rows that section specifies, never another ticket's scorecard
 - [ ] (UI issues) The design ref + label recorded in the page's `CONTEXT.md` `## Design reference` table
 - [ ] (Issues introducing a new write on an existing store — from the PRD's `## Data & Access`) An access policy for that specific operation exists for the acting user, and the write path surfaces a denied write instead of swallowing it
 

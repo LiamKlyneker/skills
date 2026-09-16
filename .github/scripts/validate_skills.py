@@ -321,9 +321,11 @@ def check_symlinks() -> None:
 
     Two different things get called a symlink here (ADR 0010):
 
-    - **Packaging** — `plugins/*/skills/_shared`, `install-skills`' `skills/install`,
-      and `figma-to-spec`'s agent link. Install dereferences these into each cache
-      copy; they are build mechanics and they are required.
+    - **Packaging** — `plugins/*/skills/_shared`, `plugins/prd-workflow/_shared` (the
+      same target one level up, so `prd-worker.md` under `agents/` resolves its own
+      `../_shared/` links), `install-skills`' `skills/install`, and `figma-to-spec`'s
+      agent link. Install dereferences these into each cache copy; they are build
+      mechanics and they are required.
     - **Delivery** — a link that makes a plugin or skill load. Two shapes of it have
       existed here and both are now illegal: a *top-level* shim into `plugins/` (one
       skill discoverable under two names, #26), and a link under `.claude/skills/`

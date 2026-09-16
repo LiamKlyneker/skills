@@ -3,8 +3,10 @@ name: deep-grill
 description: >
   Interview the user relentlessly about a plan until every branch of the decision
   tree is resolved — always fanning the exploration out to read-only recon subagents
-  first, so every question is grounded in the code instead of guessed. Invoke
-  /deep-grill.
+  first, so every question is grounded in the code instead of guessed. Carries the
+  fidelity-ledger rules: one round-one question per non-`DS as-is` ledger row with
+  the screenshot read, an evidence rule for "already matches" claims, and a
+  `## Fidelity decisions` block at consensus. Invoke /lk:deep-grill.
 disable-model-invocation: true
 ---
 
@@ -57,6 +59,20 @@ Before anything else, ask what already exists and read it. A grill that re-deriv
   3. **Override the prototype** — the ticket is allowed to disagree with it, and frequently should.
 
   A brief's `## Overrides` section is **facts, not questions**. The ticket already won there; re-asking hands back a decision that was made before the brief was written.
+
+  **The `## Fidelity ledger` outranks the mapping confidence.** A brief may also carry a `## Fidelity ledger` section: one row per visual element, with its states, its exact copy, its tokens, its layout facts in words, the source line range in the prototype, the DS candidate, and a **fidelity class** — `DS as-is` / `DS with overrides` / `local component` / `DS change` / `OPEN`. The confidence table above measures name match; the ledger measures visual match. Where both describe the same element, the ledger wins. A row marked `exact` in `## Element → DS mapping` but not `DS as-is` in the ledger is **still asked**.
+
+  **Every ledger row whose class is not `DS as-is` is its own round-one question.** One question per row. Do not batch them, do not fold several rows into one table, and do not treat a `DS with overrides` row as a confirm — each row is a real decision with its own screenshot. Each such question must:
+
+  1. **Name the element and the state(s)** the row covers.
+  2. **Describe the DS candidate's default chrome** — what the component renders out of the box (checkboxes, "Select All", group headers, trigger styling, its own search input, its own padding). Take this from the catalog overlay's "Default chrome" note for that component; if the overlay is silent, take it from the ledger's notes. Never assume a composite renders nothing of its own.
+  3. **State the ledger's layout facts** — stack direction, divider placement, padding owner, row anatomy, radius — in the ledger's own words, so the delta between the DS default and the design is visible in the question itself.
+  4. **Offer the standard answers**: (a) use the DS component as-is; (b) use it **with overrides** — and the question names which override; (c) **build local**; (d) **change the DS** and file the gap on the adapter's DS-gap backlog as a blocker; (e) **override the design** — the ticket wins over the prototype.
+
+  **Read the screenshot before asking.** For every such row, fetch the raw PNG for its state(s) at the brief's pinned SHA into the scratchpad and read it as an image, then write the question from what the design shows — not from what the brief's prose says. A question written without the image describes the text, and the text is the thing that already lost fidelity once.
+
+  **Evidence rule for "matches" claims (HARD RULE).** A claim of the form "this already matches the design" — in an answer, in a recon brief, or in your own consolidation — is accepted **only** if it cites either (a) a ledger row whose fidelity class is `DS as-is`, or (b) a render: a screenshot of the running app next to the design. **A class name, a component name, or a prop read out of the repo's source is not evidence of a visual match.** Source recon proves which component is mounted; it proves nothing about what that component paints. When the only support for a "matches" claim is code recon, mark the row unresolved and ask it. Reason: Run 0 wrote false "already matches" facts ("multi-select already matches", "separators match the design") into an implementation issue straight out of code recon, and every one of those elements failed its screenshot pair. The same bar applies to layout: a class name or a component name surfaced by recon is **not a layout fact** — the ledger is. Recon may state "the app currently renders X"; it may never state "the design is X", and a class it found may never be carried into a decision, an answer or anything this grill hands downstream. Reason: Run 1's recon surfaced the current `sui-min-w-[120px]` label width, which then reached the issue as the design's fixed 124px column and shipped wrong.
+
 - **No spec or brief, but the work is design-driven?** Say so and recommend producing one first rather than improvising the design side mid-interview — `figma-to-spec` from a canvas, `prototype-to-spec` from a designer's code prototype. Grill the engineering decisions that don't depend on it in the meantime.
 - **Prior PRDs, issues, ADRs.** Ask for pointers and read them; a decision already recorded is not an open question.
 
@@ -128,6 +144,24 @@ Status ∈ ✅ covered / ⚠️ gap (needs a policy change or code fix) / ❌ un
 ## Project gates (HARD GATES — whatever the adapter registers)
 
 The manifest above is the gate every project gets. A project may register **its own** gates in the adapter's `## Project gates` table — the same shape, catching a silent-failure class specific to that stack (an API contract the app can drift from, a platform review rule). Read that table, run every gate whose trigger this plan matches, and treat each exactly like the one above: enumerate rows, resolve each, don't conclude the grill while any row is ⚠️/❌. The gate file itself carries its row schema; this skill never names one.
+
+## Consensus output — `## Fidelity decisions`
+
+When the brief carried a `## Fidelity ledger`, the grill's closing summary ends with a short `## Fidelity decisions` block: **one line per ledger row**, carrying the decided fidelity class and, where the decision was `DS with overrides`, the named override. This is the handoff — a downstream `/prd-workflow:to-task` or `/prd-workflow:to-prd` skill pastes this block verbatim into the issue as the per-element build instruction, so every row must be phrased as an instruction, not as a discussion.
+
+Every ledger row appears, including the rows that stayed `DS as-is`. A row missing from this block is a row the implementer will decide alone.
+
+```
+## Fidelity decisions
+
+| Element | State(s) | Decision | Override / note |
+|---|---|---|---|
+| <element> | <states> | DS as-is — `<Component>` | — |
+| <element> | <states> | DS with overrides — `<Component>` | <the named override, e.g. hide Select All; divider on the row, not the container> |
+| <element> | <states> | Build local | <what it replaces, and why the DS composite was rejected> |
+| <element> | <states> | DS change | gap filed: <backlog ref> — blocker |
+| <element> | <states> | Override the design | <what the ticket does instead> |
+```
 
 ## Done
 
