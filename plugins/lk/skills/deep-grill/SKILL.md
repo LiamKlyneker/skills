@@ -5,8 +5,9 @@ description: >
   tree is resolved — always fanning the exploration out to read-only recon subagents
   first, so every question is grounded in the code instead of guessed. Carries the
   fidelity-ledger rules: one round-one question per non-`DS as-is` ledger row with
-  the screenshot read, an evidence rule for "already matches" claims, and a
-  `## Fidelity decisions` block at consensus. Invoke /lk:deep-grill.
+  the screenshot read, an evidence rule for "already matches" claims, a per-state
+  container rule, and a `## Fidelity decisions` block at consensus. Invoke
+  /lk:deep-grill.
 disable-model-invocation: true
 ---
 
@@ -43,7 +44,7 @@ Project facts (repo names, explorer agents, access-policy source) come from the 
 Before anything else, ask what already exists and read it. A grill that re-derives a document someone already wrote wastes the interview on settled questions.
 
 - **Design spec.** If the work implements from a design and a spec already exists, **read it and grill from it**. The variants, states, tokens, primitives and design-system gaps are resolved there — treat those rows as answers, not as questions, and quote the spec when a decision leans on one. Do **not** re-enumerate variants or rebuild primitive/token manifests on this thread; that is the spec's job and duplicating it invites two conflicting sources of truth.
-- **Design brief.** A path to a design brief is the same kind of input, produced from a designer's code prototype rather than from a canvas. Read it the same way, with one addition: **its `## Element → DS mapping` rows carry a confidence, and the confidence decides what happens to the row.**
+- **Design brief.** A path to a design brief is the same kind of input, produced either by `figma-tools:prototype-to-spec` from a designer's code prototype or by `figma-tools:figma-to-brief` from a design canvas. Read it the same way, with one addition: **its `## Element → DS mapping` rows carry a confidence, and the confidence decides what happens to the row.**
 
   | Confidence | Treated as | In the interview |
   |---|---|---|
@@ -60,7 +61,7 @@ Before anything else, ask what already exists and read it. A grill that re-deriv
 
   A brief's `## Overrides` section is **facts, not questions**. The ticket already won there; re-asking hands back a decision that was made before the brief was written.
 
-  **The `## Fidelity ledger` outranks the mapping confidence.** A brief may also carry a `## Fidelity ledger` section: one row per visual element, with its states, its exact copy, its tokens, its layout facts in words, the source line range in the prototype, the DS candidate, and a **fidelity class** — `DS as-is` / `DS with overrides` / `local component` / `DS change` / `OPEN`. The confidence table above measures name match; the ledger measures visual match. Where both describe the same element, the ledger wins. A row marked `exact` in `## Element → DS mapping` but not `DS as-is` in the ledger is **still asked**.
+  **The `## Fidelity ledger` outranks the mapping confidence.** A brief may also carry a `## Fidelity ledger` section: one row per visual element, with its states, its exact copy, its tokens, its layout facts in words, its source — a source line range in the prototype, or a Figma node `<fileKey>:<nodeId>` — the DS candidate, and a **fidelity class** — `DS as-is` / `DS with overrides` / `local component` / `DS change` / `OPEN`. The confidence table above measures name match; the ledger measures visual match. Where both describe the same element, the ledger wins. A row marked `exact` in `## Element → DS mapping` but not `DS as-is` in the ledger is **still asked**.
 
   **Every ledger row whose class is not `DS as-is` is its own round-one question.** One question per row. Do not batch them, do not fold several rows into one table, and do not treat a `DS with overrides` row as a confirm — each row is a real decision with its own screenshot. Each such question must:
 
@@ -69,14 +70,16 @@ Before anything else, ask what already exists and read it. A grill that re-deriv
   3. **State the ledger's layout facts** — stack direction, divider placement, padding owner, row anatomy, radius — in the ledger's own words, so the delta between the DS default and the design is visible in the question itself.
   4. **Offer the standard answers**: (a) use the DS component as-is; (b) use it **with overrides** — and the question names which override; (c) **build local**; (d) **change the DS** and file the gap on the adapter's DS-gap backlog as a blocker; (e) **override the design** — the ticket wins over the prototype.
 
-  **Read the screenshot before asking.** For every such row, fetch the raw PNG for its state(s) at the brief's pinned SHA into the scratchpad and read it as an image, then write the question from what the design shows — not from what the brief's prose says. A question written without the image describes the text, and the text is the thing that already lost fidelity once.
+  **A container decision is stated per state (HARD RULE).** When the ledger holds two or more states, every decision about a **container** around ledger elements — a page shell, a panel, a section card, a list wrapper, the page surface — is stated per state. A decision read off one state's frame names that state, and says explicitly what every other state gets, including "no container" where the other state draws none. **A per-state disagreement on a container fact is its own round-one question**: when the ledger's rows say one state binds a fill, a radius, a padding or a border and another state does not, ask that disagreement separately from the per-row questions above, and quote both states' cells in the question. Reason: a tab-bar row held a container fill for one state and "binds no fill" for the other; the grill wrote one page-wide panel decision off the first state's frame, and the second state shipped inside a panel its design never draws.
+
+  **Read the screenshot before asking.** For every such row, read the design as an image, one image per state: for a prototype brief, fetch the raw PNG at the brief's pinned SHA into the scratchpad; for a canvas brief, open the PNG the brief saved on disk for that state, at the screenshot path its pin line carries (`.claude/briefs/<ticket>/screenshots/<state>.png`). Then write the question from what the design shows — not from what the brief's prose says. A question written without the image describes the text, and the text is the thing that already lost fidelity once.
 
   **Evidence rule for "matches" claims (HARD RULE).** A claim of the form "this already matches the design" — in an answer, in a recon brief, or in your own consolidation — is accepted **only** if it cites either (a) a ledger row whose fidelity class is `DS as-is`, or (b) a render: a screenshot of the running app next to the design. **A class name, a component name, or a prop read out of the repo's source is not evidence of a visual match.** Source recon proves which component is mounted; it proves nothing about what that component paints. When the only support for a "matches" claim is code recon, mark the row unresolved and ask it. Reason: Run 0 wrote false "already matches" facts ("multi-select already matches", "separators match the design") into an implementation issue straight out of code recon, and every one of those elements failed its screenshot pair. The same bar applies to layout: a class name or a component name surfaced by recon is **not a layout fact** — the ledger is. Recon may state "the app currently renders X"; it may never state "the design is X", and a class it found may never be carried into a decision, an answer or anything this grill hands downstream. Reason: Run 1's recon surfaced the current `sui-min-w-[120px]` label width, which then reached the issue as the design's fixed 124px column and shipped wrong.
 
-- **No spec or brief, but the work is design-driven?** Say so and recommend producing one first rather than improvising the design side mid-interview — `figma-to-spec` from a canvas, `prototype-to-spec` from a designer's code prototype. Grill the engineering decisions that don't depend on it in the meantime.
+- **No spec or brief, but the work is design-driven?** Say so and recommend producing one first rather than improvising the design side mid-interview — `figma-tools:figma-to-spec` for a spec from a canvas, `figma-tools:figma-to-brief` for a brief from a canvas, `figma-tools:prototype-to-spec` for a brief from a designer's code prototype. Grill the engineering decisions that don't depend on it in the meantime.
 - **Prior PRDs, issues, ADRs.** Ask for pointers and read them; a decision already recorded is not an open question.
 
-Carry the pointers through the interview — whatever this grill feeds downstream should be able to reference the design source rather than restating it. From a spec that means the URL and node; **from a brief it means its `Source: <repo>@<sha>` line and its screenshot URLs**, which are pinned at that SHA and are what lets the PRD's `## Design reference` point at something that cannot move.
+Carry the pointers through the interview — whatever this grill feeds downstream should be able to reference the design source rather than restating it. From a spec that means the URL and node; **from a brief it means its pin line and its screenshots** — a `Source: <repo>@<sha>` line with screenshot URLs pinned at that SHA for a prototype brief, or a `Pinned at figma <fileKey> · node <nodeId> · version <versionId or YYYY-MM-DD> · brief <path>` line with the saved PNG paths pinned at that version for a canvas brief. Either form is what lets the PRD's `## Design reference` point at something that cannot move.
 
 ## Recon fan-out (spawn FIRST — always; the interview waits for it)
 
@@ -151,6 +154,10 @@ When the brief carried a `## Fidelity ledger`, the grill's closing summary ends 
 
 Every ledger row appears, including the rows that stayed `DS as-is`. A row missing from this block is a row the implementer will decide alone.
 
+**A container decision is one line per state, and it names its source row.** A decision about a container around ledger elements — a page shell, a panel, a section card, a list wrapper, the page surface — belongs in this block even where no ledger row holds the container itself. Its `State(s)` cell names the state the decision was read off; its `Override / note` cell says what every other state gets, including "no container" where the design draws none, and cites the ledger row it came from by that row's Element and States. A container line that claims every state without the other state's frame read is the defect this rule stops.
+
+**An added visual property is marked.** A decision that adds a visual property the ledger does not hold for that row — a shadow, a border, a background, a radius, a hover surface — writes it in the `Override / note` cell as `added — not in the design: <property>`. A silent addition is a defect: this marker is what the implementer and the judge read to tell a decided addition from a leak. A property the row's own cells already hold needs no marker, because it is a fact rather than an addition.
+
 ```
 ## Fidelity decisions
 
@@ -161,6 +168,8 @@ Every ledger row appears, including the rows that stayed `DS as-is`. A row missi
 | <element> | <states> | Build local | <what it replaces, and why the DS composite was rejected> |
 | <element> | <states> | DS change | gap filed: <backlog ref> — blocker |
 | <element> | <states> | Override the design | <what the ticket does instead> |
+| <container> | <the state it was read off> | <decision> | <what every other state gets> — from ledger row <element> / <states> |
+| <element> | <states> | Build local | <what it replaces> · added — not in the design: <property> |
 ```
 
 ## Done

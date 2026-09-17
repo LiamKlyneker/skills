@@ -221,7 +221,7 @@ discarded by design.
    written into those headings.
 4. **Reconstruct**: a `[TASK]` is done ⇔ a commit referencing it exists on the branch. **Board
    state is cache; commits are truth.** The reference lives in the commit *body* (normative form
-   in [`../../agents/spec-worker.md`](../../agents/spec-worker.md) mandate 5), so grep the full
+   in [`../../agents/spec-worker.md`](../../agents/spec-worker.md) mandate 6), so grep the full
    message, not the subject:
 
    ```bash
@@ -325,6 +325,10 @@ transition anything.
      the tax that keeps gates out of the adapter in the first place.
    - The **branch name** and the **work-item id** for the `Work-item: AB#<id>` commit trailer.
    - The **routing call** you announced in step 4.
+   - The **brief path** pinned in the `[SPEC]`'s `## Fidelity ledger` section — the `brief
+     <path>` field of its `Pinned at figma … · brief <path>` line — when the `[SPEC]` has that
+     section, so the worker can open the full ledger. That is the only fidelity input the prompt
+     carries — the mandates stay in the worker file.
 
    **Agent type — get this right before you fall back.** A plugin namespaces every component
    it provides, so the type is **`ado-workflow:spec-worker`** however the plugin was loaded:
@@ -346,6 +350,12 @@ transition anything.
 6. **Judge the report**: commit exists on branch (same grep as Setup step 4) · verify evidence is
    real (spot-check: re-run the L2 command if evidence looks thin) · deviations acceptable · the
    `[TASK]`'s acceptance criteria covered.
+
+   **One more check when the `[TASK]` carries a `## Fidelity ledger (in scope)` table.** The
+   report must contain the evidence line — "read ledger (N rows), N screenshots, N nodes" — and
+   the per-ledger-row self-audit table, with no row marked deviated and left without a reason. A
+   report missing either is judged **not done** and takes step 9's failure path, exactly like a
+   failed L2.
 7. **Gate** per `--gate` mode (see Invocation). On pause: present the report + your judgement,
    wait for the human.
 8. **Success path**: push the branch → move the `[TASK]` to the adapter's

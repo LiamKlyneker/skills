@@ -1,7 +1,9 @@
 # Fidelity ledger — the contract every fidelity consumer imports
 
-Shared by `to-task`, `work-on-task`, `to-prd`, `to-issues` and `work-on-issue`. Every fidelity
-rule lives here once, so those five skills cannot drift from each other.
+Shared by `to-task`, `work-on-task`, `to-prd`, `to-issues` and `work-on-issue` (prd-workflow),
+`to-spec`, `to-spec-tasks`, `work-on-spec` and `spec-worker.md` (ado-workflow), `figma-to-brief`
+and `prototype-to-spec` (figma-tools), and `deep-grill` (lk). Every fidelity rule lives here once,
+so those consumers cannot drift from each other.
 
 Each section is numbered. A skill that needs one cites it as "per `../_shared/fidelity-ledger.md`
 §N" rather than restating it.
@@ -31,6 +33,19 @@ value. Then append exactly two columns on the right:
 There is no paraphrase column. If you find yourself writing a shorter version of the Layout facts
 cell, stop — that rewrite is the single largest fidelity leak this pipeline has measured.
 
+**Figma briefs — the Source column and the pin line.** In a brief produced by `figma-to-brief` the
+**Source** cell holds `<fileKey>:<nodeId>`, and that node is the **element** node — never a frame,
+never a page root. A frame id in that cell is a broken row: send it back to the brief rather than
+reading the frame. A consumer that copies the rows also copies the brief's pin line, character for
+character:
+
+```
+Pinned at figma <fileKey> · node <nodeId> · version <versionId or YYYY-MM-DD> · brief <path>
+```
+
+The pin line is what lets a later session re-read the same design state. A row copied without it is
+unpinned, and an unpinned row is an opinion.
+
 ## §2 — Hard rules
 
 <hard-rules>
@@ -53,8 +68,9 @@ cell, stop — that rewrite is the single largest fidelity leak this pipeline ha
 5. **Never translate a ledger fact into a utility class.** The ledger says "124px fixed width,
    wraps to multiple lines"; the issue says "124px fixed width, wraps to multiple lines". It does
    not say `sui-min-w-[124px]`, `sui-w-[124px]`, or any other class. Translating a fact into a class
-   is the implementer's job, done against the prototype source slice. Where the prototype source
-   already holds the class, the slice carries it and the implementer copies it from there.
+   is the implementer's job, done against the source slice — a prototype line range or a Figma
+   element node. Where the prototype source already holds the class, the slice carries it and the
+   implementer copies it from there.
 6. **Never name a DS component the ledger did not name.** The only DS component names allowed
    anywhere in the body are the ones standing in the ledger's **DS candidate** column or named by
    the grill's `## Fidelity decisions`. Do not add `IconButton`, `LabelButton`, `Badge`, `Input` or
@@ -71,10 +87,10 @@ cell, stop — that rewrite is the single largest fidelity leak this pipeline ha
 9. **Repo recon is not a fact source.** A class name, prop or component read out of the current app
    — by you, by the grill's recon lanes, or from an earlier run's code — is **not** a layout fact
    and may not appear in the ledger section, in `## Changes`, or in any instruction. The brief's
-   ledger and the prototype source slice are the only layout-fact sources this issue has. This rule
-   governs layout facts only; engineering facts (hooks, services, query keys, paths) come from repo
-   recon as the PRD's `## Implementation Decisions` and the issue's `## Worker context` already
-   allow.
+   ledger and the source slice — a prototype line range or a Figma element node — are the only
+   layout-fact sources this issue has. This rule governs layout facts only; engineering facts
+   (hooks, services, query keys, paths) come from repo recon as the PRD's
+   `## Implementation Decisions` and the issue's `## Worker context` already allow.
 </hard-rules>
 
 A body that breaks any of the nine is not published. Fix it and re-read before asking to create.
@@ -108,6 +124,33 @@ as an image before implementing; humans open the state URLs on the preview inste
 implementer that has not read the PNGs is implementing from prose, which is the failure this
 pipeline exists to stop.
 
+**Figma brief variant — the screenshot stays on disk.** Where the brief pins Figma nodes, nothing is
+copied to the tracker: no attachment, no image tag, no url in the body. The block carries the PNG's
+path on disk and the pinned Figma address, and nothing else:
+
+### `<state-id>` — <state name>
+
+Screenshot: `.claude/briefs/<ticket>/screenshots/<state-id>.png`
+
+Pinned address: `https://www.figma.com/design/<fileKey>/?node-id=<nodeId>`.
+
+Scorecard element **<n> — <element name>** — <one line: what this screenshot is the target for>.
+
+The scorecard number never carries a `#`: on Azure DevOps `#<n>` autolinks work item n, so `#3` in a
+task body silently links an unrelated ticket instead of naming scorecard element 3.
+
+`figma-to-brief` saves one PNG per in-scope state at that path, on this machine. The brief, the spec
+and the tasks are written for the implementer, and the implementer has the repo. A human who wants
+to see the state opens the pinned Figma address.
+
+The implementer reads each PNG from that path with the Read tool, as an image, before it writes
+code — that is step 2 of the §6 evidence gate. A PNG the block names that is not on disk is a
+**deviation to report, and the run stops there**: regenerate the brief with `figma-to-brief` so the
+file exists, and never implement from the prose instead.
+
+One sentence above the Design reference blocks: "Read every screenshot below as an image before
+implementing; humans open the Figma node link instead."
+
 ## §4 — Source slices
 
 One block per row whose Decision is `local component` or `DS with overrides`, built from that row's
@@ -127,7 +170,47 @@ implementer reads layout facts out of it, never control logic or overlay code.
 A row whose Source column names no line range gets a block saying `source-only range missing — ask
 before implementing`, not a fetch line for the whole file.
 
+**Figma brief variant — the slice is a node read.** Where the row's **Source** column holds
+`<fileKey>:<nodeId>`, the slice is the **element node**, never the frame or page root: a frame read
+answers with the whole screen and buries the row's facts inside it.
+
+#### `<element>` — figma `<fileKey>:<nodeId>`
+
+```
+mcp__figma-dev-mode__get_design_context(fileKey: "<fileKey>", nodeId: "<nodeId>", clientLanguages: "typescript", clientFrameworks: "react")
+```
+
+and, where the row's **Tokens** cell names a bound variable, the second read on the same node:
+
+```
+mcp__figma-dev-mode__get_variable_defs(fileKey: "<fileKey>", nodeId: "<nodeId>", clientLanguages: "typescript", clientFrameworks: "react")
+```
+
+`mcp__figma-dev-mode__get_metadata` (the node's own id, name, type and size) and
+`mcp__figma-dev-mode__get_screenshot` (a render of that one node) are available on the same server
+when a row is ambiguous without them. They are extra reads, so name them in the block only when the
+row needs them.
+
+Take layout facts out of the result and nothing else: auto-layout direction, padding, gap, corner
+radius, size, icon name and icon size, text style, and the bound variables. Never prototype wiring,
+never control logic, never overlay positioning.
+
+One sentence above the blocks: "Run every node read below and read every result before writing any
+code — the node is where the nesting, the hit areas, the icon names and sizes and the bound
+variables live; the screenshots and this table cannot carry them."
+
+A row whose Source column names no node id gets a block saying `node id missing — ask before
+implementing`, not a read of the parent frame.
+
+**Budget.** Every node read counts against the budget the adapter's Figma source rows state; only
+`whoami` is free. Read each in-scope node once, and never walk a frame to find a node the ledger
+should have named.
+
 ## §5 — Verify rows
+
+**Vocabulary.** Where the ADO skills apply, "issue" in this section reads as "task" — the work-item
+type the project adapter (`<repo-root>/.claude/project/adapter.md`) names for a spec child. The
+rules are otherwise unchanged.
 
 **Where the rows come from.** Scorecard rows come from the file the adapter's `Fixed scorecard` row
 names, and only when the adapter registers that row and that file has a `## Scorecard` section for
@@ -140,6 +223,13 @@ otherwise omit it and say "no polish checklist for this ticket" in the final pri
 A derived row is a scorecard row in every later sense — hard rule 2 protects it, the implementer
 marks it `expected pass` / `cannot tell from code` like any other, and the judge scores it on the
 pair.
+
+**A derived row for an element that is not built.** Where the row's Decision or Instruction says
+the element is not built — `Not built`, `Override the design — not built`, or any equivalent — the
+pass condition is `absent from the app — <Element>`, followed by that row's Layout facts verbatim
+as the description of what must be absent. It is one checkbox like any other derived row, and the
+pair it is scored on passes when the app shows nothing where the design shows the element. The
+implementer marks it `expected pass` when nothing renders.
 
 **Screenshot pairs** — boot the app (`<adapter boot command>`), capture each state, and pair it
 against the prototype PNG embedded above. A row passes on the **pair**, never on a text claim that
@@ -178,6 +268,12 @@ No file is created or edited until all three of these are done, in this order:
    of the prototype component. They carry what neither the screenshots nor the table can: the click
    targets, the nesting, the icon names and sizes, the exact classes. Read layout facts out of them
    and nothing else — never copy control logic, state handling or overlay positioning code.
+
+**Figma brief variant.** Where the brief pins Figma nodes, step 2 reads every PNG the issue's
+screenshot blocks name, from its path on disk, as an image, and a PNG that is not on disk is the
+deviation to report. Step 3 runs every node read the issue names and reads each result, taking the
+hit areas, the nesting, the icon names and sizes and the bound variables out of them and nothing
+else. The one line then reads: "read ledger (N rows), N screenshots, N nodes."
 
 Then state, in **one line**, what was read: "read ledger (N rows), N screenshots, N source slices."
 

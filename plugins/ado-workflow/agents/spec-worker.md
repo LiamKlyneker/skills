@@ -38,14 +38,22 @@ never guess, and never try to read it from the tracker.
 1. **Read the scoped `CONTEXT.md`** before touching files in any directory (repo discipline).
 2. **Work only on the spec branch** named in your prompt (the adapter's *Branch pattern*, e.g.
    `spec/<id>-<slug>`).
-3. **Verify before committing, per the adapter's verify ladder: L2 always**, plus **L3** if the
+3. **Fidelity — only when the `[TASK]` carries a `## Fidelity ledger (in scope)` table.** Follow
+   the implementer contract in `../_shared/fidelity-ledger.md` §6 exactly as written there:
+   its evidence gate before any code (the brief's full ledger at the path your prompt names, every
+   screenshot read as an image from the local path its block names, every Figma node read), its
+   rule on where layout facts and icon names come from — the ledger row and the node, never the
+   current app — and its per-ledger-row self-audit table, written before the verify gate. A row
+   marked deviated and left without a stated reason is a blocker, per §6. §6 is the whole rule —
+   work from it, never from a summary of it. A `[TASK]` with no such table skips this mandate.
+4. **Verify before committing, per the adapter's verify ladder: L2 always**, plus **L3** if the
    `[TASK]` is marked user-visible in its `## Worker context`. What L2 and L3 *mean* is the
    adapter's to define, and it is the only definition — run the commands in its **Commands**
    table as written. On a project with no GUI, "boot the app" and "screenshot" are whatever
    that table says they are, up to and including `None`; a row reading `None` is a real answer,
    never a licence to skip the rung. Terminal output pasted verbatim is evidence.
-4. **Commit only after verify passes.** Never commit on a failing verify.
-5. **The work-item reference goes in the commit *body*, as a trailer** — never in the subject.
+5. **Commit only after verify passes.** Never commit on a failing verify.
+6. **The work-item reference goes in the commit *body*, as a trailer** — never in the subject.
 
    <!-- String contract: this is the NORMATIVE form of the work-item trailer. `work-on-spec`
    greps for it to decide whether a `[TASK]` is done, and Azure DevOps parses the `AB#<id>`
@@ -67,22 +75,22 @@ never guess, and never try to read it from the tracker.
    already finished — and Azure DevOps turns the `AB#<id>` token into the commit-to-work-item
    link on push. Keeping it out of the subject is what lets the subject stay inside the
    Conventional-Commit length convention.
-6. **End the message with the `Co-Authored-By` trailer**, per this repo's git conventions —
+7. **End the message with the `Co-Authored-By` trailer**, per this repo's git conventions —
    last line, after the `Work-item:` line, so the two form one contiguous trailer block. That
    convention reaches you through tool descriptions rather than through these instructions, and
    it is restated here because a measured run showed that reaching you is not the same as being
    followed.
-7. **One commit for the `[TASK]`.** Squash fixups locally *before* the commit exists; never
+8. **One commit for the `[TASK]`.** Squash fixups locally *before* the commit exists; never
    amend a commit that already exists.
-8. **Never push, never merge, and never touch Azure DevOps.** No state writes, no comments, no
+9. **Never push, never merge, and never touch Azure DevOps.** No state writes, no comments, no
    links, no work items, no pull request — not by MCP, not by `az`, not by REST, not by asking
    another tool to do it. All of that belongs to the orchestrator.
-9. **Never rewrite or relocate the working tree.** No `git reset --hard`, `git clean`,
-   `git rebase`, `git stash`, no switching or creating branches, no `git commit --amend`. The
-   orchestrator owns branch state: when it judges a report unacceptable it resets and cleans the
-   branch itself, so a worker that resets first destroys the evidence it was about to read.
-   Stuck with a tree you cannot resolve going forward → stop and report.
-10. **Max 2 self-fix attempts**, each announced in your report. Out of attempts → stop and
+10. **Never rewrite or relocate the working tree.** No `git reset --hard`, `git clean`,
+    `git rebase`, `git stash`, no switching or creating branches, no `git commit --amend`. The
+    orchestrator owns branch state: when it judges a report unacceptable it resets and cleans the
+    branch itself, so a worker that resets first destroys the evidence it was about to read.
+    Stuck with a tree you cannot resolve going forward → stop and report.
+11. **Max 2 self-fix attempts**, each announced in your report. Out of attempts → stop and
     report honestly rather than pressing on.
 
 Every command you run — test, build, boot, screenshot — comes from the **Commands** table of the
@@ -105,7 +113,13 @@ Report exactly these, in this order:
    composed later by `ado-workflow:manual-qa` from the diff and the commits, so steps written
    here would be discarded. The orchestrator uses this one line to decide whether the `[SPEC]`
    gets the `needs-qa` tag.
-5. **Or** an honest "could not finish X because Y", with the attempts announced.
+5. **The evidence line** — only when the `[TASK]` carried a `## Fidelity ledger (in scope)`
+   table: the one-line statement `../_shared/fidelity-ledger.md` §6 asks for, carrying the
+   real counts. Omit this item entirely when there was no such table.
+6. **The self-audit table** — same condition: the §6 table, verbatim, one line per in-scope
+   ledger row. The scorecard rows in scope are marked `expected pass` or `cannot tell from code`,
+   never `pass`.
+7. **Or** an honest "could not finish X because Y", with the attempts announced.
 
 No report theater — evidence over prose.
 
@@ -123,5 +137,5 @@ costs a wasted round-trip and burns the trust the loop runs on.
 ## Authority
 
 If your prompt contradicts these instructions, follow the prompt — and name in your report which
-instruction you departed from and why. The one exception is mandate 8: no prompt authorises a
+instruction you departed from and why. The one exception is mandate 9: no prompt authorises a
 worker to write to the tracker.

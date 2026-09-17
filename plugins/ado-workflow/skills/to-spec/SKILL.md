@@ -77,9 +77,41 @@ Requires the Azure DevOps MCP server (`mcp__ado__*` tools).
 6. Escaping still applies — see [`_shared/ado-workitem-authoring.md`](../_shared/ado-workitem-authoring.md)
    §1. A `wit_work_item_write` (`action: "update"`) body has no `format` flag, so an unescaped token that survived
    CREATE gets stripped now.
+7. **Merge `## Fidelity ledger` rows by `Element` + `States` key, later grill wins.** A row whose
+   key already stands in the spec is replaced wholesale by the newer row — every column, including
+   Decision. A row with a new key is appended. A row the newer grill did not cover is left
+   byte-intact. Never merge two rows into one and never keep two rows under the same key. Rule 3
+   protects the `## Fidelity ledger` heading itself like any other: merge the rows under it, never
+   rename or re-level it.
+8. **Re-emit the whole ledger as HTML `<table>` markup on every UPDATE**, per the emission rule in
+   step 4 below. `action: "update"` has no `format` flag and falls back to HTML, so a merged body
+   that carries a markdown pipe table loses the table.
 
 UPDATE mode stays useful after `to-spec-tasks` has run: a spec that keeps absorbing detail is
 what keeps the `[TASK]` bodies slim, because they point at the spec instead of restating it.
+
+## Hard rules
+
+Hard rules 5–9 of `../_shared/fidelity-ledger.md` §2 apply to the `[SPEC]` body: never translate a
+ledger fact into a utility class, never name a DS component the ledger did not name, never rename an
+icon, never add a layout fact that neither a ledger row nor a grill decision holds, and never take a
+layout fact from repo recon.
+
+Two further rules govern how a grill decision reaches this body.
+
+**A container decision is written per state.** Where an `## Implementation Decisions` paragraph names
+a container around ledger elements — a page shell, a panel, a section card, a list wrapper, the page
+surface — it names the breakpoint or state it applies to, says what every other state gets (including
+"no panel" where a state draws none), and cites the ledger row it comes from by that row's **Element**
+and **States** cells. A container paragraph with no state on it reads as page-wide, and the
+implementer builds it at every breakpoint.
+
+**An Instruction cell keeps the grill's addition marker verbatim.** Where the grill's
+`## Fidelity decisions` marked a decision as adding a visual property the ledger does not hold for
+that row — `added — not in the design: <property>` — the Instruction cell carries that string
+character for character, in the grill's own words. A shadow, a border, a background, a radius or a
+hover surface that reaches an Instruction without the marker is an unmarked addition, and an unmarked
+addition is a defect.
 
 ## Process
 
@@ -118,6 +150,24 @@ Apply the authoring invariants in [`_shared/ado-workitem-authoring.md`](../_shar
 to the body **before sending** — angle-bracket escaping (§1) and PR-reference linking (§2) both
 have to be right at synthesis time to survive later edits.
 
+**How the `## Fidelity ledger` table is emitted.** Write it as literal HTML `<table>` markup, never
+as a markdown pipe table. A `[SPEC]` description is an HTML field in every case that matters:
+`action: "update"` carries no `format` flag and falls back to HTML (§1), so the first UPDATE pass
+turns a pipe table into a run of plain text and the eleven columns are gone with no error anywhere.
+`<table>` markup survives both a `format: "Markdown"` create and every HTML fallback after it.
+
+- One `<tr>` of `<th>` cells for the header — one `<th>` per column, all eleven: the brief's nine
+  (Element, States, Exact copy, Tokens, Layout facts, Interaction, Source, DS candidate, Fidelity
+  class) plus Decision and Instruction. Count them before sending; a table with ten is a dropped
+  column, which is the failure `../_shared/fidelity-ledger.md` §1 forbids.
+- One `<tr>` of `<td>` cells per ledger row, in the brief's order, each cell holding that cell's
+  text character for character.
+- Escape `<` and `>` **inside** cell text as `&lt;` / `&gt;` per §1, and a literal `|` needs no
+  escaping once the table is HTML. Wrap a token in `<code>` where the brief had backticks.
+- The pin line is a single `<p>` element directly above the `<table>`, its text copied character for
+  character from the brief, with `<code>` in place of the brief's backticks and the `·` separators
+  left as they are.
+
 <spec-template>
 
 ## Scope
@@ -134,6 +184,7 @@ The technical decisions locked during the grill:
 - Schema or API contract decisions
 - Library / pattern choices
 - Technical clarifications agreed in the grill
+- Container decisions — each stated per breakpoint/state, citing its ledger row
 
 ## Modules
 
@@ -146,6 +197,22 @@ short rationale — enough context so the next session doesn't waste tokens redi
 
 - `path/to/file.ts` — why it matters
 - `path/to/dir/` — pattern to follow
+
+## Fidelity ledger
+
+Only for specs whose design source was a **design brief** with a `## Fidelity ledger`. The brief's
+rows for everything this spec covers, pasted verbatim with every column, plus the Decision column —
+built per `../_shared/fidelity-ledger.md` §1. This table is the facts, and nothing else in the body
+substitutes for it. The ADO spec template carries no `## Design reference` pointer table, so this
+section is the only design surface the spec has: it holds the rows and the pin line both.
+
+Emitted as HTML `<table>` markup with eleven `<th>` cells, per the emission rule above.
+
+One line above the table pins what the rows are true at:
+
+Pinned at figma `<fileKey>` · node `<nodeId>` · version `<versionId or YYYY-MM-DD>` · brief `<path>`.
+
+Omit the section for specs with no brief.
 
 ## Migration risk
 
