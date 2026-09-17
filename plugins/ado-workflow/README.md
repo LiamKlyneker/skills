@@ -33,6 +33,7 @@ membership and the board reasoning behind the title prefixes are not.
 ```
 plugins/ado-workflow/
   .claude-plugin/plugin.json
+  _shared -> ../../_shared             # symlink, see below
   skills/
     _shared -> ../../../_shared        # symlink, see below
     references/ado-mcp-setup.md        # plugin-wide, see below
@@ -43,9 +44,10 @@ plugins/ado-workflow/
   agents/spec-worker.md                # spawned by work-on-spec, per [TASK]
 ```
 
-Nothing sits at the plugin root. A directory holding both a root `SKILL.md`
-and a `skills/` subdirectory registers **twice** — once as a skill in its own
-right, once as a plugin skill — and pays always-on token cost for both.
+No component sits at the plugin root; the `_shared` link there is packaging,
+not a skill. A directory holding both a root `SKILL.md` and a `skills/`
+subdirectory registers **twice** — once as a skill in its own right, once as a
+plugin skill — and pays always-on token cost for both.
 
 ## Decisions
 
@@ -74,6 +76,16 @@ it, this one included — install dereferences the link into each cache copy.
 existing plugins. Every future skill's `../_shared/…` reference resolves with
 zero rewrites wherever the plugin is loaded from: live through the link under
 `--plugin-dir`, and inside the tree in an install cache.
+
+`agents/spec-worker.md` sits one level higher than a skill does, so its own
+`../_shared/…` references resolve at the plugin root rather than under
+`skills/`. That is what the second link, `plugins/ado-workflow/_shared ->
+../../_shared`, is for: same canonical target, same no-rewrite rule.
+
+`_shared/fidelity-ledger.md` is the shared fidelity contract both links reach.
+`to-spec`, `to-spec-tasks` and `work-on-spec` cite its numbered sections rather
+than restating them, and `spec-worker.md` follows §6. `figma-tools`'
+`figma-to-brief` writes the ledger those sections consume.
 
 ### Plugin-wide references live at `skills/references/`
 

@@ -12,7 +12,7 @@ canvas moves under the spec written from it, so that spec is filed and frozen; a
 prototype at a commit SHA is already frozen, so what comes out is a disposable brief
 and the only persisted copy is the PRD.
 
-Four skills:
+Five skills:
 
 - **`figma-to-spec`** — one Figma **page** node → a page-implementation spec plus
   DS gap tickets. Runs in a **consumer** repo. Fans every region out to
@@ -32,6 +32,19 @@ Four skills:
   see (unbound raw hex above all). A shortlist of **zero** is a complete run. Its
   existence source is a **token list** assembled from the adapter's *Token
   pipeline* row, which a catalog contributes to where one is registered.
+- **`figma-to-brief`** — one Figma node plus one ticket → a **design brief** at
+  `.claude/briefs/<ticket>.md`, with one PNG per in-scope state saved beside it.
+  Runs in a **consumer** repo, reads the canvas once through the local
+  `figma-dev-mode` server at a pinned file version, filters it to the ticket,
+  renders the ticket's overrides on top, and resolves every element and token
+  against the catalog into a **per-element fidelity ledger**. **Same brief slot as
+  `prototype-to-spec`, a different source**: a canvas instead of a committed
+  prototype spec. It asks nothing and files nothing — every judgement becomes a
+  row, and `deep-grill` is where a human answers it. No subagents: a brief covers
+  one ticket's states, and a region agent's JSON would have to be re-flattened into
+  ledger rows anyway. Its Figma seat, call budget, pin rule and screenshot export
+  come from the adapter's `## Design system` → `### Figma source` rows, and an
+  absent sub-section is a STOP.
 - **`prototype-to-spec`** — one preview URL plus one ticket → a **design brief** at
   `.claude/briefs/<ticket>.md`. Runs in a **consumer** repo, reads the designers'
   committed spec at a pinned SHA, filters it to the ticket, renders the ticket's
@@ -92,6 +105,8 @@ plugins/figma-tools/
       references/regression/                       # fixture format + assertion style
     ds-catalog/
       scripts/generate_catalog.py                  # the enumerated half; no skill-specific input
+    figma-to-brief/
+      references/brief-template.md                 # the brief's fixed headings
     prototype-to-spec/
   agents/figma-region-extractor.md                 # figma-to-spec's, per region
   agents/figma-variant-extractor.md                # figma-component-to-spec's, per variant frame
@@ -101,9 +116,9 @@ plugins/figma-tools/
 relative path, `../figma-to-spec/references/catalog-contract.md` — as
 `figma-component-to-spec` also reaches `resolution-rules.md`. All three skills
 ship in one plugin, so those paths resolve identically in this working tree and
-in an install cache copy — and so does `prototype-to-spec`, which reaches the same
-contract the same way — and they need no symlink, because nothing about them
-decides whether a skill loads. `figma-component-to-spec` addresses **its own**
+in an install cache copy — and so do `prototype-to-spec` and `figma-to-brief`,
+which reach the same contract the same way — and they need no symlink, because
+nothing about them decides whether a skill loads. `figma-component-to-spec` addresses **its own**
 agent at the plugin root instead — `../../agents/figma-variant-extractor.md` from
 `SKILL.md`, `../../../` from its `references/`, and `../../../../` from
 `references/regression/` — the same way `prd-workflow`'s `work-on-prd` addresses

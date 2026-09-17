@@ -18,6 +18,19 @@ marketplace or loaded with `claude --plugin-dir`: `/ado-workflow:to-spec-tasks`,
 `skills/` directory — the pre-plugin route — gives the unprefixed `/to-spec-tasks`.
 Unprefixed names below are shorthand for whichever form your route provides.
 
+Hard rules 5–9 of `../_shared/fidelity-ledger.md` §2 apply to every `[TASK]` body this skill
+writes: never translate a ledger fact into a utility class, never name a DS component the ledger
+did not name, never rename an icon, never add a layout fact that neither a ledger row nor a grill
+decision holds, and never take a layout fact from repo recon.
+
+**`#` links a work item; `!` links a pull request.** They are separate ID namespaces on this
+tracker, so `#<n>` before anything that is not a work-item id silently links an unrelated ticket.
+Write a PR as `!<n>` or as the full markdown link in
+[`_shared/ado-workitem-authoring.md`](../_shared/ado-workitem-authoring.md) §2, and never put `#`
+in front of a Figma node id, a scorecard element number, a state id or a count.
+`../_shared/fidelity-ledger.md` §3 already writes its screenshot block this way — copy that block
+as written.
+
 ## Project facts
 
 Every project-specific value comes from the **project adapter** at
@@ -87,6 +100,16 @@ report on the current tree.
 The spec carries no splitting advice to read — it stopped carrying any, because a spec always
 produces at least one `[TASK]` and the cut is decided here against real code.
 
+Read the spec's `## Fidelity ledger` section if present. Every slice whose `## Worker context`
+will carry **User-visible: y** takes the rows for its own elements into its `## Fidelity ledger
+(in scope)` section, plus the screenshot blocks and node blocks those rows need (see the
+template). A row belongs to exactly one slice; a row two slices both touch is the signal the seam
+is wrong, not a licence to duplicate it.
+
+Read the brief named in the spec's pin line as well. The screenshot blocks carry the PNG paths
+`../_shared/fidelity-ledger.md` §3 names, so confirm each of those PNGs is on disk before the
+task cites it.
+
 ### 4. Decide where to cut
 
 Apply [`_shared/spec-splitting-seams.md`](../_shared/spec-splitting-seams.md) — the normative
@@ -152,12 +175,18 @@ spec → parent → siblings to find a spec's tasks at all, and filters them by 
 line or that `Related` link. A `[TASK]` parented to the spec, or created without either
 back-reference, is invisible to every downstream skill.
 
+A `wit_work_item_write` (`action: "update"`) pass carries no `format` flag and falls back to HTML
+(§1), which is why the `## Fidelity ledger (in scope)` table is emitted as HTML `<table>` markup: it
+survives a pass that a markdown pipe table does not. Escape `<` and `>` inside every ledger cell per
+§1 before the create, not after — an update pass will not fix what the create already lost.
+
 #### The `[TASK]` body template
 
 <!-- String contract: this template is the NORMATIVE copy of the `[TASK]` body contract. It is
 the sole writer of the `Spec:` line and of the `## External steps`, `## What to build`,
-`## Worker context`, `## QA notes`, `## Acceptance criteria` and `## Blocked by` headings, plus
-the two "None…" sentinel phrases below. `../_shared/ado-eligibility.md` parses the `Spec:` line,
+`## Worker context`, `## QA notes`, `## Fidelity ledger (in scope)`, `## Acceptance criteria` and
+`## Blocked by` headings, plus the two "None…" sentinel phrases below.
+`../_shared/ado-eligibility.md` parses the `Spec:` line,
 `## External steps` and `## Blocked by` verbatim; `next-task-to-implement` reads them through
 it; `work-on-spec` consumes `## Worker context` and `## QA notes` when it briefs a `spec-worker`.
 Reword a heading or a sentinel here and you must change it in all three. -->
@@ -180,6 +209,27 @@ Or "None — fully implementable from the editor." <!-- parsed verbatim — do n
 A concise description of this vertical slice. End-to-end behavior, not layer-by-layer
 implementation.
 
+## Fidelity ledger (in scope)
+
+For **User-visible: y** slices whose `[SPEC]` carries a `## Fidelity ledger`. The spec's rows for
+this slice's elements, pasted verbatim with every column plus Decision and Instruction, per
+`../_shared/fidelity-ledger.md` §1, emitted as HTML `<table>` markup with eleven `<th>` cells —
+never a markdown pipe table, which the `update` pass in step 6 destroys. The pin line goes in a
+`<p>` directly above the table, copied character for character from the spec. The ADO `[TASK]`
+template carries no `## Design reference` pointer table, so this section is the slice's whole
+design surface.
+
+Then, under the table:
+
+- The sentence from `../_shared/fidelity-ledger.md` §3 above the screenshot blocks, then one
+  screenshot block per in-scope state, copied from §3 as written — the local PNG path, the pinned
+  Figma node link and the `Scorecard element` line.
+- The sentence from `../_shared/fidelity-ledger.md` §4 above the node blocks, then one node block
+  per row whose Decision is not `DS as-is`, per §4 — the `get_design_context` read on that element
+  node, plus `get_variable_defs` where the row's Tokens cell names a bound variable.
+
+Omit the whole section for a slice with no ledger rows.
+
 ## Worker context
 
 Deliberately slim, and **slice-local only** — facts that belong to this slice and cannot drift:
@@ -187,6 +237,9 @@ Deliberately slim, and **slice-local only** — facts that belong to this slice 
 - **Verify**: the exact commands, taken from the adapter's `## Commands` table (L2 test command;
   L3 boot/screenshot command when user-visible).
 - **User-visible**: y/n — y means the verify ladder's L3 applies.
+
+Whatever prior art the `[SPEC]` points this slice at is an **engineering** source only; never a
+layout-fact source (`../_shared/fidelity-ledger.md` §2 rule 9).
 
 ## QA notes
 
@@ -199,6 +252,15 @@ composes the pass from the branch later and lets the diff overrule them — so w
 
 - [ ] <criterion>
 - [ ] <criterion>
+- [ ] (User-visible: y tasks) One checkbox per scorecard row and per polish-checklist item in this
+  slice's scope, each carrying its pass condition verbatim, per `../_shared/fidelity-ledger.md`
+  §5 — and where the file the adapter's `Fixed scorecard` row names has no `## Scorecard` for this
+  ticket, or the adapter registers no such row, the derived rows that section specifies, never
+  another ticket's scorecard. Where there is no polish checklist for this ticket, say so in the
+  final print rather than writing one.
+- [ ] (User-visible: y tasks) A row whose Decision or Instruction says the element is not built
+  takes the `absent from the app` form, per `../_shared/fidelity-ledger.md` §5:
+  `pair <state-id> vs app — absent from the app — <Element> — <the row's Layout facts, verbatim>`
 
 ## Blocked by
 
@@ -230,7 +292,7 @@ Done — <k> tickets created.
 
 The hierarchy verification in §6 is **not** this print and is not trimmed by it — that is spoken as each child lands, and a `[TASK]` that failed to parent is an escalation that gets its own line here, above the command.
 
-The handoff is `work-on-spec`, the orchestrated loop over the whole `[SPEC]` — the same shape `to-issues` → `work-on-prd` has on the GitHub side. `next-task-to-implement` is still the right command when a human wants one ticket picked rather than the run driven, but it is theirs to reach for, not the default this skill points at.
+The handoff is `work-on-spec`, the orchestrated loop over the whole `[SPEC]` — the same shape `to-issues` → `work-on-prd` has on the GitHub side. `/ado-workflow:next-task-to-implement` is still the right command when a human wants one ticket picked rather than the run driven, but it is theirs to reach for, not the default this skill points at.
 
 ## Stops here
 

@@ -38,9 +38,10 @@ plugins/prd-workflow/
   agents/prd-worker.md
 ```
 
-Nothing sits at the plugin root. A directory holding both a root `SKILL.md`
-and a `skills/` subdirectory registers **twice** — once as a skill in its own
-right, once as a plugin skill — and pays always-on token cost for both.
+No component sits at the plugin root; the `_shared` link there is packaging,
+not a skill. A directory holding both a root `SKILL.md` and a `skills/`
+subdirectory registers **twice** — once as a skill in its own right, once as a
+plugin skill — and pays always-on token cost for both.
 
 ## Decisions
 

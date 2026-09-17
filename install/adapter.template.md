@@ -162,6 +162,32 @@ does not error — it produces a spec whose edits land in the wrong file:
   A spec that adds a variant value has to say whether a story edit is part of the change, and
   this row is the only thing that can tell it.
 
+### Figma source
+
+Read by `figma-to-brief` and by `_shared/fidelity-ledger.md` §4. **The whole
+sub-section is optional, and absent is a finished answer**: it means this project's designers
+hand over no design canvas, and `figma-to-brief` stops on being invoked rather than degrading.
+Nothing warns about it, and no other skill notices it is gone.
+
+It describes what a canvas costs to read from this machine, and what a pinned address looks
+like here. A canvas moves under anything written from it, so every artifact downstream is
+pinned to a file key, a node id and a version rather than to a link — a link is not a fact.
+And the reads are **metered**, which is the half nothing else can tell you: a seat is an
+account fact rather than a repo one, and an exhausted quota fails mid-run looking exactly like
+a broken file.
+
+| Row | Meaning |
+|---|---|
+| `Account and seat:` | `<the design-tool account, the organisation that owns the design files, and the seat tier that organisation grants>` — what a `whoami` call must report before any other read. **Anything else is a STOP, not a degraded run**: one login routinely belongs to several plans at once, and a file is reachable on whichever plan owns it rather than on the best seat the account holds, so the wrong plan means a budget that does not survive a single run |
+| `Servers:` | which design MCP servers this project has, named, **and what each one may be asked for**. A local dev-mode server reads the file open in the desktop app on this machine; a remote server is the only source of per-property variable bindings. Name the ones that exist and say plainly which are absent — a skill that plans a step around a tool this project does not have fails at the call rather than at the plan |
+| `URL → pin:` | how a design URL resolves to a **file key**, a **node id** and a **version**, written as a pattern against the real host. Say what each captured segment becomes **including any re-spelling** — a node id punctuated one way in a URL and another way in every tool call is the commonest silent mismatch here — and say where the version is read from and what is pinned in its place when that read is unavailable |
+| `Screenshots:` | the export call that puts one image per state on disk, and the path it lands at, e.g. `<briefs dir>/<ticket>/screenshots/<state-id>.png`. **Say whether the export spends the call budget**: an export over the tool server and an export over the design tool's REST API are metered differently, and only one of the two returns a file rather than an image into the session. Say also what a tracker item may carry — a local path plus a node link, never a rendered export URL, which is short-lived and not public |
+| `Budget:` | the **daily** and the **per-minute** call allowance the seat grants, and which calls are free. **This row is the only place those numbers live** — a skill that hardcodes them is a bug. Every read counts, and the allowance is shared with every other session on this machine, so a run that exhausts it takes the rest of the day's access with it |
+
+Every row is required once the sub-section exists: there is no partial answer here, because each
+one is a different way for a run to fail at its first call. A project whose designers use some
+other canvas tool leaves the whole sub-section out rather than filling it approximately.
+
 ### Prototype source
 
 Read by `prototype-to-spec` and by nothing else. **The whole sub-section is optional, and
@@ -245,12 +271,14 @@ list them below so the check stays quiet about them and loud about everything el
 
 `<n>`, `<id>` and `<slug>` are branch-pattern notation: a filled `Branch pattern:` value
 is itself a pattern (`feat/<slug>` on GitHub, `spec/<id>-<slug>` on Azure DevOps), so all
-three survive filling by design.
+three survive filling by design. `<ticket>`, `<state-id>`, `<path>` and `<step-id>` are
+screenshot-path notation on the same terms: a filled `Screenshots:` row — in either design-source
+sub-section — states a path *rule*, not one file, so all four survive filling too.
 
 **Delete this whole comment when you fill your copy.** doctor reads the exemption list
 from the template, never from your adapter, so a copy of it here does nothing except
 carry `<token>` into your file — where the placeholder check then reports it, forever.
 
-doctor:not-a-placeholder <repo-root> <n> <id> <slug>
+doctor:not-a-placeholder <repo-root> <n> <id> <slug> <ticket> <state-id> <path> <step-id>
 -->
 
