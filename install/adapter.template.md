@@ -205,9 +205,14 @@ files a `[DESIGN-SPEC]` the way a Figma canvas does.
 |---|---|
 | `Repo:` | `<owner>/<name>` of the prototype repo — routinely not this repo, and routinely not the design-system repo either |
 | `URL → path:` | how a preview URL resolves to a **ref** and a **path in that repo**, written as a pattern against the real preview host. Say what each captured segment becomes, including any casing rule — a host segment is lowercased and a path segment often is not, and getting it wrong returns a 404 that reads like a missing spec |
+| `Path:` | **an alternative to the two rows above, never an addition**: the prototype directory in this working tree, repo-relative or absolute. Where it is present, `Repo:` and `URL → path:` are not read and no preview URL is resolved — the prototype is read from disk, and the brief pins to the directory plus the commit its repository is on (or `working tree`, where it is in none) |
 | `Spec files:` | the files that together form the spec at that path, named exactly — e.g. a typed spec module, a handoff document, a types file |
 | `Schema:` | pointer to the spec's **shape**: a type file in the prototype repo, or a reference on this side. This is the row that lets a second prototype shape exist later without touching the skill |
 | `Screenshots:` | the path rule for a step's screenshot, relative to the resolved path — e.g. `<path>/spec/screenshots/<step-id>.png`. Screenshots are **linked at the pinned SHA, never embedded** |
+
+**`Repo:` + `URL → path:` and `Path:` are two shapes of one answer** — a prototype reached over
+the network at a pinned commit, or one already in this tree. Fill one or the other. The three
+rows below them are read the same way whichever it is.
 
 Only one prototype shape is implemented: a typed spec module plus a handoff document. The
 `Schema:` row is what makes a second one possible without a skill edit — it is not a reason to
