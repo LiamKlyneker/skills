@@ -13,25 +13,69 @@ Each section is numbered. A skill that needs one cites it as "per `../_shared/fi
 The brief's ledger rows for this issue's elements, **pasted verbatim**, plus the grill's decision
 and the instruction it produces.
 
-**How to build this table — mechanically, not editorially.** Copy the markdown rows out of the
-brief's `## Fidelity ledger` for the in-scope elements, character for character, keeping **every
+**The rows are extracted by a command and pasted from its output. They are never retyped.** A row
+re-emitted from context comes back shorter — a truncated Layout facts cell, a reworded Interaction
+cell, a Fidelity class stripped of its tail — and that shortening is the single largest fidelity
+leak this pipeline has measured. So print the rows, paste the printed bytes, and edit them in
+exactly one place: the right-hand end.
+
+**1 — Print the in-scope rows**, selecting them by the Element cell:
+
+```
+sed -n '/^## Fidelity ledger/,/^## /p' <brief-path> \
+  | awk -F'|' 'NF>2 && $2 ~ /^[[:space:]]*(<element>|<element>|…)[[:space:]]*$/'
+```
+
+One alternative per in-scope element, spelled as the brief's Element cell spells it. Where an
+element name carries regex punctuation, `grep -F` on a distinctive substring of each row does the
+same job. Print every in-scope row in one command and read its output before pasting: a command
+that prints fewer rows than the issue has elements in scope has a selector that does not match,
+not a brief that is missing a row.
+
+Where the rows' source is a tracker body rather than a file on disk — a spec's table, a parent
+work item's — write that body to a file first and run the same command against it. The source
+changes; the transport does not.
+
+**2 — Paste that output** into the issue under the header row, byte for byte, keeping **every
 column the brief has** — Element, States, Exact copy, Tokens, Layout facts, Interaction, Source, DS
-candidate, Fidelity class, and any column the brief adds later. Do not drop a column, do not merge
-two columns, do not shorten a cell, do not reflow prose, do not "clean up" a raw token or a px
-value. Then append exactly two columns on the right:
+candidate, Fidelity class, and any column the brief adds later. The header row and its separator
+are copied from the brief the same way, with the two new headers appended.
+
+**3 — Append two cells to each pasted line, and change nothing else.** Each printed line ends with
+the brief's closing `|`, so the whole edit is ` <Decision> | <Instruction> |` added to its end:
 
 | …brief's columns, verbatim… | Decision | Instruction |
 | --------------------------- | -------- | ----------- |
 
-- **Decision** — the class the grill settled in `## Fidelity decisions`, in the brief's vocabulary:
-  `DS as-is` / `DS with overrides` / `local component` / `DS change`. Where the grill named an
-  override, it goes here in the grill's own words.
+- **Decision** — the class the grill settled in `## Fidelity decisions`. The cell **opens with
+  exactly one of** `DS as-is` / `DS with overrides` / `local component` / `DS change` — that
+  string, not a synonym, optionally in backticks. Where the grill named an override, ` — ` and the
+  grill's own words follow it. `Build local`, `Local`, `Use the DS component` and every other
+  paraphrase is a defect, and so is a cell that opens with the override words instead of the class.
 - **Instruction** — imperative, and built only out of the row's own cells and that decision: "build
   local `<X>`", "use `<DS candidate>` + override `<the named override>`", "use as-is, no overrides".
   A `DS change` instruction names the DS repo issue it depends on.
 
+**4 — Check the paste before publishing.** With N as the brief's column count, each pasted row cut
+to its first N+1 pipe-separated fields is byte-equal to the row the command printed, cut the same
+way. Run the step-1 command a second time against the written body and diff the two:
+
+```
+N=$(awk -F'|' '/^\| *Element *\|/ {print NF-2; exit}' <brief-path>)
+diff <(<step 1, against the brief>    | cut -d'|' -f1-$((N+1))) \
+     <(<step 1, against the body>     | cut -d'|' -f1-$((N+1)))
+```
+
+An empty diff is the pass. A row that differs is a defect: replace it with the printed bytes rather
+than editing it towards them.
+
+**A consumer that emits another markup.** Where the table is HTML rather than markdown pipes, the
+conversion is mechanical and per cell — each cell of a printed line becomes one `<td>` holding that
+cell's text character for character, with the escaping that consumer's section states. The check in
+step 4 runs on the printed lines, before the conversion, and nothing is retyped at either step.
+
 There is no paraphrase column. If you find yourself writing a shorter version of the Layout facts
-cell, stop — that rewrite is the single largest fidelity leak this pipeline has measured.
+cell, stop — that is the rewrite the extraction command exists to prevent.
 
 **Figma briefs — the Source column and the pin line.** In a brief produced by `figma-to-brief` the
 **Source** cell holds `<fileKey>:<nodeId>`, and that node is the **element** node — never a frame,

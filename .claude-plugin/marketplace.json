@@ -9,7 +9,7 @@
     {
       "name": "prd-workflow",
       "description": "PRD-to-merge workflow for Claude Code: turn context into a PRD, slice it into tracer-bullet issues, pick the next one, run the whole thing end-to-end with a per-issue worker subagent, and triage the QA findings that come back into cold-runnable issues",
-      "version": "1.11.1",
+      "version": "1.12.0",
       "keywords": [
         "prd",
         "github-issues",
@@ -25,7 +25,7 @@
     {
       "name": "figma-tools",
       "description": "Design-to-spec extraction for Claude Code, from two design sources: a Figma page or component set, and a designer-authored code prototype. Turns a Figma page into a gap spec in a repo that consumes a design system, a Figma component set into a component spec in the repo that is one, and a prototype preview URL into a per-ticket design brief — each resolved against a per-project design-system catalog that its ds-catalog skill generates and annotates, backed by the figma-region-extractor and figma-variant-extractor subagents",
-      "version": "5.2.0",
+      "version": "5.3.0",
       "keywords": [
         "figma",
         "design-to-code",
@@ -40,7 +40,7 @@
     {
       "name": "ado-workflow",
       "description": "The PRD-to-merge workflow brought to Azure DevOps for Claude Code: publish a spec, slice it into tasks, pick the next one, and run the whole thing end-to-end with a per-task worker subagent",
-      "version": "1.8.0",
+      "version": "1.9.0",
       "keywords": [
         "azure-devops",
         "ado",
@@ -55,7 +55,7 @@
     {
       "name": "lk",
       "description": "Liam Klyneker's personal Claude Code skills: the grills that interview a plan until every branch is resolved, plus pinpoint, scoped-context and his writing voice — the ones that talk to the user and the codebase rather than to a tracker",
-      "version": "1.11.0",
+      "version": "1.12.0",
       "keywords": [
         "personal",
         "writing-voice",
@@ -68,7 +68,7 @@
     {
       "name": "install-skills",
       "description": "Bootstrap a project's `.claude/project/adapter.md` for a skill bundle, and diagnose an install that has rotted — the two jobs no distribution mechanism can do for you. Start here: the PRD and ADO workflows cannot run without the adapter it writes",
-      "version": "1.12.0",
+      "version": "1.13.0",
       "keywords": [
         "bootstrap",
         "adapter",

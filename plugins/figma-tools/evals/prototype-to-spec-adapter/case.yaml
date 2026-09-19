@@ -1,0 +1,59 @@
+schema_version: "1.0"
+name: prototype-to-spec-adapter
+description: >
+  The same prototype under the variant adapter, which names four handoff files the skill would
+  never reach for on its own. A run that reads `deck-manifest.ts`, `PLACARD.md`, `shapes.ts`
+  and `GUIDE.md` read the project; a run that reads `spec-data.ts` and `HANDOFF.md` read its
+  own defaults.
+tags: [prototype-to-spec]
+runs: 1
+context:
+  scaffold_script: ./scaffold.sh
+execution:
+  prompt: |
+    The working directory holds a pnpm workspace. The project you are working in is the
+    Vitrine consumer app at `apps/consumer/`: its adapter is
+    `apps/consumer/.claude/project/adapter.md`, and that adapter is the one this run reads.
+
+    `ticket.md` in the working directory is the ticket the brief is for.
+
+    Run this, and nothing else:
+
+    /figma-tools:prototype-to-spec ticket.md --out ./brief.md
+
+    Follow the skill exactly and stop where it stops.
+  max_turns: 150
+  timeout_seconds: 2700
+  model: claude-sonnet-5
+  allowed_tools: [Read, Glob, Grep, Skill, Bash, Write]
+graders:
+  - type: regex
+    name: brief-written
+    target: { source: file, path: brief.md }
+    pattern: "## Fidelity ledger"
+  - type: regex
+    name: read-the-adapters-spec-module
+    target: trace
+    pattern: '"file_path":"[^"]*deck-manifest\.ts"'
+  - type: regex
+    name: read-the-adapters-handoff
+    target: trace
+    pattern: '"file_path":"[^"]*PLACARD\.md"'
+  - type: regex
+    name: read-the-adapters-types-file
+    target: trace
+    pattern: '"file_path":"[^"]*shapes\.ts"'
+  - type: regex
+    name: read-the-adapters-readme
+    target: trace
+    pattern: '"file_path":"[^"]*GUIDE\.md"'
+  - type: regex
+    name: did-not-read-its-default-spec-module
+    target: trace
+    pattern: '"file_path":"[^"]*spec-data\.ts"'
+    match: not_contains
+  - type: regex
+    name: did-not-read-its-default-handoff
+    target: trace
+    pattern: '"file_path":"[^"]*HANDOFF\.md"'
+    match: not_contains

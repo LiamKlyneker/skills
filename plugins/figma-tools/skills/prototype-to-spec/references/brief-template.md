@@ -117,9 +117,10 @@ row, never two.
   element that owns the `onClick` — "the whole value area opens the editor", not "clickable" —
   plus hover, focus and keyboard. `—` only where the element is genuinely inert. A hotspot renders
   in no screenshot; if it is not in this column it does not reach the implementer.
-- **Every icon in `Layout facts` carries a name, a size and a colour token; every text run carries
-  a type token and a colour token.** A row missing either is incomplete, and both are read off the
-  source slice the `Source` column cites.
+- **Every icon in `Layout facts` carries its design-system export name, a size and a colour
+  token; every text run carries a type token and a colour token.** A row missing either is
+  incomplete, and both are read off the source slice the `Source` column cites. The prototype's
+  own glyph name is a description, never the name — resolve it through the spec's icon table.
 - **One row set per `components.new[].states` entry in scope**, not one per step screenshot. A
   state with no PNG is written from its `spec/component-states/<component>/<state>/page.tsx` plus
   the component source branch, and its `States` cell reads `source-only, no screenshot`. Per-state
