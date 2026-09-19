@@ -1,0 +1,280 @@
+schema_version: "1.0"
+name: work-on-task-self-audit-skipped
+description: >
+  The `work-on-task` implementer hop against the Vitrine fixture's frozen `to-task` issue. The
+  skill's own prose names the leak: "Run 1 failed here. The implementer worked from the issue
+  prose plus the screenshots, never opened the brief or the prototype source, and never checked
+  its own output against the ledger." That is the self-audit skipped, and it is what this case's
+  graders score — not just that code exists, but that each `DS with overrides` / `local component`
+  ledger fact actually landed in the two new files, that the DS icon names survived rather than
+  being renamed to their conventional equivalents, and that the printed self-audit table names
+  every one of the ledger's 9 in-scope rows rather than a plausible-sounding subset.
+  There is no tracker and no network here, so the case hands `work-on-task` the frozen issue as a
+  local file path — the shape `to-task --out` writes — instead of an issue URL.
+  One Sonnet 5 run of this case measured at USD 1.79.
+tags: [work-on-task]
+runs: 1
+context:
+  scaffold_script: ./scaffold.sh
+execution:
+  prompt: |
+    The working directory holds a pnpm workspace, already a git repository with one commit
+    (`fixture: scaffold snapshot`) so you have something to commit your own change onto. The
+    project you are working in is the Vitrine consumer app at `apps/consumer/`: its adapter is
+    `apps/consumer/.claude/project/adapter.md`, and that adapter — not any other project's
+    commands the skill's own prose may mention — is what names this app's verify ladder
+    (`pnpm test` and `pnpm ts-lint`, both run from `apps/consumer/`) and its repo discipline. This
+    workspace has no `yarn.lock` and no biome config; where the skill's own text names tooling
+    from a different project, defer to the adapter instead.
+
+    A run's read scope stops at the plugin directory, and the skill reaches its shared fidelity
+    contract through a symlink that points out of it. So wherever the skill says
+    `../_shared/fidelity-ledger.md`, read `fidelity-ledger.md` in this working directory — it is
+    the same file, placed here for that reason.
+
+    There is no network and no tracker credential here, so the issue this run implements is not
+    on GitHub — it is the file `./issue.md`, in exactly the shape `to-task --out` writes. Pass
+    that path as the skill's `<issue>` argument.
+
+    The issue's screenshot and source-slice evidence is pinned to a commit of
+    `LiamKlyneker/skills-fixture` that this sandbox cannot fetch over the network — but every one
+    of those files is already checked out locally, because that pinned commit is this same
+    working directory's `./prototype`. Wherever the issue gives a
+    `gh api "repos/LiamKlyneker/skills-fixture/contents/<path>?ref=<sha>" ...` line to fetch a
+    screenshot, the same PNG is already sitting at `<path>` relative to this working directory
+    (for example the `uc1-s2` fetch line's PNG is at `prototype/spec/screenshots/uc1-s2.png`) —
+    read it directly with the Read tool, never attempt the fetch. Wherever the issue gives a
+    `gh api ... | base64 -d | sed -n '<range>'` line to read a source slice, run
+    `sed -n '<range>' <path>` against that same local path instead of the network fetch. Do not
+    run `gh` at all; there is no credential for it here.
+
+    Follow `/prd-workflow:work-on-task` exactly otherwise: the evidence gate before any code, the
+    per-ledger-row self-audit before the verify gate, one commit. When you commit, stage only what
+    you actually changed under `apps/consumer/` — `/issue.md`, `/fidelity-ledger.md` and
+    `apps/consumer/capture/brief.md` are this case's scaffolding, not app source, and are already
+    gitignored.
+
+    Run this, and nothing else:
+
+    /prd-workflow:work-on-task ./issue.md
+  max_turns: 200
+  timeout_seconds: 3600
+  model: claude-sonnet-5
+  allowed_tools: [Read, Glob, Grep, Skill, Bash, Write, Edit]
+graders:
+  # ---- Evidence gate actually ran (free) ----
+  # A run may `cd prototype` first and pass a bare `components/…` path, so the pattern
+  # matches on the source-slice filenames rather than requiring the `prototype/` prefix
+  # in the same string.
+  - type: tool_used
+    name: read-source-slices-locally
+    tool: Bash
+    input_match: 'sed -n .*(shelf-picker-popover|shelf-row)\.tsx'
+    min: 1
+
+  - type: tool_used
+    name: read-a-screenshot-as-an-image
+    tool: Read
+    input_match: 'prototype/spec/(screenshots|component-states)/.*\.png'
+    min: 1
+
+  # ---- The two new files exist, the old one is gone (free) ----
+  - type: file_exists
+    name: shelf-picker-popover-written
+    path: apps/consumer/src/shelf-keeper/shelf-picker-popover.tsx
+
+  - type: file_exists
+    name: shelf-row-written
+    path: apps/consumer/src/shelf-keeper/shelf-row.tsx
+
+  - type: file_exists
+    name: old-combobox-file-removed
+    path: apps/consumer/src/shelf-keeper/save-to-shelf-combobox.tsx
+    exists: false
+
+  # ---- Ledger facts the Decision/Instruction cells hand over as literal classes land in
+  #      the code verbatim — not re-derived, not approximated (free) ----
+  - type: regex
+    name: panel-width-override
+    target: { source: file, path: apps/consumer/src/shelf-keeper/shelf-picker-popover.tsx }
+    pattern: 'w-\[250px\]'
+
+  - type: regex
+    name: panel-align-end
+    target: { source: file, path: apps/consumer/src/shelf-keeper/shelf-picker-popover.tsx }
+    pattern: 'align="end"'
+
+  - type: regex
+    name: search-input-override
+    target: { source: file, path: apps/consumer/src/shelf-keeper/shelf-picker-popover.tsx }
+    pattern: 'h-auto py-2 type-body'
+
+  - type: regex
+    name: search-placeholder-exact-copy
+    target: { source: file, path: apps/consumer/src/shelf-keeper/shelf-picker-popover.tsx }
+    pattern: 'Search shelves…'
+
+  # Regression-checked: with every `shouldFilter={false}` mention stripped from the ledger row,
+  # the Decisions-confirmed bullet and the option-list-band Decision cell of a scratch copy of
+  # `../fixtures/issue.md`, this grader still passed — the model derived the prop from the
+  # Summary's "filtering becomes substring-only" plus the Changes item's "turn off cmdk
+  # filtering" line, which the fixture states independently of the ledger. This row's redundancy
+  # (also noted in `lk`'s `deep-grill-row-coverage` case) makes it a weak regression target; the
+  # deletion was restored (`git checkout --`) rather than kept as a permanent case artifact.
+  - type: regex
+    name: option-list-should-filter-false
+    target: { source: file, path: apps/consumer/src/shelf-keeper/shelf-picker-popover.tsx }
+    pattern: 'shouldFilter=\{false\}'
+
+  - type: regex
+    name: empty-result-exact-copy
+    target: { source: file, path: apps/consumer/src/shelf-keeper/shelf-picker-popover.tsx }
+    pattern: 'No shelves found\.'
+
+  - type: regex
+    name: new-shelf-row-label
+    target: { source: file, path: apps/consumer/src/shelf-keeper/shelf-picker-popover.tsx }
+    pattern: 'New shelf'
+
+  - type: regex
+    name: shelf-row-corner-override
+    target: { source: file, path: apps/consumer/src/shelf-keeper/shelf-row.tsx }
+    pattern: 'rounded-\[--radius-tile\]'
+
+  - type: regex
+    name: shelf-row-opacity-toggle
+    target: { source: file, path: apps/consumer/src/shelf-keeper/shelf-row.tsx }
+    pattern: 'opacity-0'
+
+  # ---- Icon names copied character for character from the ledger, never renamed to a
+  #      conventional equivalent (free) ----
+  - type: regex
+    name: tally-mark-icon-in-shelf-row
+    target: { source: file, path: apps/consumer/src/shelf-keeper/shelf-row.tsx }
+    pattern: TallyMarkIcon
+
+  - type: regex
+    name: new-niche-icon-in-picker
+    target: { source: file, path: apps/consumer/src/shelf-keeper/shelf-picker-popover.tsx }
+    pattern: NewNicheIcon
+
+  - type: regex
+    name: dust-cover-icon-in-picker
+    target: { source: file, path: apps/consumer/src/shelf-keeper/shelf-picker-popover.tsx }
+    pattern: DustCoverIcon
+
+  - type: regex
+    name: no-conventional-icon-names
+    target: { source: file, path: apps/consumer/src/shelf-keeper/shelf-picker-popover.tsx }
+    pattern: CheckIcon|CheckMark|Checkmark|SearchIcon|PlusIcon|TickIcon|MagnifierIcon|CloseIcon|XIcon|MagnifierGlyph|PlusGlyph|CoverGlyph
+    match: not_contains
+
+  - type: regex
+    name: no-conventional-icon-names-shelf-row
+    target: { source: file, path: apps/consumer/src/shelf-keeper/shelf-row.tsx }
+    pattern: CheckIcon|CheckMark|Checkmark|TickIcon|TallyGlyph
+    match: not_contains
+
+  # ---- The verify ladder actually ran, and a commit exists (free — no `command` grader
+  #      exists in this CLI's case.yaml schema, verified against `claude plugin eval` before
+  #      writing this case: only regex | tool_order | tool_used | file_exists | llm | baseline.
+  #      This is the documented fallback: trace evidence plus a last_message check) ----
+  # Two verified real runs took the equivalent-command path at least once each (`vitest
+  # run` direct instead of the `pnpm test` wrapper; `tsc --noEmit` / `eslint .` direct
+  # instead of `pnpm ts-lint`, after `pnpm` itself needed a `corepack` detour) — both are
+  # the same gate the adapter names, so the pattern accepts either form.
+  - type: tool_used
+    name: pnpm-test-ran
+    tool: Bash
+    input_match: 'pnpm test|vitest run'
+    min: 1
+
+  - type: tool_used
+    name: pnpm-ts-lint-ran
+    tool: Bash
+    input_match: 'pnpm ts-lint|tsc --noEmit|eslint \.'
+    min: 1
+
+  # `/usr/bin/git` dispatches through `xcrun`, which cannot write its cache under this
+  # CLI's OS sandbox on this machine — verified against the binary: a run must reach for
+  # `/Applications/Xcode.app/Contents/Developer/usr/bin/git` (often through a shell
+  # variable, e.g. `$GIT commit -m …`), so the pattern matches the `commit -m` call
+  # itself rather than requiring the literal string `git commit`.
+  - type: tool_used
+    name: commit-made
+    tool: Bash
+    input_match: 'commit -m'
+    min: 1
+
+  - type: regex
+    name: final-print-names-a-commit
+    target: last_message
+    pattern: '\b[0-9a-f]{7,40}\b'
+
+  # ---- The self-audit names every one of the 9 in-scope ledger rows — the AC's own
+  #      phrasing, checked one row at a time so a run that covers 7 of 9 does not pass on an
+  #      aggregate count (free) ----
+  - type: regex
+    name: self-audit-names-picker-panel
+    target: last_message
+    pattern: 'picker panel'
+  - type: regex
+    name: self-audit-names-click-away-layer
+    target: last_message
+    pattern: 'click-away layer'
+  - type: regex
+    name: self-audit-names-search-band
+    target: last_message
+    pattern: 'search band'
+  - type: regex
+    name: self-audit-names-option-list-band
+    target: last_message
+    pattern: 'option list band'
+  - type: regex
+    name: self-audit-names-shelf-row
+    target: last_message
+    pattern: 'shelf row'
+  - type: regex
+    name: self-audit-names-option-rows-absent
+    target: last_message
+    pattern: 'option rows'
+  - type: regex
+    name: self-audit-names-empty-result
+    target: last_message
+    pattern: 'empty result'
+  - type: regex
+    name: self-audit-names-new-shelf-row
+    target: last_message
+    pattern: 'New shelf row'
+  - type: regex
+    name: self-audit-names-panel-content-naming
+    target: last_message
+    pattern: 'panel content'
+
+  - type: regex
+    name: self-audit-marks-matched-or-deviated
+    target: last_message
+    pattern: 'matched|deviated'
+
+  # ---- One paid grader: whether the self-audit is a real per-row judgement (a file:symbol
+  #      pointer, a matched/deviated call) rather than restating the ledger row's own prose
+  #      back as if that were the audit ----
+  - type: llm
+    name: self-audit-is-a-real-per-row-judgement
+    focus: last_message
+    criteria: |
+      Read the self-audit table in the message below — one line per ledger row, with columns for
+      the ledger row, its fact(s), what renders it (a file:symbol), matched/deviated, and a reason.
+
+      Score it passed only if:
+      - every row names a concrete `file:symbol` that renders it (not a bare directory, not "the
+        component", not left blank);
+      - every row marked `deviated` carries a reason that names what the code does instead, not
+        just the word "deviated" on its own;
+      - the table reads as a judgement made by inspecting the finished code, not as the ledger
+        row's own Instruction or Decision cell copied back verbatim as if restating the
+        instruction proved it was followed.
+
+      Score it failed if any row is missing a `file:symbol`, any `deviated` row has no reason, or
+      the table looks like the ledger's prose pasted back rather than an audit of what the two new
+      files actually contain.
