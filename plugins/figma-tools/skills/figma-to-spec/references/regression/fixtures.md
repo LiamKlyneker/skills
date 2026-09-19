@@ -22,6 +22,10 @@ filename in this plugin**. A project with no fixtures registered has nothing to 
 pre-release step below then reports *"no fixtures registered"* out loud rather than passing
 silently, because "no assertions ran" and "all assertions passed" must never look the same.
 
+The one exception is a fixture built entirely from invented material that this plugin's own
+eval suite owns and ships alongside its cases, never a project's real node IDs or catalog — see
+`../../../../../../docs/adr/0015-eval-suites-against-a-synthetic-fixture.md`.
+
 **This file carries no example fixture, and that is deliberate.** One shipped here would be one
 project's node IDs and one project's catalog vocabulary, published to every consumer of this
 plugin — and the first thing a reader would do is copy it. The field table below is the whole

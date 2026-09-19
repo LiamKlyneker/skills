@@ -59,6 +59,8 @@ Then, for a skill change:
   retired self-host route). The validator fails on both. To work against the working
   tree, run `claude --plugin-dir plugins/<name>`. The packaging links inside
   `plugins/*/skills/` are a different thing and are required.
+- Name fixtures only, never a consumer repo, ticket or path — in an issue, an eval case,
+  a doc or a commit. See `docs/adr/0015-eval-suites-against-a-synthetic-fixture.md`.
 
 ## Running an eval suite
 
