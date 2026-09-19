@@ -60,6 +60,41 @@ Then, for a skill change:
   tree, run `claude --plugin-dir plugins/<name>`. The packaging links inside
   `plugins/*/skills/` are a different thing and are required.
 
+## Running an eval suite
+
+A plugin whose manifest carries `experimental.evals` ships eval cases under
+`plugins/<plugin>/evals/`. They run against the working tree, never an installed copy:
+
+```bash
+command claude plugin eval plugins/<plugin> \
+  --ablation none --scaffold --no-publish \
+  --runs 1 --threshold 1.0 --max-cost-usd 5 \
+  --model claude-sonnet-5 --judge-model claude-sonnet-5
+```
+
+Every flag is deliberate, and the two the runner defaults differently are the ones to
+keep typing: `--ablation` defaults to with-without and `--judge-model` to Haiku.
+
+- `--ablation none` — these suites score the skill's behaviour, not the delta against a
+  no-plugin arm, and the baseline arm doubles the cost.
+- `--scaffold` — the cases place the fixture workspace with
+  `plugins/prd-workflow/evals/scaffold-fixture.sh`, and without this flag each case runs
+  against an empty workspace and fails for the wrong reason.
+- `--no-publish` — a local run is not a report.
+- `--model claude-sonnet-5` is the gate: a suite passes there or it does not pass.
+  Re-running on `claude-haiku-4-5` is advisory — a cheaper model failing a case is a
+  signal about the prose, not a regression.
+- `--judge-model claude-sonnet-5` — the graders read skill prose against a repo's
+  wiring, which the default judge is too small for.
+
+`claude` is a shell function on the maintainer's machine, so `command claude` is what
+reaches the binary. The runner writes scores to `plugins/<plugin>/evals/results/` and
+records MCP stand-ins into `plugins/<plugin>/evals/mocks/`; both are gitignored.
+
+The scaffold script copies the fixture from a `skills-fixture` checkout beside this
+repo and clones it from GitHub when there is none. It prints which source it used —
+pass `--dry-run` to see that without placing anything.
+
 ## Pull requests
 
 Contributors fork and open a PR — nobody outside the maintainer has push access, so
