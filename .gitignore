@@ -11,3 +11,5 @@ plugins/*/evals/mocks/
 # each case directory, because the runner resolves that path before the scaffold runs and
 # refuses anything outside the case directory.
 plugins/*/evals/*/grill-history.jsonl
+# A resumed eval child writes its own session log beside the history copy, under the neutral session id.
+plugins/*/evals/*/*-4000-8000-*.jsonl

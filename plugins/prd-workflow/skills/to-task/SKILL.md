@@ -45,8 +45,9 @@ Before writing a single line of the body:
    deferred, the screenshot pairs below are still written into the issue — they are the run's
    scoring instrument, not an automated gate.
 2. Read `<brief-path>` in full. Pull out: the pinned prototype repo + SHA, the prototype path, the
-   spec / component-state URLs, and the `## Fidelity ledger` rows — **as raw markdown rows**, with
-   every column, because they are pasted into the issue unchanged. Note the ledger's column order;
+   spec / component-state URLs. The `## Fidelity ledger` rows are not read into prose here: they are
+   printed by the extraction command in `../_shared/fidelity-ledger.md` §1 when the ledger section
+   is written, and pasted from that output with every column intact. Note the ledger's column order;
    the issue keeps it.
 3. Settle where the verify rows come from, per `../_shared/fidelity-ledger.md` §5. Read the file
    the adapter's `Fixed scorecard` row names, when the adapter registers one, and use its
@@ -108,8 +109,11 @@ Then one screenshot block per in-scope state, per `../_shared/fidelity-ledger.md
 
 ## Fidelity ledger (in scope)
 
-The brief's ledger rows for this issue's elements, built per `../_shared/fidelity-ledger.md` §1 —
-pasted verbatim, every column, plus the Decision and Instruction columns.
+The brief's ledger rows for this issue's elements, built per `../_shared/fidelity-ledger.md` §1:
+run the extraction command that section specifies against the brief and paste its output — every
+column, byte for byte — then append the Decision and Instruction cells to each pasted line. Never
+retype a row. Run §1's check before writing the body out; a row the diff reports is replaced with
+the printed bytes.
 
 ### Source slices — read before coding
 
