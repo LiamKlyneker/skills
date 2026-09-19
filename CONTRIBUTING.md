@@ -63,7 +63,17 @@ Then, for a skill change:
 ## Running an eval suite
 
 A plugin whose manifest carries `experimental.evals` ships eval cases under
-`plugins/<plugin>/evals/`. They run against the working tree, never an installed copy:
+`plugins/<plugin>/evals/`. They run against the working tree, never an installed copy.
+
+A case that replays a recorded conversation declares `context.history_file`, and the
+runner resolves that path inside the case directory before any scaffold script runs — so
+the transcript has to be there already. It is gitignored, and this places it:
+
+```bash
+plugins/prd-workflow/evals/prepare-history.sh
+```
+
+Then the suite:
 
 ```bash
 command claude plugin eval plugins/<plugin> \
@@ -97,7 +107,8 @@ records MCP stand-ins into `plugins/<plugin>/evals/mocks/`; both are gitignored.
 
 The scaffold script copies the fixture from a `skills-fixture` checkout beside this
 repo and clones it from GitHub when there is none. It prints which source it used —
-pass `--dry-run` to see that without placing anything.
+pass `--dry-run` to see that without placing anything. `prepare-history.sh` resolves
+its source the same way and takes the same flag.
 
 ## Pull requests
 

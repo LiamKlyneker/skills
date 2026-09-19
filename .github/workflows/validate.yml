@@ -38,10 +38,12 @@ jobs:
       - name: Test the validator's own rules
         run: python3 .github/scripts/test_validate_skills.py
 
-      # The eval suites' fixture scaffold is the second executable here, and CI is the
-      # only place its clone fallback is the reachable source. A dry run resolves the
-      # source without cloning, so this step needs no credential and no network.
-      - name: Check the eval fixture scaffold
+      # The eval suites' two fixture placers are the other executables here, and CI is
+      # the only place their clone fallback is the reachable source. A dry run resolves
+      # the source without cloning, so this step needs no credential and no network.
+      - name: Check the eval fixture scripts
         run: |
           bash -n plugins/prd-workflow/evals/scaffold-fixture.sh
           plugins/prd-workflow/evals/scaffold-fixture.sh --dry-run
+          bash -n plugins/prd-workflow/evals/prepare-history.sh
+          plugins/prd-workflow/evals/prepare-history.sh --dry-run

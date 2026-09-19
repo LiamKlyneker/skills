@@ -12,7 +12,7 @@ description: >
 # To Task
 
 ```
-/prd-workflow:to-task <ticket> <brief-path>
+/prd-workflow:to-task <ticket> <brief-path> [--out <path>]
 ```
 
 Takes the **current conversation** — a `deep-grill` session that has reached consensus — plus the
@@ -31,6 +31,7 @@ shape a cold worker can implement.
 | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `<ticket>`     | the argument — e.g. `FUS-8965`. Names the feature and goes in the title.                                                                                     |
 | `<brief-path>` | the argument — the design brief the grill read, e.g. `.claude/briefs/FUS-8965-run1.md`. Source of the **fidelity ledger rows** and the pinned prototype SHA. |
+| `--out`        | the optional argument — a path. Given, the title and body go to that file and **no** issue is created; absent, the issue is filed as usual. |
 | The grill      | this conversation. Source of `## Fidelity decisions`, the confirmed decisions, and the scope boundary.                                                       |
 | Project facts  | `<repo-root>/.claude/project/adapter.md` — tracker, verify ladder, repo discipline. Never hardcode these.                                                    |
 | Scorecard      | the file the adapter's `Fixed scorecard` row names, `## Scorecard` — the verify checklist, when the adapter registers that row and the file has one for this ticket. |
@@ -153,6 +154,15 @@ tell a deliberate exclusion from an omission.
 
 ## Publishing
 
+**With `--out`, this whole section is one step: write the title on the first line, one blank line,
+then the body verbatim, to that path.** Then go straight to the final print. Nothing is created,
+the tracker is never called, and nobody is asked to confirm — the file is what the human reads, and
+it can be edited in place. Do not stop to ask, and do not write the body anywhere else first. A
+sandbox with no network and no tracker credential still produces the whole deliverable this way.
+Everything above this section is unchanged: the same preflight, the same hard rules, the same body.
+
+Without `--out`:
+
 1. Write the finished body to a scratchpad file — never inline it into a shell argument, since the
    body contains backticks, pipes and markdown image syntax that a shell will mangle.
 2. **Show the human the title and the body, and ask for confirmation before creating.** This skill
@@ -179,6 +189,14 @@ Filter: the issue is one click away and more current than any recap of it.
 
 ```
 #<n> created: <url>
+```
+
+With `--out`, there is no number and no url, so the last two lines are the path and the invocation
+that implements it:
+
+```
+issue body written: <path>
+/prd-workflow:work-on-task <path>
 ```
 
 Above that line, one line per **deviation** — a ledger row left out of scope because the grill never

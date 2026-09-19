@@ -5,3 +5,9 @@ __pycache__/
 # Eval runner output: scored results, and the MCP stand-ins `--mocks record` writes.
 plugins/*/evals/results/
 plugins/*/evals/mocks/
+
+# The frozen grill transcript a replay case declares as `context.history_file`. Its one home
+# is the fixture repository; `plugins/prd-workflow/evals/prepare-history.sh` places a copy in
+# each case directory, because the runner resolves that path before the scaffold runs and
+# refuses anything outside the case directory.
+plugins/*/evals/*/grill-history.jsonl
