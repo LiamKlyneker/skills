@@ -9,7 +9,7 @@
     {
       "name": "prd-workflow",
       "description": "PRD-to-merge workflow for Claude Code: turn context into a PRD, slice it into tracer-bullet issues, pick the next one, run the whole thing end-to-end with a per-issue worker subagent, and triage the QA findings that come back into cold-runnable issues",
-      "version": "1.13.0",
+      "version": "1.14.0",
       "keywords": [
         "prd",
         "github-issues",
@@ -54,8 +54,8 @@
     },
     {
       "name": "lk",
-      "description": "Liam Klyneker's personal Claude Code skills: the grills that interview a plan until every branch is resolved, plus pinpoint, scoped-context and his writing voice — the ones that talk to the user and the codebase rather than to a tracker",
-      "version": "1.13.0",
+      "description": "Liam Klyneker's personal Claude Code skills: the grills that interview a plan until every branch is resolved, plus pinpoint, scoped-context, his writing voice, and report-leak, which walks a skill failure back to the hop that leaked it and files it against the skills repo",
+      "version": "1.14.0",
       "keywords": [
         "personal",
         "writing-voice",
