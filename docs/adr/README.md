@@ -70,3 +70,4 @@ or the adapter, and stops there.
 | [0012](0012-the-qa-pass-is-composed-from-the-branch.md) | The QA pass is composed from the branch, not planned into a contract | Superseded by ADR 0014 |
 | [0013](0013-ado-triage-files-work-or-writes-to-a-human.md) | On Azure DevOps, triage either files work or writes to a human | Accepted |
 | [0014](0014-github-findings-move-off-the-pr.md) | GitHub findings move off the pull request, onto a disposable per-run issue | Accepted |
+| [0015](0015-eval-suites-against-a-synthetic-fixture.md) | Eval suites against a synthetic fixture are the release gate | Accepted |

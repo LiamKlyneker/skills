@@ -2,8 +2,9 @@
 name: prototype-to-spec
 description: >
   Turn a designer-authored code prototype into a design brief for one ticket. Resolves
-  a preview URL to a pinned commit in the prototype repo, reads the spec and the
-  prototype source committed there, reads the in-scope screenshots as images, filters
+  a preview URL to a pinned commit in the prototype repo, or reads a prototype
+  directory in this working tree where the adapter names one, reads the spec and the
+  prototype source there, reads the in-scope screenshots as images, filters
   it to what the ticket covers, renders the ticket's overrides on top, and resolves
   every element and token against the project's design-system catalog into a
   per-element fidelity ledger. Asks nothing — every judgement becomes a row the grill
@@ -65,9 +66,10 @@ carrying its confidence, and the grill is where a human answers it. A skill that
 is a skill nobody runs twice.
 
 The only stops are hard input failures, all in Phase 0 and Phase 1: the URL does not resolve
-through the adapter's rule, a named spec file is missing at the pinned SHA, there is no
-catalog, or the adapter has no `### Prototype source`. Each says which input failed and what
-would fix it. There is no degraded mode and no partial brief.
+through the adapter's rule, the adapter's `Path:` is not a directory, a named spec file is
+missing at the pinned SHA, there is no catalog, or the adapter has no `### Prototype source`.
+Each says which input failed and what would fix it. There is no degraded mode and no partial
+brief.
 
 ## Invocation
 
@@ -75,9 +77,15 @@ would fix it. There is no degraded mode and no partial brief.
 /figma-tools:prototype-to-spec <preview-url> <ticket-ref> [--out <path>]
 ```
 
-- `<preview-url>` — a deployed preview of the prototype. Required.
-- `<ticket-ref>` — the issue or work item this brief is for, as a number or URL. Required; it
-  is what the filter runs against, so a brief without one would be the whole spec again.
+- `<preview-url>` — a deployed preview of the prototype. Required in **remote mode**. In
+  **local mode** — the adapter carries a `Path:` row — there is no URL to resolve: omit it, and
+  `<ticket-ref>` takes the first position. An argument passed anyway is **ignored**, and the
+  brief's header says it was.
+- `<ticket-ref>` — the issue or work item this brief is for, as a number, a URL, or **a path to
+  a local file holding the ticket body**. Required; it is what the filter runs against, so a
+  brief without one would be the whole spec again. A path that exists is read as the ticket and
+  no tracker is called — which is what lets a run work offline, against a ticket someone put on
+  disk.
 - `--out` — where the brief goes. Default `<repo-root>/.claude/briefs/<ticket>.md`. The
   project gitignores that directory; the brief is disposable and a committed one is a second
   source of truth with a long half-life.
@@ -85,14 +93,18 @@ would fix it. There is no degraded mode and no partial brief.
 ## Inputs
 
 - **The project adapter**, `<repo-root>/.claude/project/adapter.md`:
-  - `## Design system` → `### Prototype source` — the five rows this skill runs on. **Absent
+  - `## Design system` → `### Prototype source` — the rows this skill runs on. **Absent
     is a STOP**, and it is the expected one: it means this project's designers ship no code
-    prototypes.
+    prototypes. The rows present pick the mode. **Remote**: `Repo:` plus `URL → path:`, and the
+    prototype is read through `gh` at one pinned commit. **Local**: `Path:`, one directory in
+    this working tree, which replaces that pair rather than joining it. `Spec files:`,
+    `Schema:` and `Screenshots:` are read the same way in both.
   - `## Design system` → the **catalog pointer**, validated exactly as `figma-to-spec` Phase 0
     validates it, and the **usage-rules sources**, which may name several.
   - `## Repo` → the `Tracker:` line, to fetch the ticket, and the **DS-gap backlog**, which
     this skill only ever *names* in a proposed gap row. It files nothing there.
-- **The prototype repo**, read-only through `gh`, at one pinned SHA.
+- **The prototype**: the prototype repo, read-only through `gh` at one pinned SHA, or the
+  directory `Path:` names, read from the working tree.
 - **The catalog**, per `../figma-to-spec/references/catalog-contract.md` — the existence source
   every element and token resolves against, including its `## Idiom mapping` table where the
   overlay has one.
@@ -107,7 +119,7 @@ burn this skill exists to replace.
 | Phase | Does |
 |---|---|
 | **0 — Resolve** | Adapter rows · catalog validated · ticket fetched. |
-| **1 — Locate** | Preview URL → ref and path · resolve the head SHA · fetch every `Spec files:` entry raw at that SHA · download and read the in-scope screenshots. |
+| **1 — Locate** | Preview URL → ref and path · resolve the head SHA · fetch every `Spec files:` entry raw at that SHA · download and read the in-scope screenshots. In local mode: resolve `Path:` · read the same files and screenshots from disk. |
 | **2 — Filter by ticket** | Keep what the ticket covers; record every drop with its reason. |
 | **3 — Overrides** | Render the ticket's divergences on top of the prototype's. |
 | **4 — Resolve elements** | Every element and token against the catalog, at three confidences · one fidelity-ledger row per element, with its fidelity class. |
@@ -117,17 +129,25 @@ burn this skill exists to replace.
 
 Read the adapter. Establish, and stop on any of them:
 
-1. **`### Prototype source`** — all five rows. Absent sub-section → STOP: *this project has no
-   prototype source registered; `install-skills` asks for one.*
+1. **`### Prototype source`** — absent sub-section → STOP: *this project has no prototype
+   source registered; `install-skills` asks for one.* The rows decide the mode: a `Path:` row is
+   **local mode**, and `Repo:` and `URL → path:` are then not read at all; with no `Path:` row
+   both of those are required and the run is **remote mode**. `Spec files:`, `Schema:` and
+   `Screenshots:` are required either way.
 2. **The catalog** — resolve through the pointer and validate against the shape contract,
    which is the same gate `figma-to-spec` runs and fails the same way. A directory pointer is
    a split catalog and is read as one document.
 3. **The usage-rules sources** — keep all of them, by name. Absent is the answer, not a
    warning: the brief then cites nothing.
-4. **The ticket** — fetch it from the tracker the `Tracker:` line names. Its body is the
-   filter's input, so a ticket that cannot be fetched is a STOP.
+4. **The ticket** — where `<ticket-ref>` is a path to a file that exists, read the file and
+   take its contents as the ticket body; otherwise fetch it from the tracker the `Tracker:` line
+   names. Its body is the filter's input, so a ticket that can be neither read nor fetched is a
+   STOP.
 
 ### Phase 1 — Locate, and pin
+
+Steps 1 and 2 are **remote mode**. In local mode the `Path:` row stands in for both, and steps 3
+to 5 read the working tree instead of the API — see *Local mode* below.
 
 1. **Apply the `URL → path:` rule** to the preview URL. It yields a **ref** in the prototype
    repo and a **path** within it. Honour the casing rule the row states — a host segment is
@@ -194,6 +214,28 @@ Read the adapter. Establish, and stop on any of them:
 5. **Pin the SHA into the brief's header.** It is this skill's equivalent of `figma-to-spec`'s
    `Extracted against:` line: the brief describes a prototype at a moment, and a brief that
    cannot say which moment cannot be checked against anything later.
+
+#### Local mode
+
+Where `### Prototype source` carries a `Path:`, the prototype is on this machine already and
+there is nothing to resolve or download:
+
+1. **Resolve `Path:`** — absolute as given, otherwise against the project root, the directory
+   holding `.claude/`. A value that is not an existing directory is a STOP.
+2. **The ref is the working tree.** Every `gh api repos/<repo>/contents/<path>/<file>?ref=<sha>`
+   in step 3 becomes a read of `<Path:>/<file>`, and the directory listing that globs
+   `design_handoff_*` becomes a listing of `<Path:>`. Every *not a STOP* in that step stays not
+   a STOP: an unresolved `codeRef` is still an unsourced ledger row, a missing state page still
+   leaves the row `source-only, no screenshot`.
+3. **Screenshots are read from disk** at `<Path:>/spec/screenshots/<step-id>.png`, per the
+   `Screenshots:` row's path rule. Step 4's `gh api … | curl` pair does not run; the requirement
+   it carries does — read every one as an image before writing anything.
+4. **Pin to the directory and to the commit it sits on** — `git -C <Path:> rev-parse HEAD`.
+   Where `Path:` is inside no repository, the pin reads `working tree`. A brief pinned to a
+   working tree describes a moment nobody else can fetch, which is exactly why it says so.
+5. **The header carries the local source.** `Source:` reads `<Path:>@<sha>`, or
+   `<Path:>@working tree`, and `Preview:` reads `— (local prototype source)`, followed by
+   `<preview-url> ignored` where the invocation passed one anyway.
 
 The `Schema:` row says what shape the fetched spec is in. **Only one shape is implemented — a
 typed spec module plus a handoff document.** A `Schema:` naming anything else is a STOP, not an
@@ -327,7 +369,7 @@ satisfied by six separate columns, and the design frequently has three of them i
 | States             | the state ids and step ids it appears in; `⚠ no screenshot` where a step's PNG was absent at the SHA; `source-only, no screenshot` for a `states[]` entry that has no PNG at all                                                                                                                                                       |
 | Exact copy         | every string, per state — label, placeholder, empty text, button text. Quote it; never paraphrase                                                                                                                                                                                                                                      |
 | Tokens             | the semantic tokens the element uses, and — listed separately in the same cell — every raw `var(--color-*)` that still needs a mapping                                                                                                                                                                                                 |
-| Layout facts       | in words: nesting (which parts share one wrapping flow), stack direction, full-width or not, divider placement and **which element owns it**, which element owns the padding, and — per icon — **icon name, size and colour token**, and — per text run — its **type token and colour token**                                           |
+| Layout facts       | in words: nesting (which parts share one wrapping flow), stack direction, full-width or not, divider placement and **which element owns it**, which element owns the padding, and — per icon — **its design-system export name, its size and its colour token**, and — per text run — its **type token and colour token**                                           |
 | Interaction        | which element owns the `onClick` (the click target, named as an element: "the whole value area opens the editor; the chip × removes one value"), plus hover, focus and keyboard behaviour. `—` only where the element is genuinely inert                                                                                               |
 | Source             | `components/<file>.tsx:L<start>–L<end>` — where the facts came from. An unresolved `codeRef` reads `— (codeRef unresolved)`; a source-only state also cites its `spec/component-states/**/page.tsx`                                                                                                                                     |
 | DS candidate       | the component from `## Element → DS mapping`, or `—`                                                                                                                                                                                                                                                                                  |
@@ -337,6 +379,13 @@ satisfied by six separate columns, and the design frequently has three of them i
 text run written without a type token and a colour token.** Both are invisible in a screenshot at
 the sizes a design ships at, and both are the difference between a 14px muted glyph and a 24px
 blue one. Read them off the source slice the `Source` column cites.
+
+**The icon's name is the design system's export name, and the prototype's own glyph name is
+never it.** A prototype draws its glyphs inline and names them for what they look like, so the
+mapping to an export is in the spec's icon table or in the handoff — resolve it there and write
+the export. Describing the glyph in the design's words instead leaves the implementer to guess
+which of ten exports it is, and the one they reach for is the conventional name, which is the
+name the design system does not have.
 
 **The `Interaction` column carries what no screenshot can.** A hotspot, a hover colour, a focus
 ring, a keyboard affordance — none of them render in a PNG, all of them live in the source, and
@@ -414,7 +463,8 @@ about to be read by the grill.
 ## Screenshots are linked, never embedded
 
 Build each step's screenshot URL from the `Screenshots:` row's path rule, **as a raw URL at the
-pinned SHA**, and put it in the brief beside the step it belongs to.
+pinned SHA**, and put it in the brief beside the step it belongs to. In local mode the link is
+the file's path under `Path:` instead of a URL, and nothing else about this section changes.
 
 The implementer fetches one per state as it builds that state. Embedding them instead would put
 every image of a flow into a context that needs one of them at a time, which is the same cost
@@ -428,12 +478,15 @@ rules cannot be written from names. The images land in this session; the brief c
 
 1. **No `### Prototype source` in the adapter** → stop, and name `install-skills` as what adds
    one. This is the expected stop for a project that does not work this way.
-2. **The preview URL does not resolve through the `URL → path:` rule** → stop, showing the URL,
-   the rule, and how far the match got.
-3. **A named spec file is absent at the pinned SHA** → stop, naming the file and the SHA.
+2. **The preview URL does not resolve through the `URL → path:` rule** (remote mode only) →
+   stop, showing the URL, the rule, and how far the match got.
+3. **A named spec file is absent at the pinned SHA**, or under `Path:` → stop, naming the file
+   and the SHA or the resolved directory.
 4. **No catalog, or a catalog that fails the shape contract** → stop exactly as `figma-to-spec`
    does, naming the resolved path, the rule and the fix.
 5. **A `Schema:` naming an unimplemented prototype shape** → stop. Never improvise a reader.
+6. **A `Path:` that is not an existing directory** → stop, naming the row's value, the path it
+   resolved to and what it was resolved against.
 
 ## What this skill does not do
 

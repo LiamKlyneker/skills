@@ -1,0 +1,203 @@
+schema_version: "1.0"
+name: to-task-ledger-verbatim
+description: >
+  The issue `to-task` writes from the frozen grill, against the Vitrine fixture app. The hop's
+  leak is a re-summarised ledger: a shorter Layout facts column, a lost icon name, a fetch line
+  that never appears. Every row of the brief's ledger has to survive into the issue unchanged,
+  with only the Decision and Instruction columns added.
+  The case replays the grill from `context.history_file` and spends its turn on the next hop, so
+  the consensus the issue transcribes is a real one rather than one the run invented.
+  One Sonnet 5 run of this case measured at USD 1.61.
+tags: [to-task]
+runs: 1
+context:
+  scaffold_script: ./scaffold.sh
+  history_file: ./grill-history.jsonl
+execution:
+  prompt: |
+    The working directory holds a pnpm workspace. The project you are working in is the
+    Vitrine consumer app at `apps/consumer/`: its adapter is
+    `apps/consumer/.claude/project/adapter.md`, and that adapter is the one this run reads.
+
+    The grill above is finished. The brief it read is at `apps/consumer/capture/brief.md`,
+    and paths inside that brief are relative to this working directory.
+
+    A run's read scope stops at the plugin directory, and the skill reaches its shared
+    contract through a symlink that points out of it. So wherever the skill says
+    `../_shared/fidelity-ledger.md`, read `fidelity-ledger.md` in this working directory
+    — it is the same file, placed here for that reason.
+
+    Run this, and nothing else:
+
+    /prd-workflow:to-task shelf-picker apps/consumer/capture/brief.md --out ./issue.md
+
+    Follow the skill exactly and stop where it stops. There is no network and no tracker
+    credential here, which is what `--out` is for.
+  max_turns: 200
+  timeout_seconds: 3600
+  model: claude-sonnet-5
+  allowed_tools: [Read, Glob, Grep, Skill, Bash, Write]
+graders:
+  - type: regex
+    name: issue-written
+    target: { source: file, path: issue.md }
+    pattern: "## Fidelity ledger \\(in scope\\)"
+
+  # Every ledger row of `evals/fixtures/brief.md`, escaped, minus its closing pipe —
+  # the issue continues each row with a Decision and an Instruction cell. A run that
+  # shortens a Layout facts cell, or re-words any other cell, fails the row it touched.
+  - type: regex
+    name: ledger-row-verbatim-picker-panel
+    target: { source: file, path: issue.md }
+    pattern: |-
+      \| picker panel \| `open-empty-pick`, `open-one-kept`, `filtered`, `no-matches`, `naming` · uc1-s2, uc1-s3, uc1-s4, uc1-s5 \| — \| `--color-surface` \(bg\), `--color-edge` \(1px border\), `--radius-panel` \(16px corner\) · raw: `0 8px 24px rgba\(0,0,0,0\.18\)` drop shadow — \*\*⚠ no equivalent, do not invent\*\* \| fixed \*\*250px\*\* wide at every viewport, never hugs content; anchored to the \*\*right\*\* edge of the bell-jar button, 4px below it; the panel owns \*\*no\*\* padding — the search band, the option list band and the New shelf row each own their own; vertical stack of those three bands, each full panel width \| inert itself; dismissal belongs to the click-away row \| `components/shelf-picker-popover\.tsx:L43–L46` · `design_handoff_shelf_picker/README\.md` "The panel" \| `ComboboxContent` \| DS with overrides — \*\*grill question\*\* · `PopoverContent` deltas under `ComboboxContent`: width `w-72` \(288px\) → `w-\[250px\]`; `align` defaults `start` → pass `align="end"`; `sideOffset` 4 = design, keep; padding already `p-0` from `ComboboxContent`, keep; radius, border, bg and ink match, keep; shadow `shadow-md` ≠ the design's lift, and the design's value is raw — the grill decides between `shadow-md` as-is and a new token \(see DS gaps\); no arrow is rendered, nothing to remove; `overflow-hidden` is on by default 
+  - type: regex
+    name: ledger-row-verbatim-click-away-layer
+    target: { source: file, path: issue.md }
+    pattern: |-
+      \| click-away layer \| all 5 popover states · uc1-s2 \| — \| — \| not a visual element in the DS build: no `fixed inset-0` layer is rendered \| an outside pointer-down closes the panel; Escape closes it; focus moves into the panel on open and returns to the trigger on close — the DS behaviour, which the prototype lacks and `HANDOFF\.md` calls the prototype's gap \| `components/shelf-picker-popover\.tsx:L23–L24, L45` · `HANDOFF\.md` "What the panel does not do" \| `Combobox` \(Radix `Popover` root\) \| DS as-is 
+  - type: regex
+    name: ledger-row-verbatim-search-band
+    target: { source: file, path: issue.md }
+    pattern: |-
+      \| search band \| `open-empty-pick`, `open-one-kept`, `filtered`, `no-matches` · uc1-s2 → uc1-s5 \| placeholder "Search shelves…" \(single ellipsis character\) · accessible name "Search shelves" \| hairline `--color-edge`; magnifier `--color-ink-muted`; field text `type-body` in `--color-ink`; placeholder `type-body` in `--color-ink-muted` \| \*\*same element; content differs\*\*: `open-empty-pick` / `open-one-kept` show the placeholder, `filtered` shows "bra", `no-matches` shows "vitrine"\. One row: magnifier then field, 8px between; band padding \*\*12px\*\* left and right, \*\*8px\*\* top and bottom; one 1px hairline along the band's bottom, \*\*owned by the band\*\*, spanning the full panel width; the field has no border and no background and takes the rest of the row\. Icon: `LoupeGlassIcon` \*\*16px\*\* `--color-ink-muted`, first in the row \| typing narrows the list per bl3; the field owns focus when the panel opens \(DS behaviour\) \| `components/shelf-picker-popover\.tsx:L51–L62` · `design_handoff_shelf_picker/README\.md` "The search band" \| `ComboboxCommandInput` \| DS change — \*\*grill question\*\* · shipped wrapper is `flex items-center gap-2 border-b border-\[--color-edge\] px-4` with the loupe in `Icon size="sm"` \(\*\*14px\*\*\); its `className` reaches only the inner `input`\. So: horizontal padding 16px ≠ 12px, no path; loupe 14px ≠ 16px, no path; the input is `h-10 py-3 text-sm` \(40px row, 14px text\) ≠ 8px \+ 22px `type-body` — fixable through `className` \(`h-auto py-2 type-body`\)\. Gap 8px, hairline and muted loupe match 
+  - type: regex
+    name: ledger-row-verbatim-option-list-band
+    target: { source: file, path: issue.md }
+    pattern: |-
+      \| option list band \| `open-empty-pick`, `open-one-kept`, `filtered` · uc1-s2, uc1-s3, uc1-s4 \| — \| — \| \*\*4px\*\* padding all round, \*\*2px\*\* between rows; the band owns that padding, a row does not; rows are direct children in one vertical stack \| inert; keyboard arrow navigation through the rows comes with `cmdk` \(the prototype has none; the design does not forbid it\) \| `components/shelf-picker-popover\.tsx:L63, L70–L78` · `design_handoff_shelf_picker/README\.md` "The option list" \| `ComboboxCommand` \(`shouldFilter=\{false\}`\) \+ `ComboboxCommandList` \| DS with overrides — \*\*grill question\*\* · `CommandList` deltas: padding `p-1\.5` \(6px\) → `p-1` \(4px\); `cmdk` wraps items in a `\[cmdk-list-sizer\]` div, so a `gap` on the list does not reach the rows — set the 2px on the sizer \(`\[&_\[cmdk-list-sizer\]\]:flex \[&_\[cmdk-list-sizer\]\]:flex-col \[&_\[cmdk-list-sizer\]\]:gap-0\.5`\) or on each item; `max-h-\[300px\] overflow-y-auto` is on by default and the design states no max-height — keep or drop is a grill call; `ComboboxCommand` adds its own `rounded-\[--radius-panel\] bg-\[--color-surface\]`, which matches the panel 
+  - type: regex
+    name: ledger-row-verbatim-shelf-row
+    target: { source: file, path: issue.md }
+    pattern: |-
+      \| shelf row \| `plain`, `kept`, `moving` \(ShelfRow\) · `open-empty-pick`, `open-one-kept`, `filtered` · uc1-s2, uc1-s3, uc1-s4 \| the shelf's name, from the shelf store — in the captures "Upper bay", "Brass niche", "Under glass", "Cold drawer" \| name `type-body` in `--color-ink`; tally mark `--color-accent`; hover fill `--color-shade`; corner `--radius-tile` \| \*\*same element; content differs\*\*: `plain` draws the tally mark at \*\*zero opacity\*\*, `kept` draws it in accent, `moving` dims the whole row to 50% opacity\. Anatomy: 100% wide; \*\*tally column and shelf name in one flow\*\*, 8px between; the tally column is a \*\*fixed 16px\*\* in every state, so no name shifts sideways; the name takes the rest\. Row padding \*\*8px\*\* left and right, \*\*6px\*\* top and bottom; corner 8px\. Icon: `TallyMarkIcon` \*\*16px\*\* `--color-accent` in `Icon size="md" tone="accent"`; unticked it stays in the layout with `opacity-0` — never removed \| \*\*the whole row owns the press\*\* \(`onSelect` on the item, which also takes Enter\); nothing inside it is separately pressable\. Press toggles the piece on that shelf, applies at once, and \*\*closes the picker\*\* \(ticket override; untick and `moving` timing are OPEN — see Overrides\)\. Hover fills the row `--color-shade`; \*\*no focus ring\*\*\. `moving`: inert, no press, 50% opacity \| `components/shelf-row\.tsx:L10–L27` · `components/shelf-picker-popover\.tsx:L70–L78` · `spec/component-states/shelf-row/\{plain,kept,moving\}/page\.tsx` · `design_handoff_shelf_picker/README\.md` "The option list" \| `ComboboxCommandItem` \| DS with overrides — \*\*grill question\*\* · `CommandItem` deltas: corner `rounded-\[--radius-pill\]` → `rounded-\[--radius-tile\]`; padding `px-3` → `px-2` \(py-1\.5 matches\); text `text-sm` → `type-body`; gap-2 matches; highlight is `data-\[selected=true\]:bg-\[--color-shade\]`, which `cmdk` sets on pointer hover \*\*and\*\* on keyboard focus, and `cmdk` \*\*selects the first item on open\*\* — so the first row renders shaded on open, and none of uc1-s2 → uc1-s4 shows that; the grill decides whether to suppress the open-time highlight; `disabled` gives `pointer-events-none opacity-50`, which \*\*matches\*\* `moving` exactly — pass `disabled` for `moving`, and `outline-none` already gives no focus ring 
+  - type: regex
+    name: ledger-row-verbatim-option-rows-absent
+    target: { source: file, path: issue.md }
+    pattern: |-
+      \| option rows — absent \| `no-matches` · uc1-s5 \| — \| — \| \*\*not rendered in this state\*\*: zero rows; the option list band shows the empty result instead and keeps its 4px padding \| — \| `components/shelf-picker-popover\.tsx:L64` \| `ComboboxCommandList` \| DS as-is 
+  - type: regex
+    name: ledger-row-verbatim-empty-result
+    target: { source: file, path: issue.md }
+    pattern: |-
+      \| empty result \| `no-matches` · uc1-s5 \| "No shelves found\." — `spec-data\.ts` and the source win; `design_handoff_shelf_picker/README\.md` and `HANDOFF\.md` read "No shelves\.", which is stale \| glyph `--color-ink-muted`; line `type-body` in `--color-ink-muted` \| \*\*rendered only when zero shelves match\*\*, in place of the rows, inside the option list band\. Vertical stack, centred: glyph, \*\*4px\*\*, then one centred line; 24px top and bottom\. Icon: `DustCoverIcon` \*\*20px\*\* `--color-ink-muted` in `Icon size="lg" tone="muted"` \| inert \| `components/shelf-picker-popover\.tsx:L64–L68` · `design_handoff_shelf_picker/README\.md` "The empty result" \| `ComboboxCommandEmpty` \| DS with overrides — \*\*grill question\*\* · `CommandEmpty` deltas: `text-sm` → `type-body`; add `flex flex-col items-center gap-1` for the glyph stack; `py-6 text-center text-\[--color-ink-muted\]` match\. It renders only when `cmdk` counts zero items — \*\*it never renders if the New shelf row is a `ComboboxCommandItem`\*\* \(see that row\) 
+  - type: regex
+    name: ledger-row-verbatim-new-shelf-row
+    target: { source: file, path: issue.md }
+    pattern: |-
+      \| New shelf row \| `open-empty-pick`, `open-one-kept`, `filtered`, `no-matches` · uc1-s2 → uc1-s5 \| "New shelf" \| hairline `--color-edge`; glyph and label `--color-accent`; label `type-body` \| the \*\*last\*\* band of the panel in every list state, below the option list band and the empty result alike; full panel width; padding \*\*12px\*\* left and right, \*\*8px\*\* top and bottom; one 1px hairline along its \*\*top, owned by the row\*\*, spanning the full panel width\. Glyph and label in \*\*one flow\*\*, 8px between, left-aligned\. No pill, no fill, no button chrome\. Icon: `NewNicheIcon` \*\*16px\*\* `--color-accent` in `Icon size="md" tone="accent"` \| \*\*the whole row owns the press\*\*; in the prototype it switches the panel to `naming`\. Whether this ticket wires that press, given the naming form is another ticket, is a grill question\. Hover and focus treatment: none in the source or the handoff \| `components/shelf-picker-popover\.tsx:L81–L88` · `design_handoff_shelf_picker/README\.md` "The New shelf row" \| — \(`ComboboxCommandItem` or a sibling of `ComboboxCommandList`\) \| OPEN — \*\*grill question\*\* · as a `ComboboxCommandItem` pinned last: breaks the empty result \(see above\) and sits inside the list's padding, so the hairline would not span the panel; it would also be filtered unless the item is excluded\. As a sibling after the list: renders the empty result and spans the panel, but leaves `cmdk`'s arrow-key flow, and `Button` \(`variant`/`size` chrome\) is not what the design draws 
+  - type: regex
+    name: ledger-row-verbatim-panel-content-naming
+    target: { source: file, path: issue.md }
+    pattern: |-
+      \| panel content — naming \| `naming` \| — \(form copy belongs to the naming-form ticket\) \| — \| \*\*the search band, the option list band and the New shelf row are not rendered in this state\*\*; the naming form fills the same panel at the same 250px width; no second layer opens \| the form's own actions leave this state; out of scope here \| `components/shelf-picker-popover\.tsx:L47–L48` · `spec/component-states/shelf-picker-popover/naming/page\.tsx` \(`mode="naming"`\) · `spec-data\.ts` uc1-s6 annotation \| `ComboboxContent` with the form in place of `ComboboxCommand` \| OPEN — \*\*grill question\*\* · whether this ticket builds the mode switch \(and a placeholder for the form\) or leaves the whole `naming` state to the naming-form ticket 
+
+  # The Decision cell is the 10th column, and it opens with the class the grill settled. The
+  # backticks around that class are how the hand run wrote it and not something the contract
+  # asks for, so they are optional here.
+  - type: regex
+    name: one-decision-per-ledger-row
+    target: { source: file, path: issue.md }
+    pattern: '^\|(?:[^|\n]*\|){9}\s*`?(?:DS as-is|DS with overrides|local component|DS change)`?'
+    flags: m
+    match: count:9
+
+  # Hard rule 5, scoped to the 5th column: a layout fact is stated in design words, never as a
+  # utility class. `opacity-0` is deliberately not in the list — the brief's shelf-row layout
+  # facts carry it, so a run that keeps the row verbatim must keep it too.
+  - type: regex
+    name: no-utility-class-in-a-layout-fact
+    target: { source: file, path: issue.md }
+    pattern: '^\|(?:[^|\n]*\|){4}[^|\n]*\b(?:px|py|pt|pb|pl|pr|p|w|h|gap|rounded|text|flex|items|border|space|size|max-h|min-h)-[\w.\[\]/%-]+'
+    flags: m
+    match: not_contains
+
+  - type: regex
+    name: tally-mark-keeps-its-ds-name
+    target: { source: file, path: issue.md }
+    pattern: TallyMarkIcon
+  - type: regex
+    name: loupe-keeps-its-ds-name
+    target: { source: file, path: issue.md }
+    pattern: LoupeGlassIcon
+  - type: regex
+    name: dust-cover-keeps-its-ds-name
+    target: { source: file, path: issue.md }
+    pattern: DustCoverIcon
+  - type: regex
+    name: new-niche-keeps-its-ds-name
+    target: { source: file, path: issue.md }
+    pattern: NewNicheIcon
+  - type: regex
+    name: no-conventional-icon-names
+    target: { source: file, path: issue.md }
+    pattern: CheckIcon|CheckMark|Checkmark|SearchIcon|PlusIcon|TickIcon|MagnifierIcon|CloseIcon|XIcon
+    match: not_contains
+
+  # One source-slice block per row the grill decided `local component` or `DS with overrides`,
+  # each with a fetch line pinned to a SHA and cut to the row's own line range.
+  - type: regex
+    name: slice-fetch-line-picker-panel
+    target: { source: file, path: issue.md }
+    pattern: '#### [^\n]*picker panel[^\n]*\n(?:[^\n]*\n){0,6}?gh api "repos/[^"]*/contents/[^"]*\.tsx\?ref=[0-9a-f]{40}"[^\n]*sed -n'
+  - type: regex
+    name: slice-fetch-line-search-band
+    target: { source: file, path: issue.md }
+    pattern: '#### [^\n]*search band[^\n]*\n(?:[^\n]*\n){0,6}?gh api "repos/[^"]*/contents/[^"]*\.tsx\?ref=[0-9a-f]{40}"[^\n]*sed -n'
+  - type: regex
+    name: slice-fetch-line-option-list-band
+    target: { source: file, path: issue.md }
+    pattern: '#### [^\n]*option list band[^\n]*\n(?:[^\n]*\n){0,6}?gh api "repos/[^"]*/contents/[^"]*\.tsx\?ref=[0-9a-f]{40}"[^\n]*sed -n'
+  - type: regex
+    name: slice-fetch-line-shelf-row
+    target: { source: file, path: issue.md }
+    pattern: '#### [^\n]*shelf row[^\n]*\n(?:[^\n]*\n){0,6}?gh api "repos/[^"]*/contents/[^"]*\.tsx\?ref=[0-9a-f]{40}"[^\n]*sed -n'
+  - type: regex
+    name: slice-fetch-line-empty-result
+    target: { source: file, path: issue.md }
+    pattern: '#### [^\n]*empty result[^\n]*\n(?:[^\n]*\n){0,6}?gh api "repos/[^"]*/contents/[^"]*\.tsx\?ref=[0-9a-f]{40}"[^\n]*sed -n'
+  - type: regex
+    name: slice-fetch-line-new-shelf-row
+    target: { source: file, path: issue.md }
+    pattern: '#### [^\n]*New shelf row[^\n]*\n(?:[^\n]*\n){0,6}?gh api "repos/[^"]*/contents/[^"]*\.tsx\?ref=[0-9a-f]{40}"[^\n]*sed -n'
+  - type: regex
+    name: slice-fetch-line-panel-content-naming
+    target: { source: file, path: issue.md }
+    pattern: '#### [^\n]*naming[^\n]*\n(?:[^\n]*\n){0,6}?gh api "repos/[^"]*/contents/[^"]*\.tsx\?ref=[0-9a-f]{40}"[^\n]*sed -n'
+
+  - type: regex
+    name: no-consumer-vocabulary
+    target: { source: file, path: issue.md }
+    pattern: neonplace|creative-ghost|liam-klyneker/liamklyneker|teamsnap|organization-frontend|FUS-|grimme|schmiede
+    match: not_contains
+
+  # The final print closes on the invocation that implements what was just written. The skill
+  # shows that print inside a fence, so a closing fence after it is the same answer.
+  - type: regex
+    name: final-print-ends-on-a-slash-command
+    target: last_message
+    pattern: '\n/[a-z-]+:[a-z-]+[^\n]*(?:\n```)?\s*$'
+
+  # `--out` replaces the `gh issue create` the contract otherwise ends on, so the issue-writing
+  # call is a Write to the path the prompt named.
+  - type: tool_used
+    name: issue-written-to-the-out-path
+    tool: Write
+    input_match: 'issue\.md'
+    min: 1
+
+  - type: llm
+    name: changes-adds-no-layout-fact-absent-from-the-ledger
+    focus: { source: file, path: issue.md }
+    criteria: |
+      Read the `## Fidelity ledger (in scope)` table, then read `## Changes`.
+
+      Every layout fact in `## Changes` — a size, a padding, a gap, a corner radius, a stacking
+      or nesting claim, an alignment, an icon size, a hairline and which element owns it — must
+      already be stated in the cited ledger row, in the row's own words or a faithful restatement
+      of them.
+
+      Score it failed if any numbered entry in `## Changes` states a layout fact that its cited
+      ledger row does not carry, or cites no ledger row while stating one. Naming a component, a
+      prop, a handler or a file is not a layout fact and never fails this grader; neither does a
+      pure engineering entry that states no layout fact at all.

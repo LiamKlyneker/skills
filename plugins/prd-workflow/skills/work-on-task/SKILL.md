@@ -12,6 +12,7 @@ description: >
 
 ```
 /prd-workflow:work-on-task <issue-url-or-number>
+/prd-workflow:work-on-task <local-issue-path>
 ```
 
 Takes **one** issue published by `to-task` and implements it end to end: evidence first, code second,
@@ -36,14 +37,20 @@ result — lives in that print. Nothing load-bearing may exist only in mid-sessi
 
 | Input         | Where it comes from                                                                                                  |
 | ------------- | -------------------------------------------------------------------------------------------------------------------- |
-| `<issue>`     | the argument — a URL (`https://github.com/<owner>/<repo>/issues/N`), `#N`, or bare `N`. Strip query strings.         |
-| The issue     | `gh issue view`. Source of the ledger rows, the decisions, `## Changes`, and both fetch-line sets.                   |
+| `<issue>`     | the argument — a URL (`https://github.com/<owner>/<repo>/issues/N`), `#N`, bare `N`, or a path to an existing local file (the `to-task --out` shape). Strip query strings. |
+| The issue     | `gh issue view` for a URL/number; the file's own contents, read directly, for a local path. Source of the ledger rows, the decisions, `## Changes`, and both fetch-line sets either way. |
 | The brief     | the path the issue names (e.g. `.claude/briefs/FUS-8965-run2.md`). Source of the **full** `## Fidelity ledger`.      |
 | Project facts | `<repo-root>/.claude/project/adapter.md` — tracker, branch pattern, L2 floor, repo discipline. Never hardcode these. |
 
 ## Preflight
 
 1. **Resolve and fetch the issue.**
+
+   `<issue>` names an existing local file → read it directly as the issue body; there is no
+   number, no state and no labels, so nothing here is fetched and nothing is closed later. This
+   is the shape `to-task --out` writes, for a sandbox with no network and no tracker credential.
+
+   Otherwise:
 
    ```
    gh issue view <n> --repo <repo> --json number,title,body,state,labels,url
@@ -135,7 +142,8 @@ for a ticket with no fixed scorecard) is ticked exactly like a fixed one.
 One commit, only after the gate is green. Never push, never open or touch a PR, never close the
 issue, never touch labels.
 
-- Subject ends with `(#N)` — this issue's number, as the last characters of the first line.
+- Subject ends with `(#N)` — this issue's number, as the last characters of the first line. A
+  local-path `<issue>` carries no number; end the subject `(local)` instead.
 - Conventional prefix and the Jira key, matching this repo's history:
   `feat: [FUS-XXXX] <what changed> (#N)`.
 - Squash fixups locally **before** the commit exists; never amend a commit that already exists.

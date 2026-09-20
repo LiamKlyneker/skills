@@ -1,0 +1,130 @@
+schema_version: "1.0"
+name: deep-grill-row-coverage
+description: >
+  The `deep-grill` hop against the Vitrine fixture's frozen brief. The hop's leak, per
+  `plugins/prd-workflow/evals/fixtures/leaks.md`, is a grill that inherits the brief's
+  confidence and never puts a ledger row's DS-default-vs-design delta in front of the
+  human — batching several rows into one question, or skipping one, instead of asking
+  each non-`DS as-is` row on its own.
+  deep-grill is interactive: it interviews, it does not conclude alone. There is no
+  human on the other end of this run, so the case asks the skill to raise the whole of
+  round 1 in one message and stop where it would otherwise wait for an answer. The
+  graders score the questions that round raised, never a finished consensus.
+  One Sonnet 5 run of this case measured at USD 1.21.
+tags: [deep-grill]
+runs: 1
+context:
+  scaffold_script: ./scaffold.sh
+execution:
+  prompt: |
+    The working directory holds a pnpm workspace. The project you are working in is the
+    Vitrine consumer app at `apps/consumer/`: its adapter is
+    `apps/consumer/.claude/project/adapter.md`, and that adapter is the one this run
+    reads for project facts, the explorer agent and the project gates.
+
+    The design brief for this ticket is at `apps/consumer/capture/brief.md`. Paths
+    inside that brief are relative to this working directory.
+
+    A run's read scope stops at the plugin directory, and the skill reaches its shared
+    fidelity-ledger contract through a symlink that points out of it. So wherever the
+    skill says `../_shared/fidelity-ledger.md`, read `fidelity-ledger.md` in this
+    working directory — it is the same file, placed here for that reason.
+
+    There is no human on the other end of this interview. Run the recon fan-out exactly
+    as the skill directs, then raise the whole of round 1 in **one message**, with a
+    recommended answer under each question as the skill asks — and stop there. Do not
+    wait for an answer, do not invent one, do not open a second round.
+
+    Run this, and nothing else:
+
+    /lk:deep-grill apps/consumer/capture/brief.md
+
+    Follow the skill exactly up to the point where it would wait for me.
+  max_turns: 100
+  timeout_seconds: 3600
+  model: claude-sonnet-5
+  allowed_tools: [Read, Glob, Grep, Skill, Bash, Agent]
+graders:
+  # A real interview happened, in the skill's own question markup — not a summary,
+  # not a table, not a single "here is my plan" paragraph. Loose on where the bold
+  # span closes: the skill's own example is `❓ **Q1** — **<title>**`, but a run may
+  # fold the number and the title into one bold span (`❓ **Q1 — <title>**`), and
+  # both are the same numbered-interview format.
+  - type: regex
+    name: round-one-is-a-numbered-interview
+    target: last_message
+    pattern: '❓\s*\*\*Q\d+'
+
+  # At least one of the seven non-`DS as-is` rows was named as a question. The `llm`
+  # grader below is the one that checks all seven; this is the cheap, free floor that
+  # catches a run that asked nothing about the ledger at all.
+  - type: regex
+    name: asked-about-a-ledger-row
+    target: last_message
+    pattern: 'picker panel|search band|option list band|shelf row|empty result|New shelf row|naming'
+    flags: i
+
+  # Same literal list `to-task-ledger-verbatim` checks — a fixture-repo name, a private
+  # path or a real ticket prefix landing in this public repo's output is a privacy leak
+  # regardless of which hop produced it.
+  - type: regex
+    name: no-consumer-vocabulary
+    target: last_message
+    pattern: neonplace|creative-ghost|liam-klyneker/liamklyneker|teamsnap|organization-frontend|FUS-|grimme|schmiede
+    match: not_contains
+
+  # The recon fan-out is unconditional per the skill ("there is no path that skips
+  # recon and interviews from guesses") — this is the one trace check that confirms it
+  # actually ran, rather than the round being written from the brief's prose alone.
+  - type: tool_used
+    name: recon-fan-out-ran
+    tool: Agent
+    min: 1
+
+  # The one narrow rubric: every ledger row not `DS as-is` got its own round-one
+  # question. The seven element names are pinned here rather than read back out of
+  # the brief at grading time, so a brief that loses a row cannot also shrink what
+  # the judge expects. The rubric scores *coverage* — one dedicated question per
+  # row — not the content of each question: recon is allowed to narrow what a
+  # row's question still needs to settle, because that narrowing is what the
+  # recon fan-out is for.
+  #
+  # Checked against a regression that drops "empty result" from the brief's
+  # Fidelity ledger row, its Element → DS mapping row and its screenshot/prose
+  # mentions together — this brief is redundant by design, so dropping the ledger
+  # row alone left the element reconstructable and the rubric still passed.
+  - type: llm
+    name: every-non-ds-as-is-row-asked-separately
+    focus: last_message
+    criteria: |
+      Read the single message below — round 1 of a `deep-grill` interview grilling the
+      Vitrine fixture's shelf-picker brief. That brief's `## Fidelity ledger` holds nine
+      rows. Two are `DS as-is` and are never asked: click-away layer, option rows —
+      absent. The other seven are not `DS as-is`, and the skill under test requires each
+      of them to get its own round-one question — never batched with another row, never
+      silently skipped, never fully resolved with no question at all:
+
+      1. picker panel
+      2. search band
+      3. option list band
+      4. shelf row
+      5. empty result
+      6. New shelf row
+      7. panel content — naming
+
+      For each of the seven, find a round-one question (a `❓` item) whose subject is
+      that row's element — the question's title or body names the element, even where
+      recon has narrowed the question to one open sub-fact of that row rather than
+      every fact the ledger states for it. That narrowing is allowed and expected; do
+      not fail a row for asking about less than its whole ledger cell.
+
+      Score it **failed** only if: a row has **no** question naming it anywhere in the
+      round; a single question folds two or more of the seven together with no way to
+      tell which row a given sentence answers; or a row's decision is stated as
+      already settled, in prose, with no `❓` question and no offered choice at all.
+
+      Do **not** fail the message for anything about the two `DS as-is` rows, for the
+      specific choice the round recommends on any row, for facts recon resolved ahead
+      of a question, or for any other question the round raises (business rules,
+      `likely`-mapping confirmations, the Data & Access Manifest) — this rubric scores
+      whether each of the seven rows got its own question, nothing else.

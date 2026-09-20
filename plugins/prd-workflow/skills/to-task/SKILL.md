@@ -12,7 +12,7 @@ description: >
 # To Task
 
 ```
-/prd-workflow:to-task <ticket> <brief-path>
+/prd-workflow:to-task <ticket> <brief-path> [--out <path>]
 ```
 
 Takes the **current conversation** — a `deep-grill` session that has reached consensus — plus the
@@ -31,6 +31,7 @@ shape a cold worker can implement.
 | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `<ticket>`     | the argument — e.g. `FUS-8965`. Names the feature and goes in the title.                                                                                     |
 | `<brief-path>` | the argument — the design brief the grill read, e.g. `.claude/briefs/FUS-8965-run1.md`. Source of the **fidelity ledger rows** and the pinned prototype SHA. |
+| `--out`        | the optional argument — a path. Given, the title and body go to that file and **no** issue is created; absent, the issue is filed as usual. |
 | The grill      | this conversation. Source of `## Fidelity decisions`, the confirmed decisions, and the scope boundary.                                                       |
 | Project facts  | `<repo-root>/.claude/project/adapter.md` — tracker, verify ladder, repo discipline. Never hardcode these.                                                    |
 | Scorecard      | the file the adapter's `Fixed scorecard` row names, `## Scorecard` — the verify checklist, when the adapter registers that row and the file has one for this ticket. |
@@ -44,8 +45,9 @@ Before writing a single line of the body:
    deferred, the screenshot pairs below are still written into the issue — they are the run's
    scoring instrument, not an automated gate.
 2. Read `<brief-path>` in full. Pull out: the pinned prototype repo + SHA, the prototype path, the
-   spec / component-state URLs, and the `## Fidelity ledger` rows — **as raw markdown rows**, with
-   every column, because they are pasted into the issue unchanged. Note the ledger's column order;
+   spec / component-state URLs. The `## Fidelity ledger` rows are not read into prose here: they are
+   printed by the extraction command in `../_shared/fidelity-ledger.md` §1 when the ledger section
+   is written, and pasted from that output with every column intact. Note the ledger's column order;
    the issue keeps it.
 3. Settle where the verify rows come from, per `../_shared/fidelity-ledger.md` §5. Read the file
    the adapter's `Fixed scorecard` row names, when the adapter registers one, and use its
@@ -107,8 +109,11 @@ Then one screenshot block per in-scope state, per `../_shared/fidelity-ledger.md
 
 ## Fidelity ledger (in scope)
 
-The brief's ledger rows for this issue's elements, built per `../_shared/fidelity-ledger.md` §1 —
-pasted verbatim, every column, plus the Decision and Instruction columns.
+The brief's ledger rows for this issue's elements, built per `../_shared/fidelity-ledger.md` §1:
+run the extraction command that section specifies against the brief and paste its output — every
+column, byte for byte — then append the Decision and Instruction cells to each pasted line. Never
+retype a row. Run §1's check before writing the body out; a row the diff reports is replaced with
+the printed bytes.
 
 ### Source slices — read before coding
 
@@ -153,6 +158,15 @@ tell a deliberate exclusion from an omission.
 
 ## Publishing
 
+**With `--out`, this whole section is one step: write the title on the first line, one blank line,
+then the body verbatim, to that path.** Then go straight to the final print. Nothing is created,
+the tracker is never called, and nobody is asked to confirm — the file is what the human reads, and
+it can be edited in place. Do not stop to ask, and do not write the body anywhere else first. A
+sandbox with no network and no tracker credential still produces the whole deliverable this way.
+Everything above this section is unchanged: the same preflight, the same hard rules, the same body.
+
+Without `--out`:
+
 1. Write the finished body to a scratchpad file — never inline it into a shell argument, since the
    body contains backticks, pipes and markdown image syntax that a shell will mangle.
 2. **Show the human the title and the body, and ask for confirmation before creating.** This skill
@@ -179,6 +193,14 @@ Filter: the issue is one click away and more current than any recap of it.
 
 ```
 #<n> created: <url>
+```
+
+With `--out`, there is no number and no url, so the last two lines are the path and the invocation
+that implements it:
+
+```
+issue body written: <path>
+/prd-workflow:work-on-task <path>
 ```
 
 Above that line, one line per **deviation** — a ledger row left out of scope because the grill never
