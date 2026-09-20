@@ -3,23 +3,19 @@
 A local, static page listing this repo's plugins, skills, agents, eval cases, and every
 eval run recorded under `plugins/*/evals/results/`.
 
-## Regenerate
+## Run
 
 ```bash
-python3 dashboard/build.py
+dashboard/serve.sh
 ```
 
-It writes `dashboard/catalog.json`, which is gitignored: run results can carry consumer
-material, so nothing derived from them is committed.
+It regenerates `dashboard/catalog.json`, serves the directory on port 8765 and opens the
+page in the browser. Pass a port as the first argument to change it. Ctrl-C stops the
+server.
 
-## View
-
-```bash
-cd dashboard && python3 -m http.server 8765
-```
-
-Then open <http://localhost:8765/>. Serve it over HTTP rather than opening the file
-directly; browsers block the `catalog.json` fetch on a `file://` page.
+`catalog.json` is gitignored: run results can carry consumer material, so nothing derived
+from them is committed. Serve over HTTP rather than opening the file directly; browsers
+block the `catalog.json` fetch on a `file://` page.
 
 ## Facts only
 
