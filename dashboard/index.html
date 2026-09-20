@@ -1,0 +1,341 @@
+<!doctype html>
+<!--
+  Serve this directory over HTTP: `cd dashboard && python3 -m http.server 8765`.
+  Opening the file over file:// leaves the fetch of catalog.json blocked by the
+  browser's origin rules in Chrome and Safari.
+
+  Every value on this page is read from catalog.json, which build.py copies out of
+  the plugin sources and the runner's own aggregate-result.json. Nothing here
+  recomputes a verdict: the pass marks are the runner's recorded `passed` flags,
+  shown beside the `threshold` it recorded.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Skills &amp; Evals</title>
+<style>
+  :root {
+    color-scheme: light dark;
+    --bg: #fbfbfa;
+    --panel: #ffffff;
+    --ink: #1b1b1a;
+    --muted: #6b6b66;
+    --edge: #e2e1dd;
+    --accent: #3a5ccc;
+    --pass-bg: #e2f2e4;
+    --pass-ink: #1d6b2c;
+    --fail-bg: #fae4e2;
+    --fail-ink: #a32b1c;
+    --flag-bg: #fbf0d8;
+    --flag-ink: #8a6216;
+    --judge-bg: #ece7fa;
+    --judge-ink: #5a3fbf;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #16161a;
+      --panel: #1e1e23;
+      --ink: #ececea;
+      --muted: #9a9a95;
+      --edge: #33333a;
+      --accent: #8fa8ff;
+      --pass-bg: #1d3524;
+      --pass-ink: #8fdca0;
+      --fail-bg: #3b1f1c;
+      --fail-ink: #f2a294;
+      --flag-bg: #3a2f16;
+      --flag-ink: #e8c477;
+      --judge-bg: #2a2440;
+      --judge-ink: #bfaeff;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 15px/1.5 ui-sans-serif, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  .wrap { max-width: 1100px; margin: 0 auto; padding: 24px 16px 64px; }
+  header h1 { font-size: 20px; margin: 0 0 4px; }
+  header p { margin: 0; color: var(--muted); font-size: 13px; }
+  nav { display: flex; gap: 8px; flex-wrap: wrap; margin: 20px 0; }
+  nav button {
+    font: inherit; font-size: 14px; cursor: pointer;
+    background: var(--panel); color: var(--ink);
+    border: 1px solid var(--edge); border-radius: 999px; padding: 6px 16px;
+  }
+  nav button[aria-selected="true"] { background: var(--accent); border-color: var(--accent); color: #fff; }
+  section.card {
+    background: var(--panel); border: 1px solid var(--edge);
+    border-radius: 12px; padding: 16px; margin-bottom: 16px;
+  }
+  h2 { font-size: 16px; margin: 0 0 2px; }
+  h3 { font-size: 14px; margin: 16px 0 4px; }
+  .sub { color: var(--muted); font-size: 13px; margin: 0 0 8px; }
+  .desc { color: var(--muted); font-size: 13px; margin: 4px 0 0; white-space: pre-wrap; }
+  .row { border-top: 1px solid var(--edge); padding: 12px 0; }
+  .row:last-child { padding-bottom: 0; }
+  .name { font-weight: 600; }
+  code, .mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; }
+  .tag {
+    display: inline-block; border: 1px solid var(--edge); border-radius: 6px;
+    padding: 1px 7px; margin: 2px 4px 2px 0; font-size: 12px; color: var(--muted);
+  }
+  .pill {
+    display: inline-block; border-radius: 6px; padding: 1px 7px;
+    margin: 2px 4px 2px 0; font-size: 12px; font-weight: 600;
+  }
+  .pass { background: var(--pass-bg); color: var(--pass-ink); }
+  .fail { background: var(--fail-bg); color: var(--fail-ink); }
+  .flag { background: var(--flag-bg); color: var(--flag-ink); }
+  .judge { background: var(--judge-bg); color: var(--judge-ink); }
+  .unknown { background: var(--edge); color: var(--muted); }
+  .graders { list-style: none; margin: 6px 0 0; padding: 0; }
+  .graders li { padding: 3px 0; font-size: 13px; }
+  .table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  table { border-collapse: collapse; width: 100%; font-size: 13px; min-width: 760px; }
+  th, td { text-align: left; padding: 7px 10px; border-bottom: 1px solid var(--edge); white-space: nowrap; }
+  th { color: var(--muted); font-weight: 600; }
+  a { color: var(--accent); }
+  .note { color: var(--muted); font-size: 12px; margin-top: 10px; }
+  @media (max-width: 560px) { .wrap { padding: 16px; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Skills &amp; Evals</h1>
+    <p id="summary">Loading catalog.json…</p>
+  </header>
+  <nav id="tabs" role="tablist">
+    <button role="tab" data-view="skills" aria-selected="true">Skills</button>
+    <button role="tab" data-view="cases" aria-selected="false">Cases</button>
+    <button role="tab" data-view="runs" aria-selected="false">Runs</button>
+  </nav>
+  <main id="view"></main>
+  <p class="note">
+    Pass marks are the flags the eval runner recorded, shown beside the threshold it
+    recorded. <span class="pill judge">judgement</span> marks a grader scored by a model,
+    not by a pattern. Per-run detail lives in each run's own report.
+  </p>
+</div>
+<script>
+const view = document.getElementById("view");
+const summary = document.getElementById("summary");
+let catalog = null;
+
+function el(tag, attrs, children) {
+  const node = document.createElement(tag);
+  for (const key in (attrs || {})) {
+    if (key === "class") node.className = attrs[key];
+    else if (key === "text") node.textContent = attrs[key];
+    else node.setAttribute(key, attrs[key]);
+  }
+  (children || []).forEach(function (child) {
+    node.appendChild(typeof child === "string" ? document.createTextNode(child) : child);
+  });
+  return node;
+}
+
+function verdictPill(passed) {
+  if (passed === true) return el("span", { class: "pill pass", text: "passed" });
+  if (passed === false) return el("span", { class: "pill fail", text: "failed" });
+  return el("span", { class: "pill unknown", text: "no recorded verdict" });
+}
+
+function num(value, digits) {
+  return value === null || value === undefined ? "—" : Number(value).toFixed(digits);
+}
+
+function plain(value) {
+  return value === null || value === undefined || value === "" ? "—" : String(value);
+}
+
+function allRunCases() {
+  const out = [];
+  catalog.runs.forEach(function (run) {
+    (run.cases || []).forEach(function (runCase) { out.push({ run: run, case: runCase }); });
+  });
+  return out;
+}
+
+// The latest run that included this case, by the startedAt each run recorded.
+function latestRunFor(caseName) {
+  const hits = allRunCases().filter(function (pair) { return pair.case.name === caseName; });
+  hits.sort(function (a, b) { return String(b.run.startedAt).localeCompare(String(a.run.startedAt)); });
+  return hits[0] || null;
+}
+
+function casesForSkill(plugin, skillName) {
+  return plugin.cases.filter(function (c) { return (c.tags || []).indexOf(skillName) !== -1; });
+}
+
+function renderSkills() {
+  view.replaceChildren();
+  catalog.plugins.forEach(function (plugin) {
+    const card = el("section", { class: "card" }, [
+      el("h2", { text: plugin.name + " @ " + plain(plugin.version) }),
+      el("p", { class: "sub", text: plugin.skillCount + " skills · " + plugin.agents.length + " agents · " + plugin.caseCount + " eval cases" })
+    ]);
+    plugin.skills.forEach(function (skill) {
+      const row = el("div", { class: "row" }, [
+        el("div", { class: "name", text: skill.name }),
+        el("div", { class: "mono sub", text: skill.path }),
+        el("p", { class: "desc", text: plain(skill.description) })
+      ]);
+      casesForSkill(plugin, skill.name).forEach(function (c) {
+        const latest = latestRunFor(c.name);
+        const line = el("div", { class: "sub" }, [
+          el("span", { class: "tag", text: "case" }),
+          el("span", { class: "mono", text: c.name + " " }),
+        ]);
+        line.appendChild(verdictPill(latest ? latest.case.passed : null));
+        if (latest) line.appendChild(el("span", { class: "tag", text: latest.run.startedAt }));
+        row.appendChild(line);
+      });
+      card.appendChild(row);
+    });
+    plugin.agents.forEach(function (agent) {
+      card.appendChild(el("div", { class: "row" }, [
+        el("div", { class: "name", text: agent.name + " (agent)" }),
+        el("div", { class: "mono sub", text: agent.path })
+      ]));
+    });
+    view.appendChild(card);
+  });
+}
+
+function renderCases() {
+  view.replaceChildren();
+  catalog.plugins.forEach(function (plugin) {
+    plugin.cases.forEach(function (c) {
+      const latest = latestRunFor(c.name);
+      const card = el("section", { class: "card" }, [
+        el("h2", { text: c.name }),
+        el("p", { class: "sub", text: plugin.name + " · " + plain(c.model) + " · runs: " + plain(c.runs) + " · " + c.graderCount + " graders" })
+      ]);
+      (c.tags || []).forEach(function (tag) { card.appendChild(el("span", { class: "tag", text: tag })); });
+      if (c.parse_error) {
+        card.appendChild(el("p", { class: "sub" }, [el("span", { class: "pill fail", text: "parse error" }), c.parse_error]));
+      }
+      card.appendChild(el("p", { class: "desc", text: plain(c.description) }));
+
+      const verdict = el("h3", { text: "Most recent run" });
+      card.appendChild(verdict);
+      if (latest) {
+        const line = el("p", { class: "sub" }, [
+          latest.run.startedAt + " · " + latest.run.plugin + "@" + plain(latest.run.pluginVersion) + " · threshold " + plain(latest.run.threshold) + " · score " + num(latest.case.score, 3) + " "
+        ]);
+        line.appendChild(verdictPill(latest.case.passed));
+        if (latest.run.partial) line.appendChild(el("span", { class: "pill flag", text: "partial" }));
+        if (latest.run.reportPath) {
+          line.appendChild(el("a", { href: latest.run.reportPath, text: "report.html" }));
+        }
+        card.appendChild(line);
+        (latest.case.attempts || []).forEach(function (attempt) {
+          if (attempt.error) {
+            card.appendChild(el("p", { class: "sub" }, [
+              el("span", { class: "pill flag", text: "run error" }), String(attempt.error)
+            ]));
+          }
+        });
+      } else {
+        card.appendChild(el("p", { class: "sub", text: "No recorded run includes this case." }));
+      }
+
+      card.appendChild(el("h3", { text: "Graders" }));
+      const list = el("ul", { class: "graders" });
+      c.graders.forEach(function (g) {
+        const item = el("li", {}, [
+          el("span", { class: "mono", text: plain(g.name) + " " }),
+          el("span", { class: "tag", text: plain(g.type) })
+        ]);
+        if (g.type === "llm") item.appendChild(el("span", { class: "pill judge", text: "judgement" }));
+        item.appendChild(el("span", { class: "tag", text: plain(g.target) }));
+        if (latest) {
+          const recorded = (latest.case.attempts[0] && latest.case.attempts[0].graders || [])
+            .filter(function (r) { return r.name === g.name; })[0];
+          if (recorded) item.appendChild(verdictPill(recorded.passed));
+        }
+        list.appendChild(item);
+      });
+      card.appendChild(list);
+      view.appendChild(card);
+    });
+  });
+}
+
+function renderRuns() {
+  view.replaceChildren();
+  const runs = catalog.runs.slice().sort(function (a, b) {
+    return String(b.startedAt).localeCompare(String(a.startedAt));
+  });
+  const head = el("tr", {}, ["Date", "Plugin", "Case filter", "Model", "Threshold", "Passed", "Score", "Cost (USD)", "Duration (s)", "Partial", "Report"].map(function (label) {
+    return el("th", { text: label });
+  }));
+  const body = el("tbody");
+  runs.forEach(function (run) {
+    const passedCell = el("td", { text: plain(run.casesPassed) + " / " + plain(run.casesTotal) });
+    const partialCell = el("td");
+    partialCell.appendChild(run.partial
+      ? el("span", { class: "pill flag", text: "partial" })
+      : document.createTextNode("—"));
+    const reportCell = el("td");
+    reportCell.appendChild(run.reportPath
+      ? el("a", { href: run.reportPath, text: "open" })
+      : document.createTextNode("—"));
+    body.appendChild(el("tr", {}, [
+      el("td", { class: "mono", text: plain(run.startedAt) }),
+      el("td", { text: run.plugin + "@" + plain(run.pluginVersion) }),
+      el("td", { class: "mono", text: plain(run.caseFilter) }),
+      el("td", { class: "mono", text: plain(run.model) }),
+      el("td", { text: plain(run.threshold) }),
+      passedCell,
+      el("td", { text: num(run.overallScore, 3) }),
+      el("td", { text: num(run.costUsd, 4) }),
+      el("td", { text: plain(run.durationSeconds) }),
+      partialCell,
+      reportCell
+    ]));
+  });
+  const table = el("table", {}, [el("thead", {}, [head]), body]);
+  view.appendChild(el("section", { class: "card" }, [
+    el("h2", { text: "Runs" }),
+    el("p", { class: "sub", text: runs.length + " recorded runs, newest first." }),
+    el("div", { class: "table-scroll" }, [table])
+  ]));
+}
+
+const views = { skills: renderSkills, cases: renderCases, runs: renderRuns };
+
+document.getElementById("tabs").addEventListener("click", function (event) {
+  const button = event.target.closest("button[data-view]");
+  if (!button || !catalog) return;
+  document.querySelectorAll("#tabs button").forEach(function (other) {
+    other.setAttribute("aria-selected", String(other === button));
+  });
+  views[button.dataset.view]();
+});
+
+fetch("catalog.json")
+  .then(function (response) {
+    if (!response.ok) throw new Error("HTTP " + response.status);
+    return response.json();
+  })
+  .then(function (data) {
+    catalog = data;
+    const counts = data.counts;
+    summary.textContent = counts.plugins + " plugins · " + counts.skills + " skills · "
+      + counts.agents + " agents · " + counts.cases + " eval cases · " + counts.runs
+      + " runs · generated " + data.generatedAt;
+    renderSkills();
+  })
+  .catch(function (error) {
+    summary.textContent = "Could not load catalog.json (" + error.message
+      + "). Run python3 dashboard/build.py, then serve this directory over HTTP.";
+  });
+</script>
+</body>
+</html>
