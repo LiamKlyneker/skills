@@ -9,7 +9,7 @@ eval run recorded under `plugins/*/evals/results/`.
 dashboard/serve.sh
 ```
 
-It regenerates `dashboard/catalog.json`, serves the directory on port 8765 and opens the
+It regenerates `dashboard/catalog.json`, serves the repo root on port 8765 and opens the
 page in the browser. Pass a port as the first argument to change it. Ctrl-C stops the
 server.
 
