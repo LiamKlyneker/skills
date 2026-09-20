@@ -1,20 +1,23 @@
 # lk
 
-The five skills that travel everywhere Liam does, packaged as a Claude Code
+The six skills that travel everywhere Liam does, packaged as a Claude Code
 plugin: `grill` and `deep-grill` for interviewing a plan, `pinpoint`,
-`scoped-context`, and `how-i-write`.
+`scoped-context`, `how-i-write`, and `report-leak`.
 
-They talk to the **user and the codebase** rather than to a tracker, which is
-exactly why they do not belong to a tracker-bound workflow plugin. Before this
-plugin they reached a machine only as hand-made symlinks, one per skill per
-config directory, recorded nowhere the repo could check. This plugin ended
-that: `/plugin install lk@liamklyneker` places all five at once, at a version
-the catalog pins.
+None of them is bound to the **project's** tracker, which is exactly why they
+do not belong to a tracker-bound workflow plugin. Before this plugin they
+reached a machine only as hand-made symlinks, one per skill per config
+directory, recorded nowhere the repo could check. This plugin ended that:
+`/plugin install lk@liamklyneker` places all six at once, at a version the
+catalog pins.
 
-That criterion — the user and the codebase, never a tracker — is the whole
-membership rule, and it now holds with **no exception**. The plugin carried the PRD QA loop for a while, and that loop
-writes to GitHub — so it belonged to `prd-workflow` all along. `triage`
-moved there and invokes as `/prd-workflow:triage`.
+That criterion — never the project's tracker — is the whole membership rule.
+A skill that writes to the tracker of the repo it is running in belongs to that
+repo's workflow plugin: the PRD QA loop writes to GitHub, so `triage` lives in
+`prd-workflow` and invokes as `/prd-workflow:triage`. `report-leak` passes the
+rule from the other side. It files issues, but never on the project's tracker —
+its target is `LiamKlyneker/skills`, hardcoded, wherever it runs, and it reads
+one section of the project's adapter and writes nothing to it.
 
 ## Layout
 
@@ -27,6 +30,7 @@ plugins/lk/
     pinpoint/                          # throwaway-subagent search
     scoped-context/                    # the CONTEXT.md convention
     how-i-write/                       # Liam's voice, with references/
+    report-leak/                       # a skill failure, walked back to its hop
 ```
 
 Nothing sits at the plugin root, and there are no agents. A directory holding

@@ -1,0 +1,90 @@
+schema_version: "1.0"
+name: report-leak-issue-hop-sanitized
+description: >
+  `lk:report-leak` against a frozen brief chain for the Vitrine fixture, with one leak planted at
+  a known hop: the brief and the grill's `## Fidelity decisions` both keep the search band's
+  magnifier at 16px in `--color-ink-muted`, and the frozen `to-task --out` issue invents 20px in
+  `--color-accent` for the same row. The external behaviour under test is the issue body the
+  skill writes to `.claude/leaks/<key>/issue-<hop>.md` before it would ask for approval to post —
+  never the conversation, since that is what the skill posts from. Graders check that the body
+  names the guilty hop (issue) and none of the three forbidden token classes the sanitizing rule
+  bans: the fixture app name, a fixture path, and the planted ticket id.
+  There is no human on the other end of this run: the skill's two up-front questions are answered
+  in the prompt, and it stops once the sanitized body is written and shown, the same way
+  `deep-grill-row-coverage` stops round 1 before it waits for an answer.
+tags: [report-leak]
+runs: 1
+context:
+  scaffold_script: ./scaffold.sh
+execution:
+  prompt: |
+    The working directory holds a pnpm workspace. The project you are working in is the Vitrine
+    consumer app at `apps/consumer/`: its adapter is `apps/consumer/.claude/project/adapter.md`.
+
+    There is no human on the other end of this session. The skill's two up-front questions are
+    answered here, already given — do not ask them again and do not wait for a reply:
+
+    1. **What is wrong?** The shipped shelf picker's search band draws its magnifier glyph
+       noticeably larger and in the accent color, instead of the smaller muted glyph the design
+       shows.
+    2. **What did you run to get here?** This is a `to-task --out` run that never reached a
+       tracker issue. `/figma-tools:prototype-to-spec` wrote the brief now at
+       `apps/consumer/.claude/briefs/VTR-4471.md`. `/lk:deep-grill` reached consensus and wrote it
+       to `apps/consumer/.claude/briefs/VTR-4471/grill.md`. `/prd-workflow:to-task --out` wrote the
+       issue file now at `apps/consumer/capture/issue-VTR-4471.md` — read this path exactly where
+       the skill's `to-task --out` carve-out says to read it, in place of a ticket id. No branch
+       exists and no PR was opened; `work-on-task` has not run against this ticket.
+
+    Run this, and nothing else:
+
+    /lk:report-leak
+
+    Take the two answers above as already given for this skill's up-front questions; do not open
+    a second round asking for them again. Walk the chain exactly as the skill directs, from the
+    branch diff (there is none — say so and move on) back through the issue file, the grill file
+    and the brief. Follow the skill's own filing convention for where the sanitized body lands:
+    `<repo-root>/.claude/leaks/<key>/issue-<hop>.md`, where `<repo-root>` is `apps/consumer`,
+    `<key>` is the ticket id above, and `<hop>` is written as the skill's own hop name for
+    whichever hop turns out to be guilty (`brief`, `grill`, `issue`, or `code` — the same
+    vocabulary `plugins/prd-workflow/evals/fixtures/leaks.md` uses for its own section headings).
+
+    Stop once that file is written and you have shown its contents and stated the sanitizing rule,
+    the way the skill's filing step asks for approval before posting — do not run
+    `gh issue create`, do not post anything to any tracker, and do not wait for an answer past that
+    point.
+  max_turns: 60
+  timeout_seconds: 1800
+  model: claude-sonnet-5
+  allowed_tools: [Read, Glob, Grep, Skill, Bash, Write]
+graders:
+  # The body names the guilty hop by the skill's own vocabulary. This is the coverage floor: a
+  # body that never localizes which hop leaked has failed regardless of how clean it otherwise is.
+  - type: regex
+    name: names-the-issue-hop
+    target: { source: file, path: apps/consumer/.claude/leaks/VTR-4471/issue-issue.md }
+    pattern: 'Issue hop'
+    flags: i
+
+  # The three forbidden token classes from the skill's own sanitizing rule (§10): no project
+  # name, no project path, no ticket id. Each is its own grader because the point of this case is
+  # that a body leaking any one of them fails independently of whether the hop was localized
+  # correctly — these are not alternates for one "sanitized" check.
+  - type: regex
+    name: no-fixture-app-name
+    target: { source: file, path: apps/consumer/.claude/leaks/VTR-4471/issue-issue.md }
+    pattern: 'vitrine'
+    flags: i
+    match: not_contains
+
+  - type: regex
+    name: no-fixture-path
+    target: { source: file, path: apps/consumer/.claude/leaks/VTR-4471/issue-issue.md }
+    pattern: 'shelf-picker-popover|apps/consumer|skills-fixture'
+    flags: i
+    match: not_contains
+
+  - type: regex
+    name: no-planted-tracker-id
+    target: { source: file, path: apps/consumer/.claude/leaks/VTR-4471/issue-issue.md }
+    pattern: 'VTR-4471'
+    match: not_contains
