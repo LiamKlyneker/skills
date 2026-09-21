@@ -69,9 +69,11 @@ Each arrow is a **hop**, and each hop is a skill: the brief hop is `figma-tools:
 Each turn of the loop is four moves, in order. **Nothing is filed until §6.**
 
 1. **State one finding.** One visual or behavioural failure, named plainly.
-2. **Reduce it to facts and confirm them.** A fact is one checkable claim about the shipped result — a copy string, a stack direction, a divider's owner, a padding owner, an icon name, a state that draws a container. Read the screenshots to derive the list. Put the list in front of the user and get it confirmed before walking it; a walk over a fact the user does not recognise finds the wrong hop.
+2. **Reduce it to facts.** A fact is one checkable claim about the shipped result — a copy string, a stack direction, a divider's owner, a padding owner, an icon name, a state that draws a container. Read the screenshots to derive the list.
 3. **Walk each fact back** per §4, and mark it `leak` or `gap` per §5.
-4. **Report the hop and the contract sentence.** In-session, quote **the exact line of the guilty artifact**, and quote **the sentence of that hop's `SKILL.md` or shared contract that the output violated** — or say plainly that **no sentence covers it**, which is itself the most useful finding this skill produces.
+4. **Report the facts and the walk together, in one stop.** Print the fact list and the walk's result in the same message: the hop, quoting **the exact line of the guilty artifact**, and quoting **the sentence of that hop's `SKILL.md` or shared contract that the output violated** — or saying plainly that **no sentence covers it**, which is itself the most useful finding this skill produces. Then wait once, and continue on a "yes".
+
+**The fact list gets no stop of its own.** A fact the user does not recognise is corrected at this one stop, and the walk over it is redone; a separate confirmation turn before the walk buys nothing the combined stop does not.
 
 Then: next finding, or finish.
 
@@ -133,15 +135,15 @@ Phrase the finding in `leaks.md`'s own vocabulary. That file is where the issue'
 
 ## 8. Re-entrant — findings live on disk while the session runs
 
-**Findings so far are written to `<repo-root>/.claude/leaks/<key>.md` inside the consumer project**, where the key is:
+**Findings so far are written to `<scratch>/leaks/<key>.md`, outside the consumer project**, where `<scratch>` is the session scratchpad directory the harness names — Claude Code names it in the session environment — and a fresh temp directory when it names none. The key is:
 
 - the **ticket id**, for anything with a brief chain behind it;
 - the literal **`how-i-write`**, for a writing correction;
 - the **skill name**, for any other one-hop case.
 
-**Running this skill again on the same key picks up what is already there** rather than starting empty — read the file first, present the findings it holds, and add to it. The path is hardcoded here the same way `.claude/briefs/` is, and is gitignored by the same convention.
+**Running this skill again on the same key picks up what is already there** rather than starting empty — read the file first, present the findings it holds, and add to it. **Print the full path of that file in the session's last message**, so it can be copied before the scratch directory goes away.
 
-**Never write any of this into the skills repo.** The working notes stay in the project; only the sanitized issue bodies cross over.
+**Nothing this skill writes lands in a repository.** Not the consumer project — after a run, `git status --porcelain` there reads exactly what it read before it — and not the skills repo. Only the sanitized issue bodies cross over, as issues.
 
 ## 9. Filing, on finish
 
@@ -149,15 +151,16 @@ Phrase the finding in `leaks.md`'s own vocabulary. That file is where the issue'
 
 For each hop, in order:
 
-1. **Write the body to `<repo-root>/.claude/leaks/<key>/issue-<hop>.md` — before asking for approval.** The file is written first on purpose: the real run and any eval of this skill then exercise the same path, and the body that gets approved is the byte-identical body that gets posted.
-2. **Show the body and ask for approval**, stating the sanitizing rule from §10 in the prompt — so the check is against a rule rather than against taste.
-3. **Post it from that file:**
+1. **Write the body to `<scratch>/leaks/<key>/issue-<hop>.md` — before anything is shown or posted.** The file is written first on purpose: the real run and any eval of this skill then exercise the same path, and the body that is summarised is the byte-identical body that gets posted.
+2. **Summarise the issue. Never print the body.** Five lines per issue: the title, the hop, each finding's `leak` / `gap` mark, the known-leak status from §7, and a one-line list of the borderline tokens the body carries under §10 — a `sui-` prefix, a `-[Npx]` utility shape, anything that reached the body through a quoted contract sentence rather than through the run. **The `## Hop and skill` … `## Known-leak status` block never enters the transcript.** It stays in the file, and reaches `gh` through `--body-file`.
+3. **Ask for approval only when nothing in the conversation authorises posting.** The user saying "post them", or naming the issues as the deliverable in the §1 answers, is that authorisation: post from the file without asking. When you do ask, state the sanitizing rule from §10 in the prompt — so the check is against a rule rather than against taste — and still show the summary rather than the body.
+4. **Post it from that file:**
 
    ```bash
    gh issue create --repo LiamKlyneker/skills \
      --title "[LEAK] <hop> — <one-line shape of the finding>" \
      --label needs-triage \
-     --body-file <repo-root>/.claude/leaks/<key>/issue-<hop>.md
+     --body-file <scratch>/leaks/<key>/issue-<hop>.md
    ```
 
 **Body sections, in this order:**
@@ -207,4 +210,4 @@ This is what the finding being "in abstract form" means: the body says *a compos
 
 **On an Azure DevOps project**, find the pull request and the `[SPEC]` through the ADO tools; `gh` is still what files the report.
 
-**Without `gh` auth: write every body to `<repo-root>/.claude/leaks/<key>/` and stop.** Say exactly where the files are and that nothing was posted. Do not attempt another route to the repo, and do not discard the bodies — they are the whole session's work, and a human can post them in a minute.
+**Without `gh` auth: write every body to `<scratch>/leaks/<key>/` and stop.** Print the full path of each file, and say that nothing was posted. Do not attempt another route to the repo, and do not discard the bodies — they are the whole session's work, and a human can post them in a minute.

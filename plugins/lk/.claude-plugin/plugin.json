@@ -1,7 +1,7 @@
 {
   "name": "lk",
   "description": "Liam Klyneker's personal Claude Code skills: the grills that interview a plan until every branch is resolved, plus pinpoint, scoped-context, his writing voice, and report-leak, which walks a skill failure back to the hop that leaked it and files it against the skills repo",
-  "version": "1.14.0",
+  "version": "1.15.0",
   "author": {
     "name": "Liam Klyneker",
     "url": "https://github.com/LiamKlyneker"

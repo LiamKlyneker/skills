@@ -5,12 +5,12 @@ description: >
   a known hop: the brief and the grill's `## Fidelity decisions` both keep the search band's
   magnifier at 16px in `--color-ink-muted`, and the frozen `to-task --out` issue invents 20px in
   `--color-accent` for the same row. The external behaviour under test is the issue body the
-  skill writes to `.claude/leaks/<key>/issue-<hop>.md` before it would ask for approval to post —
-  never the conversation, since that is what the skill posts from. Graders check that the body
+  skill writes to `<scratch>/leaks/<key>/issue-<hop>.md` before it would post it — never the
+  conversation, which by §9 never carries the body at all. Graders check that the body
   names the guilty hop (issue) and none of the three forbidden token classes the sanitizing rule
   bans: the fixture app name, a fixture path, and the planted ticket id.
   There is no human on the other end of this run: the skill's two up-front questions are answered
-  in the prompt, and it stops once the sanitized body is written and shown, the same way
+  in the prompt, and it stops once the sanitized body is written and summarised, the same way
   `deep-grill-row-coverage` stops round 1 before it waits for an answer.
 tags: [report-leak]
 runs: 1
@@ -35,6 +35,9 @@ execution:
        the skill's `to-task --out` carve-out says to read it, in place of a ticket id. No branch
        exists and no PR was opened; `work-on-task` has not run against this ticket.
 
+    This session names no scratchpad directory, so for this run take `leak-scratch/` under
+    the working directory as `<scratch>` wherever the skill writes to the session scratchpad.
+
     Run this, and nothing else:
 
     /lk:report-leak
@@ -43,13 +46,13 @@ execution:
     a second round asking for them again. Walk the chain exactly as the skill directs, from the
     branch diff (there is none — say so and move on) back through the issue file, the grill file
     and the brief. Follow the skill's own filing convention for where the sanitized body lands:
-    `<repo-root>/.claude/leaks/<key>/issue-<hop>.md`, where `<repo-root>` is `apps/consumer`,
+    `<scratch>/leaks/<key>/issue-<hop>.md`, where `<scratch>` is the directory named above,
     `<key>` is the ticket id above, and `<hop>` is written as the skill's own hop name for
     whichever hop turns out to be guilty (`brief`, `grill`, `issue`, or `code` — the same
     vocabulary `plugins/prd-workflow/evals/fixtures/leaks.md` uses for its own section headings).
 
-    Stop once that file is written and you have shown its contents and stated the sanitizing rule,
-    the way the skill's filing step asks for approval before posting — do not run
+    Stop once that file is written and you have summarised it the way the skill's filing step
+    directs — do not run
     `gh issue create`, do not post anything to any tracker, and do not wait for an answer past that
     point.
   max_turns: 60
@@ -61,7 +64,7 @@ graders:
   # body that never localizes which hop leaked has failed regardless of how clean it otherwise is.
   - type: regex
     name: names-the-issue-hop
-    target: { source: file, path: apps/consumer/.claude/leaks/VTR-4471/issue-issue.md }
+    target: { source: file, path: leak-scratch/leaks/VTR-4471/issue-issue.md }
     pattern: 'Issue hop'
     flags: i
 
@@ -71,20 +74,20 @@ graders:
   # correctly — these are not alternates for one "sanitized" check.
   - type: regex
     name: no-fixture-app-name
-    target: { source: file, path: apps/consumer/.claude/leaks/VTR-4471/issue-issue.md }
+    target: { source: file, path: leak-scratch/leaks/VTR-4471/issue-issue.md }
     pattern: 'vitrine'
     flags: i
     match: not_contains
 
   - type: regex
     name: no-fixture-path
-    target: { source: file, path: apps/consumer/.claude/leaks/VTR-4471/issue-issue.md }
+    target: { source: file, path: leak-scratch/leaks/VTR-4471/issue-issue.md }
     pattern: 'shelf-picker-popover|apps/consumer|skills-fixture'
     flags: i
     match: not_contains
 
   - type: regex
     name: no-planted-tracker-id
-    target: { source: file, path: apps/consumer/.claude/leaks/VTR-4471/issue-issue.md }
+    target: { source: file, path: leak-scratch/leaks/VTR-4471/issue-issue.md }
     pattern: 'VTR-4471'
     match: not_contains
