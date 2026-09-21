@@ -1,0 +1,437 @@
+{
+  "note": "A recorded `POST https://api.typesafe.ai/v1/systemone` response for every claim of `planted-issue.md` the exact match leaves unsettled, keyed by the claim rather than by the question id the request happens to assign it. Four claims carry the planted verdicts — one `contradicts`, three `says_nothing`; every other claim is a faithful paraphrase of a ledger cell and carries `supports`. Replayed by `test_sidecar.py`, which reaches no network.",
+  "model": "jev-1.13.0",
+  "endpoint": "POST https://api.typesafe.ai/v1/systemone",
+  "answers_by_claim": {
+    "1. **Split the picker into two files** · engineering, no ledger row · decision: split `SaveToShelfCombobox` into `ShelfPickerPopover` and `ShelfRow`": {
+      "type": "choice",
+      "choice": "supports",
+      "probabilities": {
+        "supports": 0.938,
+        "contradicts": 0.031,
+        "says_nothing": 0.031
+      },
+      "confidence": 0.898
+    },
+    "Create `src/shelf-keeper/shelf-picker-popover.tsx` exporting `ShelfPickerPopover`, and `src/shelf-keeper/shelf-row.tsx` exporting `ShelfRow`.": {
+      "type": "choice",
+      "choice": "supports",
+      "probabilities": {
+        "supports": 0.914,
+        "contradicts": 0.043,
+        "says_nothing": 0.043
+      },
+      "confidence": 0.874
+    },
+    "Delete `src/shelf-keeper/save-to-shelf-combobox.tsx`.": {
+      "type": "choice",
+      "choice": "supports",
+      "probabilities": {
+        "supports": 0.922,
+        "contradicts": 0.039,
+        "says_nothing": 0.039
+      },
+      "confidence": 0.882
+    },
+    "`ShelfPickerPopover` keeps the current props contract (`specimenId`, `kind`, and a `trigger` node wrapped in `ComboboxTrigger asChild`), and it owns the controlled `open` state and the naming switch.": {
+      "type": "choice",
+      "choice": "supports",
+      "probabilities": {
+        "supports": 0.905,
+        "contradicts": 0.0475,
+        "says_nothing": 0.0475
+      },
+      "confidence": 0.865
+    },
+    "In `KeepSpecimenButton`, swap the import to `ShelfPickerPopover`; change nothing else in that component.": {
+      "type": "choice",
+      "choice": "supports",
+      "probabilities": {
+        "supports": 0.877,
+        "contradicts": 0.0615,
+        "says_nothing": 0.0615
+      },
+      "confidence": 0.837
+    },
+    "2. **Picker panel — width, anchor, chrome** · ledger row: `picker panel` (`DS with overrides`) · decision: `ComboboxContent` with the overrides named in the row's Decision cell": {
+      "type": "choice",
+      "choice": "supports",
+      "probabilities": {
+        "supports": 0.919,
+        "contradicts": 0.0405,
+        "says_nothing": 0.0405
+      },
+      "confidence": 0.879
+    },
+    "The panel is a fixed 250px wide at every viewport, anchored to the right edge of the bell-jar button.": {
+      "type": "choice",
+      "choice": "supports",
+      "probabilities": {
+        "supports": 0.976,
+        "contradicts": 0.012,
+        "says_nothing": 0.012
+      },
+      "confidence": 0.936
+    },
+    "It owns no padding.": {
+      "type": "choice",
+      "choice": "supports",
+      "probabilities": {
+        "supports": 0.953,
+        "contradicts": 0.0235,
+        "says_nothing": 0.0235
+      },
+      "confidence": 0.913
+    },
+    "Keep the shipped offset, radius, border, surface and shadow.": {
+      "type": "choice",
+      "choice": "supports",
+      "probabilities": {
+        "supports": 0.947,
+        "contradicts": 0.0265,
+        "says_nothing": 0.0265
+      },
+      "confidence": 0.907
+    },
+    "The panel fades in over 150ms and fades out over 100ms.": {
+      "type": "choice",
+      "choice": "says_nothing",
+      "probabilities": {
+        "supports": 0.028,
+        "contradicts": 0.028,
+        "says_nothing": 0.944
+      },
+      "confidence": 0.904
+    },
+    "File no shadow token.": {
+      "type": "choice",
+      "choice": "supports",
+      "probabilities": {
+        "supports": 0.922,
+        "contradicts": 0.039,
+        "says_nothing": 0.039
+      },
+      "confidence": 0.882
+    },
+    "The panel hugs its content, so its width tracks the longest shelf name.": {
+      "type": "choice",
+      "choice": "contradicts",
+      "probabilities": {
+        "supports": 0.0445,
+        "contradicts": 0.911,
+        "says_nothing": 0.0445
+      },
+      "confidence": 0.871
+    },
+    "3. **Click-away layer — dismissal from the DS root** · ledger row: `click-away layer` (`DS as-is`) · decision: `Combobox` as-is": {
+      "type": "choice",
+      "choice": "supports",
+      "probabilities": {
+        "supports": 0.976,
+        "contradicts": 0.012,
+        "says_nothing": 0.012
+      },
+      "confidence": 0.936
+    },
+    "Render no click-away layer.": {
+      "type": "choice",
+      "choice": "supports",
+      "probabilities": {
+        "supports": 0.916,
+        "contradicts": 0.042,
+        "says_nothing": 0.042
+      },
+      "confidence": 0.876
+    },
+    "An outside pointer-down closes the panel, Escape closes it, focus moves into the panel on open and returns to the trigger on close.": {
+      "type": "choice",
+      "choice": "supports",
+      "probabilities": {
+        "supports": 0.94,
+        "contradicts": 0.03,
+        "says_nothing": 0.03
+      },
+      "confidence": 0.9
+    },
+    "4. **Search band — input text and height** · ledger row: `search band` (`DS with overrides`) · decision: override on the input only; accept the DS wrapper padding and loupe size": {
+      "type": "choice",
+      "choice": "supports",
+      "probabilities": {
+        "supports": 0.948,
+        "contradicts": 0.026,
+        "says_nothing": 0.026
+      },
+      "confidence": 0.908
+    },
+    "Use `ComboboxCommandInput` with placeholder \"Search shelves…\" (single ellipsis character) and the override named in the row's Decision cell.": {
+      "type": "choice",
+      "choice": "supports",
+      "probabilities": {
+        "supports": 0.868,
+        "contradicts": 0.066,
+        "says_nothing": 0.066
+      },
+      "confidence": 0.828
+    },
+    "The 16px-vs-12px horizontal padding and the 14px-vs-16px loupe are accepted deltas; file no DS change.": {
+      "type": "choice",
+      "choice": "supports",
+      "probabilities": {
+        "supports": 0.96,
+        "contradicts": 0.02,
+        "says_nothing": 0.02
+      },
+      "confidence": 0.92
+    },
+    "5. **Option list band — padding, row gap, filtering** · ledger row: `option list band` (`DS with overrides`) · decision: the overrides named in the row's Decision cell, `max-h-[300px]` kept": {
+      "type": "choice",
+      "choice": "supports",
+      "probabilities": {
+        "supports": 0.954,
+        "contradicts": 0.023,
+        "says_nothing": 0.023
+      },
+      "confidence": 0.914
+    },
+    "The band owns 4px padding all round and 2px between rows (see the row's Decision cell for the sizer override).": {
+      "type": "choice",
+      "choice": "supports",
+      "probabilities": {
+        "supports": 0.895,
+        "contradicts": 0.0525,
+        "says_nothing": 0.0525
+      },
+      "confidence": 0.855
+    },
+    "Turn off cmdk filtering on `ComboboxCommand` and filter in `ShelfPickerPopover` per bl3: case-insensitive substring match against the shelf name only, on the trimmed query.": {
+      "type": "choice",
+      "choice": "supports",
+      "probabilities": {
+        "supports": 0.978,
+        "contradicts": 0.011,
+        "says_nothing": 0.011
+      },
+      "confidence": 0.938
+    },
+    "The shelf note is never searched.": {
+      "type": "choice",
+      "choice": "supports",
+      "probabilities": {
+        "supports": 0.967,
+        "contradicts": 0.0165,
+        "says_nothing": 0.0165
+      },
+      "confidence": 0.927
+    },
+    "6. **Shelf row — anatomy, states, press** · ledger row: `shelf row` (`DS with overrides`) · decision: the overrides named in the row's Decision cell; close after the toggle resolves, tick or untick": {
+      "type": "choice",
+      "choice": "supports",
+      "probabilities": {
+        "supports": 0.936,
+        "contradicts": 0.032,
+        "says_nothing": 0.032
+      },
+      "confidence": 0.896
+    },
+    "`ShelfRow` renders `ComboboxCommandItem` with the tally column held in every state (`TallyMarkIcon`, invisible when not kept, never removed) and the shelf name.": {
+      "type": "choice",
+      "choice": "supports",
+      "probabilities": {
+        "supports": 0.883,
+        "contradicts": 0.0585,
+        "says_nothing": 0.0585
+      },
+      "confidence": 0.843
+    },
+    "The whole row owns the press.": {
+      "type": "choice",
+      "choice": "supports",
+      "probabilities": {
+        "supports": 0.951,
+        "contradicts": 0.0245,
+        "says_nothing": 0.0245
+      },
+      "confidence": 0.911
+    },
+    "On press, `ShelfRow` sets its `moving` state (`disabled`), awaits `toggleOnShelf`, clears `moving`, posts the `kept` / `removed` notice unchanged, and then asks `ShelfPickerPopover` to close.": {
+      "type": "choice",
+      "choice": "supports",
+      "probabilities": {
+        "supports": 0.946,
+        "contradicts": 0.027,
+        "says_nothing": 0.027
+      },
+      "confidence": 0.906
+    },
+    "It closes for an untick as well as a tick.": {
+      "type": "choice",
+      "choice": "supports",
+      "probabilities": {
+        "supports": 0.967,
+        "contradicts": 0.0165,
+        "says_nothing": 0.0165
+      },
+      "confidence": 0.927
+    },
+    "Keep the visually hidden \"on this shelf\" text for ticked rows.": {
+      "type": "choice",
+      "choice": "supports",
+      "probabilities": {
+        "supports": 0.942,
+        "contradicts": 0.029,
+        "says_nothing": 0.029
+      },
+      "confidence": 0.902
+    },
+    "A tooltip names the shelf's owner after a 400ms hover.": {
+      "type": "choice",
+      "choice": "says_nothing",
+      "probabilities": {
+        "supports": 0.044,
+        "contradicts": 0.044,
+        "says_nothing": 0.912
+      },
+      "confidence": 0.872
+    },
+    "7. **Empty result — glyph stack** · ledger row: `empty result` (`DS with overrides`) · decision: the overrides named in the row's Decision cell": {
+      "type": "choice",
+      "choice": "supports",
+      "probabilities": {
+        "supports": 0.977,
+        "contradicts": 0.0115,
+        "says_nothing": 0.0115
+      },
+      "confidence": 0.937
+    },
+    "`ComboboxCommandEmpty` renders `DustCoverIcon` above the line \"No shelves found.\", centred, only when zero shelves match.": {
+      "type": "choice",
+      "choice": "supports",
+      "probabilities": {
+        "supports": 0.931,
+        "contradicts": 0.0345,
+        "says_nothing": 0.0345
+      },
+      "confidence": 0.891
+    },
+    "8. **New shelf row — local, outside the list** · ledger row: `New shelf row` (`local component`) · decision: build local `NewShelfRow`, a sibling after `ComboboxCommandList`": {
+      "type": "choice",
+      "choice": "supports",
+      "probabilities": {
+        "supports": 0.965,
+        "contradicts": 0.0175,
+        "says_nothing": 0.0175
+      },
+      "confidence": 0.925
+    },
+    "Build the private `NewShelfRow` in `shelf-picker-popover.tsx` as the row's Decision cell names it, with `NewNicheIcon` and \"New shelf\".": {
+      "type": "choice",
+      "choice": "supports",
+      "probabilities": {
+        "supports": 0.956,
+        "contradicts": 0.022,
+        "says_nothing": 0.022
+      },
+      "confidence": 0.916
+    },
+    "It is the last band of the panel in every list state, including `no-matches`, and it owns the top hairline.": {
+      "type": "choice",
+      "choice": "supports",
+      "probabilities": {
+        "supports": 0.919,
+        "contradicts": 0.0405,
+        "says_nothing": 0.0405
+      },
+      "confidence": 0.879
+    },
+    "The whole row owns the press, which switches the popover to `naming`.": {
+      "type": "choice",
+      "choice": "supports",
+      "probabilities": {
+        "supports": 0.912,
+        "contradicts": 0.044,
+        "says_nothing": 0.044
+      },
+      "confidence": 0.872
+    },
+    "It has no hover fill, and it keeps the browser's default focus-visible outline.": {
+      "type": "choice",
+      "choice": "supports",
+      "probabilities": {
+        "supports": 0.955,
+        "contradicts": 0.0225,
+        "says_nothing": 0.0225
+      },
+      "confidence": 0.915
+    },
+    "The New shelf row shows a keyboard hint reading ⌘N against its right edge.": {
+      "type": "choice",
+      "choice": "says_nothing",
+      "probabilities": {
+        "supports": 0.019,
+        "contradicts": 0.019,
+        "says_nothing": 0.962
+      },
+      "confidence": 0.922
+    },
+    "9. **Naming — form in place of the list** · ledger row: `panel content — naming` (`DS with overrides`) · decision: keep the naming switch; render `NewShelfInlinePanel` unchanged": {
+      "type": "choice",
+      "choice": "supports",
+      "probabilities": {
+        "supports": 0.934,
+        "contradicts": 0.033,
+        "says_nothing": 0.033
+      },
+      "confidence": 0.894
+    },
+    "In `naming`, `ShelfPickerPopover` renders the existing `NewShelfInlinePanel` in place of `ComboboxCommand`; the search band, the option list band and the New shelf row are not rendered.": {
+      "type": "choice",
+      "choice": "supports",
+      "probabilities": {
+        "supports": 0.919,
+        "contradicts": 0.0405,
+        "says_nothing": 0.0405
+      },
+      "confidence": 0.879
+    },
+    "Do not change `NewShelfInlinePanel`.": {
+      "type": "choice",
+      "choice": "supports",
+      "probabilities": {
+        "supports": 0.952,
+        "contradicts": 0.024,
+        "says_nothing": 0.024
+      },
+      "confidence": 0.912
+    },
+    "10. **Tests** · engineering, no ledger row · decision: move the 7 existing tests and cover the new behaviour": {
+      "type": "choice",
+      "choice": "supports",
+      "probabilities": {
+        "supports": 0.931,
+        "contradicts": 0.0345,
+        "says_nothing": 0.0345
+      },
+      "confidence": 0.891
+    },
+    "Move the tests in `save-to-shelf-combobox.test.tsx` to test files for the new components.": {
+      "type": "choice",
+      "choice": "supports",
+      "probabilities": {
+        "supports": 0.958,
+        "contradicts": 0.021,
+        "says_nothing": 0.021
+      },
+      "confidence": 0.918
+    },
+    "Add tests for: a query that fuzzy-matches but does not substring-match (for example \"bn\") shows no shelf; a query that matches nothing shows \"No shelves found.\" **and** the New shelf row; ticking a shelf closes the picker; unticking a shelf closes the picker; a query is matched on the name and never on the note.": {
+      "type": "choice",
+      "choice": "supports",
+      "probabilities": {
+        "supports": 0.872,
+        "contradicts": 0.064,
+        "says_nothing": 0.064
+      },
+      "confidence": 0.832
+    }
+  }
+}
