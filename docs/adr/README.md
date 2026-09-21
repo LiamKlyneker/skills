@@ -71,3 +71,4 @@ or the adapter, and stops there.
 | [0013](0013-ado-triage-files-work-or-writes-to-a-human.md) | On Azure DevOps, triage either files work or writes to a human | Accepted |
 | [0014](0014-github-findings-move-off-the-pr.md) | GitHub findings move off the pull request, onto a disposable per-run issue | Accepted |
 | [0015](0015-eval-suites-against-a-synthetic-fixture.md) | Eval suites against a synthetic fixture are the release gate | Accepted |
+| [0016](0016-a-scorer-beside-the-gate.md) | A scorer sits beside the gate, never inside it | Accepted |

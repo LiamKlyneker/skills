@@ -1,0 +1,23 @@
+{
+  "fixture": "../issue.md",
+  "split": "sentences",
+  "note": "Hand-labelled claims of the frozen `to-task` output, checked against that issue's own `## Fidelity ledger (in scope)` section. `present` and `for_the_jev_stage` are claims the splitter produces from `## Changes`; `normalised_into_the_source` are hand-written variants of ledger text that only match once the normaliser has run.",
+  "present": [
+    "Add no second magnifier.",
+    "Closing the popover leaves `naming`."
+  ],
+  "normalised_into_the_source": [
+    "Fixed  **250px**  wide at every viewport, never hugs content",
+    "no `fixed inset-0` layer is rendered",
+    "no fixed inset-0 layer is rendered",
+    "“No shelves found.” — `spec-data.ts` and the source win",
+    "AN OUTSIDE POINTER-DOWN CLOSES THE PANEL; ESCAPE CLOSES IT",
+    "**4px** padding all round, **2px** between rows"
+  ],
+  "for_the_jev_stage": [
+    "Delete `src/shelf-keeper/save-to-shelf-combobox.tsx`.",
+    "It owns no padding.",
+    "The panel is a fixed 250px wide at every viewport, anchored to the right edge of the bell-jar button.",
+    "Render no click-away layer."
+  ]
+}

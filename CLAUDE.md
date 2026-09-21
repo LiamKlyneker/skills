@@ -64,6 +64,13 @@ between two runs would make "absent from the catalog means it does not exist" un
 still the default and the rest of the repo is prose; a script is the exception that has to earn
 itself, and a script whose output is a judgement never does.
 
+**A third script is in the tree and ships with no skill**:
+`plugins/prd-workflow/evals/sidecar.py`, which scores a finished eval run's claims against the
+state the run was given. Its numbers are probabilistic, which is exactly what the rule above
+refuses — so it sits beside the release gate and never inside it, pins its model id, and never
+edits the runner's output. ADR
+[0016](docs/adr/0016-a-scorer-beside-the-gate.md) carves that exception and states its limits.
+
 `INSTALL.md` is the guide for getting any of it onto a machine — marketplace, config
 directories, scopes, the dev mode, and the traps. Keep it accurate; it is written
 from observed platform behaviour, and the platform has repeatedly differed from its
