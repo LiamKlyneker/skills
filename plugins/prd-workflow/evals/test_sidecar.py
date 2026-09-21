@@ -100,7 +100,9 @@ def _http_error(code: int) -> urllib.error.HTTPError:
 def _plant_a_run(root: Path, index: int, judge_passed: bool) -> dict:
     run_dir = root / f"run{index}"
     (run_dir / "out").mkdir(parents=True)
-    (run_dir / "issue.md").write_text(PLANTED.read_text(encoding="utf-8"), encoding="utf-8")
+    workspace = run_dir / "sealed" / "home" / "cwd"
+    workspace.mkdir(parents=True)
+    (workspace / "issue.md").write_text(PLANTED.read_text(encoding="utf-8"), encoding="utf-8")
     trace = run_dir / "out" / "trace.jsonl"
     trace.write_text("", encoding="utf-8")
     return {
@@ -405,6 +407,41 @@ class RunDirectory(unittest.TestCase):
             with self.assertRaises(sidecar.SidecarError) as caught:
                 sidecar.resolve_in_run(Path(tmp), "issue.md", "output")
             self.assertIn("issue.md", str(caught.exception))
+
+    def test_the_workspace_root_is_sealed_home_cwd(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            run_dir = Path(tmp)
+            workspace = run_dir / "sealed" / "home" / "cwd"
+            workspace.mkdir(parents=True)
+            (workspace / "issue.md").write_text("hi", encoding="utf-8")
+            self.assertEqual(
+                sidecar.resolve_in_run(run_dir, "issue.md", "output"),
+                workspace / "issue.md",
+            )
+
+    def test_an_unsealed_home_cwd_is_a_fallback(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            run_dir = Path(tmp)
+            workspace = run_dir / "home" / "cwd"
+            workspace.mkdir(parents=True)
+            (workspace / "issue.md").write_text("hi", encoding="utf-8")
+            self.assertEqual(
+                sidecar.resolve_in_run(run_dir, "issue.md", "output"),
+                workspace / "issue.md",
+            )
+
+    def test_a_sealed_directory_that_cannot_be_read_names_the_chmod_command(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            run_dir = Path(tmp)
+            sealed = run_dir / "sealed"
+            sealed.mkdir()
+            sealed.chmod(0o000)
+            try:
+                with self.assertRaises(sidecar.SidecarError) as caught:
+                    sidecar.resolve_in_run(run_dir, "issue.md", "output")
+                self.assertIn(f"chmod 700 {run_dir} {sealed}", str(caught.exception))
+            finally:
+                sealed.chmod(0o700)
 
     def test_a_run_without_a_tracepath_fails_loudly(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

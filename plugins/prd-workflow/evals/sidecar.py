@@ -272,13 +272,29 @@ def run_directory(trace_path: str) -> Path:
 
 
 def resolve_in_run(run_dir: Path, relative: str, label: str) -> Path:
-    candidate = run_dir / relative
-    if candidate.is_file():
-        return candidate
-    matches = sorted(run_dir.glob(f"*/{relative}"))
-    if len(matches) == 1:
-        return matches[0]
-    raise SidecarError(f"no {label} at {candidate} (is the run directory still on disk?)")
+    """Find `relative` under a kept run's workspace root, `sealed/home/cwd/`.
+
+    A `--keep-temp` run moves the model's working directory to `sealed/home/cwd/`
+    and locks `sealed` at mode 000, so a sealed-but-unreadable directory is reported
+    by name rather than silently falling through to the other candidates.
+    """
+    sealed = run_dir / "sealed"
+    if sealed.is_dir() and not os.access(sealed, os.R_OK | os.X_OK):
+        raise SidecarError(
+            f"{sealed} is sealed (mode 000) and cannot be read; "
+            f"run `chmod 700 {run_dir} {sealed}` to inspect it"
+        )
+
+    candidates = [
+        sealed / "home" / "cwd" / relative,
+        run_dir / "home" / "cwd" / relative,
+        run_dir / relative,
+    ]
+    for candidate in candidates:
+        if candidate.is_file():
+            return candidate
+    tried = ", ".join(str(candidate) for candidate in candidates)
+    raise SidecarError(f"no {label} at any of: {tried} (is the run directory still on disk?)")
 
 
 def scored_cases(aggregate_path: Path) -> list[tuple[dict, dict, dict]]:
