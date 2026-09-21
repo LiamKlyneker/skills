@@ -191,6 +191,52 @@ class SplitClaims(unittest.TestCase):
         with self.assertRaises(sidecar.SidecarError):
             sidecar.split_claims("anything", "paragraphs")
 
+    def test_a_sentence_hard_wrapped_across_lines_stays_one_claim(self) -> None:
+        # Two list items from a real runner output, each wrapped at ~100 columns —
+        # the shape `to-task` actually produces, unlike the fixture's one-line paragraphs.
+        wrapped = (
+            "1. **File split — `ShelfPickerPopover` and `ShelfRow`** · decision: split today's\n"
+            "   `SaveToShelfCombobox` (`src/shelf-keeper/save-to-shelf-combobox.tsx`) into\n"
+            "   `src/shelf-keeper/shelf-picker-popover.tsx` (`ShelfPickerPopover`, holding a private\n"
+            "   `NewShelfRow`) and `src/shelf-keeper/shelf-row.tsx` (`ShelfRow`). Delete\n"
+            "   `save-to-shelf-combobox.tsx` and its test file, moving the existing tests onto the two new\n"
+            "   files. Update `KeepSpecimenButton`'s import to the new component.\n"
+            "\n"
+            "2. **Picker panel** — ledger row: `picker panel` (`DS with overrides`) · decision as above. Build\n"
+            "   `ShelfPickerPopover`'s `ComboboxContent` with `className=\"w-[250px]\"` and `align=\"end\"`, keeping\n"
+            "   `sideOffset={4}` and `shadow-md`.\n"
+        )
+        claims = sidecar.split_claims(wrapped, "sentences")
+        self.assertEqual(
+            claims,
+            [
+                "1. **File split — `ShelfPickerPopover` and `ShelfRow`** · decision: split today's "
+                "`SaveToShelfCombobox` (`src/shelf-keeper/save-to-shelf-combobox.tsx`) into "
+                "`src/shelf-keeper/shelf-picker-popover.tsx` (`ShelfPickerPopover`, holding a private "
+                "`NewShelfRow`) and `src/shelf-keeper/shelf-row.tsx` (`ShelfRow`).",
+                "Delete `save-to-shelf-combobox.tsx` and its test file, moving the existing tests onto "
+                "the two new files.",
+                "Update `KeepSpecimenButton`'s import to the new component.",
+                "2. **Picker panel** — ledger row: `picker panel` (`DS with overrides`) · decision as above.",
+                'Build `ShelfPickerPopover`\'s `ComboboxContent` with `className="w-[250px]"` and '
+                '`align="end"`, keeping `sideOffset={4}` and `shadow-md`.',
+            ],
+        )
+        for fragment in ("Delete", "files.", "above.", "it.", "Build the"):
+            self.assertNotIn(fragment, claims)
+
+    def test_a_wrapped_line_ending_without_a_stop_does_not_split(self) -> None:
+        # "into" is followed by a backtick on the next line, but there is no `.` before it.
+        wrapped = "split today's `SaveToShelfCombobox` (`x.tsx`) into\n`shelf-picker-popover.tsx`.\n"
+        self.assertEqual(
+            sidecar.split_claims(wrapped, "sentences"),
+            ["split today's `SaveToShelfCombobox` (`x.tsx`) into `shelf-picker-popover.tsx`."],
+        )
+
+    def test_a_new_list_item_starts_a_paragraph_even_without_a_blank_line(self) -> None:
+        claims = sidecar.split_claims("1. **First** item.\n2. **Second** item.\n", "sentences")
+        self.assertEqual(claims, ["1. **First** item.", "2. **Second** item."])
+
 
 class ExactMatchAgainstTheFrozenIssue(unittest.TestCase):
     """The hand-labelled claims of `fixtures/issue.md`, scored with no network call."""

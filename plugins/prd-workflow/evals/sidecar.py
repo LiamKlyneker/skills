@@ -67,14 +67,40 @@ def split_sentences(line: str) -> list[str]:
     return [part.strip() for part in _SENTENCE_END.split(line) if part.strip()]
 
 
+_LIST_ITEM = re.compile(r"^\s*(\d+[.)]|[-*+])\s")
+
+
+def split_paragraphs(text: str) -> list[str]:
+    """Runs of non-blank lines, each joined into one line.
+
+    A line matching `_LIST_ITEM` starts a new paragraph even without a preceding blank
+    line, so two list items typed back to back still split into separate paragraphs.
+    """
+    paragraphs: list[str] = []
+    current: list[str] = []
+    for raw_line in text.splitlines():
+        stripped = raw_line.strip()
+        if not stripped:
+            if current:
+                paragraphs.append(" ".join(current))
+                current = []
+            continue
+        if current and _LIST_ITEM.match(raw_line):
+            paragraphs.append(" ".join(current))
+            current = []
+        current.append(stripped)
+    if current:
+        paragraphs.append(" ".join(current))
+    return paragraphs
+
+
 def split_claims(text: str, split: str) -> list[str]:
-    """One claim per sentence or per line. A claim never spans a blank line."""
-    lines = [line.strip() for line in text.splitlines()]
-    lines = [line for line in lines if line]
+    """One claim per sentence or per line. A claim never spans a blank line or a list-item boundary."""
     if split == "lines":
-        return lines
+        lines = [line.strip() for line in text.splitlines()]
+        return [line for line in lines if line]
     if split == "sentences":
-        return [claim for line in lines for claim in split_sentences(line)]
+        return [claim for paragraph in split_paragraphs(text) for claim in split_sentences(paragraph)]
     raise SidecarError(f"unknown split mode {split!r}: expected 'sentences' or 'lines'")
 
 
