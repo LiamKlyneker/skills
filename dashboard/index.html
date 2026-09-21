@@ -92,6 +92,7 @@
   .flag { background: var(--flag-bg); color: var(--flag-ink); }
   .judge { background: var(--judge-bg); color: var(--judge-ink); }
   .unknown { background: var(--edge); color: var(--muted); }
+  .sidecar-block { border-left: 3px solid var(--judge-ink); padding-left: 10px; margin: 8px 0; }
   .graders { list-style: none; margin: 6px 0 0; padding: 0; }
   .graders li { padding: 3px 0; font-size: 13px; }
   .table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
@@ -207,6 +208,56 @@ function renderSkills() {
   });
 }
 
+// Renders the sidecar.json data attached to this run's case, if any. Every number here
+// is a model's judgement (see docs/adr/0016-a-scorer-beside-the-gate.md), so it is marked
+// the same way an `llm` grader is, and nothing here recomputes a verdict from it.
+function renderSidecar(meta, caseSidecar, attempts) {
+  const block = el("div", { class: "sidecar-block" });
+  const header = el("p", { class: "sub" }, [
+    el("span", { class: "pill judge", text: "judgement" }),
+    " sidecar " + plain(meta.model) + " · threshold " + plain(meta.threshold)
+      + " · " + plain(meta.scorings_per_run) + " scorings/run · rubric bit: " + plain(meta.rubric_bit) + " "
+  ]);
+  block.appendChild(header);
+  block.appendChild(el("p", { class: "sub", title: plain(meta.spread) }, [
+    "judge spread " + num(caseSidecar.judge_spread, 3) + " · sidecar spread " + num(caseSidecar.sidecar_spread, 3)
+      + " (grader: " + plain(caseSidecar.judge_grader) + ") — hover for the spread definition"
+  ]));
+
+  attempts.forEach(function (attempt, i) {
+    if (!attempt.sidecar) return;
+    const s = attempt.sidecar;
+    const row = el("div", { class: "row" });
+    row.appendChild(el("div", { class: "sub" }, [
+      "run " + (i + 1) + " · " + plain(s.claims) + " claims"
+    ]));
+    if (s.unscored) {
+      row.appendChild(el("p", { class: "sub" }, [
+        el("span", { class: "pill flag", text: "unscored" }), plain(s.error)
+      ]));
+    }
+    if (s.buckets) {
+      const buckets = el("p", { class: "sub" }, []);
+      ["present", "contradicted", "added", "uncertain"].forEach(function (key) {
+        buckets.appendChild(el("span", { class: "tag", text: key + ": " + plain(s.buckets[key]) }));
+      });
+      row.appendChild(buckets);
+    }
+    (s.added || []).forEach(function (claim) {
+      row.appendChild(el("p", { class: "desc" }, [
+        el("span", { class: "pill flag", text: "added" }), " " + num(claim.probability, 2) + " — " + claim.claim
+      ]));
+    });
+    (s.contradicted || []).forEach(function (claim) {
+      row.appendChild(el("p", { class: "desc" }, [
+        el("span", { class: "pill fail", text: "contradicted" }), " " + num(claim.probability, 2) + " — " + claim.claim
+      ]));
+    });
+    block.appendChild(row);
+  });
+  return block;
+}
+
 function renderCases() {
   view.replaceChildren();
   catalog.plugins.forEach(function (plugin) {
@@ -241,6 +292,14 @@ function renderCases() {
             ]));
           }
         });
+        if (latest.run.sidecar_error) {
+          card.appendChild(el("p", { class: "sub" }, [
+            el("span", { class: "pill flag", text: "sidecar parse error" }), latest.run.sidecar_error
+          ]));
+        }
+        if (latest.run.sidecar && latest.case.sidecar) {
+          card.appendChild(renderSidecar(latest.run.sidecar, latest.case.sidecar, latest.case.attempts || []));
+        }
       } else {
         card.appendChild(el("p", { class: "sub", text: "No recorded run includes this case." }));
       }

@@ -25,3 +25,8 @@ run recorded. There are no trends, no health colours and no recomputed scores. A
 `partial: true` is shown and flagged. A grader of type `llm` is marked as judgement, so it
 is not read as hard evidence. Per-run detail is the run's own `report.html`, linked rather
 than re-rendered.
+
+A `sidecar.json` beside a run's `aggregate-result.json` is shown next to that run's case,
+marked as judgement the same way an `llm` grader is: the sidecar's own model, threshold,
+spreads, bucket counts and claims. The page never merges those numbers into the runner's
+score or `passed` flag.

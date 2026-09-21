@@ -345,6 +345,36 @@ def collect_cases(plugin_dir):
     return cases
 
 
+def attach_sidecar(run_cases, sidecar_data):
+    """Merges sidecar.json's per-case, per-run judgement onto the runner's own case records.
+
+    Matched by case `name`, then by position within that case's `runs` array against the
+    runner's own attempt order — the sidecar carries no attempt id of its own.
+    """
+    by_name = {c.get("name"): c for c in sidecar_data.get("cases") or [] if isinstance(c, dict)}
+    for case in run_cases:
+        sidecar_case = by_name.get(case.get("name"))
+        if not sidecar_case:
+            continue
+        case["sidecar"] = {
+            "judge_grader": sidecar_case.get("judge_grader"),
+            "judge_spread": sidecar_case.get("judge_spread"),
+            "sidecar_spread": sidecar_case.get("sidecar_spread"),
+        }
+        sidecar_runs = sidecar_case.get("runs") or []
+        for attempt, sidecar_run in zip(case.get("attempts") or [], sidecar_runs):
+            if not isinstance(sidecar_run, dict):
+                continue
+            attempt["sidecar"] = {
+                "claims": sidecar_run.get("claims"),
+                "buckets": sidecar_run.get("buckets"),
+                "added": sidecar_run.get("added"),
+                "contradicted": sidecar_run.get("contradicted"),
+                "unscored": sidecar_run.get("unscored"),
+                "error": sidecar_run.get("error"),
+            }
+
+
 def collect_runs(plugin_name, plugin_dir):
     results_dir = os.path.join(plugin_dir, "evals", "results")
     runs = []
@@ -369,6 +399,25 @@ def collect_runs(plugin_name, plugin_dir):
         suite = data.get("suite") or {}
         plugins = suite.get("plugins") or []
         report = os.path.join(results_dir, stamp, "report.html")
+        run_cases = [run_case(case) for case in data.get("cases") or []]
+
+        sidecar = None
+        sidecar_error = None
+        sidecar_path = os.path.join(results_dir, stamp, "sidecar.json")
+        if os.path.isfile(sidecar_path):
+            try:
+                sidecar_data = read_json(sidecar_path)
+                sidecar = {
+                    "model": sidecar_data.get("model"),
+                    "threshold": sidecar_data.get("threshold"),
+                    "scorings_per_run": sidecar_data.get("scorings_per_run"),
+                    "rubric_bit": sidecar_data.get("rubric_bit"),
+                    "spread": sidecar_data.get("spread"),
+                }
+                attach_sidecar(run_cases, sidecar_data)
+            except Exception as exc:
+                sidecar_error = "%s: %s" % (type(exc).__name__, exc)
+
         runs.append(
             {
                 "plugin": plugin_name,
@@ -396,7 +445,9 @@ def collect_runs(plugin_name, plugin_dir):
                     if os.path.isfile(report)
                     else None
                 ),
-                "cases": [run_case(case) for case in data.get("cases") or []],
+                "cases": run_cases,
+                "sidecar": sidecar,
+                "sidecar_error": sidecar_error,
                 "parse_error": None,
             }
         )
