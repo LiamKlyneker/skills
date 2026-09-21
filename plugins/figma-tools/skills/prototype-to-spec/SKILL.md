@@ -313,9 +313,21 @@ again, so a wrong one is the only kind of error in this brief that reaches imple
 unchallenged.
 
 **Tokens** resolve against the catalog's tiers the same way `_shared/ui-manifests.md`'s token
-manifest does, and a raw `var(--color-x)` with no semantic equivalent is flagged
-`⚠ no equivalent, do not invent` — not silently mapped to the nearest thing. The prototype is
-allowed to use a raw value; the implementation is not.
+manifest does, and a value with no equivalent on its tier is flagged — not silently mapped to the
+nearest thing. The prototype is allowed to use a raw value; the implementation is not. A raw
+`var(--color-x)` with no semantic equivalent is flagged `⚠ no equivalent, do not invent`. A
+spacing, radius, size or font-size value that matches no named token on its tier — an odd gap, a
+padding pair like `3px 11px`, a radius off the grid, a `fontSize` with no exact type token — is
+flagged `⚠ off-grid`, naming the nearest catalog token and the delta.
+
+**An off-grid value stays raw, and the decision belongs to the grill.** Four things happen to it
+together: it appears in the ledger's `Layout facts` **unchanged**; it carries its `⚠ off-grid`
+flag with the nearest token and the delta; it gets a row in `## DS gaps (proposed, not filed)`,
+the way a raw colour does; and its ledger row is marked **grill question** with both options
+spelled out — the raw value, and the nearest token. Writing the nearest token in place of the
+value is the same failure as carrying the value bare, and a row that presents the choice as
+already made is the same failure again. The skill preserves the value and hands the decision
+over.
 
 **Every `## Tokens` row names the element or elements it applies to**, in its own `Applies to`
 column, and the names it writes there are element names the fidelity ledger also uses. A token
@@ -379,6 +391,14 @@ satisfied by six separate columns, and the design frequently has three of them i
 text run written without a type token and a colour token.** Both are invisible in a screenshot at
 the sizes a design ships at, and both are the difference between a 14px muted glyph and a 24px
 blue one. Read them off the source slice the `Source` column cites.
+
+**Reject an approximate size standing in for a type token.** A text run written as a size plus a
+weight — `~Npx weight 600` — names no token, so the row is incomplete and does not ship as
+written. It survives only under the four conditions an off-grid value survives: the size stays in
+`Layout facts` unchanged, it carries `⚠ off-grid` against the nearest type token with the delta,
+it gets a row in `## DS gaps (proposed, not filed)`, and its ledger row is a **grill question**
+naming both options. A bare `~Npx` with no flag, no DS-gaps row and no grill question is not an
+acceptable row, and neither is one where the nearest type token was written in instead.
 
 **The icon's name is the design system's export name, and the prototype's own glyph name is
 never it.** A prototype draws its glyphs inline and names them for what they look like, so the

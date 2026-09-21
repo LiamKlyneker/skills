@@ -93,9 +93,15 @@ written, and state its one-line evidence statement before any file is created or
   `use as-is`); the ledger row and the source slice say what it must look like.
 - **Layout facts and icon names** — per `../_shared/fidelity-ledger.md` §6.
 - **Translate facts into classes yourself** — that is this session's job, and the reason `to-task`
-  is forbidden from doing it. A px fact resolves to a DS token where the grid has an exact match
-  (`sui-` spacing is an 8px grid), otherwise to an arbitrary value. Where the source slice already
-  holds a class, prefer copying it over re-deriving it.
+  is forbidden from doing it. A px fact resolves to a DS token where it equals a named token on
+  that tier of the project's design-system catalog — token membership, never grid arithmetic, since
+  a scale may hold a 1px hairline alongside its 4px or 8px steps. Otherwise it resolves to an
+  arbitrary value **only where the issue records a grill decision permitting that value for that
+  element**. A `⚠ off-grid` flag on the ledger row raises the question — it is not the permission.
+  Where the source slice already holds a class, prefer copying it over re-deriving it.
+- **An off-grid fact with no recorded grill decision is a stop.** Halt and ask. Shipping the raw
+  value and quietly substituting the nearest token are both wrong: one puts a value the shared UI
+  standard forbids into the component, the other makes a design decision the human never made.
 - **Do not substitute a component.** If the Instruction says build local, build local — do not reach
   for the DS primitive that "would do the same thing". Each of `IconButton`, `LabelButton`, `Input`,
   `Badge` and `PopoverContent` ships chrome (rings, pill hovers, default sizes, an arrow) that the
@@ -107,6 +113,10 @@ written, and state its one-line evidence statement before any file is created or
 
 Write the per-ledger-row self-audit table in `../_shared/fidelity-ledger.md` §6 — before running
 L2, with the code in its finished state, one line per ledger row in scope, every row.
+
+**The self-audit lists every arbitrary value the code kept** — each one with its ledger row, the
+grill decision in the issue that permitted it, and the token it rejected. An arbitrary value with
+no such line is a value nobody approved.
 
 Then tick the issue's `## Verify` checkboxes **from the code**, per
 `../_shared/fidelity-ledger.md` §6 — scorecard rows and polish items get `expected pass` or

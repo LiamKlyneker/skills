@@ -301,9 +301,22 @@ again, so a wrong one is the only kind of error in this brief that reaches imple
 unchallenged.
 
 **Tokens** resolve against the catalog's `## Tokens` tiers. The bound variable name comes from
-`get_variable_defs` on the node; a value with no bound variable and no catalog token is flagged
-`⚠ no equivalent, do not invent` — not silently mapped to the nearest thing. The canvas is
-allowed to hold a raw hex; the implementation is not.
+`get_variable_defs` on the node; a value with no bound variable and no catalog token is flagged —
+not silently mapped to the nearest thing. The canvas is allowed to hold a raw value; the
+implementation is not. An unbound colour is flagged `⚠ no equivalent, do not invent`. An unbound
+spacing, radius, size or font size — a padding, gap, corner radius, dimension or text size the
+node holds as a literal number matching no named token on its tier — is flagged `⚠ off-grid`,
+naming the nearest catalog token and the delta.
+
+**An off-grid value stays raw, and the decision belongs to the grill.** Four things happen to it
+together: it appears in the ledger's `Layout facts` **unchanged**; it carries its `⚠ off-grid`
+flag with the nearest token and the delta; it gets a row in `## DS gaps (proposed, not filed)`,
+the way an unbound hex does; and its ledger row is marked **grill question** with both options
+spelled out — the raw value, and the nearest token. Writing the nearest token in place of the
+value is the same failure as carrying the value bare, and a row that presents the choice as
+already made is the same failure again. This is how a text size with no type token survives too:
+a size and a weight standing in for a token is an incomplete row unless it meets all four
+conditions.
 
 **There is no per-property binding read where the adapter registers no remote server.**
 `use_figma` lives on the remote Figma server, so where the `### Figma source` *Servers* row names
