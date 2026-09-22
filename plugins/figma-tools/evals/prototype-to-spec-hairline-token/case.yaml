@@ -1,0 +1,66 @@
+schema_version: "1.0"
+name: prototype-to-spec-hairline-token
+description: >
+  The brief prototype-to-spec writes for one ticket against a hand-written stub project — no
+  workspace, no build, no captures, one component. The stub's adapter carries only the rows this
+  skill reads: `## Repo` for the tracker and the DS-gap backlog, `## Design system` for the
+  catalog pointer, the class prefixes, the icon ladder and the usage-rules sources, and
+  `### Prototype source` for `Path:`, `Spec files:`, `Schema:` and `Screenshots:`. The chip's
+  border is written as a raw value in the prototype's inline style, and the catalog's spacing
+  scale is non-uniform and names that exact value as its hairline step; the run has to resolve
+  it by membership in the tier rather than test it against a grid.
+tags: [micro]
+runs: 1
+context:
+  scaffold_script: ./scaffold.sh
+execution:
+  prompt: |
+    The working directory is the project. Its adapter is `.claude/project/adapter.md`, and that
+    adapter is the one this run reads.
+
+    `ticket.md` in the working directory is the ticket the brief is for.
+
+    Run this, and nothing else:
+
+    /figma-tools:prototype-to-spec ticket.md --out ./brief.md
+
+    Follow the skill exactly and stop where it stops.
+  max_turns: 30
+  timeout_seconds: 300
+  model: claude-sonnet-5
+  allowed_tools: [Read, Glob, Grep, Skill, Bash, Write]
+graders:
+  - type: regex
+    name: brief-written
+    target: { source: file, path: brief.md }
+    pattern: "## Fidelity ledger"
+
+  - type: regex
+    name: border-row-resolves-to-the-hairline-token
+    target: { source: file, path: brief.md }
+    pattern: '^\|(?=[^\n]*border)(?=[^\n]*--space-hairline)[^\n]*$'
+    flags: mi
+
+  - type: regex
+    name: border-row-carries-no-off-grid-flag
+    target: { source: file, path: brief.md }
+    pattern: '^\|(?=[^\n]*border)(?=[^\n]*off-grid)[^\n]*$'
+    flags: mi
+    match: not_contains
+
+  - type: regex
+    name: border-width-gets-no-proposed-ds-gap-row
+    target: { source: file, path: brief.md }
+    pattern: '## DS gaps \(proposed, not filed\)(?:(?!\n## )[\s\S])*?\b1px\b'
+    match: not_contains
+
+  - type: regex
+    name: padding-resolves-to-the-step-token
+    target: { source: file, path: brief.md }
+    pattern: '--space-step'
+
+  - type: regex
+    name: no-consumer-vocabulary
+    target: { source: file, path: brief.md }
+    pattern: neonplace|creative-ghost|liam-klyneker/liamklyneker
+    match: not_contains
