@@ -176,12 +176,14 @@ For each hop, in order:
 ## Finding
 <one entry per finding, each in abstract form, each marked `leak` or `gap`>
 
-## Input shape
-<what kind of input reproduces it — a ledger row of class X, a composite whose
- default chrome differs from the still, a register of type Y>
-
-## Candidate fixture element
-<which element of the existing fixture could carry this shape>
+## Minimal input
+<what a micro stub needs to reproduce it, and nothing else: the adapter rows the
+ skill reads, the catalog tokens involved, the one source file or component, and —
+ when the guilty hop is not the first in the chain — the frozen artifact of the hop
+ before it, such as a ledger row or an issue fragment>
+<name a `skills-fixture` element only when the finding is about fixture shape — the
+ skill reading the wrong file, ignoring a pointer the adapter gave it, mis-walking the
+ tree — and say why a stub cannot carry it; ADR 0017 holds the boundary>
 
 ## Proposed grader
 <what a grader would assert — for how-i-write, a regex or a Vale-style rule>
@@ -195,7 +197,7 @@ known / known, new shape / new — <the case name, or "no case exists for this s
 **The body may quote this repo's files and nothing else.** Concretely, permitted content is:
 
 - text from a `SKILL.md`, from `_shared/*.md`, or from `plugins/prd-workflow/evals/fixtures/leaks.md`;
-- fixture element names;
+- fixture element names and stub file names;
 - the names of skills, hops and eval cases.
 
 **Everything else is excluded, with no judgement call:** no project name, no company name, no ticket id, no project path, no component name, no branch or PR number, no screenshot, and no quoted text from any artifact of the run — no brief row, no issue line, no diff hunk, no grill answer.
