@@ -1,0 +1,128 @@
+schema_version: "1.0"
+name: work-on-task-off-grid-stops
+description: >
+  The `work-on-task` implementer hop against a hand-written stub project — no workspace, no
+  package manager, no build, one component and one screenshot. The frozen issue is the shape
+  `to-task --out` writes, shrunk to a single ledger row whose one layout fact is flagged
+  `⚠ off-grid` and whose Decision cell is still `OPEN`: the grill never reached the chip's
+  inner space, so nothing in the issue permits the raw value and nothing chooses a token in
+  its place. The skill's contract calls that a halt — "an off-grid fact with no recorded grill
+  decision is a stop" — so the run's whole job here is to hand the question back. Shipping the
+  raw value and quietly moving to the nearest token are both failures, and the graders score
+  both against `components/chip.tsx` on top of the halt itself.
+  The stub's adapter carries only the rows this skill reads: `## Repo` for the tracker, the
+  default branch, the `Branch pattern:` the run branches on and the `Fixed scorecard:` row;
+  `## Design system` for the catalog pointer that shows the space tier has no 10px step;
+  `## Commands` and `## Verify ladder` for the L2 floor; and `## Repo discipline` for the
+  scoped-`CONTEXT.md` rule.
+  There is no tracker and no network here, so the case hands `work-on-task` the frozen issue
+  as a local file path instead of an issue URL.
+tags: [micro]
+runs: 1
+context:
+  scaffold_script: ./scaffold.sh
+execution:
+  prompt: |
+    The working directory is the project, already a git repository with one commit
+    (`fixture: scaffold snapshot`). Its adapter is `.claude/project/adapter.md`, and that
+    adapter — not any other project's commands the skill's own prose may mention — names this
+    project's branch pattern, its verify ladder and its repo discipline. There is no package
+    manager here, no test runner and no app to boot; where the skill's own text names tooling
+    from a different project, defer to the adapter instead.
+
+    A run's read scope ends at the plugin directory, and the skill reaches its shared fidelity
+    contract through a symlink that points out of it. So wherever the skill says
+    `../_shared/fidelity-ledger.md`, read `fidelity-ledger.md` in this working directory — it
+    is the same file, placed here for that reason.
+
+    There is no network and no tracker credential here, so the issue this run implements is
+    not on GitHub — it is the file `./issue.md`, in exactly the shape `to-task --out` writes.
+    Pass that path as the skill's `<issue>` argument.
+
+    The issue's screenshot and source-slice evidence is pinned to a commit of
+    `LiamKlyneker/atelier-stub` that this sandbox cannot fetch over the network — but both
+    files are already checked out locally, because that pinned commit is this same working
+    directory's `./prototype`. The screenshot fetch line's PNG is at
+    `prototype/screenshots/chip-plain.png`: read it directly with the Read tool, never attempt
+    the fetch. For the source-slice fetch line, run `sed -n '6,16p' prototype/components/chip.tsx`
+    instead. Do not run `gh` at all; there is no credential for it here.
+
+    Follow `/prd-workflow:work-on-task` exactly otherwise, including its evidence gate before
+    any code. Nothing outside this working directory is yours to change.
+
+    Run this, and nothing else:
+
+    /prd-workflow:work-on-task ./issue.md
+  max_turns: 30
+  timeout_seconds: 300
+  model: claude-sonnet-5
+  allowed_tools: [Read, Glob, Grep, Skill, Bash, Write, Edit]
+graders:
+  # ---- The evidence gate ran before the hand-back. A micro case grades output only, so this
+  #      is the gate's own one-line statement in the final print, not a `tool_used` trace.
+  - type: regex
+    name: evidence-gate-line-printed
+    target: last_message
+    pattern: 'read ledger \(\d+ rows?'
+
+  # ---- The hand-back itself: the run says it did not implement, and names all three parts of
+  #      why — the flagged fact, the raw value, and the decision the issue never records.
+  - type: regex
+    name: final-message-states-the-work-was-not-implemented
+    target: last_message
+    pattern: '\b(stopped|stopping|halted|halting|did not implement|did not write|not implemented|no code was (?:written|produced)|cannot proceed|blocked)\b'
+    flags: i
+
+  - type: regex
+    name: final-message-names-the-off-grid-flag
+    target: last_message
+    pattern: 'off-grid'
+
+  - type: regex
+    name: final-message-names-the-raw-value
+    target: last_message
+    pattern: '\b10px\b'
+
+  - type: regex
+    name: final-message-names-the-absent-grill-decision
+    target: last_message
+    pattern: '(unresolved|undecided|(?:no|without|missing|absent)[^.\n]{0,80}decision)'
+    flags: i
+
+  # ---- The component is untouched. `file_exists` cannot express "unchanged", so the floor is
+  #      the scaffolded content still standing intact (the trailing quote catches a class
+  #      appended to the existing list) plus one `not_contains` per wrong way to proceed.
+  #      These are the graders that carry the case. Measured against a locally reverted stop
+  #      sentence, the run substituted the nearest token and every `last_message` grader above
+  #      still passed — it described the flag, the raw value and the unresolved decision while
+  #      writing the substitution in anyway. Only `chip-class-list-intact` and
+  #      `nearest-token-not-substituted-in-the-chip` went red. Never trim this block to the
+  #      final-message checks.
+  - type: regex
+    name: chip-class-list-intact
+    target: { source: file, path: components/chip.tsx }
+    pattern: 'inline-flex items-center rounded-\[--radius-tile\] border-solid border-\[length:--space-hairline\] border-\[--color-edge\] bg-\[--color-surface\]"'
+
+  - type: regex
+    name: no-arbitrary-value-utility-in-the-chip
+    target: { source: file, path: components/chip.tsx }
+    pattern: '-\[\d+(?:\.\d+)?(?:px|rem|em)\]'
+    match: not_contains
+
+  - type: regex
+    name: nearest-token-not-substituted-in-the-chip
+    target: { source: file, path: components/chip.tsx }
+    pattern: '--space-step|--space-roomy|\bp[xytblrse]?-\d'
+    match: not_contains
+
+  - type: regex
+    name: no-inner-space-written-into-the-chip
+    target: { source: file, path: components/chip.tsx }
+    pattern: 'padding'
+    match: not_contains
+
+  - type: regex
+    name: no-consumer-vocabulary
+    target: last_message
+    pattern: neonplace|creative-ghost|liam-klyneker/liamklyneker
+    match: not_contains
