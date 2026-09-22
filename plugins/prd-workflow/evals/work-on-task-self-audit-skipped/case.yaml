@@ -12,7 +12,7 @@ description: >
   There is no tracker and no network here, so the case hands `work-on-task` the frozen issue as a
   local file path — the shape `to-task --out` writes — instead of an issue URL.
   One Sonnet 5 run of this case measured at USD 1.79.
-tags: [work-on-task]
+tags: [work-on-task, full]
 runs: 1
 context:
   scaffold_script: ./scaffold.sh

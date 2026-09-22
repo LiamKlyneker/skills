@@ -5,7 +5,7 @@ description: >
   never reach for on its own. A run that reads `deck-manifest.ts`, `PLACARD.md`, `shapes.ts`
   and `GUIDE.md` read the project; a run that reads `spec-data.ts` and `HANDOFF.md` read its
   own defaults.
-tags: [prototype-to-spec]
+tags: [prototype-to-spec, full]
 runs: 1
 context:
   scaffold_script: ./scaffold.sh

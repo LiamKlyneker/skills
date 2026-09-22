@@ -12,7 +12,7 @@ description: >
   There is no human on the other end of this run: the skill's two up-front questions are answered
   in the prompt, and it stops once the sanitized body is written and summarised, the same way
   `deep-grill-row-coverage` stops round 1 before it waits for an answer.
-tags: [report-leak]
+tags: [report-leak, full]
 runs: 1
 context:
   scaffold_script: ./scaffold.sh

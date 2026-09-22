@@ -4,7 +4,7 @@ description: >
   The brief prototype-to-spec writes for one ticket against the Vitrine fixture prototype.
   The prototype draws its own glyphs and gives them its own names; the ledger has to carry the
   design system's export names instead, one row per element, each citing the source it read.
-tags: [prototype-to-spec]
+tags: [prototype-to-spec, full]
 runs: 1
 context:
   scaffold_script: ./scaffold.sh

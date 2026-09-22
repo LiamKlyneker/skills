@@ -52,8 +52,8 @@ Both tiers live in the same directory, told apart by tag. A case is
 `plugins/<plugin>/evals/<skill>-<behaviour>/`, flat, carrying `tags: [micro]` or
 `tags: [full]`. A micro case owns its stub under its own `fixture/`, and micro cases share
 nothing with each other — a stub drifting to serve a second case is how a micro tier grows
-back into a workspace. The six cases that predate the split carry per-skill tags and are
-converted one at a time, which costs the gate nothing: it selects on `micro`.
+back into a workspace. Every case carries a tier tag alongside any per-skill tag, and the
+six full-workspace cases carry `full`, which costs the gate nothing: it selects on `micro`.
 
 A micro case grades the artifact the skill produced — the brief, the file on disk, the
 last message. `tool_used` belongs to the full tier, where which file was read is the point.
