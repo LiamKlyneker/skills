@@ -30,6 +30,10 @@ brief for `deep-grill`, a frozen brief plus a frozen grill transcript (the runne
 `history_file`) for `to-task`, a frozen issue plus the scaffolded fixture app for
 `work-on-task`. A change to one skill's prose therefore fails only its own case.
 
+**Amended by ADR [0017](0017-two-fixture-tiers-and-which-one-a-leak-lands-in.md)**, which
+supersedes this clause only: a case earns the scaffolded workspace when the leak is about
+fixture shape, and tests one contract sentence on a micro stub otherwise.
+
 Cases are named `<skill>-<leak>`, one per known leak cluster, tagged per hop.
 Assertions are mechanical first: regex over the artifact a hop produced (a brief, an
 issue body, a self-audit table), `tool_used` with an input match on the call that

@@ -32,12 +32,25 @@ runner. The only executable is
 | Test — **verify L2 floor** | `bash -n plugins/install-skills/skills/install-skills/scripts/doctor.sh && bash plugins/install-skills/skills/install-skills/scripts/doctor.sh --repo . --quiet` |
 | Manifest check — **also L2 floor** | `out=$(for p in plugins/prd-workflow plugins/figma-tools plugins/ado-workflow plugins/lk plugins/install-skills .; do claude plugin validate "$p" 2>&1 && continue; echo "VALIDATE FAILED: $p"; done); echo "$out"; ! grep -q -e '❯' -e 'VALIDATE FAILED' <(grep -v 'not read — components are read without following symlinks' <<<"$out")` |
 | Catalog + version gate — **also L2 floor** | `python3 .github/scripts/validate_skills.py --base origin/main` |
+| Micro eval gate — **before any plugin version bump** | `command claude plugin eval plugins/<plugin> --ablation none --scaffold --no-publish --runs 1 --threshold 1.0 --max-cost-usd 5 --model claude-sonnet-5 --judge-model claude-sonnet-5 --allow-tools Write Bash Edit --tag micro` |
 | Boot the app (visual loop) | `claude plugin list` — the loaded-plugin inventory *is* this repo's running state |
 | App screenshot | None — terminal output is the evidence; paste it verbatim |
 | Install deps | None |
 
 The manifest check covers both plugin manifests and the marketplace catalog (`.`).
 Any new directory carrying a `.claude-plugin/plugin.json` joins that line.
+
+**The micro eval gate runs on the plugin whose version is moving, and only that one.** It
+selects the `micro`-tagged cases — one contract sentence each, against a stub the case owns
+— and every one of them passes before the bump. The `full`-tagged cases run on demand
+instead, when a change touches how a skill reads the prototype tree, the adapter or the
+fixture app. Two flags are the difference between a real run and a meaningless one:
+`--allow-tools Write Bash Edit`, without which only read-only tools are granted and a skill
+that writes its own output scores 0.00, and `--scaffold`, without which each case runs
+against an empty working directory. `command claude` is what reaches the binary, since
+`claude` is a `$PWD`-switching shell function on this machine. The tier boundary and what a
+micro case does and does not prove are ADR
+[0017](../../docs/adr/0017-two-fixture-tiers-and-which-one-a-leak-lands-in.md).
 
 **Zero warnings is the bar — except the packaging-symlink one.** That row was plain
 `validate` on purpose until #57: manifests carried no `version`, the CLI warned about the

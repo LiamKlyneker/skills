@@ -8,7 +8,7 @@ description: >
   The case replays the grill from `context.history_file` and spends its turn on the next hop, so
   the consensus the issue transcribes is a real one rather than one the run invented.
   One Sonnet 5 run of this case measured at USD 1.61.
-tags: [to-task]
+tags: [to-task, full]
 runs: 1
 context:
   scaffold_script: ./scaffold.sh

@@ -11,7 +11,7 @@ description: >
   round 1 in one message and stop where it would otherwise wait for an answer. The
   graders score the questions that round raised, never a finished consensus.
   One Sonnet 5 run of this case measured at USD 1.21.
-tags: [deep-grill]
+tags: [deep-grill, full]
 runs: 1
 context:
   scaffold_script: ./scaffold.sh

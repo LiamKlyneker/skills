@@ -9,7 +9,7 @@
     {
       "name": "prd-workflow",
       "description": "PRD-to-merge workflow for Claude Code: turn context into a PRD, slice it into tracer-bullet issues, pick the next one, run the whole thing end-to-end with a per-issue worker subagent, and triage the QA findings that come back into cold-runnable issues",
-      "version": "1.17.0",
+      "version": "1.18.0",
       "keywords": [
         "prd",
         "github-issues",
@@ -25,7 +25,7 @@
     {
       "name": "figma-tools",
       "description": "Design-to-spec extraction for Claude Code, from two design sources: a Figma page or component set, and a designer-authored code prototype. Turns a Figma page into a gap spec in a repo that consumes a design system, a Figma component set into a component spec in the repo that is one, and a prototype preview URL into a per-ticket design brief — each resolved against a per-project design-system catalog that its ds-catalog skill generates and annotates, backed by the figma-region-extractor and figma-variant-extractor subagents",
-      "version": "5.4.0",
+      "version": "5.5.0",
       "keywords": [
         "figma",
         "design-to-code",
@@ -55,7 +55,7 @@
     {
       "name": "lk",
       "description": "Liam Klyneker's personal Claude Code skills: the grills that interview a plan until every branch is resolved, plus pinpoint, scoped-context, his writing voice, and report-leak, which walks a skill failure back to the hop that leaked it and files it against the skills repo",
-      "version": "1.15.0",
+      "version": "1.16.0",
       "keywords": [
         "personal",
         "writing-voice",

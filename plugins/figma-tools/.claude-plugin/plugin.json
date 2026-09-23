@@ -1,7 +1,7 @@
 {
   "name": "figma-tools",
   "description": "Design-to-spec extraction for Claude Code, from two design sources: a Figma page or component set, and a designer-authored code prototype. Turns a Figma page into a gap spec in a repo that consumes a design system, a Figma component set into a component spec in the repo that is one, and a prototype preview URL into a per-ticket design brief — each resolved against a per-project design-system catalog that its ds-catalog skill generates and annotates, backed by the figma-region-extractor and figma-variant-extractor subagents",
-  "version": "5.4.0",
+  "version": "5.5.0",
   "author": {
     "name": "Liam Klyneker",
     "url": "https://github.com/LiamKlyneker"
