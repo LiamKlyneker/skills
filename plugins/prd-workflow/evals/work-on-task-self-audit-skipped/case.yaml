@@ -1,5 +1,6 @@
 schema_version: "1.0"
 name: work-on-task-self-audit-skipped
+summary: "The self-audit covers all 9 ledger rows."
 description: >
   The `work-on-task` implementer hop against the Vitrine fixture's frozen `to-task` issue. The
   skill's own prose names the leak: "Run 1 failed here. The implementer worked from the issue

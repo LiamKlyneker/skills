@@ -1,5 +1,6 @@
 schema_version: "1.0"
 name: work-on-task-off-grid-stops
+summary: "An off-grid value with no grill decision stops the run."
 description: >
   The `work-on-task` implementer hop against a hand-written stub project — no workspace, no
   package manager, no build, one component and one screenshot. The frozen issue is the shape

@@ -1,5 +1,6 @@
 schema_version: "1.0"
 name: report-leak-issue-hop-sanitized
+summary: "A leak report names the issue hop and leaks no fixture names."
 description: >
   `lk:report-leak` against a frozen brief chain for the Vitrine fixture, with one leak planted at
   a known hop: the brief and the grill's `## Fidelity decisions` both keep the search band's

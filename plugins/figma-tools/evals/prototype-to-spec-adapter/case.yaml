@@ -1,5 +1,6 @@
 schema_version: "1.0"
 name: prototype-to-spec-adapter
+summary: "Reads the files the adapter names, not its own defaults."
 description: >
   The same prototype under the variant adapter, which names four handoff files the skill would
   never reach for on its own. A run that reads `deck-manifest.ts`, `PLACARD.md`, `shapes.ts`
