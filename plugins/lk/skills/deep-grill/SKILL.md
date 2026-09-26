@@ -7,7 +7,7 @@ description: >
   fidelity-ledger rules: one round-one question per non-`DS as-is` ledger row with
   the screenshot read, an evidence rule for "already matches" claims, a per-state
   container rule, and a `## Fidelity decisions` block at consensus. Invoke
-  /lk:deep-grill.
+  /lk:deep-grill; add --debug to save the interview to .claude/briefs/<ticket>/grill.md.
 disable-model-invocation: true
 ---
 
@@ -172,9 +172,11 @@ Every ledger row appears, including the rows that stayed `DS as-is`. A row missi
 | <element> | <states> | Build local | <what it replaces> · added — not in the design: <property> |
 ```
 
-## Saving the consensus — `.claude/briefs/<ticket>/grill.md`
+## Saving the consensus — only with `--debug`
 
-**On consensus, write the interview down.** The file is `<repo-root>/.claude/briefs/<ticket>/grill.md`, beside the screenshots directory of the same ticket, and it holds three parts in this order:
+**Without `--debug`, write no file.** The consensus lives in the conversation, and the `## Fidelity decisions` block above is printed there for the next hop to take.
+
+**With `--debug` (`/lk:deep-grill --debug`), on consensus, write the interview down.** The file is `<repo-root>/.claude/briefs/<ticket>/grill.md`, beside the screenshots directory of the same ticket, and it holds three parts in this order:
 
 1. **The "Resolved by the code" list** — every question recon settled, each with its precedent, exactly as it was surfaced before Round 1.
 2. **Every question asked, with the answer given** — one entry per question, across every round, in the order they were asked. The answer is the user's, close to verbatim; a recommendation the user accepted is recorded as accepted rather than rewritten into a decision.
@@ -182,7 +184,7 @@ Every ledger row appears, including the rows that stayed `DS as-is`. A row missi
 
 The ticket is the brief's filename stem, or the ticket id this grill was invoked with. A grill with neither has nowhere to write the file — say so instead of inventing a key.
 
-This file is what makes the grill hop legible after the fact. A downstream issue carries the decisions but not the questions, so without it the only surviving record of what was asked is the transcript of a session nobody can open. `lk:report-leak` reads it to tell a decision the grill made from a decision it never raised, and falls back to the issue's `## Decisions confirmed` block when it is absent.
+The file is for debugging a skill, not for the project. A downstream issue carries the decisions but not the questions, so this file is the only record of what was asked. `lk:report-leak` reads it to tell a decision the grill made from a decision it never raised, and falls back to the issue's `## Decisions confirmed` block when it is absent.
 
 ## Done
 
