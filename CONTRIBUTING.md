@@ -112,6 +112,11 @@ repo and clones it from GitHub when there is none. It prints which source it use
 pass `--dry-run` to see that without placing anything. `prepare-history.sh` resolves
 its source the same way and takes the same flag.
 
+A new case needs three things the dashboard (`dashboard/`) reads: a name of the form
+`<skill>-<behaviour>`, which is how a case is filed under its skill; a `micro` or `full`
+tag for its tier; and a one-line `summary:` saying what it checks, shown as the case's
+title. The runner ignores `summary:`.
+
 ## Pull requests
 
 Contributors fork and open a PR — nobody outside the maintainer has push access, so

@@ -288,7 +288,29 @@ def grader_target_summary(grader):
     return None
 
 
-def collect_cases(plugin_dir):
+TIER_TAGS = ("micro", "full")
+
+
+def owning_skill(case_name, tags, skill_names):
+    """Names the skill a case tests: the longest skill name the case name starts with.
+
+    Cases are named `<skill>-<behaviour>`, and a micro case carries no skill tag, so the
+    name is the one link every case has. A tag naming a skill is the fallback. Returns
+    None when neither matches.
+    """
+    prefixed = [s for s in skill_names if case_name.startswith(s + "-")]
+    if prefixed:
+        return max(prefixed, key=len)
+    tagged = [t for t in tags if t in skill_names]
+    return tagged[0] if tagged else None
+
+
+def case_tier(tags):
+    tiers = [t for t in tags if t in TIER_TAGS]
+    return tiers[0] if tiers else None
+
+
+def collect_cases(plugin_dir, skill_names):
     evals_dir = os.path.join(plugin_dir, "evals")
     cases = []
     if not os.path.isdir(evals_dir):
@@ -313,12 +335,17 @@ def collect_cases(plugin_dir):
                         "target": grader_target_summary(grader),
                     }
                 )
+            name = doc.get("name") or entry
+            tags = doc.get("tags") or []
             cases.append(
                 {
-                    "name": doc.get("name") or entry,
+                    "name": name,
                     "dir": entry,
+                    "summary": doc.get("summary"),
                     "description": doc.get("description"),
-                    "tags": doc.get("tags") or [],
+                    "tags": tags,
+                    "skill": owning_skill(name, tags, skill_names),
+                    "tier": case_tier(tags),
                     "runs": doc.get("runs"),
                     "model": execution.get("model"),
                     "graders": graders,
@@ -332,8 +359,11 @@ def collect_cases(plugin_dir):
                 {
                     "name": entry,
                     "dir": entry,
+                    "summary": None,
                     "description": None,
                     "tags": [],
+                    "skill": owning_skill(entry, [], skill_names),
+                    "tier": None,
                     "runs": None,
                     "model": None,
                     "graders": [],
@@ -521,7 +551,7 @@ def main():
         manifest = read_json(manifest_path)
         name = manifest.get("name") or entry
         skills = collect_skills(plugin_dir)
-        cases = collect_cases(plugin_dir)
+        cases = collect_cases(plugin_dir, [s["name"] for s in skills])
         plugins.append(
             {
                 "name": name,

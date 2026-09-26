@@ -1,5 +1,6 @@
 schema_version: "1.0"
 name: prototype-to-spec-hairline-token
+summary: "A 1px border resolves to the hairline token and gets no flag."
 description: >
   The brief prototype-to-spec writes for one ticket against a hand-written stub project — no
   workspace, no build, no captures, one component. The stub's adapter carries only the rows this

@@ -1,399 +1,427 @@
 <!doctype html>
 <!--
-  Serve this directory over HTTP: `cd dashboard && python3 -m http.server 8765`.
-  Opening the file over file:// leaves the fetch of catalog.json blocked by the
-  browser's origin rules in Chrome and Safari.
-
-  Every value on this page is read from catalog.json, which build.py copies out of
-  the plugin sources and the runner's own aggregate-result.json. Nothing here
-  recomputes a verdict: the pass marks are the runner's recorded `passed` flags,
-  shown beside the `threshold` it recorded.
+  Serve over HTTP with dashboard/serve.sh. Opening the file over file:// leaves the
+  fetch of catalog.json blocked by the browser.
 -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Skills &amp; Evals</title>
+<title>Skill Evals</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
-  :root {
-    color-scheme: light dark;
-    --bg: #fbfbfa;
-    --panel: #ffffff;
-    --ink: #1b1b1a;
-    --muted: #6b6b66;
-    --edge: #e2e1dd;
-    --accent: #3a5ccc;
-    --pass-bg: #e2f2e4;
-    --pass-ink: #1d6b2c;
-    --fail-bg: #fae4e2;
-    --fail-ink: #a32b1c;
-    --flag-bg: #fbf0d8;
-    --flag-ink: #8a6216;
-    --judge-bg: #ece7fa;
-    --judge-ink: #5a3fbf;
+:root {
+  --bg: #FFFFFF;
+  --panel: #FFFFFF;
+  --ink: #000000;
+  --muted: rgb(0 0 0 / 64%);
+  --faint: rgb(0 0 0 / 44%);
+  --meta: rgb(0 0 0 / 56%);
+  --line: rgb(0 0 0 / 10%);
+  --line-strong: rgb(0 0 0 / 18%);
+  --hover: rgb(0 0 0 / 5%);
+  --select: rgb(0 0 0 / 9%);
+  --zebra: rgb(0 0 0 / 3%);
+  --pass: #1a7f37;
+  --pass-bg: #e6f4ea;
+  --fail: #c62828;
+  --fail-bg: #fdecea;
+  --none: rgb(0 0 0 / 50%);
+  --none-bg: rgb(0 0 0 / 5%);
+  --judge: #6b4fbb;
+  --judge-bg: #f1edfb;
+  --sans: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --bg: #0A0A0A; --panel: #0A0A0A; --ink: #FFFFFF;
+    --muted: rgb(255 255 255 / 56%); --faint: rgb(255 255 255 / 36%); --meta: rgb(255 255 255 / 56%);
+    --line: rgb(255 255 255 / 11%); --line-strong: rgb(255 255 255 / 20%);
+    --hover: rgb(255 255 255 / 9%); --select: rgb(255 255 255 / 14%); --zebra: rgb(255 255 255 / 3%);
+    --pass: #4cc26a; --pass-bg: #12261a; --fail: #ff6b6b; --fail-bg: #2e1516;
+    --none: rgb(255 255 255 / 50%); --none-bg: rgb(255 255 255 / 7%); --judge: #b39dff; --judge-bg: #231d36;
   }
-  @media (prefers-color-scheme: dark) {
-    :root {
-      --bg: #16161a;
-      --panel: #1e1e23;
-      --ink: #ececea;
-      --muted: #9a9a95;
-      --edge: #33333a;
-      --accent: #8fa8ff;
-      --pass-bg: #1d3524;
-      --pass-ink: #8fdca0;
-      --fail-bg: #3b1f1c;
-      --fail-ink: #f2a294;
-      --flag-bg: #3a2f16;
-      --flag-ink: #e8c477;
-      --judge-bg: #2a2440;
-      --judge-ink: #bfaeff;
-    }
-  }
-  * { box-sizing: border-box; }
-  body {
-    margin: 0;
-    background: var(--bg);
-    color: var(--ink);
-    font: 15px/1.5 ui-sans-serif, -apple-system, "Segoe UI", Roboto, sans-serif;
-  }
-  .wrap { max-width: 1100px; margin: 0 auto; padding: 24px 16px 64px; }
-  header h1 { font-size: 20px; margin: 0 0 4px; }
-  header p { margin: 0; color: var(--muted); font-size: 13px; }
-  nav { display: flex; gap: 8px; flex-wrap: wrap; margin: 20px 0; }
-  nav button {
-    font: inherit; font-size: 14px; cursor: pointer;
-    background: var(--panel); color: var(--ink);
-    border: 1px solid var(--edge); border-radius: 999px; padding: 6px 16px;
-  }
-  nav button[aria-selected="true"] { background: var(--accent); border-color: var(--accent); color: #fff; }
-  section.card {
-    background: var(--panel); border: 1px solid var(--edge);
-    border-radius: 12px; padding: 16px; margin-bottom: 16px;
-  }
-  h2 { font-size: 16px; margin: 0 0 2px; }
-  h3 { font-size: 14px; margin: 16px 0 4px; }
-  .sub { color: var(--muted); font-size: 13px; margin: 0 0 8px; }
-  .desc { color: var(--muted); font-size: 13px; margin: 4px 0 0; white-space: pre-wrap; }
-  .row { border-top: 1px solid var(--edge); padding: 12px 0; }
-  .row:last-child { padding-bottom: 0; }
-  .name { font-weight: 600; }
-  code, .mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; }
-  .tag {
-    display: inline-block; border: 1px solid var(--edge); border-radius: 6px;
-    padding: 1px 7px; margin: 2px 4px 2px 0; font-size: 12px; color: var(--muted);
-  }
-  .pill {
-    display: inline-block; border-radius: 6px; padding: 1px 7px;
-    margin: 2px 4px 2px 0; font-size: 12px; font-weight: 600;
-  }
-  .pass { background: var(--pass-bg); color: var(--pass-ink); }
-  .fail { background: var(--fail-bg); color: var(--fail-ink); }
-  .flag { background: var(--flag-bg); color: var(--flag-ink); }
-  .judge { background: var(--judge-bg); color: var(--judge-ink); }
-  .unknown { background: var(--edge); color: var(--muted); }
-  .sidecar-block { border-left: 3px solid var(--judge-ink); padding-left: 10px; margin: 8px 0; }
-  .graders { list-style: none; margin: 6px 0 0; padding: 0; }
-  .graders li { padding: 3px 0; font-size: 13px; }
-  .table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-  table { border-collapse: collapse; width: 100%; font-size: 13px; min-width: 760px; }
-  th, td { text-align: left; padding: 7px 10px; border-bottom: 1px solid var(--edge); white-space: nowrap; }
-  th { color: var(--muted); font-weight: 600; }
-  a { color: var(--accent); }
-  .note { color: var(--muted); font-size: 12px; margin-top: 10px; }
-  @media (max-width: 560px) { .wrap { padding: 16px; } }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+    --bg: #0A0A0A; --panel: #0A0A0A; --ink: #FFFFFF;
+    --muted: rgb(255 255 255 / 56%); --faint: rgb(255 255 255 / 36%); --meta: rgb(255 255 255 / 56%);
+    --line: rgb(255 255 255 / 11%); --line-strong: rgb(255 255 255 / 20%);
+    --hover: rgb(255 255 255 / 9%); --select: rgb(255 255 255 / 14%); --zebra: rgb(255 255 255 / 3%);
+    --pass: #4cc26a; --pass-bg: #12261a; --fail: #ff6b6b; --fail-bg: #2e1516;
+    --none: rgb(255 255 255 / 50%); --none-bg: rgb(255 255 255 / 7%); --judge: #b39dff; --judge-bg: #231d36;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font-family: var(--sans); font-size: 14px; line-height: 1.45; }
+.wrap { max-width: 1200px; margin: 0 auto; padding-inline: 24px; padding-block: 40px 64px; display: grid; gap: 24px; }
+@media (min-width: 900px) { .wrap { padding-inline: 48px; } }
+.mono { font-family: var(--mono); }
+.num { font-variant-numeric: tabular-nums; }
+
+header.top { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px 24px; }
+header.top h1 { margin: 0; font-size: 28px; font-weight: 500; line-height: 1.1; letter-spacing: -0.02em; }
+.totals { display: flex; flex-wrap: wrap; gap: 6px 18px; color: var(--muted); }
+.totals b { color: var(--ink); font-weight: 600; }
+.note { color: var(--meta); font-size: 13px; max-width: 68ch; margin: 0; }
+a { color: inherit; text-underline-offset: 2px; }
+.flag { color: var(--fail); font-size: 12.5px; }
+
+.filters { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { font: inherit; font-size: 13px; border: 1px solid var(--line); background: var(--panel); color: var(--ink); border-radius: 999px; padding: 3px 12px; cursor: pointer; }
+.chip:hover { background: var(--hover); }
+.chip[aria-pressed="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.chip:focus-visible, .row:focus-visible, summary:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+
+.layout { display: grid; grid-template-columns: minmax(300px, 380px) 1fr; gap: 40px; align-items: start; }
+@media (max-width: 820px) { .layout { grid-template-columns: 1fr; } }
+
+.list { display: grid; gap: 24px; }
+.group h2 { margin: 0; padding: 0 12px 8px; font-size: 13px; font-weight: 500; color: var(--ink); display: flex; justify-content: space-between; }
+
+.group h2 .v { font-family: var(--mono); letter-spacing: 0; text-transform: none; font-weight: 400; color: var(--faint); }
+.row { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 12px; width: 100%; text-align: left; font: inherit; color: inherit; background: none; border: 0; border-radius: 6px; padding: 8px 12px; cursor: pointer; }
+.row:hover { background: var(--hover); }
+.row[aria-current="true"] { background: var(--select); }
+.row .name { font-family: var(--mono); font-size: 13px; overflow-wrap: anywhere; }
+.row.untested .name { color: var(--faint); }
+.cells { display: flex; gap: 6px; }
+
+.cell { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; border-radius: 5px; padding: 2px 7px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.cell .t { font-size: 11px; opacity: 0.75; }
+.cell.pass { background: var(--pass-bg); color: var(--pass); }
+.cell.fail { background: var(--fail-bg); color: var(--fail); }
+.cell.notrun { background: var(--none-bg); color: var(--none); }
+.cell.absent { color: var(--faint); border: 1px dashed var(--line-strong); }
+.cell.nocases { color: var(--muted); border: 1px dashed var(--line-strong); }
+.ico { font-weight: 700; width: 1em; text-align: center; }
+
+.detail { display: grid; gap: 14px; }
+.skillhead { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 14px; }
+.skillhead h2 { margin: 0; font-family: var(--mono); font-size: 22px; font-weight: 500; letter-spacing: -0.01em; }
+.skillhead .plug { color: var(--muted); }
+.tierhead { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; margin-top: 16px; }
+.tierhead h3 { margin: 0; font-size: 12px; }
+.tierhead .hint { color: var(--muted); font-size: 12px; }
+.tierbadge { font-size: 16px; font-weight: 500; }
+
+
+
+.case { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 20px 24px; display: grid; gap: 12px; }
+.case.failing { border-left: 4px solid var(--fail); }
+.casetop { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px 12px; align-items: flex-start; }
+.checks { font-size: 17px; font-weight: 500; line-height: 1.35; margin: 0; text-wrap: balance; }
+.casename { font-family: var(--mono); font-size: 12px; color: var(--muted); overflow-wrap: anywhere; }
+.verdict { display: inline-flex; align-items: center; gap: 6px; font-weight: 600; font-size: 13px; border-radius: 999px; padding: 3px 11px; white-space: nowrap; }
+.verdict.pass { background: var(--pass-bg); color: var(--pass); }
+.verdict.fail { background: var(--fail-bg); color: var(--fail); }
+.verdict.notrun { background: var(--none-bg); color: var(--none); }
+
+.facts { display: flex; flex-wrap: wrap; gap: 4px 20px; color: var(--meta); font-size: 13px; }
+.facts b { color: var(--ink); font-weight: 500; }
+.pills { display: flex; flex-wrap: wrap; gap: 5px; }
+.gp { font-family: var(--mono); font-size: 11.5px; border: 1px solid var(--line); border-radius: 4px; padding: 1px 6px; color: var(--muted); }
+.gp.llm { border-color: var(--judge); color: var(--judge); background: var(--judge-bg); }
+.failed { margin: 0; padding-left: 18px; color: var(--fail); font-family: var(--mono); font-size: 12px; }
+.history { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; color: var(--muted); font-size: 12px; }
+.dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+.dot.pass { background: var(--pass); }
+.dot.fail { background: var(--fail); }
+.dot.notrun { background: transparent; border: 1.5px solid var(--none); }
+
+details summary { cursor: pointer; color: var(--ink); font-size: 13px; font-weight: 500; }
+.tablewrap { overflow-x: auto; margin-top: 8px; }
+table { border-collapse: collapse; width: 100%; font-size: 12.5px; font-variant-numeric: tabular-nums; }
+th, td { text-align: left; padding: 6px 12px; white-space: nowrap; }
+tbody tr:nth-child(odd) { background: var(--zebra); }
+th { font-weight: 500; color: var(--muted); font-size: 11px; }
+
+.jev { border: 1px dashed var(--line-strong); border-radius: 8px; padding: 16px; display: grid; gap: 10px; }
+.jev .h { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 12px; }
+.jev .h b { font-weight: 600; }
+.jev .sub { color: var(--meta); font-size: 13px; }
+.bar { display: flex; height: 10px; border-radius: 5px; overflow: hidden; background: var(--line); }
+.bar span { display: block; height: 100%; }
+.legend { display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: 12.5px; font-variant-numeric: tabular-nums; }
+.legend i { display: inline-block; width: 9px; height: 9px; border-radius: 2px; margin-right: 5px; }
+.jev ul { margin: 0; padding-left: 18px; font-size: 12.5px; }
+
+.empty { border: 1px dashed var(--line-strong); border-radius: 10px; padding: 20px 24px; color: var(--muted); }
+.empty b { color: var(--ink); }
+.legendbar { display: flex; flex-wrap: wrap; gap: 6px 14px; color: var(--muted); font-size: 12px; align-items: center; }
 </style>
+
 </head>
 <body>
 <div class="wrap">
-  <header>
-    <h1>Skills &amp; Evals</h1>
-    <p id="summary">Loading catalog.json…</p>
+  <header class="top">
+    <h1>Skill Evals</h1>
+    <div class="totals num" id="totals">Loading catalog.json…</div>
   </header>
-  <nav id="tabs" role="tablist">
-    <button role="tab" data-view="skills" aria-selected="true">Skills</button>
-    <button role="tab" data-view="cases" aria-selected="false">Cases</button>
-    <button role="tab" data-view="runs" aria-selected="false">Runs</button>
-  </nav>
-  <main id="view"></main>
   <p class="note">
-    Pass marks are the flags the eval runner recorded, shown beside the threshold it
-    recorded. <span class="pill judge">judgement</span> marks a grader scored by a model,
-    not by a pattern. Per-run detail lives in each run's own report.
+    Every verdict here is a flag the eval runner recorded. A count such as 2/3 counts
+    recorded flags; the page computes no score of its own.
   </p>
+  <div class="legendbar">
+    <span class="cell pass"><span class="ico">✓</span>pass</span>
+    <span class="cell fail"><span class="ico">✗</span>fail</span>
+    <span class="cell notrun"><span class="ico">○</span>no verdict</span>
+    <span class="cell absent">— no cases in tier</span>
+    <span class="gp llm">◆ llm · model judgement</span>
+  </div>
+  <div class="filters" role="group" aria-label="Filter skills">
+    <button class="chip" id="f-all" data-f="all" aria-pressed="true">All skills</button>
+    <button class="chip" id="f-tested" data-f="tested" aria-pressed="false">Tested</button>
+    <button class="chip" id="f-untested" data-f="untested" aria-pressed="false">No cases yet</button>
+    <button class="chip" id="f-failing" data-f="failing" aria-pressed="false">Failing</button>
+  </div>
+  <div class="layout">
+    <nav class="list" id="list" aria-label="Skills by plugin"></nav>
+    <main class="detail" id="detail"></main>
+  </div>
 </div>
+
 <script>
-const view = document.getElementById("view");
-const summary = document.getElementById("summary");
-let catalog = null;
-
-function el(tag, attrs, children) {
-  const node = document.createElement(tag);
-  for (const key in (attrs || {})) {
-    if (key === "class") node.className = attrs[key];
-    else if (key === "text") node.textContent = attrs[key];
-    else node.setAttribute(key, attrs[key]);
+function el(tag, attrs, kids) {
+  const n = document.createElement(tag);
+  for (const k in (attrs || {})) {
+    if (k === "text") n.textContent = attrs[k];
+    else if (k === "cls") n.className = attrs[k];
+    else n.setAttribute(k, attrs[k]);
   }
-  (children || []).forEach(function (child) {
-    node.appendChild(typeof child === "string" ? document.createTextNode(child) : child);
-  });
-  return node;
+  (kids || []).forEach(c => { if (c) n.appendChild(typeof c === "string" ? document.createTextNode(c) : c); });
+  return n;
+}
+const ICON = { pass: "✓", fail: "✗", notrun: "○" };
+function state(run) {
+  if (!run || run.passed === null || run.passed === undefined) return "notrun";
+  return run.passed ? "pass" : "fail";
+}
+function stateWord(s) { return s === "notrun" ? "no verdict" : s; }
+function fmtDate(iso) { return iso ? iso.slice(0, 10) + " " + iso.slice(11, 16) : "—"; }
+function fmtDur(s) { if (s == null) return "—"; const m = Math.floor(s / 60); return m + "m " + String(Math.round(s % 60)).padStart(2, "0") + "s"; }
+function fmtCost(c) { return c == null ? "—" : "$" + c.toFixed(2); }
+function sum(xs) { return xs.some(x => x != null) ? xs.reduce((a, x) => a + (x || 0), 0) : null; }
+
+// The `without` arm is the runner's no-plugin baseline, not a run of the skill.
+function runEntry(run, rc) {
+  const attempts = (rc.attempts || []).filter(a => a.arm !== "without");
+  const graders = attempts.flatMap(a => a.graders || []);
+  const jev = attempts.filter(a => a.sidecar).map(a => a.sidecar);
+  return {
+    at: run.startedAt,
+    passed: rc.passed,
+    score: rc.score,
+    threshold: run.threshold,
+    attemptsPassed: attempts.filter(a => a.passed === true).length,
+    attempts: attempts.length,
+    gPass: graders.filter(g => g.passed === true).length,
+    gTotal: graders.length,
+    cost: sum(attempts.map(a => a.costUsd)),
+    dur: sum(attempts.map(a => a.durationSeconds)),
+    model: run.model || rc.model,
+    version: run.pluginVersion,
+    partial: run.partial,
+    report: run.reportPath,
+    failed: [...new Set(graders.filter(g => g.passed === false).map(g => g.name))],
+    jev: jev.length ? { model: run.sidecar && run.sidecar.model, attempts: jev } : null,
+    sidecarError: run.sidecar_error
+  };
 }
 
-function verdictPill(passed) {
-  if (passed === true) return el("span", { class: "pill pass", text: "passed" });
-  if (passed === false) return el("span", { class: "pill fail", text: "failed" });
-  return el("span", { class: "pill unknown", text: "no recorded verdict" });
-}
-
-function num(value, digits) {
-  return value === null || value === undefined ? "—" : Number(value).toFixed(digits);
-}
-
-function plain(value) {
-  return value === null || value === undefined || value === "" ? "—" : String(value);
-}
-
-function allRunCases() {
-  const out = [];
-  catalog.runs.forEach(function (run) {
-    (run.cases || []).forEach(function (runCase) { out.push({ run: run, case: runCase }); });
-  });
-  return out;
-}
-
-// The latest run that included this case, by the startedAt each run recorded.
-function latestRunFor(caseName) {
-  const hits = allRunCases().filter(function (pair) { return pair.case.name === caseName; });
-  hits.sort(function (a, b) { return String(b.run.startedAt).localeCompare(String(a.run.startedAt)); });
-  return hits[0] || null;
-}
-
-function casesForSkill(plugin, skillName) {
-  return plugin.cases.filter(function (c) { return (c.tags || []).indexOf(skillName) !== -1; });
-}
-
-function renderSkills() {
-  view.replaceChildren();
-  catalog.plugins.forEach(function (plugin) {
-    const card = el("section", { class: "card" }, [
-      el("h2", { text: plugin.name + " @ " + plain(plugin.version) }),
-      el("p", { class: "sub", text: plugin.skillCount + " skills · " + plugin.agents.length + " agents · " + plugin.caseCount + " eval cases" })
-    ]);
-    plugin.skills.forEach(function (skill) {
-      const row = el("div", { class: "row" }, [
-        el("div", { class: "name", text: skill.name }),
-        el("div", { class: "mono sub", text: skill.path }),
-        el("p", { class: "desc", text: plain(skill.description) })
-      ]);
-      casesForSkill(plugin, skill.name).forEach(function (c) {
-        const latest = latestRunFor(c.name);
-        const line = el("div", { class: "sub" }, [
-          el("span", { class: "tag", text: "case" }),
-          el("span", { class: "mono", text: c.name + " " }),
-        ]);
-        line.appendChild(verdictPill(latest ? latest.case.passed : null));
-        if (latest) line.appendChild(el("span", { class: "tag", text: latest.run.startedAt }));
-        row.appendChild(line);
-      });
-      card.appendChild(row);
-    });
-    plugin.agents.forEach(function (agent) {
-      card.appendChild(el("div", { class: "row" }, [
-        el("div", { class: "name", text: agent.name + " (agent)" }),
-        el("div", { class: "mono sub", text: agent.path })
-      ]));
-    });
-    view.appendChild(card);
-  });
-}
-
-// Renders the sidecar.json data attached to this run's case, if any. Every number here
-// is a model's judgement (see docs/adr/0016-a-scorer-beside-the-gate.md), so it is marked
-// the same way an `llm` grader is, and nothing here recomputes a verdict from it.
-function renderSidecar(meta, caseSidecar, attempts) {
-  const block = el("div", { class: "sidecar-block" });
-  const header = el("p", { class: "sub" }, [
-    el("span", { class: "pill judge", text: "judgement" }),
-    " sidecar " + plain(meta.model) + " · threshold " + plain(meta.threshold)
-      + " · " + plain(meta.scorings_per_run) + " scorings/run · rubric bit: " + plain(meta.rubric_bit) + " "
-  ]);
-  block.appendChild(header);
-  block.appendChild(el("p", { class: "sub", title: plain(meta.spread) }, [
-    "judge spread " + num(caseSidecar.judge_spread, 3) + " · sidecar spread " + num(caseSidecar.sidecar_spread, 3)
-      + " (grader: " + plain(caseSidecar.judge_grader) + ") — hover for the spread definition"
-  ]));
-
-  attempts.forEach(function (attempt, i) {
-    if (!attempt.sidecar) return;
-    const s = attempt.sidecar;
-    const row = el("div", { class: "row" });
-    row.appendChild(el("div", { class: "sub" }, [
-      "run " + (i + 1) + " · " + plain(s.claims) + " claims"
-    ]));
-    if (s.unscored) {
-      row.appendChild(el("p", { class: "sub" }, [
-        el("span", { class: "pill flag", text: "unscored" }), plain(s.error)
-      ]));
-    }
-    if (s.buckets) {
-      const buckets = el("p", { class: "sub" }, []);
-      ["present", "contradicted", "added", "uncertain"].forEach(function (key) {
-        buckets.appendChild(el("span", { class: "tag", text: key + ": " + plain(s.buckets[key]) }));
-      });
-      row.appendChild(buckets);
-    }
-    (s.added || []).forEach(function (claim) {
-      row.appendChild(el("p", { class: "desc" }, [
-        el("span", { class: "pill flag", text: "added" }), " " + num(claim.probability, 2) + " — " + claim.claim
-      ]));
-    });
-    (s.contradicted || []).forEach(function (claim) {
-      row.appendChild(el("p", { class: "desc" }, [
-        el("span", { class: "pill fail", text: "contradicted" }), " " + num(claim.probability, 2) + " — " + claim.claim
-      ]));
-    });
-    block.appendChild(row);
-  });
-  return block;
-}
-
-function renderCases() {
-  view.replaceChildren();
-  catalog.plugins.forEach(function (plugin) {
-    plugin.cases.forEach(function (c) {
-      const latest = latestRunFor(c.name);
-      const card = el("section", { class: "card" }, [
-        el("h2", { text: c.name }),
-        el("p", { class: "sub", text: plugin.name + " · " + plain(c.model) + " · runs: " + plain(c.runs) + " · " + c.graderCount + " graders" })
-      ]);
-      (c.tags || []).forEach(function (tag) { card.appendChild(el("span", { class: "tag", text: tag })); });
-      if (c.parse_error) {
-        card.appendChild(el("p", { class: "sub" }, [el("span", { class: "pill fail", text: "parse error" }), c.parse_error]));
-      }
-      card.appendChild(el("p", { class: "desc", text: plain(c.description) }));
-
-      const verdict = el("h3", { text: "Most recent run" });
-      card.appendChild(verdict);
-      if (latest) {
-        const line = el("p", { class: "sub" }, [
-          latest.run.startedAt + " · " + latest.run.plugin + "@" + plain(latest.run.pluginVersion) + " · threshold " + plain(latest.run.threshold) + " · score " + num(latest.case.score, 3) + " "
-        ]);
-        line.appendChild(verdictPill(latest.case.passed));
-        if (latest.run.partial) line.appendChild(el("span", { class: "pill flag", text: "partial" }));
-        if (latest.run.reportPath) {
-          line.appendChild(el("a", { href: latest.run.reportPath, text: "report.html" }));
-        }
-        card.appendChild(line);
-        (latest.case.attempts || []).forEach(function (attempt) {
-          if (attempt.error) {
-            card.appendChild(el("p", { class: "sub" }, [
-              el("span", { class: "pill flag", text: "run error" }), String(attempt.error)
-            ]));
-          }
-        });
-        if (latest.run.sidecar_error) {
-          card.appendChild(el("p", { class: "sub" }, [
-            el("span", { class: "pill flag", text: "sidecar parse error" }), latest.run.sidecar_error
-          ]));
-        }
-        if (latest.run.sidecar && latest.case.sidecar) {
-          card.appendChild(renderSidecar(latest.run.sidecar, latest.case.sidecar, latest.case.attempts || []));
-        }
-      } else {
-        card.appendChild(el("p", { class: "sub", text: "No recorded run includes this case." }));
-      }
-
-      card.appendChild(el("h3", { text: "Graders" }));
-      const list = el("ul", { class: "graders" });
-      c.graders.forEach(function (g) {
-        const item = el("li", {}, [
-          el("span", { class: "mono", text: plain(g.name) + " " }),
-          el("span", { class: "tag", text: plain(g.type) })
-        ]);
-        if (g.type === "llm") item.appendChild(el("span", { class: "pill judge", text: "judgement" }));
-        item.appendChild(el("span", { class: "tag", text: plain(g.target) }));
-        if (latest) {
-          const recorded = (latest.case.attempts[0] && latest.case.attempts[0].graders || [])
-            .filter(function (r) { return r.name === g.name; })[0];
-          if (recorded) item.appendChild(verdictPill(recorded.passed));
-        }
-        list.appendChild(item);
-      });
-      card.appendChild(list);
-      view.appendChild(card);
-    });
-  });
-}
-
-function renderRuns() {
-  view.replaceChildren();
-  const runs = catalog.runs.slice().sort(function (a, b) {
-    return String(b.startedAt).localeCompare(String(a.startedAt));
-  });
-  const head = el("tr", {}, ["Date", "Plugin", "Case filter", "Model", "Threshold", "Passed", "Score", "Cost (USD)", "Duration (s)", "Partial", "Report"].map(function (label) {
-    return el("th", { text: label });
+let skills = [], plugins = [], badRuns = [];
+function index(catalog) {
+  plugins = catalog.plugins;
+  badRuns = catalog.runs.filter(r => r.parse_error);
+  const history = {};
+  catalog.runs.forEach(run => (run.cases || []).forEach(rc => {
+    const key = run.plugin + "/" + rc.name;
+    (history[key] = history[key] || []).push(runEntry(run, rc));
   }));
-  const body = el("tbody");
-  runs.forEach(function (run) {
-    const passedCell = el("td", { text: plain(run.casesPassed) + " / " + plain(run.casesTotal) });
-    const partialCell = el("td");
-    partialCell.appendChild(run.partial
-      ? el("span", { class: "pill flag", text: "partial" })
-      : document.createTextNode("—"));
-    const reportCell = el("td");
-    reportCell.appendChild(run.reportPath
-      ? el("a", { href: run.reportPath, text: "open" })
-      : document.createTextNode("—"));
-    body.appendChild(el("tr", {}, [
-      el("td", { class: "mono", text: plain(run.startedAt) }),
-      el("td", { text: run.plugin + "@" + plain(run.pluginVersion) }),
-      el("td", { class: "mono", text: plain(run.caseFilter) }),
-      el("td", { class: "mono", text: plain(run.model) }),
-      el("td", { text: plain(run.threshold) }),
-      passedCell,
-      el("td", { text: num(run.overallScore, 3) }),
-      el("td", { text: num(run.costUsd, 4) }),
-      el("td", { text: plain(run.durationSeconds) }),
-      partialCell,
-      reportCell
-    ]));
+  plugins.forEach(p => {
+    p.cases.forEach(c => { c.runs = (history[p.name + "/" + c.name] || []).sort((a, b) => (b.at || "").localeCompare(a.at || "")); });
+    p.skills.forEach(s => skills.push({ plugin: p.name, name: s.name, cases: p.cases.filter(c => c.skill === s.name) }));
+    const orphans = p.cases.filter(c => !c.skill);
+    if (orphans.length) skills.push({ plugin: p.name, name: "(no matching skill)", cases: orphans });
   });
-  const table = el("table", {}, [el("thead", {}, [head]), body]);
-  view.appendChild(el("section", { class: "card" }, [
-    el("h2", { text: "Runs" }),
-    el("p", { class: "sub", text: runs.length + " recorded runs, newest first." }),
-    el("div", { class: "table-scroll" }, [table])
-  ]));
 }
 
-const views = { skills: renderSkills, cases: renderCases, runs: renderRuns };
+function tierCell(sk, tier) {
+  const cs = sk.cases.filter(c => c.tier === tier);
+  if (!cs.length) return { cls: "absent", passed: 0, total: 0 };
+  const states = cs.map(c => state(c.runs[0]));
+  const passed = states.filter(x => x === "pass").length;
+  const cls = states.includes("fail") ? "fail" : states.includes("notrun") ? "notrun" : "pass";
+  return { cls, passed, total: cs.length };
+}
+function isFailing(sk) { return sk.cases.some(c => state(c.runs[0]) === "fail"); }
 
-document.getElementById("tabs").addEventListener("click", function (event) {
-  const button = event.target.closest("button[data-view]");
-  if (!button || !catalog) return;
-  document.querySelectorAll("#tabs button").forEach(function (other) {
-    other.setAttribute("aria-selected", String(other === button));
+let filter = "all";
+let current = null;
+try { current = localStorage.getItem("evals-skill"); } catch (e) {}
+
+function renderTotals() {
+  const tested = skills.filter(s => s.cases.length).length;
+  const cases = skills.reduce((n, s) => n + s.cases.length, 0);
+  const micro = skills.reduce((n, s) => n + s.cases.filter(c => c.tier === "micro").length, 0);
+  const full = skills.reduce((n, s) => n + s.cases.filter(c => c.tier === "full").length, 0);
+  const failing = skills.reduce((n, s) => n + s.cases.filter(c => state(c.runs[0]) === "fail").length, 0);
+  document.getElementById("totals").replaceChildren(
+    el("span", {}, [el("b", { text: tested + "/" + skills.length }), " skills tested"]),
+    el("span", {}, [el("b", { text: String(cases) }), " cases (" + micro + " micro · " + full + " full)"]),
+    el("span", {}, [el("b", { text: String(failing) }), " failing on last run"])
+  );
+}
+
+function cellNode(c, label) {
+  if (c.cls === "absent") return el("span", { cls: "cell absent", title: "No " + label + " cases" }, [el("span", { cls: "t", text: label }), "—"]);
+  return el("span", { cls: "cell " + c.cls }, [el("span", { cls: "t", text: label }), el("span", { cls: "ico", text: ICON[c.cls] }), c.passed + "/" + c.total]);
+}
+
+function renderList() {
+  const nav = document.getElementById("list");
+  nav.replaceChildren();
+  plugins.forEach(p => {
+    const rows = skills.filter(s => s.plugin === p.name).filter(s =>
+      filter === "all" || (filter === "tested" && s.cases.length) || (filter === "untested" && !s.cases.length) || (filter === "failing" && isFailing(s)));
+    if (!rows.length) return;
+    const g = el("section", { cls: "group" }, [el("h2", {}, [p.name, el("span", { cls: "v", text: "v" + p.version })])]);
+    rows.forEach(s => {
+      const cells = el("span", { cls: "cells" });
+      if (!s.cases.length) cells.appendChild(el("span", { cls: "cell nocases", text: "no cases yet" }));
+      else { cells.appendChild(cellNode(tierCell(s, "micro"), "micro")); cells.appendChild(cellNode(tierCell(s, "full"), "full")); }
+      const key = s.plugin + "/" + s.name;
+      const b = el("button", { cls: "row" + (s.cases.length ? "" : " untested"), id: "row-" + key.replace(/[^\w-]/g, "_") }, [el("span", { cls: "name", text: s.name }), cells]);
+      if (key === current) b.setAttribute("aria-current", "true");
+      b.addEventListener("click", () => { current = key; try { localStorage.setItem("evals-skill", current); } catch (e) {} renderList(); renderDetail(); });
+      g.appendChild(b);
+    });
+    nav.appendChild(g);
   });
-  views[button.dataset.view]();
-});
+}
+
+function jevBox(jev) {
+  const parts = [["present", "var(--pass)"], ["added", "var(--ink)"], ["contradicted", "var(--fail)"], ["uncertain", "var(--none)"]];
+  const box = el("div", { cls: "jev" }, [
+    el("div", { cls: "h" }, [el("span", {}, [el("b", { text: "Jev" }), " · measurement, not a verdict"]), el("span", { cls: "mono sub", text: jev.model || "" })]),
+    el("div", { cls: "sub", text: "Claims in the ## Changes section, checked against the ledger. This never changes pass or fail." })
+  ]);
+  jev.attempts.forEach((a, i) => {
+    if (a.error) { box.appendChild(el("div", { cls: "flag", text: "Attempt " + (i + 1) + ": " + a.error })); return; }
+    const b = a.buckets || {};
+    const total = a.claims || 0;
+    if (jev.attempts.length > 1) box.appendChild(el("div", { cls: "sub", text: "Attempt " + (i + 1) + " of " + jev.attempts.length }));
+    const bar = el("div", { cls: "bar", role: "img", "aria-label": parts.map(p => p[0] + " " + (b[p[0]] || 0)).join(", ") });
+    parts.forEach(p => { const v = b[p[0]] || 0; if (v && total) bar.appendChild(el("span", { style: "width:" + (100 * v / total) + "%;background:" + p[1] })); });
+    box.appendChild(bar);
+    box.appendChild(el("div", { cls: "legend" }, [el("span", {}, ["claims ", el("b", { text: String(total) })])].concat(
+      parts.map(p => el("span", {}, [el("i", { style: "background:" + p[1] }), p[0] + " ", el("b", { text: String(b[p[0]] || 0) })])))));
+    if (a.added && a.added.length) box.appendChild(el("ul", {}, a.added.map(x => el("li", { text: "added: " + (x.claim || x) }))));
+    if (a.contradicted && a.contradicted.length) box.appendChild(el("ul", {}, a.contradicted.map(x => el("li", { text: "contradicted: " + (x.claim || x) }))));
+  });
+  return box;
+}
+
+function caseCard(c) {
+  const last = c.runs[0];
+  const st = state(last);
+  const card = el("article", { cls: "case" + (st === "fail" ? " failing" : "") });
+  card.appendChild(el("div", { cls: "casetop" }, [
+    el("div", {}, [el("p", { cls: "checks", text: c.summary || c.name }), el("div", { cls: "casename", text: c.name })]),
+    el("span", { cls: "verdict " + st }, [el("span", { text: ICON[st] }), last ? stateWord(st) : "never run"])
+  ]));
+  if (c.parse_error) card.appendChild(el("div", { cls: "flag", text: "case.yaml did not parse: " + c.parse_error }));
+  const counts = {};
+  (c.graders || []).forEach(g => { counts[g.type] = (counts[g.type] || 0) + 1; });
+  card.appendChild(el("div", { cls: "pills" }, Object.entries(counts).map(([t, n]) =>
+    el("span", { cls: "gp" + (t === "llm" ? " llm" : ""), text: (t === "llm" ? "◆ " : "") + t + " ×" + n }))));
+  if (!last) {
+    card.appendChild(el("div", { cls: "facts", text: "No run recorded under evals/results/." }));
+    return card;
+  }
+  const facts = el("div", { cls: "facts num" }, [
+    last.attempts > 1 ? el("span", {}, ["attempts passed ", el("b", { text: last.attemptsPassed + "/" + last.attempts })]) : null,
+    el("span", {}, ["graders ", el("b", { text: last.gPass + "/" + last.gTotal })]),
+    el("span", {}, ["score ", el("b", { text: last.score == null ? "—" : last.score.toFixed(2) }), " / threshold " + (last.threshold == null ? "—" : last.threshold)]),
+    el("span", {}, ["last run ", el("b", { text: fmtDate(last.at) })]),
+    el("span", {}, [el("b", { text: fmtCost(last.cost) }), " · " + fmtDur(last.dur)]),
+    el("span", { cls: "mono", text: (last.model || "model not recorded") + (last.version ? " · v" + last.version : "") }),
+    last.report ? el("a", { href: last.report, text: "report" }) : null
+  ]);
+  card.appendChild(facts);
+  if (last.partial) card.appendChild(el("div", { cls: "flag", text: "Partial run: the runner stopped before every attempt finished." }));
+  if (st === "notrun" && last.attempts > 1) card.appendChild(el("div", { cls: "facts", text: "The runner records pass/fail per attempt, not per case, so a run with several attempts has no single verdict." }));
+  if (last.failed.length) card.appendChild(el("ul", { cls: "failed" }, last.failed.map(f => el("li", { text: "✗ " + f }))));
+  const hist = el("div", { cls: "history" }, [el("span", { text: "history, newest first " })]);
+  c.runs.slice(0, 12).forEach(r => hist.appendChild(el("span", { cls: "dot " + state(r), title: fmtDate(r.at) + " · " + stateWord(state(r)) })));
+  card.appendChild(hist);
+  const withJev = c.runs.find(r => r.jev);
+  if (withJev) card.appendChild(jevBox(withJev.jev));
+  const sidecarErr = c.runs.find(r => r.sidecarError);
+  if (sidecarErr) card.appendChild(el("div", { cls: "flag", text: "sidecar.json did not parse: " + sidecarErr.sidecarError }));
+  const tbl = el("table", {}, [el("thead", {}, [el("tr", {}, ["run", "result", "graders", "score", "cost", "time", "version", ""].map(h => el("th", { text: h })))])]);
+  const tb = el("tbody");
+  c.runs.forEach(r => {
+    const s = state(r);
+    tb.appendChild(el("tr", {}, [
+      el("td", { text: fmtDate(r.at) }),
+      el("td", {}, [el("span", { cls: "dot " + s }), " " + stateWord(s) + (r.attempts > 1 ? " (" + r.attemptsPassed + "/" + r.attempts + " attempts)" : "") + (r.partial ? " (partial)" : "")]),
+      el("td", { text: r.gPass + "/" + r.gTotal }),
+      el("td", { text: r.score == null ? "—" : r.score.toFixed(2) }),
+      el("td", { text: fmtCost(r.cost) }),
+      el("td", { text: fmtDur(r.dur) }),
+      el("td", { cls: "mono", text: r.version ? "v" + r.version : "—" }),
+      el("td", {}, [r.report ? el("a", { href: r.report, text: "report" }) : null])
+    ]));
+  });
+  tbl.appendChild(tb);
+  card.appendChild(el("details", {}, [el("summary", { text: "All " + c.runs.length + " runs" }), el("div", { cls: "tablewrap" }, [tbl])]));
+  return card;
+}
+
+function renderDetail() {
+  const d = document.getElementById("detail");
+  const s = skills.find(x => x.plugin + "/" + x.name === current) || skills.find(x => x.cases.length) || skills[0];
+  if (!s) { d.replaceChildren(el("div", { cls: "empty", text: "No skills found." })); return; }
+  d.replaceChildren(el("div", { cls: "skillhead" }, [el("h2", { text: s.name }), el("span", { cls: "plug", text: s.plugin + " plugin" })]));
+  if (!s.cases.length) {
+    d.appendChild(el("div", { cls: "empty" }, [el("b", { text: "No cases yet." }), " This skill has no eval case in either tier, so no automated check guards a change to it."]));
+    return;
+  }
+  [["micro", "one contract sentence on a small stub · runs before every version bump"], ["full", "the realistic fixture workspace · runs on demand"]].forEach(([tier, hint]) => {
+    const cs = s.cases.filter(c => c.tier === tier);
+    d.appendChild(el("div", { cls: "tierhead" }, [el("span", { cls: "tierbadge " + tier, text: tier }), el("span", { cls: "hint", text: hint })]));
+    if (!cs.length) d.appendChild(el("div", { cls: "empty", text: "No " + tier + " cases for this skill." }));
+    cs.forEach(c => d.appendChild(caseCard(c)));
+  });
+  const untiered = s.cases.filter(c => c.tier !== "micro" && c.tier !== "full");
+  if (untiered.length) {
+    d.appendChild(el("div", { cls: "tierhead" }, [el("span", { cls: "tierbadge", text: "no tier tag" }), el("span", { cls: "hint", text: "carries neither micro nor full in its tags" })]));
+    untiered.forEach(c => d.appendChild(caseCard(c)));
+  }
+  if (badRuns.length) d.appendChild(el("div", { cls: "flag", text: badRuns.length + " result file(s) did not parse: " + badRuns.map(r => r.plugin + "/" + r.stamp).join(", ") }));
+}
+
+document.querySelectorAll(".chip").forEach(b => b.addEventListener("click", () => {
+  filter = b.dataset.f;
+  document.querySelectorAll(".chip").forEach(x => x.setAttribute("aria-pressed", String(x === b)));
+  renderList();
+}));
 
 fetch("catalog.json")
-  .then(function (response) {
-    if (!response.ok) throw new Error("HTTP " + response.status);
-    return response.json();
+  .then(r => { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); })
+  .then(catalog => {
+    index(catalog);
+    if (!skills.some(s => s.plugin + "/" + s.name === current)) {
+      const first = skills.find(s => s.cases.length);
+      current = first ? first.plugin + "/" + first.name : null;
+    }
+    renderTotals(); renderList(); renderDetail();
   })
-  .then(function (data) {
-    catalog = data;
-    const counts = data.counts;
-    summary.textContent = counts.plugins + " plugins · " + counts.skills + " skills · "
-      + counts.agents + " agents · " + counts.cases + " eval cases · " + counts.runs
-      + " runs · generated " + data.generatedAt;
-    renderSkills();
-  })
-  .catch(function (error) {
-    summary.textContent = "Could not load catalog.json (" + error.message
-      + "). Run python3 dashboard/build.py, then serve this directory over HTTP.";
+  .catch(err => {
+    document.getElementById("totals").textContent = "Could not load catalog.json (" + err.message + "). Run dashboard/serve.sh.";
   });
 </script>
 </body>

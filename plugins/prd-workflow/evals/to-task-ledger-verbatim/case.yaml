@@ -1,5 +1,6 @@
 schema_version: "1.0"
 name: to-task-ledger-verbatim
+summary: "The issue copies the ledger rows word for word."
 description: >
   The issue `to-task` writes from the frozen grill, against the Vitrine fixture app. The hop's
   leak is a re-summarised ledger: a shorter Layout facts column, a lost icon name, a fetch line

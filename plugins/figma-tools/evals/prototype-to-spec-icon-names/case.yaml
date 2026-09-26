@@ -1,5 +1,6 @@
 schema_version: "1.0"
 name: prototype-to-spec-icon-names
+summary: "Icons keep their design-system names, never common ones."
 description: >
   The brief prototype-to-spec writes for one ticket against the Vitrine fixture prototype.
   The prototype draws its own glyphs and gives them its own names; the ledger has to carry the

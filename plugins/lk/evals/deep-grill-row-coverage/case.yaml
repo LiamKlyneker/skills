@@ -1,5 +1,6 @@
 schema_version: "1.0"
 name: deep-grill-row-coverage
+summary: "The grill asks about every ledger row."
 description: >
   The `deep-grill` hop against the Vitrine fixture's frozen brief. The hop's leak, per
   `plugins/prd-workflow/evals/fixtures/leaks.md`, is a grill that inherits the brief's
