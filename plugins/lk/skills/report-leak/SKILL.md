@@ -107,7 +107,7 @@ The two need different fixes — a leak needs a grader that catches an invention
 **Briefs are regenerated in place.** The brief on disk today is not necessarily the brief the issue was written from, and nothing records which one was.
 
 - **Diff the issue's ledger rows against the on-disk brief's rows.** On any difference, or when the brief is absent, mark the brief hop **"unverifiable, brief regenerated after the issue"** and continue the walk from the **issue** as the earliest trusted artifact.
-- **The same rule applies to a missing `grill.md`.** Fall back to the issue's `## Decisions confirmed` block, and **say in the session and in the issue body that the grill hop was read from the issue rather than from `grill.md`**.
+- **The same rule applies to a missing `grill.md`**, which is the usual case: `deep-grill` writes it only when run with `--debug`. Fall back to the issue's `## Decisions confirmed` block, and **say in the session and in the issue body that the grill hop was read from the issue rather than from `grill.md`**.
 
 An unverifiable hop still appears in the finding. "This may have leaked at the brief hop, and the brief can no longer prove it either way" is a real report; silence about it is not.
 
