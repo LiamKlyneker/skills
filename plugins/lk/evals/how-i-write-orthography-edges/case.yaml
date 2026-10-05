@@ -1,0 +1,77 @@
+schema_version: "1.0"
+name: how-i-write-orthography-edges
+summary: "Articles keep every apostrophe; informal drafts never drop one into a different word."
+description: >
+  Two drafts from `lk:how-i-write` in one run, each written to its own file: the opening of an
+  article, which Register 1 keeps fully spelled, and a PR approval comment, which takes the loose
+  orthography of Registers 2 and 3. The graders check only the deterministic edges of that
+  trait. The article carries none of the apostrophe-less contractions. The comment never drops
+  an apostrophe into a different word, and it does not lowercase after every full stop. Whether
+  a single draft is mixed enough is a property of many drafts, not one, so no grader scores it.
+  The meaning-changing drops are checked only where a real word cannot sit in the same place:
+  `ill` anywhere, and `well` followed by a bare verb outside `as well`. `were`, `shell` and
+  `hell` are real words a correct comment can carry, so no regex separates them from a drop.
+  No scaffold: the run needs nothing but an empty working directory.
+tags: [micro]
+runs: 1
+execution:
+  prompt: |
+    There is no human on the other end of this session. Do not ask which register to use or
+    what the text is about; both are given below. Use the `/lk:how-i-write` skill for both
+    drafts, and write each draft's text and nothing else into its file.
+
+    1. Liam asks for an article. Write the opening two paragraphs of a blog post about why he
+       moved his team's shared UI library from one big index export to one export per
+       component, told the way he tells his own build stories. Write it to `article.md`.
+
+    2. Liam asks for a PR review comment. It is the approval summary on Fran's pull request
+       that adds a filters panel. Mark also worked on it. Say the work is nice, that he left some
+       suggestions inline, that one question is for Mark about the filters hook fetching on every
+       render, that he will look at the PR again tomorrow, and that the team will merge once Mark
+       answers. Four to six sentences. Write it to `pr-comment.md`.
+
+    Stop once both files are written.
+  max_turns: 15
+  timeout_seconds: 300
+  model: claude-sonnet-5
+  allowed_tools: [Read, Glob, Grep, Skill, Write]
+graders:
+  - type: regex
+    name: article-written
+    target: { source: file, path: article.md }
+    pattern: '\w'
+
+  - type: regex
+    name: pr-comment-written
+    target: { source: file, path: pr-comment.md }
+    pattern: '\w'
+
+  # `its`, `lets`, `wont` and `id` are left out: each is a real word a correct article can use.
+  - type: regex
+    name: article-keeps-every-apostrophe
+    target: { source: file, path: article.md }
+    pattern: '\b(?:dont|doesnt|didnt|cant|couldnt|wouldnt|shouldnt|isnt|arent|wasnt|werent|havent|hasnt|im|ive|youre|youve|theyre|thats|whats|theres|weve)\b'
+    flags: i
+    match: not_contains
+
+  - type: regex
+    name: pr-comment-never-drops-ill
+    target: { source: file, path: pr-comment.md }
+    pattern: '\bill\b(?!-)'
+    flags: i
+    match: not_contains
+
+  - type: regex
+    name: pr-comment-never-drops-well
+    target: { source: file, path: pr-comment.md }
+    pattern: '(?<![Aa]s )\bwell\s+(?:need|have|do|be|get|ship|push|move|merge|see|check|take|look|talk|sync|keep|leave|pick|fix|want)\b'
+    flags: i
+    match: not_contains
+
+  # Matches only when no full stop is followed by a capital and at least two full stops (not
+  # ellipses, not `e.g.`, `i.e.`, `etc.`, `vs.`) are followed by lowercase.
+  - type: regex
+    name: pr-comment-not-lowercase-after-every-full-stop
+    target: { source: file, path: pr-comment.md }
+    pattern: '^(?![\s\S]*(?<!\.)\.\s+[A-Z])(?=(?:[\s\S]*?(?<!\.)(?<!e\.g)(?<!i\.e)(?<!etc)(?<!vs)\.\s+[a-z]){2})'
+    match: not_contains

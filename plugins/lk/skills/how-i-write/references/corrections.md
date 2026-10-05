@@ -50,3 +50,31 @@ Before/after pairs collected from real usage. Each entry is: what a draft got wr
 4. **Drops the inline ticket ref** ("(FUS-8967/8968)") — he doesn't tag ticket numbers into the middle of a conversational question.
 
 Also note his non-native rhythm ("so there is working and i was expecting some equivalent", lowercase `i`) stays untouched per hard rule 4 — the draft's tidy "so I had something to lean on there. I couldn't find an equivalent" is the wrong instinct.
+
+## 3. Lowercase after every full stop in a PR comment (2026-10)
+
+**Register:** PR review comment, an approval summary. Liam flagged the line *"left some suggestions inline. one thing for Mark tho"*; the rest of the comment around it is reconstructed to show the pattern.
+
+**Before (as drafted):**
+
+> nice work over here. left some suggestions inline. one thing for Mark tho, the filters hook fetches on every render. is this on purpose? if it's out of the scope of this PR we can add a TODO. otherwise lgtm.
+
+**After (what it should have been):**
+
+> nice work over here, left some suggestions inline... one thing for Mark tho, the filters hook fetches on every render, is this on purpose? if its out of the scope of this PR we can add a TODO. Otherwise LGTM ✅
+
+**Why:** Hard rule 13 lowercases the **opening word** of a comment, and hard rule 14 capitalises the word after a full stop. The draft lowercased after all four full stops, and that uniformity is what reads as generated. His real comments join sentences in a mix: comma splices most often, a question mark into lowercase, an ellipsis, a full stop into a capital. A full stop into lowercase can appear once, but never on every join. Any rule applied to every case becomes a new tell.
+
+## 4. Every apostrophe and every subject in place on a Slack heads-up (2026-10)
+
+**Register:** Slack-work, a short heads-up. Illustrative, not a sent message: it shows the shape of the miss rather than a real edit.
+
+**Before (as drafted):**
+
+> team, I've pushed the fix for the date picker, it's on the `fix/date-picker` branch. I'd appreciate a quick look when you've got a sec... I'll merge it tomorrow if nobody's against it, that's the plan at least
+
+**After (what it should have been):**
+
+> team, pushed the fix for the date picker, its on the `fix/date-picker` branch... would appreciate a quick look when you've got a sec. I'll merge it tomorrow if nobody's against it, thats the plan at least
+
+**Why:** Every contraction spelled correctly and every clause with its subject is tidier than anyone types in Slack. The after drops the subject on the short clauses (`pushed the fix`, `would appreciate`) and the apostrophe on two contractions (`its`, `thats`) while `you've` and `nobody's` keep theirs. The mix is the signal: dropping every apostrophe is as uniform as keeping them all. `I'll` keeps its apostrophe because `ill` is a different word.
