@@ -55,10 +55,12 @@ Five skills:
 - **`ds-catalog`** — writes the catalog, and the adapter rows that go with it. Its
   output is **two files**: a `generated` half enumerated by
   `scripts/generate_catalog.py` from the design system's own declarations, stamped with
-  the installed version, and an `overlay` a human owns — conventions, every `status:`,
+  the installed version, and **usage notes** a human owns — conventions, every `status:`,
   and the idiom mapping that says which design-system component a hand-rolled popover
-  or chip row should have been. A design-system bump re-runs the script and diffs;
-  it re-runs the interview only where something was removed or renamed.
+  or chip row should have been. Where the design-system package ships its own generated
+  catalog, the adapter's `Catalog:` row names that file and `ds-catalog` writes only the
+  usage notes. A design-system bump re-runs the script and diffs; it re-runs the
+  interview only where something was removed or renamed.
 
 What is genuinely shared is the **contracts**, not the pipeline:
 `figma-to-spec/references/resolution-rules.md` and

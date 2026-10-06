@@ -5,7 +5,7 @@ Reads a bundled TypeScript declaration file and a theme stylesheet, and writes t
 mechanical sections of `catalog-contract.md` — `## Components`, `## Tokens`,
 `## Typography`, `## Icons`. It never writes `## Conventions`, never writes a `status:`
 field, and never guesses: anything it cannot resolve is listed under `## Unresolved`, for
-the overlay's author to answer.
+the usage notes' author to answer.
 
 Standard library only, and no argument names a skill, a workflow or a plugin — the whole
 file is intended to move into a design-system package unchanged.
@@ -149,7 +149,7 @@ def collect_tokens(css: str) -> dict[str, list[tuple[str, str]]]:
     """Group custom properties into tiers by their first name segment.
 
     The grouping is a proposal, not a claim: a design system's real tier names come from the
-    overlay, and the caller is told to confirm them.
+    usage notes, and the caller is told to confirm them.
     """
     tiers: dict[str, list[tuple[str, str]]] = {}
     for name, value in CSS_VAR.findall(css):
@@ -207,8 +207,8 @@ def render(args, components, unresolved, tiers, typography, icons) -> str:
         "exactly as current as the installed package.",
         "",
         "**Regenerate this file; never hand-edit it.** Every judgement — `status:` fields, "
-        "successors, conventions, idiom mappings — lives in the overlay, which is the half "
-        "a human owns and this script never touches.",
+        "successors, conventions, idiom mappings — lives in the usage notes, which a human "
+        "owns and this script never touches.",
         "",
         "## Components",
         "",
@@ -232,7 +232,7 @@ def render(args, components, unresolved, tiers, typography, icons) -> str:
         out.append(
             "Tiers are grouped by the first segment of each custom property's name. "
             "**The grouping is mechanical and the tier names are not the project's** — "
-            "confirm both in the overlay's `## Conventions`."
+            "confirm both in the usage notes' `## Conventions`."
         )
         for tier, entries in tiers.items():
             out += [
@@ -272,7 +272,7 @@ def render(args, components, unresolved, tiers, typography, icons) -> str:
             ", ".join(f"`{n}`" for n in icons),
             "",
             "**Whether this is the project's only icon source is not readable here.** "
-            "Icon sources are plural by default; the overlay names the rest.",
+            "Icon sources are plural by default; the usage notes name the rest.",
         ]
     else:
         out.append(
@@ -284,7 +284,7 @@ def render(args, components, unresolved, tiers, typography, icons) -> str:
     out += ["", "## Unresolved", ""]
     if unresolved:
         out.append(
-            "Read but not settled. Each one is a question for the overlay's author; none of "
+            "Read but not settled. Each one is a question for the usage notes' author; none of "
             "them is a gap in the design system."
         )
         out.append("")

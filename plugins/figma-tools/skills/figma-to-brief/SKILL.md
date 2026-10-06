@@ -172,11 +172,12 @@ Read the adapter. Establish, and stop on any of them:
    ladder and the usage-rules source. An absent section → STOP: _this project has no design
    system registered; `install-skills` asks for one._
 4. **The catalog** — resolve through the `Catalog:` pointer and validate against the shape
-   contract, which is the same gate `figma-to-spec` runs and fails the same way. **Where the
-   pointer resolves to a single file** there is **no overlay document and no `## Idiom mapping`
-   table** — so every rule below that reads a "Default chrome" note reads the catalog's variant
-   axes and the node render instead. Say so once in the run; it changes what Phase 4's rule 2
-   compares against, not whether it runs.
+   contract, which is the same gate `figma-to-spec` runs and fails the same way. Read the
+   "Default chrome" notes and the `## Idiom mapping` table from whichever resolved source
+   carries them. **Where no resolved source carries a "Default chrome" note for a component**,
+   every rule below that reads one reads the catalog's variant axes and the node render instead;
+   **where none carries `## Idiom mapping`**, idioms resolve by name similarity alone. Say so
+   once in the run; it changes what Phase 4's rule 2 compares against, not whether it runs.
 5. **The usage-rules source** — keep it by name, as the adapter's row names it. Absent is the
    answer, not a warning: the brief then cites nothing.
 6. **The ticket** — fetch work item `<ado-id>` with `mcp__ado__wit_work_item`, against the
@@ -432,9 +433,9 @@ implementer to invent one.
    `Table`, `Card`, `Accordion`, `Carousel`, and **any component the catalog records a variant
    axis for**. Such a component may not be given confidence `exact` in `## Element → DS mapping`,
    and may not be given fidelity class `DS as-is` unless rule 2 produced no difference.
-2. **Compare the default chrome against the row's layout facts.** Where the catalog is a generated
-   document with no overlay, a component's **default chrome is its catalog entry's default variant
-   values plus what it renders** — take the defaults from the `## Components` table (the `(def)`
+2. **Compare the default chrome against the row's layout facts.** Where no catalog source
+   carries a "Default chrome" note for the component, its **default chrome is its catalog entry's
+   default variant values plus what it renders** — take the defaults from the `## Components` table (the `(def)`
    values) and the rendering from the node's screenshot next to however the app already renders
    that component. Then:
    - **No difference** → `DS as-is`.
@@ -579,7 +580,7 @@ and node links.
    usual cause is a file that is not open in Figma Desktop, because the local server reads the
    running app — say so.
 6. **No catalog, or a catalog that fails the shape contract** → stop exactly as `figma-to-spec`
-   does, naming the resolved path, the rule and the fix.
+   does, naming the resolved paths, the rule and the fix.
 7. **The ticket cannot be fetched** → stop, naming the project and the id.
 8. **`$FIGMA_PAT` is unset** → stop before Phase 5 writes anything, naming the token scope and the
    variable.
