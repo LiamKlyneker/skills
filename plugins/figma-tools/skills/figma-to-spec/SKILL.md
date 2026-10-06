@@ -49,12 +49,13 @@ dependency is detachable:
 
 - **A project design-system catalog (required artifact).** The existence source — what tells
   the spec which class, token, component, and variant value actually exist. It is a
-  **per-project artifact in the consuming repo**, never bundled here, and it is registered in
-  the adapter's `## Design system` section by pointer — the same pattern as `## Project gates`,
-  so this skill never names its filename. Resolution order: **passed arg → the adapter's
-  catalog pointer → ask**, stopping there. Its required shape is
-  `references/catalog-contract.md`; Phase 0 validates the resolved file against it and **fails
-  loudly** rather than degrading. Staleness is a separate, soft check (Phase 0 step 2c) —
+  **per-project artifact named by the consuming repo's adapter** — written in the repo,
+  shipped inside the design-system package, or both — never bundled here, and it is registered
+  in the adapter's `## Design system` section by pointer — the same pattern as
+  `## Project gates`, so this skill never names a filename. Resolution order: **passed arg →
+  the adapter's catalog pointer → ask**, stopping there. Its required shape is
+  `references/catalog-contract.md`; Phase 0 validates everything the pointer resolves against
+  it and **fails loudly** rather than degrading. Staleness is a separate, soft check (Phase 0 step 2c) —
   never a hard fail. A project without one gets it from **`figma-tools:ds-catalog`**, the
   companion skill in this plugin that explores the design system, interviews the human, and
   writes a conforming catalog. This skill never authors one mid-run.
@@ -128,7 +129,8 @@ Region agents are driven by `agents/figma-region-extractor.md`.
 | **D — Filing** | main thread | Branch on the adapter's `Tracker:` line. Page spec → `[DESIGN-SPEC]` on the **design-spec target**, parented to the scope ticket (native sub-issue on GitHub, child work item on ADO) · escalated gaps → the **DS-gap backlog**, ids written back. |
 
 (No catalog, or one that has drifted from the design system: author or refresh it with
-`figma-tools:ds-catalog`, then re-run Phase 0.)
+`figma-tools:ds-catalog`, then re-run Phase 0. A pointer into a dependency that is not
+installed: install the project's dependencies, then re-run Phase 0.)
 
 **STOP gates — none of these is automatable:**
 
@@ -139,7 +141,7 @@ Region agents are driven by `agents/figma-region-extractor.md`.
    Figma read (Phase 0, before step 1).
 2. **`figma-dev-mode` absent** → stop. There is no fallback (Phase 0).
 3. **No resolvable catalog, or one that fails `references/catalog-contract.md`** → stop, naming
-   the path and the rule that failed. (Staleness alone never stops a run.)
+   the paths and the rule that failed. (Staleness alone never stops a run.)
 4. **Scope or node-canonicity conflict** between the ticket and the freetext → ask, don't
    silently pick (Phase 0).
 5. **Human triage checkpoint** (Phase C step 8) → present every gap and flag; the user marks

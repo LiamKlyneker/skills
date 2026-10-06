@@ -106,8 +106,8 @@ brief.
 - **The prototype**: the prototype repo, read-only through `gh` at one pinned SHA, or the
   directory `Path:` names, read from the working tree.
 - **The catalog**, per `../figma-to-spec/references/catalog-contract.md` — the existence source
-  every element and token resolves against, including its `## Idiom mapping` table where the
-  overlay has one.
+  every element and token resolves against, including its `## Idiom mapping` table wherever a
+  resolved source carries one.
 - **The brief's shape**, `references/brief-template.md`.
 
 ## Phases
@@ -135,8 +135,8 @@ Read the adapter. Establish, and stop on any of them:
    both of those are required and the run is **remote mode**. `Spec files:`, `Schema:` and
    `Screenshots:` are required either way.
 2. **The catalog** — resolve through the pointer and validate against the shape contract,
-   which is the same gate `figma-to-spec` runs and fails the same way. A directory pointer is
-   a split catalog and is read as one document.
+   which is the same gate `figma-to-spec` runs and fails the same way. Every path the pointer
+   names is read, and the union is one document.
 3. **The usage-rules sources** — keep all of them, by name. Absent is the answer, not a
    warning: the brief then cites nothing.
 4. **The ticket** — where `<ticket-ref>` is a path to a file that exists, read the file and
@@ -298,8 +298,8 @@ Three populations, one resolution pass:
    matter: the prototype builds them out of primitives because a prototype has no reason not
    to, and an implementer copying it faithfully reproduces a component that already ships.
 
-Propose a design-system mapping for each, using the catalog and — where the overlay has one —
-its `## Idiom mapping` table. **Three confidences, and they are the brief's whole interface to
+Propose a design-system mapping for each, using the catalog and — where a catalog source
+carries one — its `## Idiom mapping` table. **Three confidences, and they are the brief's whole interface to
 the grill:**
 
 | Confidence | Means | What the grill does |
@@ -417,16 +417,16 @@ clickable".
 
 1. **Composites are never `exact`, and never `DS as-is` without evidence.** A composite is any
    component that ships its own chrome: `MultiSelectPicker`, `Combobox`, `DatePicker`, `Select`,
-   `DropdownMenu`, `DataTable`, and **any component whose catalog-overlay entry carries a
-   "Default chrome" note**. Such a component may not be given confidence `exact` in
+   `DropdownMenu`, `DataTable`, and **any component whose catalog entry carries a
+   "Default chrome" note**, in whichever source holds it. Such a component may not be given confidence `exact` in
    `## Element → DS mapping`, and may not be given fidelity class `DS as-is` unless rule 2
    produced no difference.
 2. **Compare the default chrome against the row's layout facts.** Take the composite's default
-   chrome from the overlay's "Default chrome" note for that component; **where the overlay is
+   chrome from the catalog's "Default chrome" note for that component; **where the catalog is
    silent, take it from the screenshot** — what the shipped control renders next to what the
    design draws. Then:
    - **No difference** → `DS as-is`.
-   - **A difference the component exposes a prop, slot or `className` for** (the overlay's note
+   - **A difference the component exposes a prop, slot or `className` for** (the catalog's note
      says which chrome is removable) → `DS with overrides`. Name the prop or slot in the notes.
    - **A difference with no prop, slot or `className` path** → `local component`.
    - **A difference that should not be solved locally because the design system itself is wrong
@@ -435,7 +435,7 @@ clickable".
    `Separator`.** They render nothing the caller did not ask for, so name-matching them is safe.
    **`IconButton`, `LabelButton`, `Input`, `Badge` and `PopoverContent` are not on that list** —
    each ships colour, hover, focus, radius, height or padding of its own, and each carries a
-   "Default chrome" note in the overlay. They go through rule 2's compare exactly as a composite
+   "Default chrome" note in the catalog. They go through rule 2's compare exactly as a composite
    does. A blue-by-default `IconButton` under a design that draws a neutral glyph turning red on
    hover is a difference, and the rule that let it through as `exact` is the rule this one
    replaces.
@@ -503,7 +503,7 @@ rules cannot be written from names. The images land in this session; the brief c
 3. **A named spec file is absent at the pinned SHA**, or under `Path:` → stop, naming the file
    and the SHA or the resolved directory.
 4. **No catalog, or a catalog that fails the shape contract** → stop exactly as `figma-to-spec`
-   does, naming the resolved path, the rule and the fix.
+   does, naming the resolved paths, the rule and the fix.
 5. **A `Schema:` naming an unimplemented prototype shape** → stop. Never improvise a reader.
 6. **A `Path:` that is not an existing directory** → stop, naming the row's value, the path it
    resolved to and what it was resolved against.

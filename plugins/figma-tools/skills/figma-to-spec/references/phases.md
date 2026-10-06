@@ -41,25 +41,29 @@ This is the mirror image of `figma-component-to-spec`'s Phase 1 step 1, which re
    at the end of a run it would already be a different value. Unavailable → carry
    `unknown — <why>` forward rather than dropping it.
 2. **Resolve, validate, then staleness-check the project catalog** — three parts, in this
-   order. The catalog is a **per-project artifact in the consuming repo**, never a file inside
-   this plugin.
+   order. The catalog is a **per-project artifact named by the consuming repo's adapter**,
+   never a file inside this plugin.
 
    **2a — Resolve: passed arg → the adapter's registered catalog pointer → ask the user.** In
    that order, and no further: resolution stops at *ask*, with no fallback beyond it. The
    pointer lives in `<repo-root>/.claude/project/adapter.md`'s `## Design system` section,
    registered the same way a gate is registered in `## Project gates` — **that registry is the
    only place the catalog is named.** Never hardcode a catalog filename or path here, and
-   never reconstruct one by reading the design system's source at run time. Read the resolved
-   file in — or, where the pointer names a **directory**, every markdown file directly inside
-   it, which is one catalog in two halves and is read as one document. Where both halves carry
-   the same section, the hand-owned overlay wins; `catalog-contract.md`'s *One document, two
-   files* section is normative for all of it.
+   never reconstruct one by reading the design system's source at run time. The pointer names
+   **one path or several**; read every one in — a file path as that file, a **directory** path
+   as every markdown file directly inside it — and treat the union as one document. A path may
+   lead inside an installed dependency; it is read like any other, and nothing probes for a
+   catalog the row does not name. Where two sources state the same entry, the usage notes win
+   over a generated source, and otherwise the later path; `catalog-contract.md`'s *One
+   document, several sources* section is normative for all of it. **A named path that does not
+   exist is a hard STOP** as "no resolvable catalog", naming the path; where it leads inside a
+   dependency, name installing the project's dependencies as the fix.
 
    **2b — Validate against `catalog-contract.md`. Hard STOP on failure.** Run that file's
    numbered validation rules **before any Figma read**, against the **union** of whatever 2a
-   resolved — never against one half of a split catalog, which fails rules the other half
+   resolved — never against one source of a split catalog, which fails rules another source
    satisfies. A malformed catalog fails **loudly and
-   specifically**: name the resolved path, the rule that failed, and what to change, then offer
+   specifically**: name the resolved paths, the rule that failed, and what to change, then offer
    the two ways forward (fix the catalog, or point the run at a different one). Never degrade,
    never proceed on partial data, and never infer a missing section from the design system's
    source — a spec built on a half-read catalog reads as fully resolved, which is exactly the
@@ -67,7 +71,7 @@ This is the mirror image of `figma-component-to-spec`'s Phase 1 step 1, which re
 
    **2c — Staleness: soft, never fatal.** If the adapter registers a **fingerprint command**
    for this design system, run it and compare the result to the line-1 stamp — the generated
-   half's, in a split catalog, since the overlay carries none. Match
+   source's, in a split catalog, since usage notes carry none. Match
    → note "catalog current". Mismatch → **soft-warn** ("catalog may lag the live design system
    — regenerate it") and **continue**. No fingerprint command registered, or the design-system
    source unreachable → note "staleness unchecked" and continue. **Never hard-fail on
@@ -220,7 +224,9 @@ deterministically).
 `model: 'sonnet'` passed explicitly, `run_in_background: false`. The extraction contract
 lives in the agent, so the per-call prompt carries **only the seven inputs** — region node ID
 · region layer name · source-node role (`primary` / `viewport:<bp>` / `state:<name>`) ·
-Figma file/page URL · **absolute** catalog path · **absolute** resolution-rules path · the
+Figma file/page URL · **absolute** catalog paths (every file 2a resolved, directories
+expanded, in precedence order — generated sources first, then usage notes, each kind in the
+pointer's order, so the later path always wins) · **absolute** resolution-rules path · the
 adapter's **icon resolution ladder, pasted verbatim**. The agent hard-STOPs with
 `{"error": "missing input: <name>"}` if any is absent, so a malformed spawn fails loudly
 instead of hallucinating catalog contents.

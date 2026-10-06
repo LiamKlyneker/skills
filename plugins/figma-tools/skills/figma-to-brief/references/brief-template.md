@@ -147,8 +147,8 @@ scope, not per screenshot. Same element in two states with different content = o
   radius and padding for `PopoverContent`; variant colour, size, height and `selected` for `Chip`;
   variant, size, loading slot and hover for `Button` and `IconButton`; variant and thickness for
   `Separator`; `size` and overlay behaviour for `DialogContent`. The catalog's `## Components`
-  entry — its variant axes and its `(def)` values — is the source where the catalog has no overlay
-  and therefore no "Default chrome" note.
+  entry — its variant axes and its `(def)` values — is the source where no catalog source carries
+  a "Default chrome" note for that component.
 - **Only `Popover`, `Dialog` and `Tooltip` (the roots) and an icon from the adapter's icon ladder
   may be `exact` / `DS as-is` on name alone.** `Button`, `IconButton`, `Chip`, `Tag`, `Separator`,
   `PopoverContent` and `DialogContent` carry chrome and go through the same compare a composite

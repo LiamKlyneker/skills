@@ -4,9 +4,10 @@ description: >
   Author a project's design-system catalog — the existence source `figma-to-spec`
   resolves every component, token, type utility and icon against. Explores the
   design system read-only, enumerates what a declaration file states, interviews the
-  human where static reading runs out, writes a generated half plus a hand-owned
-  overlay conforming to the shape contract, and registers the fingerprint recipe in
-  the project adapter. Invoke /figma-tools:ds-catalog.
+  human where static reading runs out, writes a generated half plus hand-owned
+  usage notes conforming to the shape contract — or only the usage notes, where the
+  design-system package ships its own generated catalog — and registers the
+  fingerprint recipe in the project adapter. Invoke /figma-tools:ds-catalog.
 disable-model-invocation: true
 ---
 
@@ -20,20 +21,22 @@ project gets one.
 Three outputs, and all three are required for the run to have finished:
 
 1. **The generated half**, enumerated by `scripts/generate_catalog.py` from the design system's
-   own declarations and theme stylesheet. Regenerated, never hand-edited.
-2. **The overlay**, written from the interview: `## Conventions`, every `status:` and
+   own declarations and theme stylesheet. Regenerated, never hand-edited. **Where the *Catalog*
+   row names a generated catalog the design-system package ships, that file is the generated
+   half and is not this skill's to write** — see *The package ships its generated half* below.
+2. **The usage notes**, written from the interview: `## Conventions`, every `status:` and
    `successor:`, and the `## Idiom mapping` table. Hand-owned, and the thing a re-run protects.
 3. **The fingerprint recipe**, written into the consuming project's adapter — the recipe that
    recomputes the generated half's stamp, without which staleness is permanently unchecked.
 
-Both files go where the adapter's catalog pointer says, and together they satisfy
-`../figma-to-spec/references/catalog-contract.md`; its *One document, two files* section is
-normative for the split and is never restated here.
+What this run writes goes where the adapter's catalog pointer says, and the union of every
+source the pointer names satisfies `../figma-to-spec/references/catalog-contract.md`; its
+*One document, several sources* section is normative for the split and is never restated here.
 
 ## Two halves, and the interview owns the one that matters
 
-**The interview is the designed path for the overlay. It is not the fallback for a parser that
-failed, and enumeration is not a change of mind about that.**
+**The interview is the designed path for the usage notes. It is not the fallback for a parser
+that failed, and enumeration is not a change of mind about that.**
 
 Splitting the catalog draws the line where the evidence already drew it. A declaration file
 does state, mechanically and completely, *which components are exported, under what names,
@@ -54,7 +57,7 @@ through a runtime remap. A parser that handled all five would be a parser for **
 system — the per-project fork this whole abstraction exists to avoid.
 
 So the shape is: **generate what is stated, read everything else readable, then ask about the
-rest, then write the overlay.** Enumeration narrows the questions and supplies the evidence each
+rest, then write the usage notes.** Enumeration narrows the questions and supplies the evidence each
 one carries; it never decides a question it cannot see, and the generator's `## Unresolved`
 section is precisely its list of those. The five shapes above are named, probed and carried
 through the interview by `references/static-reading-failures.md` — the extraction contract this
@@ -65,7 +68,7 @@ Two consequences worth stating up front:
 
 - **Nothing a human owns reaches disk before the interview.** The generated half is written
   early and freely — it is derived, it is reproducible, and a wrong one is fixed by fixing its
-  inputs and re-running. The overlay is written once, at the end, from answers.
+  inputs and re-running. The usage notes are written once, at the end, from answers.
 - **A silent omission is the failure mode this skill exists to prevent.** Every probe ends
   either *confirmed, by this file* or *asked*. "Not found" is not an outcome — for four of the
   five shapes, not-found is exactly what the failure looks like from inside a parser.
@@ -85,7 +88,7 @@ thing that replaced it.
 
 - **The project adapter**, `<repo-root>/.claude/project/adapter.md`, its `## Design system`
   section: the *Design-system source* row says what to explore, the *Catalog* row says where
-  the output goes, and the class-prefix and icon-ladder rows carry what a previous
+  the output goes — and whether the generated half is the package's own — and the class-prefix and icon-ladder rows carry what a previous
   install-time interview already established — including the *Repo role* row and, where that
   role is `library`, the variant-mechanism, token-pipeline and story-convention rows.
   `install-skills` writes that section; this skill owns the fingerprint recipe outright, and
@@ -99,7 +102,7 @@ thing that replaced it.
   one owner, and a paraphrase that drifts is worse than a pointer.
 - **The generator**, `scripts/generate_catalog.py`, bundled with this skill. It takes no
   skill-specific input and knows nothing about this workflow — deliberately, so a design system
-  can eventually ship it and a project can stop generating its catalog from the outside.
+  can ship its own generated catalog and a project can stop generating one from the outside.
 
 Missing `## Design system` section entirely → say so, point at `install-skills`, and offer to
 add the section from this run's answers. Never invent a catalog location: if no row names one,
@@ -122,13 +125,13 @@ unimplementable. Say which assumption fails and stop.
 | Phase | Runs as | Does |
 |---|---|---|
 | **0 — Resolve** | main thread | Read the adapter's `## Design system`. Locate the design-system source · decide **author** vs **refresh** · run the scope gate. |
-| **1 — Generate** | main thread | Locate the declaration file and the theme stylesheet · run `scripts/generate_catalog.py` · write the generated half. **No interview.** Its `## Unresolved` list joins Phase 3's probes. |
+| **1 — Generate** | main thread | Locate the declaration file and the theme stylesheet · run `scripts/generate_catalog.py` · write the generated half. **No interview.** Its `## Unresolved` list joins Phase 3's probes. **Skipped where the package ships the generated half.** |
 | **2 — Explore** | explorer subagents ×N, read-only, parallel | One per area, and **only for what the generated half could not settle**. Each carries `references/static-reading-failures.md`. Output: findings **plus an uncertainty ledger**. |
 | **3 — Probe** | main thread | Walk all five failure shapes against the generated half. Every one resolves to *confirmed by <file>* or *a question*. |
 | **4 — Interview** | main thread, with the human | Ask the questions, in catalog order, evidence attached. Statuses, successors, conventions and idiom rows come from here, and so does the **repo role** — with the three library conventions it gates. |
-| **5 — Write the overlay** | main thread | `## Conventions`, the statuses, `## Idiom mapping`. First hand-owned disk write of the run. |
+| **5 — Write the usage notes** | main thread | `## Conventions`, the statuses, `## Idiom mapping`. First hand-owned disk write of the run. |
 | **6 — Fingerprint** | main thread | Write the one-line recipe that reads the installed version · confirm it · write the adapter rows this run owns. |
-| **7 — Validate** | main thread | Run the contract's eight validation rules against the **union** of the two files, and report. |
+| **7 — Validate** | main thread | Run the contract's eight validation rules against the **union** of every source the *Catalog* row names, and report. |
 
 ### Phase 0 — Resolve
 
@@ -136,15 +139,54 @@ Read the adapter section. Establish, in this order:
 
 1. **The design-system source**, from its row. A path outside this repo is fine and common;
    note whether it is machine-local, because Phase 6's recipe inherits that limitation.
-2. **Author or refresh.** If the *Catalog* row names a file, or a directory holding one, that
-   already exists, this run is a **refresh** — see below, the rules differ and the difference
-   matters.
-3. **The evidence base.** A source checkout gives source, history and build config. An
+2. **Author or refresh.** If the *Catalog* row names a project-local file, or a directory
+   holding one, that already exists, this run is a **refresh** — see below, the rules differ
+   and the difference matters.
+3. **Whose generated half it is.** Where a path the *Catalog* row names lies inside the
+   design-system package's installed copy, the package ships the generated half — its line 1
+   carries the contract's fingerprint stamp — and the next section applies.
+4. **The evidence base.** A source checkout gives source, history and build config. An
    installed published package gives built output plus type declarations and no history — a
    thinner base, where variant axes may exist only in `.d.ts` and deprecations may exist
    nowhere at all. Say which one this run has, because it decides how much the interview is
    carrying.
-4. **The scope gate** above.
+5. **The scope gate** above.
+
+### The package ships its generated half
+
+`install-skills` decides this once and records it in the *Catalog* row; this skill reads the row
+and never probes for a package catalog the row does not name. Where the row names one:
+
+- **That file is not this skill's to generate or refresh, and nothing here writes inside an
+  installed dependency** — not the catalog, not any file beside it. Phase 1 does not run. A
+  package catalog that is wrong is a finding for the design system's own repo.
+- **It is the generated half for every other phase.** Phase 2 explores only what it leaves
+  open, Phase 3 probes it, and the interview carries its entries as evidence. Where it already
+  carries judgement — `## Conventions`, statuses — the interview confirms that rather than
+  re-asking it, and the usage notes restate an entry only to change it.
+- **This run writes the project's usage notes and the *Catalog* row, and nothing else of the
+  catalog.** The usage notes go at the project-local path the row already names; where it names
+  none, propose one (`usage-notes.md` beside the adapter is a reasonable default), confirm it,
+  and append it to the row after the package path.
+- **The fingerprint recipe is the installed-version read** (Phase 6). Where the *Fingerprint
+  command* row already holds one, leave it alone.
+- **A package catalog that is absent** — dependencies not installed — stops the run: name the
+  path and say to install the project's dependencies first. Never fall back to generating one.
+
+**Adopting a package catalog over a project-local one.** Where the row names the package
+catalog and the project still holds its own generated half with usage notes written against it:
+
+- **The project-local generated half is redundant.** Propose deleting it, and any generator
+  inputs kept only for it, and remove its path from the row — after the human confirms, never
+  silently.
+- **Re-read the usage notes against the package catalog before Phase 7.** A section restated in
+  full, or a tier or section heading that enumerates nothing and annotates a tier the package
+  catalog does not have, fails the contract's union rules — an orphan tier under `## Tokens` is
+  the usual one. Rewrite each annotation onto the package catalog's own entry and tier names,
+  and drop any statement the package catalog already carries identically.
+- **A usage-notes fact that contradicts the package catalog** — a different number of icon
+  sources, say — is an interview question, never resolved silently in either direction.
+- **Phase 7's union validation is the gate**, as on every run.
 
 ### Phase 1 — Generate the enumerated half
 
@@ -169,7 +211,7 @@ Three rules about what comes out:
   re-running, which is why the "nothing reaches disk first" rule does not cover it.
 - **Never hand-edit it.** An edit survives exactly until the next bump, and it silently
   un-survives, which is worse than never making it. Anything that needs saying goes in the
-  overlay, which wins on any section both files carry.
+  usage notes, which win on any entry both files carry.
 - **Its `## Unresolved` list is input to Phase 3**, item for item. Each entry is a place the
   declaration parsed cleanly and answered nothing — an unbounded `string` prop, a props type
   declared elsewhere — and each is exactly failure shape 1 wearing a type annotation.
@@ -266,9 +308,10 @@ has no answer yet — and only there; a row that is already filled is confirmed,
    In a `consumer` repo these three are not asked and not written; Phase 6 deletes them if a
    copied template left them behind.
 
-### Phase 5 — Write the overlay
+### Phase 5 — Write the usage notes
 
-Write it beside the generated half, where the *Catalog* row points, against
+Write them where the *Catalog* row points — beside the generated half, or at the project-local
+path the row names after a package catalog — against
 `../figma-to-spec/references/catalog-contract.md`. It carries `## Conventions`, every `status:`
 and `successor:`, `## Idiom mapping`, and **any section the generator could not produce** — a
 typography scale that exists only as a plugin call is enumerated here, by hand, from the
@@ -286,7 +329,8 @@ repeated here only because they are the ones a first run gets wrong:
   explicit `None` is a real answer; an absent section is not.
 - **`—` is not blank.** A component with no variant axis says so.
 
-**Where the overlay restates an entry the generated half already carries, the overlay wins** —
+**Where the usage notes restate an entry the generated half already carries, the usage notes
+win** —
 that is the contract's rule and it is what makes an annotation possible at all. Restate only the
 entry being annotated, never a whole section for tidiness: a section copied across in full stops
 tracking the next regeneration, and does it silently.
@@ -297,9 +341,10 @@ here because a run that has the answer from Phase 4 and no way to write it down 
 
 - **A successor across tiers or sections.** `successor:` names an entry *anywhere* in the
   catalog — a primitive superseded by a semantic token, a utility by a composite, a variant value
-  by a different component. Qualify the target (`<tier or section> → <entry>`) wherever the bare
-  string would match in two places; a pointer that resolves twice fails validation rule 8 the
-  same as one that resolves nowhere.
+  by a different component. A value- or prop-level successor that names a sibling on the same
+  entry needs no qualifier — the contract resolves it there first. Otherwise qualify the target
+  (`<tier or section> → <entry>`) wherever the bare string would match in two places; a pointer
+  that resolves twice fails validation rule 8 the same as one that resolves nowhere.
 - **A tier with no single successor.** Where a whole tier is retiring and its entries redistribute
   rather than moving as a block, write it explicitly under the tier heading —
   `status: legacy · successor: none — <where its entries go instead>`. Never leave the field bare
@@ -378,7 +423,7 @@ Then write to the adapter's `## Design system` section:
 | Row | This skill's authority |
 |---|---|
 | *Fingerprint command* | **Owns it.** Write the recipe. Nothing else in the system can — it is derived from the file set this run read. `None — staleness unchecked` is a real answer where no stable set exists, and the staleness check is soft, so it never fails a run. |
-| *Catalog* | **Writes it when nothing names one yet** — a catalog no pointer reaches is not a deliverable. Point it at the **directory** where a split catalog's two files live, never at one of them: a pointer naming the generated half makes the overlay invisible, and every status in it silently stops applying. Where a row already exists and the catalog was written there, leave it byte-intact. |
+| *Catalog* | **Writes it when nothing names one yet** — a catalog no pointer reaches is not a deliverable. Point it at **every** source: the **directory** where a split catalog's two files live, or — where the package ships the generated half — the package catalog's path followed by the usage notes' path. A pointer that names only the generated half makes the usage notes invisible, and every status in them silently stops applying. Where a row already exists and the catalog was written there, leave it byte-intact; the one edit this skill makes to an existing row is appending a usage-notes path it just created. |
 | *Repo role* | **Writes it when no row exists**, from the Phase 4 answer and from nothing else — never from the tree. Where the row already says `consumer` or `library`, leave it alone; a role changes because a human decides it has, not because a run explored differently. |
 | *Variant mechanism* · *Token pipeline* · *Story convention* | **Writes all three when the role is `library`** and the rows are absent, from the Phase 4 answers. Where the role is `consumer`, write none of them, and **delete only an unfilled one a copied template left behind** — a row still carrying its `<placeholder>` is noise `doctor` will report forever, while a row somebody actually filled is theirs and stays. Where a row already exists and this run's evidence contradicts it, propose rather than overwrite, exactly like the class-prefix rows below. |
 | *Tailwind class prefix* · *CSS variable prefix* · *Consumer-facing emission form* · *Icon resolution ladder* | **Proposes, never silently changes.** Where this run's evidence contradicts what the row says, show the row, show the evidence, and let the human decide. These are three separate facts and one ordered list — collapsing any of them is how a spec recommends a class the app cannot write. |
@@ -387,11 +432,14 @@ Then write to the adapter's `## Design system` section:
 
 ### Phase 7 — Validate and report
 
-Run the contract's eight validation rules against **the union of what was just written** — the
-skill that writes runs the reader's gate, so a catalog never reaches `figma-to-spec` failing a
-rule this run could have caught. Validating either half alone fails rules the other half
-satisfies: the generated one has no `## Conventions` and the overlay has no `## Components`. Then report: what was written, which entries came from the interview rather than
-from reading, which questions resolved conservatively, and anything the run could not settle.
+Run the contract's eight validation rules against **the union of every source the *Catalog*
+row names**, the package's included — the skill that writes runs the reader's gate, so a
+catalog never reaches `figma-to-spec` failing a rule this run could have caught. Validating one
+source alone fails rules another satisfies: a generated half may have no `## Conventions` and
+the usage notes have no `## Components`. A failure inside a package catalog is reported with
+the fix on the design system's side; this run does not patch around it. Then report: what was
+written, which entries came from the interview rather than from reading, which questions
+resolved conservatively, and anything the run could not settle.
 
 ## Refresh — a re-run is a diff, not a rewrite
 
@@ -399,17 +447,18 @@ Re-running against an existing catalog re-enumerates the mechanical sections, re
 interview only for what changed or is newly ambiguous, re-stamps line 1, and reports the diff
 for a human to scan.
 
-**On a design-system bump, that is one command and a diff.** Re-run the generator, read the
-diff of the generated half, and touch the overlay only where the diff shows something
+**On a design-system bump, that is one command and a diff.** Re-run the generator — or, where
+the package ships the generated half, install the new version — read the diff of the generated
+half, and touch the usage notes only where the diff shows something
 **removed or renamed** — an entry that is gone takes any status written on it with it, and a
 `successor:` pointing at a renamed entry now dangles and fails validation rule 8. A bump that
-only *adds* entries needs no overlay edit at all, which is the whole point of the split and the
+only *adds* entries needs no usage-notes edit at all, which is the whole point of the split and the
 thing worth not undoing: a new component with no status is `current` by default, which is
 correct.
 
 Two things a refresh must not do:
 
-- **Re-run the interview because the version moved.** The overlay's answers are about
+- **Re-run the interview because the version moved.** The usage notes' answers are about
   conventions and adoption, and a patch bump changes neither.
 - **Hand-edit the generated half to match an expectation.** If the diff is wrong, an input is
   wrong; fix that and regenerate.
@@ -432,10 +481,12 @@ re-toned for tidiness.
 4. **The written catalog fails a contract validation rule** (Phase 7) that this run cannot fix
    → report it as a failure rather than handing over a catalog that will stop the next
    `figma-to-spec` run at its Phase 0.
+5. **A package catalog the *Catalog* row names is absent** (Phase 0) → stop, naming the path,
+   and say to install the project's dependencies. Never generate a substitute for it.
 
 ## What this skill verifies vs what it cannot
 
-It verifies that every section of the contract is present and populated across the two files,
+It verifies that every section of the contract is present and populated across every source,
 that every enumerated list is complete as far as the run could establish, that all five known
 failure shapes were probed rather than skipped, and that the fingerprint recipe returns the
 version the generated half is stamped with.

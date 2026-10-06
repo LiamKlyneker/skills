@@ -23,8 +23,8 @@ some other codebase does not exist here unless the catalog says it does.
 ## Input contract — check this first
 
 Your prompt must supply seven inputs: region node ID · region layer name · source-node role ·
-Figma file/page URL · catalog path (absolute) · resolution-rules path (absolute) · the icon
-resolution ladder (verbatim). If any is missing, or arrives as an unresolved
+Figma file/page URL · catalog paths (absolute, one or more) · resolution-rules path (absolute) ·
+the icon resolution ladder (verbatim). If any is missing, or arrives as an unresolved
 `{{placeholder}}`, **STOP** and return `{"error": "missing input: <name>"}` — do not guess, do
 not proceed on partial inputs, and never substitute your own knowledge of any design system for
 the catalog.
@@ -47,8 +47,9 @@ the catalog.
   prompt gives you; you never invent it, and you never infer the role from a layer name that
   happens to look like a variant.
 - **Figma file / page URL:** given in your prompt, for context.
-- **Catalog (existence source):** read the absolute catalog path given in your prompt — this
-  project's authoritative list of components (+ their variant axes and values), tokens by tier,
+- **Catalog (existence source):** read **every** absolute catalog path given in your prompt and
+  treat them as one catalog. They arrive in precedence order: where two state the same entry,
+  the one listed later wins. Together they are this project's authoritative list of components (+ their variant axes and values), tokens by tier,
   typography utilities, and icon sources with their entries. This is the ONLY source for "does
   the DS have this?", and it is written in the project's **consumer-facing form**, so an entry
   is emitted exactly as the catalog writes it — never re-prefixed or otherwise transformed.

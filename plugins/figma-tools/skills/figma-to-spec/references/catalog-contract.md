@@ -1,7 +1,8 @@
 # Catalog shape contract
 
 The **interface** between this skill and a project's design-system catalog. The catalog is a
-per-project artifact living in the consuming repo; this file is the plugin-side shape it is
+per-project artifact named by the consuming repo's adapter — written in that repo, shipped
+inside the design-system package it installs, or both; this file is the plugin-side shape it is
 written against, and it is the only thing about a catalog the plugin knows.
 
 Three parties, one contract:
@@ -22,20 +23,23 @@ registers — one, several, or none, and absent means cited from nothing, which 
 
 The catalog is registered in the consuming repo's adapter
 (`<repo-root>/.claude/project/adapter.md`), in its `## Design system` section, exactly the way
-a project gate is registered in `## Project gates`: **the registry is the only place the file
-is named.** No skill and no reference doc in this plugin — including this one — may hardcode a
-catalog filename, path, or location. Follow the pointer or ask.
+a project gate is registered in `## Project gates`: **the registry is the only place the
+catalog is named.** No skill and no reference doc in this plugin — including this one — may
+hardcode a catalog filename, path, or location. Follow the pointer or ask.
 
 Phase 0's resolution order is **passed arg → the adapter's catalog pointer → ask the user**,
 in that order and no further. There is no fallback beyond *ask*: never resolve a catalog from
 inside this plugin, and never reconstruct one by reading the design system's source at run
 time. A run without a valid catalog stops.
 
-**The pointer may name a directory, and routinely does.** A catalog is one *document* and may
-be more than one *file* — see the next section. Where the pointer names a directory, every
-markdown file directly inside it is part of the catalog; where it names a file, that file is the
-whole catalog. Both shapes are valid, and nothing outside the pointer decides which this project
-uses.
+**The pointer names one path or several, and each path is a file or a directory.** A catalog
+is one *document* and may be more than one *file* — see the next section. A file path
+contributes that file; a directory path contributes every markdown file directly inside it. The
+catalog is the **union** of everything the pointer names, and nothing outside the pointer
+decides which shape this project uses. A path may lead inside an installed dependency — a
+design-system package that ships its own generated catalog — and is then read exactly like a
+path in the repo; whether such a package catalog is used was decided when the row was written,
+never at run time.
 
 Two adapter rows this contract defers to rather than duplicating, both referenced by role and
 never by literal value:
@@ -46,34 +50,51 @@ never by literal value:
   none matches. The catalog says what *exists*; the adapter says which order to try. One
   source of truth each.
 
-## One document, two files — generated and overlay
+## One document, several sources — generated and usage notes
 
 A catalog has two kinds of content, and they have different authors, different lifetimes and
 different failure modes. Keeping them in one file means every design-system bump either
 re-runs an interview or silently loses its answers.
 
-- **The generated half** — the enumeration. `## Components` with their props and the variant
+- **Generated content** — the enumeration. `## Components` with their props and the variant
   axes a declaration file actually states, `## Tokens` by tier, `## Typography`, `## Icons`.
   Produced mechanically from the design system's own bundled declarations and theme
-  stylesheet. It is **regenerated, never hand-edited**, and its fingerprint is the installed
+  stylesheet — by a project-side run, or by the design system's own build, which ships it in
+  the package. It is **regenerated, never hand-edited**, and its fingerprint is the installed
   version of the design system.
-- **The overlay** — the judgement. `## Conventions`, every `status:` line and its
+- **Usage notes** — the judgement. `## Conventions`, every `status:` line and its
   `successor:`, and the **idiom mapping** below. None of it is readable from source: the five
   shapes in `ds-catalog`'s `references/static-reading-failures.md` are exactly the places
   where a parser reports a confident wrong answer. Hand-authored, seeded by an interview, and
   it changes rarely — a design-system bump usually touches it not at all.
 
-**Validation reads the union.** A section satisfies a rule below if it is present in either
-file; a `successor:` in the overlay resolves against entries in the generated half, and the
-other way round. Neither file is required to pass the rules alone, and neither is the
-*primary* one. Where both files carry the same section — a project that annotates a whole
-tier, say — **the overlay wins**, because the overlay is the half that knows things the
-generator cannot see.
+**A source's kind is read from its line 1, never from its filename or location.** A file whose
+line 1 carries the fingerprint stamp is a **generated source**; a file whose title line carries
+no stamp is **usage notes**. Where a generated source also carries judgement — a package
+catalog that states conventions or statuses — that content is still read; the kind decides only
+precedence.
+
+**Validation reads the union.** A section satisfies a rule below if it is present in any
+source; a `successor:` in one source resolves against entries in any other. No source is
+required to pass the rules alone, and none is the *primary* one.
+
+**Precedence, where two sources state the same entry or the same section-level fact** (a tier's
+status, a section's prose on one point):
+
+1. **Usage notes win over a generated source**, because the usage notes are the part that knows
+   things the generator cannot see.
+2. **Between two sources of the same kind, the one named later in the pointer wins**, and
+   within a directory the files are taken in name order. The pointer reads as layers, each
+   refining the ones before it.
+
+Precedence works entry by entry. A source that carries a section never erases the entries
+another source lists in it — usage notes that annotate two components leave the rest of
+`## Components` standing.
 
 Splitting is **optional**. One file carrying everything is a valid catalog and always was;
 the split is what a project adopts when it got tired of re-interviewing on every bump.
 
-### `## Idiom mapping` — overlay only
+### `## Idiom mapping`
 
 The one section that is neither an existence fact nor a usage rule: a table whose left column
 is an idiom a **design source** expresses — an absolute-positioned popover with a click-away
@@ -93,7 +114,8 @@ rendering the component that ships. The table is what turns that into a lookup.
 
 It is **optional**, and a catalog without it resolves idioms by name similarity alone, which
 is the state every catalog was in before the section existed. Rows accumulate: each one is
-something a run got wrong once.
+something a run got wrong once. It usually lives in the usage notes, and is read from whichever
+source carries it; where two sources carry a row for the same idiom, precedence above decides.
 
 ## Scope: Tailwind-first, and that is a licence, not a hedge
 
@@ -127,9 +149,9 @@ project's vocabulary.
 | `## Typography` | yes | the text utilities in consumer-facing form, with the properties each sets | matching a Figma text style |
 | `## Icons` | yes | every icon **source** (plural), each enumerated or bounded | the icon ladder has something to walk |
 
-**Sections beyond this list are legal and are never validated.** A generated half listing what
-it read but could not settle, an overlay's idiom mapping, a project's own notes — none of them
-is a violation, and nothing reads them as one.
+**Sections beyond this list are legal and are never validated.** A generated source listing
+what it read but could not settle, an idiom mapping, a project's own notes — none of them is a
+violation, and nothing reads them as one.
 
 A section whose answer is genuinely "this project has none of these" is written as
 `None — <what is used instead>`. **An explicit `None` is a real answer; an absent section is
@@ -147,10 +169,12 @@ Line 1 carries the name, the fingerprint value, and the generation date:
 Immediately below it, a short source note: which repo or package the catalog was read from,
 and **what the fingerprint covers** — the set of files whose contents produce the hash.
 
-**In a split catalog the stamp lives on the generated half**, and the overlay carries its own
-title line with no stamp. The stamp measures whether the *enumeration* is current, which is a
-fact about the design system's version; the overlay ages against nothing mechanical, and giving
-it a second stamp would create two answers to one question.
+**In a split catalog the stamp lives on the generated source**, and the usage notes carry their
+own title line with no stamp — which is also how a reader tells the two kinds apart. The stamp
+measures whether the *enumeration* is current, which is a fact about the design system's
+version; usage notes age against nothing mechanical, and giving them a second stamp would create
+two answers to one question. Where more than one source carries a stamp, the fingerprint command
+is checked against the first of them the pointer names.
 
 Two rules about the stamp:
 
@@ -333,9 +357,18 @@ different component entirely. Nothing here restricts the pointer's target to the
 entry's own neighbourhood — the only requirement is that the target **exists in this catalog**,
 which is validation rule 8.
 
-Write the target unambiguously enough that a reader can find it: where the same literal string
-appears in two sections, qualify it (`successor: <tier or section> → <entry>`). A pointer that
-resolves to two entries is a dangling pointer with extra steps.
+**A pointer written below the entry level resolves in its sibling scope first.** A `successor:`
+on a **variant value** resolves first among the values of the **same axis of the same entry**;
+one on a **prop or variant axis** resolves first among the props and axes of the **same entry**,
+wherever the catalog lists them. A match there is the target, and the same literal on other
+entries or in other sections is not an ambiguity. Only where the sibling scope has no match does the pointer resolve catalog-wide,
+by the rules below — which is how a variant value superseded by a different component still
+names it. A `successor:` on a whole entry — component, token, utility, icon, tier — always
+resolves catalog-wide.
+
+Write a catalog-wide target unambiguously enough that a reader can find it: where the same
+literal string appears in two sections, qualify it (`successor: <tier or section> → <entry>`).
+A pointer that resolves to two entries is a dangling pointer with extra steps.
 
 ### A tier may declare that it has no single successor
 
@@ -386,8 +419,8 @@ nothing consumes is precisely the one a new design is most likely to be the firs
 
 ## Validation — Phase 0, loud failure only
 
-Phase 0 validates the resolved catalog **before** any Figma read — **the union of its files**,
-where the pointer named a directory, exactly as described above. Every rule below is a hard
+Phase 0 validates the resolved catalog **before** any Figma read — **the union of every source
+the pointer resolved**, exactly as described above. Every rule below is a hard
 STOP. There is no partial acceptance, no degraded mode, and no inferring a missing section
 from the design system's source: a catalog that is wrong in one section is not evidence of
 anything in the others, and a run that proceeds on partial data produces a spec that *looks*
@@ -395,14 +428,14 @@ resolved.
 
 | # | Rule | Fails when |
 |---|---|---|
-| 1 | Title line carries a fingerprint value and a generation date | line 1 has no `fingerprint:` / `generated:` stamp |
+| 1 | Title line carries a fingerprint value and a generation date — on at least one source; usage notes carry none | no source's line 1 has a `fingerprint:` / `generated:` stamp |
 | 2 | `## Conventions` present and non-empty | heading missing, or heading with no body |
 | 3 | `## Components` present, with at least one entry, every entry stating its variant axes (`—` counts) | heading missing, table empty, or a blank variant cell |
 | 4 | `## Tokens` present, with at least one named tier, each tier declaring its consumer-facing form and enumerating its entries | heading missing, no `###` tier, a tier with no form declared, or a truncated list |
 | 5 | `## Typography` present — enumerated utilities, or an explicit `None — …` | heading missing, or present and empty |
 | 6 | `## Icons` present — at least one source with its code reference, or an explicit `None — …` | heading missing, a source with no reference form, or an unbounded set with no verification route |
 | 7 | Every `status:` value is one of the four — `current` · `legacy` · `deprecated` · `unused` — at whatever scope it is written on: component, prop/axis, single variant value, token, tier, utility, icon | any other value, including a plausible synonym (`obsolete`, `wip`, `internal`), and including `unused` used as a synonym for `legacy` where the catalog's own `## Conventions` says they differ |
-| 8 | Every `successor:` resolves — to exactly one entry **anywhere in this catalog**, in any section and any tier, or to the explicit `none — <what to do instead>` form | a pointer naming nothing in the catalog; a pointer whose literal string matches entries in two sections with nothing qualifying which; or a `successor:` present but empty, which is the "nobody filled this in" case the `none — …` form exists to distinguish from a real one |
+| 8 | Every `successor:` resolves — to exactly one entry **anywhere in this catalog**, in any section and any tier, or to the explicit `none — <what to do instead>` form. A value- or prop-level pointer resolves in its **sibling scope** first (*A successor may point across tiers, and across sections*) | a pointer naming nothing in the catalog; a pointer whose literal string matches entries in two sections with nothing qualifying which; a value- or prop-level pointer that matches nothing in its sibling scope and nothing, or more than one thing, catalog-wide; or a `successor:` present but empty, which is the "nobody filled this in" case the `none — …` form exists to distinguish from a real one |
 
 Three things rule 7 and rule 8 deliberately **do not** fail on, because each is a legitimate
 shape the Status section defines and a stricter reading would reject a correct catalog:
@@ -418,13 +451,14 @@ Every one of the three was found in the wild before it was written down here. Th
 **additive**: rule 7's value set widened, rule 8's failure conditions were made explicit rather
 than narrowed, and no catalog that passed these rules before passes any of them less now.
 
-The STOP message names three things — **the resolved catalog path, the rule that failed, and
+The STOP message names three things — **the resolved catalog paths, the rule that failed, and
 what to change** — and offers the two ways forward: fix the catalog, or point the run at a
 different one. Never name a fallback: there isn't one.
 
 ## What this contract deliberately does not specify
 
-- **The catalog's filename and location.** The adapter's pointer, always.
+- **The catalog's filenames and locations, or how many sources it has.** The adapter's pointer,
+  always.
 - **The fingerprint recipe.** The adapter's row; the catalog carries only its output.
 - **Tier names, tier count, component inventory, icon sources, class vocabulary.** All project
   facts. A contract that named any of them would be one project's catalog wearing a schema's

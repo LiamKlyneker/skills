@@ -135,8 +135,8 @@ row, never two.
   primitive's Default-chrome deltas as explicit override instructions** — arrow, width behaviour,
   radius, padding, max-height and scroll for `PopoverContent`; colour, hover, focus ring, size and
   border for `IconButton`; variant, size, height and hover for `LabelButton`; size and shape for
-  `Input`; shape, height, padding and variant colour for `Badge`. The overlay's "Default chrome"
-  note for that primitive is the source.
+  `Input`; shape, height, padding and variant colour for `Badge`. The catalog's "Default chrome"
+  note for that primitive is the source, in whichever source carries it.
 - **Only `Popover` (the root), `Icon` and `Separator` may be `exact` / `DS as-is` on name alone.**
   `IconButton`, `LabelButton`, `Input`, `Badge` and `PopoverContent` carry chrome and go through
   the same compare a composite does.

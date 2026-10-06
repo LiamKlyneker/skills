@@ -292,8 +292,8 @@ change to the **component's API**, because consumers write against it.
 4. **No existence source resolves at all** — no token source behind the *Token pipeline* row, no
    registered catalog, nothing enumerable → stop, naming each thing looked for and where (Setup
    step 3c). Separately: a **registered** catalog that fails
-   `../figma-to-spec/references/catalog-contract.md` → stop, naming the path and the rule that
-   failed (Setup step 3d). Staleness alone never stops a run, and a *missing* catalog is not a
+   `../figma-to-spec/references/catalog-contract.md`, or names a path that does not exist → stop,
+   naming the paths and the rule that failed (Setup step 3d). Staleness alone never stops a run, and a *missing* catalog is not a
    stop.
 5. **No variant-mechanism ladder in the adapter** → ask the user for it; never infer the
    mechanism from the code. `ds-catalog` is what writes the row (Setup step 4).

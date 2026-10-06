@@ -175,9 +175,12 @@ empty is a **complete** run.
      place a catalog is ever named — never hardcode a filename, never reconstruct one by reading
      the design system's source at run time. **No pointer and no arg is no longer a stop**: note
      "no catalog registered — existence resolved from the *Token pipeline* source" and continue.
+     Where a pointer exists, read every path it names and treat the union as the catalog, exactly
+     as `../../figma-to-spec/references/phases.md` Phase 0 step 2a does — including its STOP for a
+     named path that does not exist.
    - *Validate* whatever did resolve against
      `../../figma-to-spec/references/catalog-contract.md`, and **a registered catalog that fails
-     it is a hard STOP** — name the resolved path, the rule that failed, and what to change,
+     it is a hard STOP** — name the resolved paths, the rule that failed, and what to change,
      then offer the two ways forward (fix it, or point the run at a different one). A project
      that registered a catalog is asserting it is valid; a malformed one is a **defect**, not an
      absence, and degrading onto half-read data produces a spec that reads as fully resolved.
