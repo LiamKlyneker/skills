@@ -1,0 +1,97 @@
+schema_version: "1.0"
+name: to-spec-tasks-ledger-by-reference
+summary: "The [TASK] names its ledger rows and copies no cells."
+description: >
+  The `to-spec-tasks` hop against a hand-written stub project, with the `[SPEC]` given as a
+  local file and the `[TASK]` written with `--out`. The spec holds one small slice and a
+  two-row fidelity ledger as an HTML table: a `DS as-is` heading and a `local component` chip.
+  The `[TASK]`'s `## Fidelity ledger (in scope)` section points at the spec's ledger, pinned to
+  the spec's revision, and lists each row by Element and States. The leak this case catches is
+  the copied table: any `<table>` or `<td>` in the task, or a cell of the `DS as-is` row that no
+  other section of the task has a reason to quote.
+  The stub's adapter carries only the rows this skill reads: `## Repo` with the `### Azure
+  DevOps` rows, and `## Commands` and `## Verify ladder` for the task's verify line.
+tags: [micro]
+runs: 1
+context:
+  scaffold_script: ./scaffold.sh
+execution:
+  prompt: |
+    The working directory is the project, already a git repository with one commit
+    (`fixture: scaffold snapshot`). Its adapter is `.claude/project/adapter.md`.
+
+    A run's read scope ends at the plugin directory, and the skill reaches its shared
+    references through a symlink that points out of it. So wherever the skill says
+    `../_shared/<name>.md` or `_shared/<name>.md`, read `<name>.md` in this working directory —
+    `fidelity-ledger.md`, `spec-splitting-seams.md`, `ado-workitem-authoring.md` and
+    `final-prints.md` are placed here for that reason.
+
+    There is no network and no tracker here. The `[SPEC]` is the local file `./spec.md`, and
+    the run writes its `[TASK]`s with `--out`. Do not call any `mcp__ado__*` tool.
+
+    Run this, and nothing else:
+
+    /ado-workflow:to-spec-tasks ./spec.md --out ./out
+
+    Follow the skill exactly and stop where it stops.
+  max_turns: 40
+  timeout_seconds: 600
+  model: claude-sonnet-5
+  allowed_tools: [Read, Glob, Grep, Skill, Bash, Write]
+graders:
+  - type: regex
+    name: task-written-with-ledger-section
+    target: { source: file, path: out/task-1.md }
+    pattern: '## Fidelity ledger \(in scope\)'
+
+  - type: regex
+    name: pointer-names-spec-and-revision
+    target: { source: file, path: out/task-1.md }
+    pattern: '#4812 rev 7'
+
+  - type: regex
+    name: lists-the-heading-row
+    target: { source: file, path: out/task-1.md }
+    pattern: 'board heading'
+
+  - type: regex
+    name: lists-the-chip-row
+    target: { source: file, path: out/task-1.md }
+    pattern: 'plate chip'
+
+  # The old shape copied the spec's ledger as an HTML table. Either tag is that copy.
+  - type: regex
+    name: no-html-table
+    target: { source: file, path: out/task-1.md }
+    pattern: '<table|<td'
+    match: not_contains
+
+  # Cells of the `DS as-is` row. No derived scorecard row, node block or screenshot block
+  # quotes them, so either one in the task is a copied cell.
+  - type: regex
+    name: no-copied-tokens-cell
+    target: { source: file, path: out/task-1.md }
+    pattern: 'color-ink-hush'
+    match: not_contains
+
+  - type: regex
+    name: no-copied-layout-facts-cell
+    target: { source: file, path: out/task-1.md }
+    pattern: 'flush left above the first chip row'
+    match: not_contains
+
+  - type: regex
+    name: template-intact-spec-line
+    target: { source: file, path: out/task-1.md }
+    pattern: 'Spec: #4812'
+
+  - type: regex
+    name: template-intact-blocked-by-sentinel
+    target: { source: file, path: out/task-1.md }
+    pattern: 'None — can start immediately\.'
+
+  - type: regex
+    name: no-consumer-vocabulary
+    target: last_message
+    pattern: neonplace|creative-ghost|liam-klyneker/liamklyneker
+    match: not_contains

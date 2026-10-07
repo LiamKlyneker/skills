@@ -1,11 +1,21 @@
 ---
 name: to-spec-tasks
-description: Slice a `[SPEC]` work item into the `[TASK]` work units that implement it, on Azure DevOps. Always produces at least one `[TASK]`. Use in a fresh session against a `[SPEC]` URL or id.
+description: Slice a `[SPEC]` work item into the `[TASK]` work units that implement it, on Azure DevOps. Always produces at least one `[TASK]`. Use in a fresh session against a `[SPEC]` URL or id, or against a local `[SPEC]` file with `--out <dir>` to write the `[TASK]` bodies to disk instead of the tracker.
 ---
 
 # To Spec Tasks
 
+```
+/ado-workflow:to-spec-tasks <spec-id | spec-url | spec-file> [--out <dir>]
+```
+
 Take a `[SPEC]` work item and create the `[TASK]` work units that implement it.
+
+| Argument      | Meaning                                                                                                                                                                                  |
+| ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `<spec-id>`   | the `[SPEC]` work item's id, or its URL. Fetched in step 1.                                                                                                                              |
+| `<spec-file>` | a local `[SPEC]` file: a line `id: <n>`, a line `rev: <n>`, then the title line, one blank line, and the description body. The two header lines stand in for the work item's id and `rev`. |
+| `--out <dir>` | optional. Given, each `[TASK]` is written to `<dir>/task-<k>.md` and nothing is created on the tracker — see step 6.                                                                     |
 
 A `[SPEC]` **always produces at least one `[TASK]`**. The spec is a document, never a work
 unit — the same relationship a PRD has to its child issues on the GitHub side. So this skill
@@ -53,7 +63,8 @@ error.
 
 ## Readiness: the ADO MCP server
 
-Requires the Azure DevOps MCP server (`mcp__ado__*` tools).
+Requires the Azure DevOps MCP server (`mcp__ado__*` tools), except with a `<spec-file>` and
+`--out`, which call no MCP tool and skip this section.
 
 **Before starting:**
 
@@ -69,8 +80,8 @@ Requires the Azure DevOps MCP server (`mcp__ado__*` tools).
 
 ### 1. Resolve the SPEC
 
-The argument is a `[SPEC]` work-item URL or id — **mandatory**. Strip query strings. If no
-argument is passed, ask the user for one; never guess.
+The argument is a `[SPEC]` work-item URL or id, or a `<spec-file>` — **mandatory**. Strip query
+strings. If no argument is passed, ask the user for one; never guess.
 
 Fetch it with `mcp__ado__wit_work_item` (`action: "get"`), passing `expand: "relations"` and **no** `fields`
 filter — the two are mutually exclusive, and a `fields` filter silently suppresses the
@@ -78,7 +89,15 @@ relations the next steps walk (see [`_shared/ado-workitem-authoring.md`](../_sha
 §4). Verify the work-item type matches the adapter's and the title starts with `[SPEC]`. If
 not, abort.
 
+From a `<spec-file>`, read the file instead: the `id:` and `rev:` lines, then the title, which must
+start with `[SPEC]`, then the body. Abort if either header line is missing.
+
+Record the spec's **revision** — the work item's `rev` field, or the file's `rev:` line. The
+template's ledger pointer names it.
+
 ### 2. Check for existing `[TASK]`s
+
+Skipped with `--out`: there is no parent to read.
 
 Take the parent work item from the `[SPEC]`'s `Hierarchy-Reverse` relation and fetch its
 `Hierarchy-Forward` children — the spec's **siblings**. If any sibling title starts with
@@ -101,10 +120,11 @@ The spec carries no splitting advice to read — it stopped carrying any, becaus
 produces at least one `[TASK]` and the cut is decided here against real code.
 
 Read the spec's `## Fidelity ledger` section if present. Every slice whose `## Worker context`
-will carry **User-visible: y** takes the rows for its own elements into its `## Fidelity ledger
-(in scope)` section, plus the screenshot blocks and node blocks those rows need (see the
-template). A row belongs to exactly one slice; a row two slices both touch is the signal the seam
-is wrong, not a licence to duplicate it.
+will carry **User-visible: y** takes the rows for its own elements **by reference**: its
+`## Fidelity ledger (in scope)` section names each row by Element and States and copies none of
+its cells, then adds the screenshot blocks and node blocks those rows need (see the template). A
+row belongs to exactly one slice; a row two slices both touch is the signal the seam is wrong, not
+a licence to duplicate it.
 
 Read the brief named in the spec's pin line as well. The screenshot blocks carry the PNG paths
 `../_shared/fidelity-ledger.md` §3 names, so confirm each of those PNGs is on disk before the
@@ -147,6 +167,9 @@ Approve? (approve / edit / abort)
 A one-slice list is presented the same way, as a single numbered entry. Do not editorialise
 about it being unsplit.
 
+With `--out`, print the list without the `Approve?` line and go straight to step 6. The files are
+what the human reviews, and they can be edited in place.
+
 ### 6. Author and create the `[TASK]`s
 
 Author each description per the template below, applying the authoring invariants in
@@ -154,7 +177,13 @@ Author each description per the template below, applying the authoring invariant
 escaping (§1) matters here as much as on the spec, since `[TASK]` scopes routinely name
 components and generic types.
 
-Then, for each approved `[TASK]`, **in dependency order** (so blockers reference real ids):
+**With `--out`, the rest of this step is one write per `[TASK]`**: `<dir>/task-<k>.md`, where `k`
+counts the slices in dependency order from 1, holding the title (the `[TASK]` prefix followed by
+the slice title) on the first line, one blank line, then the body verbatim. Nothing else in this
+step runs — no create, no link, no assignment — and a `## Blocked by` entry names the blocking
+slice's title in place of an id. Then go to step 7.
+
+Otherwise, for each approved `[TASK]`, **in dependency order** (so blockers reference real ids):
 
 - `mcp__ado__wit_work_item_write` (`action: "create"`):
   - `project`: the adapter's **work-item project** (same as the spec's)
@@ -174,11 +203,6 @@ Hierarchy and the `Related` link are not decoration: `../_shared/ado-eligibility
 spec → parent → siblings to find a spec's tasks at all, and filters them by the `Spec: #<id>`
 line or that `Related` link. A `[TASK]` parented to the spec, or created without either
 back-reference, is invisible to every downstream skill.
-
-A `wit_work_item_write` (`action: "update"`) pass carries no `format` flag and falls back to HTML
-(§1), which is why the `## Fidelity ledger (in scope)` table is emitted as HTML `<table>` markup: it
-survives a pass that a markdown pipe table does not. Escape `<` and `>` inside every ledger cell per
-§1 before the create, not after — an update pass will not fix what the create already lost.
 
 #### The `[TASK]` body template
 
@@ -211,15 +235,17 @@ implementation.
 
 ## Fidelity ledger (in scope)
 
-For **User-visible: y** slices whose `[SPEC]` carries a `## Fidelity ledger`. The spec's rows for
-this slice's elements, pasted verbatim with every column plus Decision and Instruction, per
-`../_shared/fidelity-ledger.md` §1, emitted as HTML `<table>` markup with eleven `<th>` cells —
-never a markdown pipe table, which the `update` pass in step 6 destroys. The pin line goes in a
-`<p>` directly above the table, copied character for character from the spec. The ADO `[TASK]`
-template carries no `## Design reference` pointer table, so this section is the slice's whole
-design surface.
+For **User-visible: y** slices whose `[SPEC]` carries a `## Fidelity ledger`. The section points
+at the spec's rows and copies none of their cells. In order:
 
-Then, under the table:
+- The pointer line, exactly this shape:
+  `Rows: [SPEC] #<spec-id> rev <rev> → ## Fidelity ledger`
+  with the revision recorded in step 1.
+- The spec's pin line, copied character for character.
+- One bullet per in-scope row, `<Element> — <States>`, each spelled as the spec's cells spell
+  them.
+
+Then, under the list:
 
 - The sentence from `../_shared/fidelity-ledger.md` §3 above the screenshot blocks, then one
   screenshot block per in-scope state, copied from §3 as written — the local PNG path, the pinned
@@ -279,6 +305,11 @@ from the spec can therefore go stale silently, with nothing anywhere to detect t
 A verify command, a user-visible flag and QA steps are the exceptions: they describe this slice,
 not the architecture, so the spec changing underneath them cannot falsify them.
 
+The fidelity ledger rows stay on the `[SPEC]` for the same reason, and the `[TASK]` names them by
+Element and States only. The pointer's revision is what lets a reader recover the rows as they
+stood when the slice was cut: `mcp__ado__wit_work_item` reads a work item `asOf` a point in time,
+and its revision history lists every earlier body.
+
 ### 7. Report
 
 Filter: `../_shared/final-prints.md`. §5 showed the slice list and the human approved it; the `[TASK]`s are now children on the board in dependency order. Listing them back is the same list a third time.
@@ -286,6 +317,13 @@ Filter: `../_shared/final-prints.md`. §5 showed the slice list and the human ap
 ```
 Done — <k> tickets created.
 /ado-workflow:work-on-spec <spec-id>
+```
+
+With `--out`, the print is one line, and no `work-on-spec` line follows it — no ids exist to run
+against:
+
+```
+<k> task bodies written: <dir>
 ```
 
 **No per-`[TASK]` ids, titles or URLs, and no URL at all** — the `[SPEC]` the human already has open carries every one of them. The count stays because it is the one fact the approval gate could not: how many actually landed.
@@ -297,7 +335,8 @@ The handoff is `work-on-spec`, the orchestrated loop over the whole `[SPEC]` —
 ## Stops here
 
 Do not modify the `[SPEC]` or the parent work item. The only state change this skill makes is
-creating `[TASK]` work items — which it always does, at least one.
+creating `[TASK]` work items — which it always does, at least one — or, with `--out`, writing
+their files.
 
 **This skill never enters plan mode**, on any path. There is no verdict, no monolithic
 outcome, and no branch that hands the session a spec to plan directly; planning happens per
