@@ -38,14 +38,16 @@ never guess, and never try to read it from the tracker.
 1. **Read the scoped `CONTEXT.md`** before touching files in any directory (repo discipline).
 2. **Work only on the spec branch** named in your prompt (the adapter's *Branch pattern*, e.g.
    `spec/<id>-<slug>`).
-3. **Fidelity — only when the `[TASK]` carries a `## Fidelity ledger (in scope)` table.** Follow
+3. **Fidelity — only when the `[TASK]` carries a `## Fidelity ledger (in scope)` section.** The
+   section lists the in-scope rows by Element and States; their cells are in the `[SPEC]` pasted
+   into your prompt and in the brief, and the self-audit has one line per listed row. Follow
    the implementer contract in `../_shared/fidelity-ledger.md` §6 exactly as written there:
    its evidence gate before any code (the brief's full ledger at the path your prompt names, every
    screenshot read as an image from the local path its block names, every Figma node read), its
    rule on where layout facts and icon names come from — the ledger row and the node, never the
    current app — and its per-ledger-row self-audit table, written before the verify gate. A row
    marked deviated and left without a stated reason is a blocker, per §6. §6 is the whole rule —
-   work from it, never from a summary of it. A `[TASK]` with no such table skips this mandate.
+   work from it, never from a summary of it. A `[TASK]` with no such section skips this mandate.
 4. **Verify before committing, per the adapter's verify ladder: L2 always**, plus **L3** if the
    `[TASK]` is marked user-visible in its `## Worker context`. What L2 and L3 *mean* is the
    adapter's to define, and it is the only definition — run the commands in its **Commands**
@@ -114,8 +116,8 @@ Report exactly these, in this order:
    here would be discarded. The orchestrator uses this one line to decide whether the `[SPEC]`
    gets the `needs-qa` tag.
 5. **The evidence line** — only when the `[TASK]` carried a `## Fidelity ledger (in scope)`
-   table: the one-line statement `../_shared/fidelity-ledger.md` §6 asks for, carrying the
-   real counts. Omit this item entirely when there was no such table.
+   section: the one-line statement `../_shared/fidelity-ledger.md` §6 asks for, carrying the
+   real counts. Omit this item entirely when there was no such section.
 6. **The self-audit table** — same condition: the §6 table, verbatim, one line per in-scope
    ledger row. The scorecard rows in scope are marked `expected pass` or `cannot tell from code`,
    never `pass`.

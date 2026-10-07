@@ -351,7 +351,7 @@ transition anything.
    real (spot-check: re-run the L2 command if evidence looks thin) · deviations acceptable · the
    `[TASK]`'s acceptance criteria covered.
 
-   **One more check when the `[TASK]` carries a `## Fidelity ledger (in scope)` table.** The
+   **One more check when the `[TASK]` carries a `## Fidelity ledger (in scope)` section.** The
    report must contain the evidence line — "read ledger (N rows), N screenshots, N nodes" — and
    the per-ledger-row self-audit table, with no row marked deviated and left without a reason. A
    report missing either is judged **not done** and takes step 9's failure path, exactly like a
