@@ -11,6 +11,7 @@ Single home for every project-specific fact the skills need. Workflow skills (`w
 ## Repo
 
 - Tracker: `<github|azure-devops>` — **an absent `Tracker:` line means `github`.** Every adapter written before this line existed is a GitHub project, so a filled adapter that never gained the line still reads unambiguously, and needs no edit.
+- Ticket source *(optional)*: `<ticket-source>` — one of `jira · site <jira-site>`, `github · repo <owner>/<repo>` or `azure-devops · org <ado-org> · project <ado-workitem-project>`. It names where the skills that take a ticket as input **read** it. `Tracker:` is where work is **filed**; this line is the other half of that pair, for a project that keeps its tickets on a different system from the one it files on — tickets in Jira, work filed on GitHub. **Absent → tickets are read from the `Tracker:` line**, so an adapter without the line needs no edit and nothing warns. The line carries its own locator because the adapter keeps only the filing tracker's sub-section below. Never write it naming the same system as `Tracker:`. Read by `figma-to-brief` and `prototype-to-spec`, through `_shared/ticket-source.md`; no skill files anything against it.
 - Default branch: `<main>`
 - Related repos (cross-repo issues, API contracts): `<owner>/<other-repo>` — or "None"
 

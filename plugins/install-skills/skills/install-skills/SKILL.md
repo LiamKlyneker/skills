@@ -187,7 +187,9 @@ makes `prototype-to-spec` stop when invoked, and nothing warns about either. `##
 GitHub sub-section carries two more — `Branch pattern:` and `PR template:` — and leaving each
 out is what keeps a run on `prd/<n>-<slug>` with the loop's own PR skeleton, which is what
 every project got before those rows existed. The Azure DevOps sub-section carries
-`PR template:` on the same terms; its `Branch pattern:` is not optional. Ask once, accept "no"
+`PR template:` on the same terms; its `Branch pattern:` is not optional. `## Repo` itself carries
+one more, `Ticket source:`, asked only for `figma-tools`: leaving it out is what makes the brief
+skills read tickets from the `Tracker:` line. Ask once, accept "no"
 as a complete answer, delete the row, and record no warning anywhere. An install that ends with
 an adapter carrying none of them is finished, not half-filled.
 

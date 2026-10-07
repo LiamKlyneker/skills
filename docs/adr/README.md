@@ -73,3 +73,4 @@ or the adapter, and stops there.
 | [0015](0015-eval-suites-against-a-synthetic-fixture.md) | Eval suites against a synthetic fixture are the release gate | Accepted |
 | [0016](0016-a-scorer-beside-the-gate.md) | A scorer sits beside the gate, never inside it | Accepted |
 | [0017](0017-two-fixture-tiers-and-which-one-a-leak-lands-in.md) | Two fixture tiers, and which one a leak lands in | Accepted |
+| [0018](0018-reading-a-ticket-is-not-filing-work.md) | Reading a ticket is not filing work | Accepted |

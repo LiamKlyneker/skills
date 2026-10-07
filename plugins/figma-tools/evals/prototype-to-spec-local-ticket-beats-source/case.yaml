@@ -1,0 +1,60 @@
+schema_version: "1.0"
+name: prototype-to-spec-local-ticket-beats-source
+summary: "A ticket path that exists is read from disk, even with a Ticket source set."
+description: >
+  The hairline-token stub project, with one line added to its adapter: a `Ticket source:` naming
+  a Jira site. The ticket is handed over as a path to a file that exists, so the shared
+  ticket-resolution rule reads the file and calls no tracker — not the Jira site the adapter
+  names, and not the GitHub tracker it files on. The brief's title carries the ticket key that
+  rule derives from a local file: the file's stem.
+tags: [micro]
+runs: 1
+context:
+  scaffold_script: ./scaffold.sh
+execution:
+  prompt: |
+    The working directory is the project. Its adapter is `.claude/project/adapter.md`, and that
+    adapter is the one this run reads.
+
+    `ticket.md` in the working directory is the ticket the brief is for.
+
+    Run this, and nothing else:
+
+    /figma-tools:prototype-to-spec ticket.md --out ./brief.md
+
+    Follow the skill exactly and stop where it stops.
+  max_turns: 30
+  timeout_seconds: 300
+  model: claude-sonnet-5
+  allowed_tools: [Read, Glob, Grep, Skill, Bash, Write]
+graders:
+  - type: regex
+    name: brief-written
+    target: { source: file, path: brief.md }
+    pattern: "## Fidelity ledger"
+
+  - type: regex
+    name: read-the-ticket-file
+    target: trace
+    pattern: '"file_path":"[^"]*ticket\.md"'
+
+  - type: regex
+    name: brief-title-carries-the-file-stem-as-ticket-key
+    target: { source: file, path: brief.md }
+    pattern: '^# Design brief — ticket\b'
+    flags: m
+
+  # Both patterns match a tool call, not prose: the shared rule the skill reads names
+  # `getJiraIssue`, `gh issue view` and `wit_work_item`, so a bare name would match the
+  # file being read rather than a call being made.
+  - type: regex
+    name: did-not-call-jira
+    target: trace
+    pattern: '"name":"mcp__atlassian__'
+    match: not_contains
+
+  - type: regex
+    name: did-not-call-the-filing-tracker
+    target: trace
+    pattern: '"command":"[^"]*gh issue view|"name":"mcp__ado__wit_work_item"'
+    match: not_contains

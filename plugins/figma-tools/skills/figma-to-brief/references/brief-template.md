@@ -11,8 +11,8 @@ after the grill.
 ---
 
 ```markdown
-# Design brief — <ado-id> · <design name>
-Pinned at figma <fileKey> · node <nodeId> · version <versionId or YYYY-MM-DD> · brief .claude/briefs/<ado-id>.md
+# Design brief — <ticket> · <design name>
+Pinned at figma <fileKey> · node <nodeId> · version <versionId or YYYY-MM-DD> · brief .claude/briefs/<ticket>.md
 Catalog: <fingerprint> · Generated: <YYYY-MM-DD> · Figma calls: <n>
 
 ## Scope
@@ -28,7 +28,7 @@ Dropped: `order-status-export-dialog` (export flow — separate ticket), `order-
 ## Screens
 
 ### `order-status-populated` — <frame title>
-Screenshot: .claude/briefs/<ado-id>/screenshots/order-status-populated.png · node https://www.figma.com/design/<fileKey>/?node-id=<nodeId>
+Screenshot: .claude/briefs/<ticket>/screenshots/order-status-populated.png · node https://www.figma.com/design/<fileKey>/?node-id=<nodeId>
 Annotations:
 - <annotation text> `component:<tag>`
 
