@@ -22,14 +22,20 @@ rows name, read through the local `figma-dev-mode` MCP server against the file o
 Desktop.
 
 ```
-/figma-tools:figma-to-brief <figma-url> <ado-id>     → writes a brief + screenshots, asks nothing
-/lk:deep-grill <ado-id> .claude/briefs/<ado-id>.md   → design rows are answers, OPEN rows are questions
-/ado-workflow:to-spec                                → the ledger and the pin line reach the [SPEC]
+/figma-tools:figma-to-brief <figma-url> <ticket-ref>   → writes a brief + screenshots, asks nothing
+/lk:deep-grill <ticket> .claude/briefs/<ticket>.md     → design rows are answers, OPEN rows are questions
+/ado-workflow:to-spec                                  → Tracker azure-devops: the ledger and the pin line reach the [SPEC]
+/prd-workflow:to-task <ticket> <brief-path>            → Tracker github: the ledger and the pin line reach one issue
 ```
+
+The third step follows the adapter's `Tracker:` line — the system work is **filed** on — and never
+the ticket source. A project that reads its tickets from Jira and files on GitHub runs the GitHub
+line.
 
 **The output is a brief, not a spec, and it is disposable.** It describes one ticket against one
 Figma file at one version, it is written to an excluded directory, and it is regenerated rather
-than updated. The durable artifact is the `[SPEC]` work item.
+than updated. The durable artifact is what the third step files: the `[SPEC]` work item on Azure
+DevOps, the issue on GitHub.
 
 That is the deliberate difference from `figma-tools:figma-to-spec`, which files a `[DESIGN-SPEC]`
 work item and has to freeze what it saw because the canvas moves under it. This skill files
@@ -70,23 +76,28 @@ a skill nobody runs twice.
 
 The only stops are hard input failures, all in Phase 0 and Phase 1: `whoami` does not report the
 organisation and seat the adapter's `### Figma source` rows name, the URL carries no `node-id`,
-the node does not resolve, there is no catalog, or the adapter has no `### Figma source`. Each
+the node does not resolve, there is no catalog, the ticket can be neither read nor fetched, or
+the adapter has no `### Figma source`. Each
 says which input failed and what would fix it. There is no degraded mode and no partial brief.
 
 ## Invocation
 
 ```
-/figma-tools:figma-to-brief <figma-url> <ado-id> [--out <path>]
+/figma-tools:figma-to-brief <figma-url> <ticket-ref> [--out <path>]
 ```
 
 - `<figma-url>` — a Figma design URL carrying a `node-id`. Required. A URL with no `node-id` is
   a STOP, never a guess: the node is what everything downstream is pinned to.
-- `<ado-id>` — the work item this brief is for, as a number or a URL. Required; it is what the
-  filter runs against, so a brief without one would be the whole canvas again.
-- `--out` — where the brief goes. Default `<repo-root>/.claude/briefs/<ado-id>.md`, with the
-  screenshots beside it at `<repo-root>/.claude/briefs/<ado-id>/screenshots/`. That directory is
-  excluded from git; the brief is disposable and a committed one is a second source of truth with
-  a long half-life.
+- `<ticket-ref>` — the ticket this brief is for: an id or key, a URL, or **a path to a local file
+  holding the ticket body**. Required; it is what the filter runs against, so a brief without one
+  would be the whole canvas again. Which forms resolve, and against which system, is
+  `../_shared/ticket-source.md` §1–§2.
+- `--out` — where the brief goes. Default `<repo-root>/.claude/briefs/<ticket>.md`, with the
+  screenshots beside it at `<repo-root>/.claude/briefs/<ticket>/screenshots/`. `<ticket>` is the
+  **ticket key**, per `../_shared/ticket-source.md` §3 — `ABC-123` for a Jira issue, the number
+  for a GitHub issue or an Azure DevOps work item, the slugged file stem for a local file. That
+  directory is excluded from git; the brief is disposable and a committed one is a second source
+  of truth with a long half-life.
 
 ## Inputs
 
@@ -97,8 +108,9 @@ says which input failed and what would fix it. There is no degraded mode and no 
   - `## Design system` → the **catalog pointer** (`Catalog:`), the **class-prefix** rows, the
     **icon resolution ladder**, and the **usage-rules source**. An absent `## Design system` is
     a STOP.
-  - `## Repo` → `### Azure DevOps`, for the **work-item project** row the ticket is fetched
-    from, and the **DS-gap backlog**, which this skill only ever _names_ in a proposed gap row.
+  - `## Repo` → the `Ticket source:` and `Tracker:` lines, which decide where the ticket is read
+    from, per `../_shared/ticket-source.md`, plus the locator rows that file names for the chosen
+    system; and the **DS-gap backlog**, which this skill only ever _names_ in a proposed gap row.
     It files nothing there.
 - **The Figma file**, read-only through the local `figma-dev-mode` MCP server, at one pinned
   version. The file must be open in Figma Desktop — the local server's tools resolve against the
@@ -180,11 +192,13 @@ Read the adapter. Establish, and stop on any of them:
    once in the run; it changes what Phase 4's rule 2 compares against, not whether it runs.
 5. **The usage-rules source** — keep it by name, as the adapter's row names it. Absent is the
    answer, not a warning: the brief then cites nothing.
-6. **The ticket** — fetch work item `<ado-id>` with `mcp__ado__wit_work_item`, against the
-   **work-item project** the adapter's `## Repo` → `### Azure DevOps` rows name. Where that
-   project's work-item type carries no `AcceptanceCriteria` field, the acceptance criteria live
-   in the description instead — either way that text is the filter's input, so a ticket that
-   cannot be fetched is a STOP.
+6. **The ticket** — resolve `<ticket-ref>` per `../_shared/ticket-source.md`: a local file that
+   exists is read and no tracker is called; otherwise the ticket is fetched from the system the
+   `Ticket source:` line names, or the `Tracker:` line where there is none. That file also says
+   where each system keeps the acceptance criteria. Their text is the filter's input, and a ticket
+   with none is still valid input — Phase 2 then scores rather than matches, and marks the scope
+   `⚠ inferred`. A ticket that can be neither read nor fetched is a STOP. Settle the **ticket
+   key** here, per §3 of that file; every path below uses it.
 
 ### Phase 1 — Locate, and pin
 
@@ -497,23 +511,23 @@ the loser noted inline. The node still wins on **layout**.
 ### Phase 5 — Write the brief, and save the screenshots
 
 1. **Save one PNG per in-scope state**, at
-   `.claude/briefs/<ado-id>/screenshots/<state-id>.png`, per `../_shared/fidelity-ledger.md` §3
+   `.claude/briefs/<ticket>/screenshots/<state-id>.png`, per `../_shared/fidelity-ledger.md` §3
    and the adapter's `### Figma source` *Screenshots* row. The state id is the frame's name,
    slugged, and it is the same string the ledger's `States` column uses —
-   `ado-workflow:to-spec-tasks` matches the two on that string, so a mismatch orphans the
-   attachment. Create the directory first.
+   `ado-workflow:to-spec-tasks` and `prd-workflow:to-task` match the two on that string, so a
+   mismatch orphans the screenshot. Create the directory first.
 
    The local `get_screenshot` returns an **image into this session, not a file**, so the PNG
    reaches disk over the Figma REST images endpoint, which does **not** spend the MCP budget:
 
    ```
-   mkdir -p .claude/briefs/<ado-id>/screenshots
+   mkdir -p .claude/briefs/<ticket>/screenshots
 
    URL=$(curl -sS -H "X-Figma-Token: $FIGMA_PAT" \
      "https://api.figma.com/v1/images/<fileKey>?ids=<nodeId>&format=png&scale=2" \
      | python3 -c "import json,sys; d=json.load(sys.stdin); print(d['images'].popitem()[1])")
 
-   curl -sSL -o ".claude/briefs/<ado-id>/screenshots/<state-id>.png" "$URL"
+   curl -sSL -o ".claude/briefs/<ticket>/screenshots/<state-id>.png" "$URL"
    ```
 
    The `ids` parameter takes the node id in `<a>:<b>` form, one node per call, and the answer's
@@ -541,7 +555,7 @@ the loser noted inline. The node still wins on **layout**.
 4. **Print**, per `../_shared/final-prints.md`, exactly three things: **the path**, **the counts**
    — states kept and dropped, rows at each of the three confidences, ledger rows at each fidelity
    class, PNGs saved — and **the Figma calls spent**. Close with the next command,
-   `/lk:deep-grill <ado-id> <brief path>`.
+   `/lk:deep-grill <ticket> <brief path>`.
 
 The brief's content is not summarised into the print. It is a file, one click away, and it is
 about to be read by the grill.
@@ -552,11 +566,11 @@ The brief carries, per state, the **local path** of the saved PNG and the **node
 pinned address:
 
 ```
-Screenshot: .claude/briefs/<ado-id>/screenshots/<state-id>.png · node https://www.figma.com/design/<fileKey>/?node-id=<nodeId>
+Screenshot: .claude/briefs/<ticket>/screenshots/<state-id>.png · node https://www.figma.com/design/<fileKey>/?node-id=<nodeId>
 ```
 
 Both halves are required and neither replaces the other. The path is what
-`ado-workflow:to-spec-tasks` copies into the task; the node link is what a human opens to see the
+`ado-workflow:to-spec-tasks` and `prd-workflow:to-task` copy into the task; the node link is what a human opens to see the
 design in context.
 
 **A `figma.com` image export URL is never written anywhere.** The REST answer's URL expires
@@ -581,7 +595,9 @@ and node links.
    running app — say so.
 6. **No catalog, or a catalog that fails the shape contract** → stop exactly as `figma-to-spec`
    does, naming the resolved paths, the rule and the fix.
-7. **The ticket cannot be fetched** → stop, naming the project and the id.
+7. **The ticket can be neither read nor fetched** → stop, naming the ref, the system it was
+   resolved against per `../_shared/ticket-source.md`, and the project or site. Where the ref
+   looked like a path, say that no file exists there too.
 8. **`$FIGMA_PAT` is unset** → stop before Phase 5 writes anything, naming the token scope and the
    variable.
 9. **The daily Figma call cap is reached mid-run** → stop, report the calls spent and the nodes
@@ -593,8 +609,8 @@ and node links.
   a brief and stops.
 - **It does not write code**, and it does not paste `get_design_context`'s generated output. It
   reads the canvas for layout facts.
-- **It does not persist a spec.** The brief is disposable and the `[SPEC]` work item is the
-  durable artifact.
+- **It does not persist a spec.** The brief is disposable and what the next step files — a
+  `[SPEC]` work item or an issue — is the durable artifact.
 - **It does not call `use_figma`** where the adapter's `### Figma source` *Servers* row names no
   remote server. That tool lives on the remote Figma server, so per-property bindings are then out
   of reach by construction and the row says so rather than guessing.

@@ -18,8 +18,8 @@ adding a skill here means adding it to a plugin. The rest of the top level:
 - `_shared/` — **global reference only.** Docs several skills read, true in every
   project: `model-effort-heuristics.md`, `eligibility-policy.md`, `prd-eligibility.md`,
   `ado-eligibility.md`, `ado-workitem-authoring.md`,
-  `spec-splitting-seams.md`, `ui-manifests.md`, `ui-standard.md`. No templates, no project
-  values, ever.
+  `spec-splitting-seams.md`, `ticket-source.md`, `ui-manifests.md`, `ui-standard.md`. No
+  templates, no project values, ever.
 - `install/` — what a project gets wired with: `bundles.md` (the manifest the
   `install-skills` skill reads), `adapter.template.md`, and `gates/`. See
   `install/README.md` for the layout a wired project ends up with. Canonical copy,

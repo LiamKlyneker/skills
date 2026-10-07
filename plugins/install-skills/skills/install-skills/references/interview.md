@@ -139,6 +139,12 @@ it makes sense to someone who has never read a skill:
    (*design-spec target*) and where an escalated design-system gap files (*DS-gap backlog*).
    Ask both even when the answer is the same value twice — the common case is that they
    differ, since a gap belongs to the design system rather than to the app being specced.
+   Then **one optional question: where do tickets live, if not on that tracker?** The brief
+   skills read the ticket a human hands them, and some projects keep tickets on one system and
+   file work on another — Jira beside GitHub is the common case. **"On the tracker" is a
+   complete answer**: write no `Ticket source:` line and never warn. Any other answer is one
+   line, with its locator — the Jira site host, or the repo or org and project of the other
+   tracker. A ticket URL the human pastes is the quickest way to read the locator back.
 3. **Which role does this repo play?** `consumer` (it renders the design system) or `library`
    (it *is* the design system). One question, asked before the rest of `## Design system`,
    because it **gates** the three convention questions in step 4 — a `consumer` answer means
@@ -239,9 +245,10 @@ it makes sense to someone who has never read a skill:
 
 That is more than the six-question cap for a `library` repo, and it is the one place here where
 that is right: the cap exists to stop an installer asking for things it could have read, and
-none of these is in any file. A `consumer` repo — the common case — gains exactly two
-questions over what this bundle asked before, one per design source, because steps 4 and 5 are
-both gated behind `library` and steps 7 and 8 each take "no" and stop.
+none of these is in any file. A `consumer` repo — the common case — gains exactly three
+questions over the filing rows: where tickets live, and one per design source. Steps 4 and 5 are
+both gated behind `library`, and step 2's ticket question and steps 7 and 8 each take "no" and
+stop.
 
 The `ui-manifests.md` gate is still the offer at the end, and the honest default is still no
 until this project has been burned once.

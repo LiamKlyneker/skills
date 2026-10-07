@@ -67,7 +67,8 @@ is a skill nobody runs twice.
 
 The only stops are hard input failures, all in Phase 0 and Phase 1: the URL does not resolve
 through the adapter's rule, the adapter's `Path:` is not a directory, a named spec file is
-missing at the pinned SHA, there is no catalog, or the adapter has no `### Prototype source`.
+missing at the pinned SHA, there is no catalog, the ticket can be neither read nor fetched, or
+the adapter has no `### Prototype source`.
 Each says which input failed and what would fix it. There is no degraded mode and no partial
 brief.
 
@@ -81,12 +82,12 @@ brief.
   **local mode** — the adapter carries a `Path:` row — there is no URL to resolve: omit it, and
   `<ticket-ref>` takes the first position. An argument passed anyway is **ignored**, and the
   brief's header says it was.
-- `<ticket-ref>` — the issue or work item this brief is for, as a number, a URL, or **a path to
-  a local file holding the ticket body**. Required; it is what the filter runs against, so a
-  brief without one would be the whole spec again. A path that exists is read as the ticket and
-  no tracker is called — which is what lets a run work offline, against a ticket someone put on
-  disk.
-- `--out` — where the brief goes. Default `<repo-root>/.claude/briefs/<ticket>.md`. The
+- `<ticket-ref>` — the ticket this brief is for: an id or key, a URL, or **a path to a local
+  file holding the ticket body**. Required; it is what the filter runs against, so a brief
+  without one would be the whole spec again. Which forms resolve, and against which system, is
+  `../_shared/ticket-source.md` §1–§2.
+- `--out` — where the brief goes. Default `<repo-root>/.claude/briefs/<ticket>.md`, where
+  `<ticket>` is the **ticket key** per `../_shared/ticket-source.md` §3. The
   project gitignores that directory; the brief is disposable and a committed one is a second
   source of truth with a long half-life.
 
@@ -101,8 +102,10 @@ brief.
     `Schema:` and `Screenshots:` are read the same way in both.
   - `## Design system` → the **catalog pointer**, validated exactly as `figma-to-spec` Phase 0
     validates it, and the **usage-rules sources**, which may name several.
-  - `## Repo` → the `Tracker:` line, to fetch the ticket, and the **DS-gap backlog**, which
-    this skill only ever *names* in a proposed gap row. It files nothing there.
+  - `## Repo` → the `Ticket source:` and `Tracker:` lines, which decide where the ticket is read
+    from, per `../_shared/ticket-source.md`, plus the locator rows that file names for the chosen
+    system; and the **DS-gap backlog**, which this skill only ever *names* in a proposed gap row.
+    It files nothing there.
 - **The prototype**: the prototype repo, read-only through `gh` at one pinned SHA, or the
   directory `Path:` names, read from the working tree.
 - **The catalog**, per `../figma-to-spec/references/catalog-contract.md` — the existence source
@@ -139,10 +142,13 @@ Read the adapter. Establish, and stop on any of them:
    names is read, and the union is one document.
 3. **The usage-rules sources** — keep all of them, by name. Absent is the answer, not a
    warning: the brief then cites nothing.
-4. **The ticket** — where `<ticket-ref>` is a path to a file that exists, read the file and
-   take its contents as the ticket body; otherwise fetch it from the tracker the `Tracker:` line
-   names. Its body is the filter's input, so a ticket that can be neither read nor fetched is a
-   STOP.
+4. **The ticket** — resolve `<ticket-ref>` per `../_shared/ticket-source.md`: a local file that
+   exists is read and no tracker is called; otherwise the ticket is fetched from the system the
+   `Ticket source:` line names, or the `Tracker:` line where there is none. That file also says
+   where each system keeps the acceptance criteria. Their text is the filter's input, and a
+   ticket with none is still valid input — Phase 2 then scores rather than matches, and marks the
+   scope `⚠ inferred`. A ticket that can be neither read nor fetched is a STOP. Settle the
+   **ticket key** here, per §3 of that file; the default `--out` path uses it.
 
 ### Phase 1 — Locate, and pin
 
@@ -507,6 +513,9 @@ rules cannot be written from names. The images land in this session; the brief c
 5. **A `Schema:` naming an unimplemented prototype shape** → stop. Never improvise a reader.
 6. **A `Path:` that is not an existing directory** → stop, naming the row's value, the path it
    resolved to and what it was resolved against.
+7. **The ticket can be neither read nor fetched** → stop, naming the ref, the system it was
+   resolved against per `../_shared/ticket-source.md`, and the project or site. Where the ref
+   looked like a path, say that no file exists there too.
 
 ## What this skill does not do
 
