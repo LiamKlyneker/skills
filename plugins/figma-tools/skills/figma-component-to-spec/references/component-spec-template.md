@@ -3,7 +3,7 @@
 Fill this in **Phase 8**, from the reconciled findings. It is **the run's single artifact** — one
 component spec per component set — filed in **Phase 9** as a plain `[SPEC]` work item (ADO) or an ordinary issue
 (GitHub), and sliced from there by the tracker's existing chain (`ado-workflow:to-spec-tasks`,
-`prd-workflow:to-issues`) with no new machinery.
+`prd-workflow:to-prd-tasks`) with no new machinery.
 
 **There is no `gaps/` directory, and one must never be produced.** In a consumer repo a gap
 file exists because the gap belongs to *someone else's* backlog and travels there without the

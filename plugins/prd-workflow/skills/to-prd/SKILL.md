@@ -33,7 +33,7 @@ only a nicer branch name to aim for.
 
 1. Fetch the issue and read its **full current body** first.
 2. Do a **section-aware, contract-preserving merge**: replace only the sections *this grill produced*; leave every other section **byte-intact**. Don't reflow, reorder, or re-tone untouched prose.
-3. **Never clobber the headings `to-issues` parses.** These are a downstream contract — `to-issues` reads them verbatim:
+3. **Never clobber the headings `to-prd-tasks` parses.** These are a downstream contract — `to-prd-tasks` reads them verbatim:
    - `## Implementation Decisions`
    - `## UI Primitives`
    - `## Design reference`
@@ -104,7 +104,7 @@ Do NOT include specific file paths or code snippets. They may end up being outda
 
 ## UI Primitives
 
-Only for PRDs that implement a visual design. The component manifest carried over from the **design spec** (the grill confirms these rows, it does not build them) — every UI primitive the design needs, so `to-issues` can emit one issue per primitive that must be built or changed. Schema (statuses, homes, column meanings) is normative in `../_shared/ui-manifests.md`.
+Only for PRDs that implement a visual design. The component manifest carried over from the **design spec** (the grill confirms these rows, it does not build them) — every UI primitive the design needs, so `to-prd-tasks` can emit one issue per primitive that must be built or changed. Schema (statuses, homes, column meanings) is normative in `../_shared/ui-manifests.md`.
 
 | Primitive | Status | Home | API surface | Consumed by |
 |-----------|--------|------|-------------|-------------|
@@ -145,7 +145,7 @@ Or "None — all schema/RPC changes can land atomically in a single deploy" if n
 
 ## Data & Access
 
-The Data & Access Manifest agreed during the grill — one row **per operation** the implementation actually exercises on each store, so `to-issues` can spin the access-control work into the right slices. This is orthogonal to `## Migration risk`: that section asks "can this deploy atomically?"; this one asks "is every operation permitted, correctly scoped, and its error surfaced?". The trap it exists to catch is a **new operation on an already-used store** (e.g. a first update or delete on something only ever read from and appended to) whose missing access policy silently blocks the write.
+The Data & Access Manifest agreed during the grill — one row **per operation** the implementation actually exercises on each store, so `to-prd-tasks` can spin the access-control work into the right slices. This is orthogonal to `## Migration risk`: that section asks "can this deploy atomically?"; this one asks "is every operation permitted, correctly scoped, and its error surfaced?". The trap it exists to catch is a **new operation on an already-used store** (e.g. a first update or delete on something only ever read from and appended to) whose missing access policy silently blocks the write.
 
 | Store | Operation | Client | Access policy exists? | Status |
 |-------|-----------|--------|-----------------------|--------|
@@ -156,7 +156,7 @@ Client ∈ user-scoped (policies apply) / privileged (policies bypassed — admi
 
 ## Project gates
 
-One section **per extra gate this project registers** in the adapter's `## Project gates` table (at `<repo-root>/.claude/project/adapter.md`) that the grill actually ran — heading named after the gate, carrying its table through verbatim, so `to-issues` can slice any ⚠️ row into the right issue. The gate file owns its row schema; read it through the adapter's pointer and never assume its name. Omit the section entirely when the adapter registers no gates, or when none of them triggered.
+One section **per extra gate this project registers** in the adapter's `## Project gates` table (at `<repo-root>/.claude/project/adapter.md`) that the grill actually ran — heading named after the gate, carrying its table through verbatim, so `to-prd-tasks` can slice any ⚠️ row into the right issue. The gate file owns its row schema; read it through the adapter's pointer and never assume its name. Omit the section entirely when the adapter registers no gates, or when none of them triggered.
 
 ## Testing Decisions
 
@@ -182,7 +182,7 @@ Filter: `../_shared/final-prints.md`. The PRD body is one click away and more cu
 
 ```
 [PRD] #<n> created: <url>
-/prd-workflow:to-issues #<n>
+/prd-workflow:to-prd-tasks #<n>
 ```
 
 `created:` becomes `updated:` in UPDATE mode. **No scope summary, no list of the sections written or merged** — the human is about to open the issue.

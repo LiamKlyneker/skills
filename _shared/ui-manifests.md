@@ -1,6 +1,6 @@
 # UI Manifest Gates (Token + Primitive)
 
-Shared reference for the skill that **builds** these tables (`figma-to-spec`) and the workflow skills that **consume their rows** downstream (`to-prd`, `to-issues`). Two manifests that catch the two halves of design-drift: improvised **components** and improvised **tokens**. Both are **HARD GATES** — the invoking skill is not done while any ⚠️/❌ row is unresolved.
+Shared reference for the skill that **builds** these tables (`figma-to-spec`) and the workflow skills that **consume their rows** downstream (`to-prd`, `to-prd-tasks`). Two manifests that catch the two halves of design-drift: improvised **components** and improvised **tokens**. Both are **HARD GATES** — the invoking skill is not done while any ⚠️/❌ row is unresolved.
 
 The building skill resolves rows **autonomously**; unresolvable rows batch into its single checkpoint. Run both right after the variant table, before any code.
 
@@ -30,7 +30,7 @@ For every ⚠️/❌ row, resolve:
 - **API surface** — props/params, variants, states, sizes.
 - **Consumers** — which screens/cards use it.
 
-Treat each ⚠️/❌ primitive as if it ships from a UI library — downstream, each becomes its own issue (see the `to-issues` exception). Present as a table:
+Treat each ⚠️/❌ primitive as if it ships from a UI library — downstream, each becomes its own issue (see the `to-prd-tasks` exception). Present as a table:
 
 | Primitive | Status | Home | API surface | Consumed by |
 |-----------|--------|------|-------------|-------------|

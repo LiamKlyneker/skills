@@ -17,7 +17,7 @@ Project facts (repo, title prefixes, commands, verify ladder) come from the **pr
 
 **Every skill in this plugin is namespaced**, on every route — installed from the
 marketplace or loaded with `claude --plugin-dir`: `/prd-workflow:work-on-prd`,
-`/prd-workflow:to-issues`, and so on. Only a bare symlink into a config's `skills/`
+`/prd-workflow:to-prd-tasks`, and so on. Only a bare symlink into a config's `skills/`
 directory — the pre-plugin route — gives the unprefixed `/work-on-prd`. The same rule
 governs the agent type; see Loop step 5. Unprefixed names below are shorthand for
 whichever form your route provides.
@@ -49,7 +49,7 @@ State lives in git + GitHub only (branch commits, issue labels, PR body). Zero s
    command -v caffeinate >/dev/null && ! pgrep -F /tmp/work-on-prd.caffeinate.pid >/dev/null 2>&1 && { caffeinate -dimsu & echo $! > /tmp/work-on-prd.caffeinate.pid; }
    ```
 
-1. **Fetch state**: PRD + children per `../_shared/prd-eligibility.md` — the children are the PRD's **native sub-issues**, read back in one `gh api …/sub_issues` call. Everything that call returns is a child by construction: there are no filters, so nothing is dropped and there is nothing to report as dropped. Zero children → **nothing is linked to this PRD**, which is not the same as "never sliced". Stop, and tell the user to link the PRD's children as sub-issues — explicitly **do not** tell them to re-run `/to-issues`, and say so: re-slicing a PRD that already has children doubles every one of them, and that plausible-sounding message is the expensive wrong move this branch exists to prevent. Cycle in `Blocked by` → report it, stop.
+1. **Fetch state**: PRD + children per `../_shared/prd-eligibility.md` — the children are the PRD's **native sub-issues**, read back in one `gh api …/sub_issues` call. Everything that call returns is a child by construction: there are no filters, so nothing is dropped and there is nothing to report as dropped. Zero children → **nothing is linked to this PRD**, which is not the same as "never sliced". Stop, and tell the user to link the PRD's children as sub-issues — explicitly **do not** tell them to re-run `/to-prd-tasks`, and say so: re-slicing a PRD that already has children doubles every one of them, and that plausible-sounding message is the expensive wrong move this branch exists to prevent. Cycle in `Blocked by` → report it, stop.
 
    **Then find the run, and find it by its pull request.** A run *is* its open PR: that PR's body
    carries the machine block, and the block carries a literal `PRD: #<n>` line (`## The machine
@@ -343,7 +343,7 @@ Then release keep-awake — mirror of Setup step 0, no-op if never started:
 
 ## Label vocabulary
 
-Normative home for the label vocabulary — `to-issues` and this loop apply these; change them here first.
+Normative home for the label vocabulary — `to-prd-tasks` and this loop apply these; change them here first.
 
 `ready-to-start` (filed, unclaimed) → `state:in-progress` (claimed) → `state:done-on-branch` (committed, awaiting merge). Merge auto-closes via the PR's Closes line. One state per axis; always remove-before-add. Precondition (one-time, human): the repo setting "auto-close issues with merged linked pull requests" must be on — see the adapter.
 

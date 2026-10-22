@@ -298,7 +298,7 @@ Or "None — can start immediately." <!-- parsed verbatim — do not reword -->
 
 **Why `## Worker context` stays this slim.** No file inventories, no architecture, no module
 shapes, no prior-art tours — all of that stays on the `[SPEC]`, and a worker reads it there.
-This is the deliberate difference from the GitHub sibling `to-issues`, which does put real
+This is the deliberate difference from the GitHub sibling `to-prd-tasks`, which does put real
 paths in the issue: a GitHub issue's parent PRD is frozen once its children are written, but
 `to-spec`'s **UPDATE mode mutates a spec after its `[TASK]`s exist**. Anything a task restates
 from the spec can therefore go stale silently, with nothing anywhere to detect the divergence.
@@ -330,7 +330,7 @@ against:
 
 The hierarchy verification in §6 is **not** this print and is not trimmed by it — that is spoken as each child lands, and a `[TASK]` that failed to parent is an escalation that gets its own line here, above the command.
 
-The handoff is `work-on-spec`, the orchestrated loop over the whole `[SPEC]` — the same shape `to-issues` → `work-on-prd` has on the GitHub side. `/ado-workflow:next-task-to-implement` is still the right command when a human wants one ticket picked rather than the run driven, but it is theirs to reach for, not the default this skill points at.
+The handoff is `work-on-spec`, the orchestrated loop over the whole `[SPEC]` — the same shape `to-prd-tasks` → `work-on-prd` has on the GitHub side. `/ado-workflow:next-task-to-implement` is still the right command when a human wants one ticket picked rather than the run driven, but it is theirs to reach for, not the default this skill points at.
 
 ## Stops here
 

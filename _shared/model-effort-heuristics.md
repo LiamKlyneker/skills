@@ -24,7 +24,7 @@ Human sessions default Opus-class·high, so this file detects downgrades. Orches
 **Heavier — keep Opus-class, high effort:**
 - Cross-module orchestration, schema change, migration / expand-contract
 - Money / billing / auth / concurrency / security
-- New shared-primitive API design (the UI-primitive-exception issues from `to-issues`)
+- New shared-primitive API design (the UI-primitive-exception issues from `to-prd-tasks`)
 - Net-new architecture (not following an existing pattern)
 - Many files / multiple modules or packages touched
 - Ambiguous AC or unresolved decisions in the issue

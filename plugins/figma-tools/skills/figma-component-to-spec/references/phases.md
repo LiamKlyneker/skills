@@ -1254,7 +1254,7 @@ work item here is filed. Read the plain `## Repo` rows — GitHub: `Issue tracke
 tracker.** It is consumer-mode-only and marks a spec whose implementer is somewhere else. A
 component spec filed under it is invisible to the slicing chain that would pick it up, which is a
 dead end that looks exactly like a successful run. File the right type in the first place and the existing chains —
-`ado-workflow:to-spec-tasks`, `prd-workflow:to-issues` — consume it unchanged. **No file under
+`ado-workflow:to-spec-tasks`, `prd-workflow:to-prd-tasks` — consume it unchanged. **No file under
 `ado-workflow` or `prd-workflow` is touched to make this work.**
 
 ### Dedup first — on both trackers, before any write
@@ -1307,7 +1307,7 @@ there is a fingerprint that does not exist on the next run's search.
 - **Given a scope issue in Setup, link the new issue as its native sub-issue.** The link is
   what makes it a child, so the body carries **no `## Parent` section** — a hand-written parent
   beside a real link is a second source of truth that can disagree. The mechanics are documented
-  once, in `prd-workflow`'s `to-issues` skill under *Link each child to the PRD as a native
+  once, in `prd-workflow`'s `to-prd-tasks` skill under *Link each child to the PRD as a native
   sub-issue*: create → link → **verify**, three `gh api` calls, and `sub_issue_id` takes the
   issue's **internal numeric `id`** (`--jq .id`), never its issue number — passing the number
   returns a bare `404` indistinguishable from "no such issue". Follow that file; do not

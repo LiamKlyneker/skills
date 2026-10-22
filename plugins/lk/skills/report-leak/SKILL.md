@@ -62,7 +62,7 @@ design source (a Figma node, or a designer's code prototype at a pinned SHA)
   → the branch diff  against the default branch, attributed by the `(#N)` commit suffix
 ```
 
-Each arrow is a **hop**, and each hop is a skill: the brief hop is `figma-tools:figma-to-brief` or `figma-tools:prototype-to-spec`, the grill hop is `lk:deep-grill`, the issue hop is `prd-workflow:to-task` (or `to-prd` → `to-issues`), and the code hop is `prd-workflow:work-on-task` (or a `work-on-prd` worker).
+Each arrow is a **hop**, and each hop is a skill: the brief hop is `figma-tools:figma-to-brief` or `figma-tools:prototype-to-spec`, the grill hop is `lk:deep-grill`, the issue hop is `prd-workflow:to-task` (or `to-prd` → `to-prd-tasks`), and the code hop is `prd-workflow:work-on-task` (or a `work-on-prd` worker).
 
 ## 3. The loop — one finding at a time
 
