@@ -1,15 +1,22 @@
 # prd-workflow
 
-The PRD-to-merge workflow, packaged as a Claude Code plugin: `to-prd` →
-`to-issues` → `next-prd-issue` → `work-on-prd` / `work-on-issue`, plus the
-`prd-worker` agent that `work-on-prd` spawns per child issue.
+The PRD-to-merge workflow, packaged as a Claude Code plugin. Two routes start
+from a `deep-grill` consensus:
 
-`to-task` and `work-on-task` are the single-issue route past the PRD ceremony.
-`to-task` publishes one implementation issue straight from a `deep-grill`
-consensus, carrying the design brief's fidelity ledger rows as build
-instructions and a screenshot-pair verify checklist. `work-on-task` implements
-one such issue: evidence first, then code, then a per-ledger-row self-audit
-before the verify gate.
+```
+PRD flow:     deep-grill → to-prd → to-issues → work-on-prd
+Single flow:  deep-grill → to-task → work-on-task
+After either: manual-qa → triage
+```
+
+`work-on-prd` runs a PRD as a loop and spawns the `prd-worker` agent per child
+issue. `to-task` publishes one self-contained `[TASK]` issue; `work-on-task`
+implements one task — a `to-task` issue or a PRD child — behind a readiness
+gate. Both task writers share one body shape, `skills/references/task-body.md`.
+When the grill worked from a design brief, the task also carries the brief's
+fidelity ledger rows as build instructions and a screenshot-pair verify
+checklist, and `work-on-task` runs its evidence gate and per-ledger-row
+self-audit.
 
 `manual-qa` and `triage` close the loop from the other end. `manual-qa`
 **composes** the pass on demand from what actually landed on the run's branch —
@@ -31,8 +38,9 @@ plugins/prd-workflow/
   _shared -> ../../_shared             # symlink, see below
   skills/
     _shared -> ../../../_shared        # symlink, see below
-    to-prd/  to-issues/  next-prd-issue/  work-on-prd/  work-on-issue/
-    to-task/  work-on-task/            # the single-issue route, fidelity-ledger aware
+    to-prd/  to-issues/  work-on-prd/  # the PRD route
+    to-task/  work-on-task/            # the single-task route, fidelity-ledger aware
+    references/task-body.md            # the one task-issue shape both routes write
     manual-qa/                         # compose the pass from the branch, drive it, capture findings
     triage/                            # QA findings back into children
   agents/prd-worker.md
@@ -95,7 +103,7 @@ references.
 ../../_shared`, is for: same canonical target, same no-rewrite rule.
 
 `_shared/fidelity-ledger.md` is the shared fidelity contract both links reach.
-`to-task`, `work-on-task`, `to-prd`, `to-issues` and `work-on-issue` cite its
+`to-task`, `work-on-task`, `to-prd` and `to-issues` cite its
 numbered sections rather than restating them, and `prd-worker.md` follows §6.
 `figma-tools`' `prototype-to-spec` writes the ledger those sections consume.
 

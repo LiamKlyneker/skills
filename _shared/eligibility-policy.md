@@ -38,8 +38,8 @@ Inside an orchestrated run (`work-on-prd`, `work-on-spec`), a blocker **inside t
 being run** also counts as satisfied once its commit exists on the run's branch. Children only
 close on merge, so a strict done-only reading would deadlock the loop.
 
-The relaxation holds only inside such a run — a recommendation-only skill (`next-prd-issue`,
-`next-task-to-implement`) applies the strict rule. How "its commit exists on the branch" is
+The relaxation holds only inside such a run — a recommendation-only skill
+(`next-task-to-implement`) applies the strict rule. How "its commit exists on the branch" is
 observed is mechanics, and each orchestrator specs it at its own pick step.
 
 ## Picking order (when multiple eligible)

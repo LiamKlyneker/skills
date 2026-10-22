@@ -343,7 +343,7 @@ Then release keep-awake — mirror of Setup step 0, no-op if never started:
 
 ## Label vocabulary
 
-Normative home for the label vocabulary — `to-issues` and `next-prd-issue` apply/read these; change them here first.
+Normative home for the label vocabulary — `to-issues` and this loop apply these; change them here first.
 
 `ready-to-start` (filed, unclaimed) → `state:in-progress` (claimed) → `state:done-on-branch` (committed, awaiting merge). Merge auto-closes via the PR's Closes line. One state per axis; always remove-before-add. Precondition (one-time, human): the repo setting "auto-close issues with merged linked pull requests" must be on — see the adapter.
 

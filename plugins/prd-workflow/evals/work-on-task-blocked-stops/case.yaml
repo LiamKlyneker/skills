@@ -1,0 +1,60 @@
+schema_version: "1.0"
+name: work-on-task-blocked-stops
+summary: "A task with an open blocker and an unchecked external step is not started."
+description: >
+  The `work-on-task` readiness gate against a hand-written stub project. The frozen issue is a
+  plain task — no fidelity ledger — whose `## Blocked by` names `#41` and whose
+  `## External steps` holds one unchecked item. A local file names nothing `gh` can check, so
+  the skill counts `#41` as open; the unchecked step blocks on its own either way. The run must
+  change no file, commit nothing, and print the `Not ready` block naming both gaps.
+  There is no tracker and no network here, so the case hands `work-on-task` the issue as a
+  local file path.
+tags: [micro]
+runs: 1
+context:
+  scaffold_script: ./scaffold.sh
+execution:
+  prompt: |
+    The working directory is the project, already a git repository with one commit
+    (`fixture: scaffold snapshot`). Its adapter is `.claude/project/adapter.md`.
+
+    There is no network and no tracker credential here, so the issue this run implements is
+    the file `./issue.md`. Pass that path as the skill's `<issue>` argument. Do not run `gh`.
+
+    Run this, and nothing else:
+
+    /prd-workflow:work-on-task ./issue.md
+
+    Follow the skill exactly and stop where it stops.
+  max_turns: 20
+  timeout_seconds: 300
+  model: claude-sonnet-5
+  allowed_tools: [Read, Glob, Grep, Skill, Bash, Write, Edit]
+graders:
+  - type: regex
+    name: not-ready-print
+    target: last_message
+    pattern: 'Not ready'
+
+  - type: regex
+    name: names-the-open-blocker
+    target: last_message
+    pattern: '#41'
+
+  - type: regex
+    name: names-the-unchecked-external-step
+    target: last_message
+    pattern: 'external step|shelf-store owner|import job'
+    flags: i
+
+  # The function is untouched: the scaffolded body still stands, and no filter was added. A
+  # `tool_used` grader cannot express "called zero times", so the file is the evidence.
+  - type: regex
+    name: function-body-intact
+    target: { source: file, path: lib/shelf-count.ts }
+    pattern: 'return shelves\.length;'
+  - type: regex
+    name: no-filter-written
+    target: { source: file, path: lib/shelf-count.ts }
+    pattern: 'filter|archived\)'
+    match: not_contains

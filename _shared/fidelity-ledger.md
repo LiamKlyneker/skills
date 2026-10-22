@@ -1,6 +1,6 @@
 # Fidelity ledger — the contract every fidelity consumer imports
 
-Shared by `to-task`, `work-on-task`, `to-prd`, `to-issues` and `work-on-issue` (prd-workflow),
+Shared by `to-task`, `work-on-task`, `to-prd` and `to-issues` (prd-workflow),
 `to-spec`, `to-spec-tasks`, `work-on-spec` and `spec-worker.md` (ado-workflow), `figma-to-brief`
 and `prototype-to-spec` (figma-tools), and `deep-grill` (lk). Every fidelity rule lives here once,
 so those consumers cannot drift from each other.
@@ -101,7 +101,7 @@ unpinned, and an unpinned row is an opinion.
    the adapter's `Fixed scorecard` row names, when that row is present and covers this ticket, is a
    first-class numbered change and a verify row if it is in this issue's scope.
    It is never demoted to a footnote, a "polish" bucket, a parenthetical, or a priority marker.
-3. **Symbols, never line numbers.** Reference `EligibilityCriteriaBuilder.tsx` → `DateOfBirthRow`,
+3. **Symbols, never line numbers.** Reference `ShelfPicker.tsx` → `ShelfRow`,
    never `:242`. Line refs rot between the grill and the implementation session, and a stale one
    sends a cold worker to the wrong code with full confidence. No `file:line`, no `~:290-315`, no
    "around line N" — not even hedged with a drift disclaimer.
@@ -111,7 +111,7 @@ unpinned, and an unpinned row is an opinion.
    stop.
 5. **Never translate a ledger fact into a utility class.** The ledger says "124px fixed width,
    wraps to multiple lines"; the issue says "124px fixed width, wraps to multiple lines". It does
-   not say `sui-min-w-[124px]`, `sui-w-[124px]`, or any other class. Translating a fact into a class
+   not say `min-w-[124px]`, `w-[124px]`, or any other class. Translating a fact into a class
    is the implementer's job, done against the source slice — a prototype line range or a Figma
    element node. Where the prototype source already holds the class, the slice carries it and the
    implementer copies it from there.
@@ -139,10 +139,10 @@ unpinned, and an unpinned row is an opinion.
 
 A body that breaks any of the nine is not published. Fix it and re-read before asking to create.
 
-Run 1 lost most of its polish at exactly these nine points: the ledger was re-summarised into a
-shorter column, `arrow_drop_down` came out as `keyboard_arrow_down`, "124px fixed" came out as
-`sui-min-w-[124px]`, and `IconButton` / `LabelButton` arrived as build instructions the brief never
-gave. The implementer worked from the issue alone, so the compressed copy was the only truth it had.
+These nine are where polish is lost: a ledger re-summarised into a shorter column, an icon renamed
+to its conventional equivalent, a "124px fixed" fact turned into a utility class, a DS button
+arriving as a build instruction the brief never gave. The implementer works from the issue alone,
+so a compressed copy is the only truth it has.
 
 ## §3 — Screenshot blocks
 
@@ -329,7 +329,7 @@ While implementing:
 
 - **Layout facts come from the ledger row and the source slice. Never from the current app.** A
   class already in the repo tells you what ships today, which is the thing being changed. Do not
-  carry an existing class forward because it looks close, and do not treat a Run-N class as a
+  carry an existing class forward because it looks close, and do not treat a class from an earlier attempt as a
   design fact.
 - **Icon names are copied character for character** from the ledger and the slice.
 
@@ -343,7 +343,7 @@ in scope — every row, including the ones you believe are trivially correct:
 - **Ledger row** — the element name, as the ledger spells it.
 - **Fact(s)** — the row's layout / interaction / token facts, short but not re-summarised away. A
   row with five facts gets five facts.
-- **Rendered by** — the concrete `file:symbol` in your diff that paints it (`EligibilityValuePill.tsx:ValueChip`).
+- **Rendered by** — the concrete `file:symbol` in your diff that paints it (`ShelfRow.tsx:TallyMark`).
   Not a directory, not "the builder". A row with nothing to point at is a deviation.
 - **matched / deviated** — one or the other. There is no "partially".
 - **reason** — required on every `deviated`. Why the code departs from the row, and what you did
@@ -354,8 +354,7 @@ in the table as a note and carry on to the gate.
 </self-audit>
 
 Then tick the issue's `## Verify` checkboxes **from the code**, not from a render — the human scores
-renders, and a text claim of a visual match is worth nothing here (this is exactly what Run 0 got
-wrong). Two lists, both filled in the final print:
+renders, and a text claim of a visual match is worth nothing here. Two lists, both filled in the final print:
 
 - **Scorecard rows in scope** — per row: `expected pass` (the code does what the pass condition
   describes, and you can name the symbol that does it) or `cannot tell from code` (the condition is

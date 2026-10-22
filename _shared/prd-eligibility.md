@@ -1,6 +1,6 @@
 # PRD Child Eligibility — GitHub Mechanics
 
-Shared by `next-prd-issue` and `work-on-prd`. Given a PRD issue number, find its child issues
+Used by `work-on-prd`. Given a PRD issue number, find its child issues
 and produce the facts eligibility runs on: how to fetch them, how to parse a body, and how
 GitHub state and labels map onto open/done.
 

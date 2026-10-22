@@ -1,7 +1,7 @@
 # Project Adapter — LiamKlyneker/skills
 
 Single home for every project-specific fact the skills need. Workflow skills
-(`work-on-prd`, `to-issues`, `next-prd-issue`, `work-on-issue`) and `deep-grill`
+(`work-on-prd`, `to-issues`, `to-task`, `work-on-task`) and `deep-grill`
 reference this file and never hardcode these values.
 
 **This repo is the canonical skills repo**, so it is its own install target: what

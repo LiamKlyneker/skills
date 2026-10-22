@@ -3,9 +3,10 @@ name: work-on-task-self-audit-skipped
 summary: "The self-audit covers all 9 ledger rows."
 description: >
   The `work-on-task` implementer hop against the Vitrine fixture's frozen `to-task` issue. The
-  skill's own prose names the leak: "Run 1 failed here. The implementer worked from the issue
-  prose plus the screenshots, never opened the brief or the prototype source, and never checked
-  its own output against the ledger." That is the self-audit skipped, and it is what this case's
+  skill's own prose names the leak: an implementer that works from the issue prose plus the
+  screenshots, without opening the brief or the prototype source, loses every layout fact the
+  ledger held. That, and never checking its own output against the ledger, is the self-audit
+  skipped, and it is what this case's
   graders score — not just that code exists, but that each `DS with overrides` / `local component`
   ledger fact actually landed in the two new files, that the DS icon names survived rather than
   being renamed to their conventional equivalents, and that the printed self-audit table names
