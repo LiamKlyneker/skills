@@ -1,6 +1,6 @@
 # Fidelity ledger — the contract every fidelity consumer imports
 
-Shared by `to-task`, `work-on-task`, `to-prd` and `to-issues` (prd-workflow),
+Shared by `to-task`, `work-on-task`, `to-prd` and `to-prd-tasks` (prd-workflow),
 `to-spec`, `to-spec-tasks`, `work-on-spec` and `spec-worker.md` (ado-workflow), `figma-to-brief`
 and `prototype-to-spec` (figma-tools), and `deep-grill` (lk). Every fidelity rule lives here once,
 so those consumers cannot drift from each other.

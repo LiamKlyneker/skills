@@ -17,7 +17,7 @@ gh issue view <prd-number> --repo <repo> --json title,body,state,comments
 gh api repos/<owner>/<repo>/issues/<prd-number>/sub_issues
 ```
 
-The second call is the **authoritative and only** list of the PRD's children. `to-issues` links
+The second call is the **authoritative and only** list of the PRD's children. `to-prd-tasks` links
 each child to its PRD as a native sub-issue as it creates it, and `triage` does the same for
 each `[BUG]` it files; this endpoint reads those links back. It returns one object per child
 carrying `number`, `title`, `state`, `body` and `labels` — everything the parsing below needs,
@@ -43,12 +43,12 @@ Three properties of the endpoint to hold on to:
 
 **Zero children returned** means nothing was ever linked — either the PRD has not been sliced, or
 it was sliced and the links were never written. Both are fixed by linking, never by re-slicing:
-re-running `/to-issues` on a PRD that already has children doubles every child. The consuming
+re-running `/to-prd-tasks` on a PRD that already has children doubles every child. The consuming
 skills own the exact message.
 
 ## Parse each child body
 
-The headings and "None…" sentinels below are a string contract with the writer — normative copy lives in `to-issues`'s issue template. Reword there first, never here alone.
+The headings and "None…" sentinels below are a string contract with the writer — normative copy lives in `to-prd-tasks`'s issue template. Reword there first, never here alone.
 
 - **External steps**: everything under `## External steps` until the next `## ` heading. Each `- [ ]` line is an unmet step; `- [x]` is met. The literal phrase "None — fully implementable from the editor" (or just "None") means no external steps. Section missing entirely → treat as "None" and flag `needs-backfill` (issue predates the template).
 - **Blocked by**: everything under `## Blocked by` until the next `## ` heading. Collect every `#NNN` reference. "None" (or "None - can start immediately") means no blockers.

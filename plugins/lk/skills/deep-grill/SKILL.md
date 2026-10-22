@@ -56,7 +56,7 @@ Before anything else, ask what already exists and read it. A grill that re-deriv
 
   The three standard answers to an `OPEN` element or a proposed gap, and they are the same three either way:
   1. **Build it local**, colocated, per the primitive-home ladder.
-  2. **Extend or build it in the design system**, and file the gap on the adapter's DS-gap backlog **as a blocker** — which is what makes it a ❌/⚠️ row in the PRD's `## UI Primitives`, and therefore a blocking issue when `to-issues` runs.
+  2. **Extend or build it in the design system**, and file the gap on the adapter's DS-gap backlog **as a blocker** — which is what makes it a ❌/⚠️ row in the PRD's `## UI Primitives`, and therefore a blocking issue when `to-prd-tasks` runs.
   3. **Override the prototype** — the ticket is allowed to disagree with it, and frequently should.
 
   A brief's `## Overrides` section is **facts, not questions**. The ticket already won there; re-asking hands back a decision that was made before the brief was written.

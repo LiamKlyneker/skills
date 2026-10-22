@@ -243,7 +243,7 @@ filed in a related repo is not a sub-issue of a PRD here — skip the link entir
 `blocked-external` pointer issue as the only local trace. A reject is filed-then-closed, not
 parented, so it gets no link either.
 
-## Issue template (mirror the `to-issues` child so work-on-prd eats it identically)
+## Issue template (mirror the `to-prd-tasks` child so work-on-prd eats it identically)
 
 ```
 ## Blocked by

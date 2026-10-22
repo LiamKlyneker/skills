@@ -1,9 +1,9 @@
 ---
-name: to-issues
+name: to-prd-tasks
 description: Break a plan, spec, or PRD into independently-grabbable issues on the project issue tracker using tracer-bullet vertical slices. Use when user wants to convert a plan into issues, create implementation tickets, or break down work into issues.
 ---
 
-# To Issues
+# To PRD Tasks
 
 Break a plan into independently-grabbable issues using vertical slices (tracer bullets).
 

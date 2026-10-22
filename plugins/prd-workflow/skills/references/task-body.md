@@ -3,7 +3,7 @@
 The single home for the body of a task issue in `prd-workflow`. Two skills write it and one
 executes it:
 
-- `to-issues` writes one per PRD child: **core** sections, plus the
+- `to-prd-tasks` writes one per PRD child: **core** sections, plus the
   **fidelity** sections for a User-visible slice whose PRD carries a `## Fidelity ledger`.
 - `to-task` writes one standalone task: **core** + **standalone** sections, plus the **fidelity**
   sections when the grill worked from a design brief (ledger mode).

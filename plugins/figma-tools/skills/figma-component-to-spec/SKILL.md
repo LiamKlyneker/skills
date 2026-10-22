@@ -237,7 +237,7 @@ never written by this one**, on either tracker: it marks a spec whose implemente
 else, and a component spec filed under it is invisible to the slicing chain that would pick it
 up — a dead end that looks exactly like a
 successful run. Filing the right type in the first place is what lets `ado-workflow:to-spec-tasks`
-and `prd-workflow:to-issues` consume it with **zero new machinery and no edit to either plugin**.
+and `prd-workflow:to-prd-tasks` consume it with **zero new machinery and no edit to either plugin**.
 
 ## Phases
 

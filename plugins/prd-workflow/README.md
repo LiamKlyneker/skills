@@ -4,7 +4,7 @@ The PRD-to-merge workflow, packaged as a Claude Code plugin. Two routes start
 from a `deep-grill` consensus:
 
 ```
-PRD flow:     deep-grill → to-prd → to-issues → work-on-prd
+PRD flow:     deep-grill → to-prd → to-prd-tasks → work-on-prd
 Single flow:  deep-grill → to-task → work-on-task
 After either: manual-qa → triage
 ```
@@ -38,7 +38,7 @@ plugins/prd-workflow/
   _shared -> ../../_shared             # symlink, see below
   skills/
     _shared -> ../../../_shared        # symlink, see below
-    to-prd/  to-issues/  work-on-prd/  # the PRD route
+    to-prd/  to-prd-tasks/  work-on-prd/  # the PRD route
     to-task/  work-on-task/            # the single-task route, fidelity-ledger aware
     references/task-body.md            # the one task-issue shape both routes write
     manual-qa/                         # compose the pass from the branch, drive it, capture findings
@@ -103,7 +103,7 @@ references.
 ../../_shared`, is for: same canonical target, same no-rewrite rule.
 
 `_shared/fidelity-ledger.md` is the shared fidelity contract both links reach.
-`to-task`, `work-on-task`, `to-prd` and `to-issues` cite its
+`to-task`, `work-on-task`, `to-prd` and `to-prd-tasks` cite its
 numbered sections rather than restating them, and `prd-worker.md` follows §6.
 `figma-tools`' `prototype-to-spec` writes the ledger those sections consume.
 

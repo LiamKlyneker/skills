@@ -371,7 +371,7 @@ entire zero-new-tickets guarantee on a re-run.
 - **If Phase 0 was given a scope issue, link the new issue as its native sub-issue.** The link
   is what makes it a child — the body carries **no `## Parent` section**, because a
   hand-written parent beside a real link is a second source of truth that can disagree.
-  The mechanics are documented once, in `prd-workflow`'s `to-issues` skill under *Link each
+  The mechanics are documented once, in `prd-workflow`'s `to-prd-tasks` skill under *Link each
   child to the PRD as a native sub-issue*: create → link → **verify**, three `gh api` calls,
   and `sub_issue_id` takes the issue's **internal numeric `id`** (`--jq .id`), never its issue
   number — passing the number returns a bare `404` indistinguishable from "no such issue".

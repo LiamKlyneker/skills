@@ -2,7 +2,7 @@
 name: to-task
 description: >
   Publish one self-contained task from a grill's consensus, skipping the
-  PRD → to-issues ceremony. Transcribes the settled decisions into a `[TASK]` issue a
+  PRD → to-prd-tasks ceremony. Transcribes the settled decisions into a `[TASK]` issue a
   cold worker can implement — and, when the grill worked from a design brief, embeds the
   pinned screenshots, pastes the fidelity ledger rows in scope as build instructions and
   ends with the scorecard as a screenshot-pair verify checklist. Use when a conversation
@@ -18,7 +18,7 @@ description: >
 Takes the **current conversation** — any session that has reached a settled consensus, usually a
 `deep-grill` — and publishes **one** implementation task to the project tracker.
 
-Use it instead of `to-prd` → `to-issues` when the work is a single task that one worker session can
+Use it instead of `to-prd` → `to-prd-tasks` when the work is a single task that one worker session can
 carry: a small feature, a bug fix, a refactor, a design-fidelity pass. There is no PRD, no sub-issue
 tree. One task, one commit, one verify pass.
 

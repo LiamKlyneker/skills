@@ -28,7 +28,7 @@ wrote a different one inline. The headings the loop parses lived in one of them 
 **Two routes, one shape.**
 
 ```
-PRD flow:     deep-grill → to-prd → to-issues → work-on-prd
+PRD flow:     deep-grill → to-prd → to-prd-tasks → work-on-prd
 Single flow:  deep-grill → to-task → work-on-task
 After either: manual-qa → triage
 ```
@@ -49,6 +49,8 @@ After either: manual-qa → triage
   a closed issue, an open question — and runs the fidelity evidence gate and self-audit iff the task
   carries a `## Fidelity ledger (in scope)` table.
 - **`work-on-issue` and `next-prd-issue` are deleted.** `deep-grill` plans and the loops pick.
+- **`to-issues` is renamed `to-prd-tasks`.** The name says what it writes — the `[TASK]` children
+  of a PRD — and mirrors the ADO side's `to-spec` → `to-spec-tasks` → `work-on-spec`.
 - **`work-on-task` enters no plan mode and spawns no subagents.** The plan is the task body. Whether
   a session delegates is the operator's model rule, decided by the session's model, not by a skill.
 - **`work-on-task` names no project's tooling.** The verify gate runs the adapter's L2 command and
