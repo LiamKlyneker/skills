@@ -1,6 +1,6 @@
 # Model & Effort Heuristics
 
-Shared reference for issue-pickup skills (`next-prd-issue`, `work-on-issue`). At pickup time, recommend whether to keep the default or go lighter, plus plan-mode y/n. The call is made **at point-of-use, never frozen into issue bodies** — the model lineup churns, and the right call depends on what the files actually look like when you open them.
+Shared reference for the loops that route a model per child — `work-on-prd` and the ADO loop (`work-on-spec`) — and for the skills that recommend a tier. At pickup time, recommend whether to keep the default or go lighter, plus plan-mode y/n. The call is made **at point-of-use, never frozen into issue bodies** — the model lineup churns, and the right call depends on what the files actually look like when you open them.
 
 ## Framing: this is a downgrade detector
 

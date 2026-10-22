@@ -61,17 +61,17 @@ Read the PRD's `## Migration risk` section if present. For each entry there:
 
 Read the PRD's `## Data & Access` section if present. For each ⚠️ row (an operation with a missing/wrong access policy, or a mis-scoped client):
 - The access-policy change must land **in the same slice as — or as a `Blocked by` of — the slice that first introduces that operation**, never a slice later. A user-scoped write with no policy is silently denied, so the write and its policy cannot ship apart.
-- This matters most for a **new operation on an already-used store** (e.g. the first update or delete on something only ever read from and appended to): there's no creation step to hang the policy off, so it's easy to slice the write into a feature issue and lose the policy entirely. Call it out explicitly in that issue's acceptance criteria (see the template note below).
+- This matters most for a **new operation on an already-used store** (e.g. the first update or delete on something only ever read from and appended to): there's no creation step to hang the policy off, so it's easy to slice the write into a feature issue and lose the policy entirely. Call it out explicitly in that issue's acceptance criteria (see the `## Acceptance criteria` note in `../references/task-body.md`).
 - ✅ rows need nothing — they're already covered.
 
 Read the PRD's `## Fidelity ledger` section if present. Every slice marked **User-visible: y**
 carries the rows for its own elements into its `## Fidelity ledger (in scope)` section, plus the
-screenshot blocks and source slices those rows need (see the template). A row belongs to exactly one
+screenshot blocks and source slices those rows need (see `../references/task-body.md`). A row belongs to exactly one
 slice; a row two slices both touch is the signal the seam is wrong, not a licence to duplicate it.
 
 Read the PRD's `## Project gates` section if present — one sub-section per extra gate this project registers in its adapter, each carrying that gate's table. Slice its ⚠️ rows the same way: the fix lands **in, or as a `Blocked by` of**, the slice that first introduces the offending operation, never a slice later. A gate row that resolves in another repo becomes a cross-repo dependency, listed under the slice's `## External steps` or `## Blocked by` as appropriate. Never assume which gates exist — the PRD section and the adapter registry are the only sources.
 
-While drafting each slice, also gather its `## Worker context` and `## QA notes` (see the template): explore the codebase for the real file paths, scoped `CONTEXT.md`s, and prior-art examples the slice needs; take verify commands from the **project adapter** at `<repo-root>/.claude/project/adapter.md` (never hardcode them); mark **User-visible: y/n** (y = app boot + screenshot verification applies). These two sections are what let an isolated orchestrated worker (`/work-on-prd`) implement the slice without plan mode — vague pointers here mean a blind worker there.
+While drafting each slice, also gather its `## Worker context` and `## QA notes` (see `../references/task-body.md`): explore the codebase for the real file paths, scoped `CONTEXT.md`s, and prior-art examples the slice needs; take verify commands from the **project adapter** at `<repo-root>/.claude/project/adapter.md` (never hardcode them); mark **User-visible: y/n** (y = app boot + screenshot verification applies). These two sections are what let an isolated orchestrated worker (`/work-on-prd`) implement the slice without plan mode — vague pointers here mean a blind worker there.
 
 ### 4. Quiz the user
 
@@ -94,7 +94,7 @@ Iterate until the user approves the breakdown.
 
 ### 5. Publish the issues to the issue tracker
 
-For each approved slice, publish a new issue to the issue tracker, titled `[TASK] …` per `## Titles` above. Use the issue body template below. Apply the `ready-to-start` triage label to record the issue as filed-and-unclaimed (label vocabulary is normative in `work-on-prd`'s `## Label vocabulary`). What makes it pickable is the sub-issue link to the PRD, not the label — nothing in the pick path reads a label.
+For each approved slice, publish a new issue to the issue tracker, titled `[TASK] …` per `## Titles` above. Write the body per `../references/task-body.md` (below). Apply the `ready-to-start` triage label to record the issue as filed-and-unclaimed (label vocabulary is normative in `work-on-prd`'s `## Label vocabulary`). What makes it pickable is the sub-issue link to the PRD, not the label — nothing in the pick path reads a label.
 
 Publish issues in dependency order (blockers first) so you can reference real issue identifiers in the "Blocked by" field.
 
@@ -141,69 +141,9 @@ Two rules, both non-negotiable:
 Use `gh api` for this. Do **not** use `gh issue create --parent`: that flag needs
 `gh >= 2.94.0`, this machine runs `2.89.0`, and `gh api` works on both.
 
-<!-- String contract: this template is the normative writer for the `## External steps`, `## Blocked by`, `## Worker context`, `## Design reference` and `## QA notes` headings and for the two "None…" sentinel phrases below. `../_shared/prd-eligibility.md` and `next-prd-issue` parse them; `work-on-prd` consumes `## Worker context`. Change a heading or sentinel here and you must change them there. There is deliberately no `## Parent` heading: the parent is the native sub-issue link, and a hand-written section beside it would be a second source of truth that can disagree. -->
-
-<issue-template>
-## External steps
-
-A checklist of in-session manual actions Claude cannot perform — anything you'll need to do yourself during the implementation session (dashboard config, RPC/policy tweaks, env var changes, copy approval, manual prod verification, feature-flag toggles, webhook setup, etc.).
-
-- [ ] Step 1
-- [ ] Step 2
-
-Or "None — fully implementable from the editor" if the issue requires no manual actions. <!-- parsed verbatim — do not reword -->
-
-
-## What to build
-
-A concise description of this vertical slice. Describe the end-to-end behavior, not layer-by-layer implementation.
-
-## Design reference
-
-For UI issues only. Carry the design ref(s) from the PRD's `## Design reference` so a cold implementation session has the target with no prior context. Omit for non-UI issues.
-
-| Area | Design ref | Label |
-|------|------------|-------|
-| <area> | <design ref url> | "<label>" |
-
-## Fidelity ledger (in scope)
-
-For **User-visible: y** slices whose PRD carries a `## Fidelity ledger`. The PRD's rows for this
-slice's elements, pasted verbatim with every column plus Decision and Instruction, per
-`../_shared/fidelity-ledger.md` §1. Then the screenshot blocks for those rows' states, per §3, and
-the source slices for their `local component` / `DS with overrides` rows, per §4. Omit the whole
-section for a slice with no ledger rows.
-
-## Worker context
-
-Everything a cold, isolated worker session needs to implement this slice without plan mode. The PRD stays path-free (paths rot over months); this section gets real paths because issues are consumed within days.
-
-- **Files**: real paths the slice touches (create/edit), plus the scoped `CONTEXT.md`(s) to read first.
-- **Prior art**: concrete in-repo examples to copy the pattern from (path + one line on what to imitate). Prior art is an **engineering** source only; never a layout-fact source (`../_shared/fidelity-ledger.md` §2 rule 9).
-- **Verify**: exact commands, taken from the project adapter at `<repo-root>/.claude/project/adapter.md` (L2 test command; L3 app/boot command if applicable).
-- **User-visible**: y/n — y means the verify ladder's L3 (app boot + screenshot) applies.
-
-## QA notes
-
-2–3 lines for the human QA pass: what to do in the running app, what they should see, edge cases worth poking. These are **context for the QA pass, not the pass itself** — `manual-qa` composes the pass from the branch later and lets the diff overrule them — so write each as "start from X, then …", naming the state to be in before the action, and where this slice is a refactor, a bump or config that nobody can exercise by hand, say that instead of inventing a step.
-
-## Acceptance criteria
-
-- [ ] Criterion 1
-- [ ] Criterion 2
-- [ ] Criterion 3
-- [ ] (UI issues) One checkbox per scorecard row and per polish-checklist item in this slice's scope, each carrying its pass condition verbatim, per `../_shared/fidelity-ledger.md` §5 — and where the file the adapter's `Fixed scorecard` row names has no `## Scorecard` for this ticket, or the adapter registers no such row, the derived rows that section specifies, never another ticket's scorecard
-- [ ] (UI issues) The design ref + label recorded in the page's `CONTEXT.md` `## Design reference` table
-- [ ] (Issues introducing a new write on an existing store — from the PRD's `## Data & Access`) An access policy for that specific operation exists for the acting user, and the write path surfaces a denied write instead of swallowing it
-
-## Blocked by
-
-- A reference to the blocking ticket (if any)
-
-Or "None - can start immediately" if no blockers. <!-- parsed verbatim — do not reword -->
-
-
-</issue-template>
+Write each body per `../references/task-body.md` — the **core** sections, plus the **fidelity**
+sections for a User-visible slice whose PRD carries a `## Fidelity ledger`. That file is the
+normative writer for every heading and sentinel the loop parses; do not restate the template here.
 
 Once all child issues are published, transition the parent PRD's triage label from `needs-triage` to `ready-to-start` (it has now been broken down and is ready to be picked up). Do NOT close the parent issue or modify anything else about it.
 

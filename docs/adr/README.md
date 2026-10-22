@@ -74,3 +74,4 @@ or the adapter, and stops there.
 | [0016](0016-a-scorer-beside-the-gate.md) | A scorer sits beside the gate, never inside it | Accepted |
 | [0017](0017-two-fixture-tiers-and-which-one-a-leak-lands-in.md) | Two fixture tiers, and which one a leak lands in | Accepted |
 | [0018](0018-reading-a-ticket-is-not-filing-work.md) | Reading a ticket is not filing work | Accepted |
+| [0019](0019-one-task-shape-one-executor.md) | One task shape, one executor | Accepted |

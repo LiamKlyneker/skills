@@ -1,12 +1,12 @@
 ---
 name: triage
-description: PRD-scoped triage — take the [FINDING] comments manual-qa logged on a run's [FINDINGS] issue, confirm each against the PRD/issues/decision-lock and the code, pinpoint root cause via a cheap subagent, then file cold-runnable GitHub issues (in this repo, or in the related repo that owns the contract boundary) that work-on-prd/work-on-issue can execute with no plan mode, and close the [FINDINGS] issue once every finding is disposed. Invoke /prd-workflow:triage to promote a PRD run's QA findings into executable issues.
+description: PRD-scoped triage — take the [FINDING] comments manual-qa logged on a run's [FINDINGS] issue, confirm each against the PRD/issues/decision-lock and the code, pinpoint root cause via a cheap subagent, then file cold-runnable GitHub issues (in this repo, or in the related repo that owns the contract boundary) that work-on-prd/work-on-task can execute with no plan mode, and close the [FINDINGS] issue once every finding is disposed. Invoke /prd-workflow:triage to promote a PRD run's QA findings into executable issues.
 disable-model-invocation: true
 ---
 
 # triage
 
-The **investigate + promote** half of the PRD QA loop. `manual-qa` — the capture phase — composes a run's pass from what landed on the branch, drives it flow by flow, and logs each failure as a self-contained `### [FINDING]` comment on the run's disposable `[FINDINGS]` issue; `triage` *confirms, roots-causes, and promotes* the survivors into **cold-runnable issues** — one per finding — that `work-on-prd` (or `work-on-issue`) executes later with zero re-research, then closes the `[FINDINGS]` issue once every finding on it is disposed. It is the PRD-scoped specialization of the generic triage pattern: it never reads a deploy-preview comment stream, it reads a PRD.
+The **investigate + promote** half of the PRD QA loop. `manual-qa` — the capture phase — composes a run's pass from what landed on the branch, drives it flow by flow, and logs each failure as a self-contained `### [FINDING]` comment on the run's disposable `[FINDINGS]` issue; `triage` *confirms, roots-causes, and promotes* the survivors into **cold-runnable issues** — one per finding — that `work-on-prd` (or `work-on-task`) executes later with zero re-research, then closes the `[FINDINGS]` issue once every finding on it is disposed. It is the PRD-scoped specialization of the generic triage pattern: it never reads a deploy-preview comment stream, it reads a PRD.
 
 Its edge over a generic triage is **decision context**: it loads the PRD, its child issues, the touched `CONTEXT.md`, and the locked decisions — so it can tell a real defect from a gap that was **deferred on purpose**, and route a finding to the repo that actually owns it.
 
@@ -14,8 +14,8 @@ Project facts (repos, commands, verify ladder) come from the **project adapter**
 
 ## Two non-negotiables
 
-1. **Every issue is a cold-runnable fix plan.** A future `work-on-issue`/`work-on-prd` session (fresh, no memory of this chat) must fix it with **no plan mode and no re-investigation**. So each issue carries: root cause (confirmed, not hypothesized), exact files + prior art, the fix approach, and testable acceptance criteria — mirroring the `to-issues` child template so the worker consumes a bug identically to a planned child.
-2. **Never fix.** triage stops at filed issues. No code changes, no fix-tests. The fix belongs to `work-on-prd`/`work-on-issue`. (Mirror of `manual-qa`'s `<the-line>`, one phase later.)
+1. **Every issue is a cold-runnable fix plan.** A future `work-on-task`/`work-on-prd` session (fresh, no memory of this chat) must fix it with **no plan mode and no re-investigation**. So each issue carries: root cause (confirmed, not hypothesized), exact files + prior art, the fix approach, and testable acceptance criteria — mirroring the task body in `../references/task-body.md` so the worker consumes a bug identically to a planned child.
+2. **Never fix.** triage stops at filed issues. No code changes, no fix-tests. The fix belongs to `work-on-prd`/`work-on-task`. (Mirror of `manual-qa`'s `<the-line>`, one phase later.)
 
 ## Context loading (once, up front)
 
@@ -105,7 +105,7 @@ Spawn **one read-only subagent per finding** (the token-saver: the main session 
 The adapter names both halves: `## Repo → Related repos` says which repo owns the other side of the API boundary, and `## Sources of truth → Contract-boundary explorer agent` names the read-only agent that owns it (API handlers, contract spec, data layer). For a finding whose root cause is across that boundary:
 
 - **Spawn that explorer agent** instead of the project one. It reads the actual handler code to confirm the cause, plus that repo's scoped `CONTEXT.md` and its own issue conventions.
-- It files the issue **in the related repo**, native to **their** house style, so their own `work-on-issue` can execute it — with a **"Discovered via `<this-repo>#<pr>`"** back-link.
+- It files the issue **in the related repo**, native to **their** house style, so their own workflow can execute it — with a **"Discovered via `<this-repo>#<pr>`"** back-link.
 - **This side:** carry a `blocked-external` pointer issue, named under `## Blocked by` on whichever child needs the fix. **Cross-repo auto-close does not fire** (`Closes` is same-repo only) — the local pointer is closed by hand when the other fix ships.
 - If the adapter says "None" for either field, there is no boundary to route across: file the issue here and say plainly that the boundary is unmodelled, rather than guessing a repo.
 
@@ -298,4 +298,4 @@ labels for them).
 
 - triage = **investigate + decide + file**. It does **not** fix, and it does **not** need a separate "fix the bugs" skill: a bug filed in this repo and **linked to that PRD as a native sub-issue** **is a PRD child** — `work-on-prd` (re-entrant, cold-start) discovers it from the PRD's sub-issue list and works it on the PRD branch with no new machinery. The link is the whole requirement — no label is consulted, and the `[BUG]` title prefix is a scanning convention that changes nothing about discovery. A bug filed but never linked is invisible before eligibility ever runs. See `../_shared/prd-eligibility.md`.
 - Deferred follow-ups are filed **standalone**, carrying the `deferred` label as a human scanning convention and naming the PRD in prose. They are not children, so nothing picks them up and nothing needs to skip them. Promoting one is a single call — link it to the PRD as a sub-issue.
-- Related-repo issues are executed by that repo's own `work-on-issue`.
+- Related-repo issues are executed by that repo's own workflow.

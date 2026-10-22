@@ -108,7 +108,8 @@ two different rows and they behave differently at install time:
 
 ## `prd-workflow`
 
-The PRD → issues → implementation loop. The reason the adapter exists.
+The PRD → issues → implementation loop, and the single-task route beside it (`to-task` →
+`work-on-task`). The reason the adapter exists.
 
 - **Status:** ready
 - **Adapter sections:** `## Repo`, `## Commands`, `## App facts`, `## Verify ladder`, `## Project gates`, `## Repo discipline`, `## One-time repo preconditions`
@@ -119,10 +120,10 @@ Which skill drives which section, so a partial adoption can drop questions:
 | Section | Wanted by |
 |---|---|
 | `## Repo` | all five workflow skills — including the **title prefixes**, which every one of them either writes or filters on |
-| `## Commands`, `## Verify ladder` | `to-issues`, `work-on-prd`, `work-on-issue` |
+| `## Commands`, `## Verify ladder` | `to-issues`, `to-task`, `work-on-prd`, `work-on-task` |
 | `## App facts` | `work-on-prd` (pasted into every worker prompt) |
 | `## Project gates` | `to-prd`, `to-issues` |
-| `## Repo discipline` | `work-on-prd`, `work-on-issue` |
+| `## Repo discipline` | `work-on-prd`, `work-on-task` |
 | `## One-time repo preconditions` | `work-on-prd` (the `Closes #N` setting) |
 
 Every row names a skill this plugin ships. `## Sources of truth` used to be here too, for
@@ -194,7 +195,7 @@ that could edit it would get a `triage` that silently finds zero findings and re
 a clean PR.
 
 **Pairs with `prd-workflow`, doesn't replace it.** `triage` files issues shaped like
-`to-issues` children, so `work-on-prd` / `work-on-issue` execute them with no new
+`to-issues` children, so `work-on-prd` / `work-on-task` execute them with no new
 machinery. Adopting `prd-qa` alone is legal but leaves nothing downstream to run the
 issues it files — say so rather than silently bootstrapping both.
 
@@ -319,7 +320,7 @@ Which skill drives which section:
 | Section | Wanted by |
 |---|---|
 | `## Repo` | `figma-to-spec` — the `Tracker:` line its filing phase branches on, plus the two filing rows inside that tracker's sub-section: the **design-spec target** (where a page spec files) and the **DS-gap backlog** (where an escalated gap files). `prototype-to-spec` and `figma-to-brief` read the second of those too, but only to *name* a proposed gap in a brief — they file nothing. Those two also read the optional **`Ticket source:`** line, through `_shared/ticket-source.md`: where the ticket they are handed is read from, when that is not the filing tracker. Absent means the `Tracker:` line, and no other skill reads it. Two rows rather than one because a design system's gaps routinely belong to a different repo or ADO project than the code being specced, and a single row would send them to whichever of the two was written down |
-| `## Design system` | `figma-to-spec` — the design-system source; the **catalog pointer**, which is the only place the catalog is ever named; the **fingerprint command** behind its soft staleness check; the **three class-prefix facts** (Tailwind class prefix, CSS variable prefix, consumer-facing emission form — separate facts, and collapsing them makes a spec recommend a class the app cannot write); and the **icon resolution ladder**, which is per-project and multi-source. Plus three optional rows that degrade silently: the usage-rules sources (absent → the spec cites nothing; **the row may name several**, because UI rules routinely sit in more than one skill), the downstream implementer (absent → a human), and the **fixed scorecard**, the one row here that `figma-tools` does not read — `prd-workflow`'s `to-task`, `work-on-task`, `to-issues` and `work-on-issue` take a ticket's `## Scorecard` and `## Polish checklist` from the file it names, and derive them from the design brief's fidelity ledger when it is absent. Plus the optional `### Prototype source` sub-section, which `prototype-to-spec` alone reads — its rows say which repo the designers' prototypes live in and how a preview URL resolves to a ref and a path — or, instead of that pair, which directory in this tree holds one — plus which files form the spec there, what shape that spec is, and where a step's screenshot sits. **Absent means this project's designers ship no code prototypes**, and that skill stops when invoked; nothing else notices. Also the **repo role**; the four **provisional-decision** rows, which all default and are asked only in a `library` repo because only `figma-component-to-spec` reads them today; and, where that role is `library`, the three library conventions below |
+| `## Design system` | `figma-to-spec` — the design-system source; the **catalog pointer**, which is the only place the catalog is ever named; the **fingerprint command** behind its soft staleness check; the **three class-prefix facts** (Tailwind class prefix, CSS variable prefix, consumer-facing emission form — separate facts, and collapsing them makes a spec recommend a class the app cannot write); and the **icon resolution ladder**, which is per-project and multi-source. Plus three optional rows that degrade silently: the usage-rules sources (absent → the spec cites nothing; **the row may name several**, because UI rules routinely sit in more than one skill), the downstream implementer (absent → a human), and the **fixed scorecard**, the one row here that `figma-tools` does not read — `prd-workflow`'s `to-task`, `work-on-task` and `to-issues` take a ticket's `## Scorecard` and `## Polish checklist` from the file it names, and derive them from the design brief's fidelity ledger when it is absent. Plus the optional `### Prototype source` sub-section, which `prototype-to-spec` alone reads — its rows say which repo the designers' prototypes live in and how a preview URL resolves to a ref and a path — or, instead of that pair, which directory in this tree holds one — plus which files form the spec there, what shape that spec is, and where a step's screenshot sits. **Absent means this project's designers ship no code prototypes**, and that skill stops when invoked; nothing else notices. Also the **repo role**; the four **provisional-decision** rows, which all default and are asked only in a `library` repo because only `figma-component-to-spec` reads them today; and, where that role is `library`, the three library conventions below |
 
 **One question in `## Design system` gates the rest.** The **repo role** — `consumer` or
 `library`, and an absent row means `consumer` — is asked first, because it decides whether the

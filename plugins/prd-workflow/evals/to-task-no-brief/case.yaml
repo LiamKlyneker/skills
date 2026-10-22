@@ -1,0 +1,122 @@
+schema_version: "1.0"
+name: to-task-no-brief
+summary: "A task with no design brief is filed without a ledger and without a question."
+description: >
+  The `to-task` hop on an ordinary task: a settled consensus about one pure function in a
+  hand-written stub project, no design brief, no ticket key. The hop's leak is the fidelity
+  pipeline it grew out of — refusing to file without a brief and a ledger, stubbing the fidelity
+  sections, or stopping to ask for confirmation before writing. The run must write a `[TASK]`
+  body with the core and standalone sections of `references/task-body.md`, no fidelity section
+  and no question.
+  There is no tracker and no network here, so the case passes `--out`.
+tags: [micro]
+runs: 1
+context:
+  scaffold_script: ./scaffold.sh
+execution:
+  prompt: |
+    The working directory is the project, already a git repository with one commit
+    (`fixture: scaffold snapshot`). Its adapter is `.claude/project/adapter.md`.
+
+    We have finished discussing this task and settled every decision:
+
+    - `countShelves` in `lib/shelf-count.ts` counts archived shelves, so the header total
+      overstates what a user can open. It must count only shelves whose `archived` is `false`.
+    - Archived shelves never count toward the total. We considered a second "include archived"
+      parameter and dropped it: nothing calls the function that way.
+    - The archive action itself is out of scope — another task.
+    - Nothing blocks this, and no manual step is needed outside the editor.
+
+    There is no design brief and no ticket key for this work. There is no network and no
+    tracker credential here, which is what `--out` is for.
+
+    Run this, and nothing else:
+
+    /prd-workflow:to-task --out ./issue.md
+
+    Follow the skill exactly and stop where it stops.
+  max_turns: 30
+  timeout_seconds: 300
+  model: claude-sonnet-5
+  allowed_tools: [Read, Glob, Grep, Skill, Bash, Write]
+graders:
+  - type: regex
+    name: title-carries-the-task-prefix
+    target: { source: file, path: issue.md }
+    pattern: '^\[TASK\] [^\n]+\n'
+
+  - type: regex
+    name: no-ticket-key-invented-in-the-title
+    target: { source: file, path: issue.md }
+    pattern: '^[^\n]*\([A-Z][A-Z0-9]+-\d+\)'
+    match: not_contains
+
+  - type: regex
+    name: no-fidelity-section
+    target: { source: file, path: issue.md }
+    pattern: '## Fidelity ledger|## Design reference|## Verify\b|## Changes'
+    match: not_contains
+
+  # The core sections every task carries, then the three only a standalone task carries.
+  - type: regex
+    name: core-external-steps
+    target: { source: file, path: issue.md }
+    pattern: '^## External steps$'
+    flags: m
+  - type: regex
+    name: core-what-to-build
+    target: { source: file, path: issue.md }
+    pattern: '^## What to build$'
+    flags: m
+  - type: regex
+    name: core-worker-context
+    target: { source: file, path: issue.md }
+    pattern: '^## Worker context$'
+    flags: m
+  - type: regex
+    name: core-qa-notes
+    target: { source: file, path: issue.md }
+    pattern: '^## QA notes$'
+    flags: m
+  - type: regex
+    name: core-acceptance-criteria
+    target: { source: file, path: issue.md }
+    pattern: '^## Acceptance criteria$'
+    flags: m
+  - type: regex
+    name: core-blocked-by-sentinel
+    target: { source: file, path: issue.md }
+    pattern: '## Blocked by\s*\n(?:[^\n]*\n){0,4}?[^\n]*None - can start immediately'
+  - type: regex
+    name: standalone-summary
+    target: { source: file, path: issue.md }
+    pattern: '^## Summary$'
+    flags: m
+  - type: regex
+    name: standalone-decisions-confirmed
+    target: { source: file, path: issue.md }
+    pattern: '^## Decisions confirmed$'
+    flags: m
+  - type: regex
+    name: standalone-out-of-scope
+    target: { source: file, path: issue.md }
+    pattern: '^## Out of scope$'
+    flags: m
+
+  - type: regex
+    name: worker-context-names-the-real-path
+    target: { source: file, path: issue.md }
+    pattern: 'lib/shelf-count\.ts'
+
+  - type: tool_used
+    name: issue-written-to-the-out-path
+    tool: Write
+    input_match: 'issue\.md'
+    min: 1
+
+  # No question before filing: the final print closes on the invocation that implements it,
+  # bare or in inline backticks, and inside a fence or not.
+  - type: regex
+    name: final-print-ends-on-a-slash-command
+    target: last_message
+    pattern: '\n`?/[a-z-]+:[a-z-]+[^\n]*(?:\n```)?\s*$'
