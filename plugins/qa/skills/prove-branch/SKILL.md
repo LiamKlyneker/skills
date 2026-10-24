@@ -1,6 +1,6 @@
 ---
 name: prove-branch
-description: Run the automated QA pass on the checked-out branch — resolve the ticket, the pull request and the preview deployment from the branch alone, read the ticket's acceptance criteria, and stop with a question wherever the branch is ambiguous. Runs on user invocation only; neither loop ever invokes it. Invoke /qa:prove-branch with no argument, in a fresh session on the implemented branch.
+description: Run the automated QA pass on the checked-out branch — resolve the ticket, the pull request and the preview deployment from the branch alone, read the ticket's acceptance criteria, drive and grade flows against the preview, and post one receipt to the ticket; it stops with a question wherever the branch is ambiguous, and on a failure asks fix now or file. Runs on user invocation only; neither loop ever invokes it. Invoke /qa:prove-branch with no argument, in a fresh session on the implemented branch.
 disable-model-invocation: true
 ---
 
@@ -15,7 +15,8 @@ does not say exactly one thing, the skill **stops and asks**; it never guesses.
 **It is an external tester.** It writes nothing into the project under test: no test ids, no spec
 files, no fixtures, no configuration, no feature-flag overrides committed anywhere, no app code. The
 project is the same after a run as before it. What a run produces lives on the tracker, never in
-the tree.
+the tree. The one change a pass can lead to is a fix-now commit the developer asks for after
+grading, which a worker makes (`## On a Fail`).
 
 **It runs on user invocation only.** Neither `work-on-prd` nor `work-on-spec` invokes it, and
 nothing else may: ADR 0012 keeps every QA pass on demand, and ADR 0020 applies that to this
@@ -650,6 +651,327 @@ A `Human-only` row goes to the developer, the way `manual-qa` drives a flow:
 To `## Receipt`: the verdict table with every human-only row replaced by the developer's verdict,
 the `gaps:` line, and the run folder's path.
 
+## Escalation
+
+The developer is pulled in for **exactly five things**, and for nothing else:
+
+1. an **Unable-to-verify** flow or sub-step — from `## Preparing states`, `## Driving` or
+   `## Grading`;
+2. a **Fail**;
+3. an **uncovered** criterion;
+4. a criterion the composer found **ambiguous**;
+5. **QA-created data** — every item `## Preparing states` created on the target.
+
+**An item escalates for what it is, never for how sure anyone is.** No model confidence figure
+raises, holds back or ranks an escalation, and none appears anywhere in the pass: not on a verdict,
+a criterion, a receipt line or the final print. A Pass is never an escalation. A Human-only
+sub-step is not one either, because the developer already gave its verdict in `## Grading`.
+
+Every escalation reaches the developer in two places: in the receipt, in the receipt's order, and
+as its own line in the final print. Uncovered and ambiguous criteria, the flows already Unable to
+verify before driving, and the QA-created data plan are also shown at the approval gate. That
+showing is a preview; the receipt still carries each one.
+
 ## Receipt
 
-Lands in a later slice.
+The receipt is **one free-form comment on the ticket** the run resolved — the PRD, the `[SPEC]`, or
+the ticket on the `Ticket source:` system. Nothing parses it: it is output, never input, and no
+skill reads it back. **The pull request gets nothing** from the pass: no comment, no label, no
+review.
+
+The receipt is posted once, after `## On a Fail` has settled every Fail, so it can say what
+happened to each. A pass that stops before any driver starts posts no receipt, since nothing was
+tested.
+
+### What it carries
+
+First, the head:
+
+- the ticket, and the pull request;
+- the **target URL** and the **SHA tested**, marked `developer-stated` where it applies;
+- the run folder's absolute path. It is on the developer's machine, nothing in it is uploaded, and
+  every artifact path in the receipt is under it;
+- **completed** or **stopped early**, as `## End of pass` defines them, and for a stopped-early
+  pass, where it stopped;
+- the **QA-created data** record from `## Preparing states`: each item's state, name, id and
+  target — or `none`.
+
+Then four sections, **in this order**, each present and reading `none` when empty:
+
+1. **Unable to verify** — each Unable-to-verify flow and sub-step with its reason, then each
+   uncovered and each ambiguous criterion with its coverage-map reason. Every item carries a
+   **suggested remedy**: the one change that would make it checkable — the state to add to the
+   adapter's *State catalog*, the variable to set, the target to confirm as staging, the reading of
+   the criterion to settle, or the check a human makes by hand.
+2. **Fails** — each Fail sub-step with its flow's name, the grader's reason, its **artifact path**,
+   and its lane from `## On a Fail`: the finding's link or id, the fix-now commit, or `no lane` with
+   the reason.
+3. **Passes, with coverage** — each criterion whose checking sub-steps all passed, with those
+   sub-steps and their artifact paths. A sub-step the developer decided shows `developer` for its
+   artifact.
+4. **Noted** — what the pass saw that is not a verdict on this branch: each entry of the grader's
+   `gaps:` line, and each Fail the developer said is **present on the base target too** — the
+   default branch's deployment — so this branch did not cause it. The skill never drives the base
+   target; each item says who placed it here, `grader gap` or `developer`.
+
+Every criterion keeps its source wherever it appears, and an inferred one is labelled `inferred`.
+The receipt carries no credential, no session contents and no cookie.
+
+### Posting it
+
+Write the body to the scratchpad, then post it to the system the ticket was read from:
+
+| Ticket read from | Call |
+|---|---|
+| `github` | `gh issue comment <n> --repo <owner>/<repo> --body-file <path>` |
+| `azure-devops` | `mcp__ado__wit_work_item_comment_write` (`action: "add"`) against the **work-item project**, with **`format: "Markdown"`** — without it the comment lands as HTML and its headings and code spans arrive as literal text. Escape angle brackets when writing the body, and use inline code spans, never fenced blocks: a fence in an Azure DevOps comment comes back empty. |
+| `jira` | `mcp__atlassian__addCommentToJiraIssue`, with `cloudId` the site host from the `Ticket source:` line, `issueIdOrKey` the ticket key, `commentBody` the receipt and `contentFormat: "markdown"` |
+
+Keep the posted comment's URL: it is the final print's one URL. A post that fails is a stop that
+says so and gives the scratchpad path of the body, so the receipt is not lost.
+
+**A rerun composes fresh.** It reads the branch, the ticket and the target again and posts a new
+receipt. It never reads, edits or replies to an earlier one.
+
+## On a Fail
+
+After grading, each Fail gets **one question: fix now or file.** Take the Fails one at a time, in
+flow order. Present the flow's name, the sub-step, the grader's reason and the artifact path, then
+ask. Answers are natural language — "fix it", "file that one". An answer that is neither gets one
+clarifying question, never a guess.
+
+The developer may instead say the failure is present on the base target too. That Fail goes to the
+receipt's **Noted** section, and nothing is fixed or filed for it.
+
+**Both lanes need the ticket on the filing tracker** — the system the `Tracker:` line names. Fix
+now needs it because the worker's commit names it; file needs it because `triage` finds the
+findings by it. When the run resolved a ticket on another system, such as a Jira ticket through
+key 4, say that neither lane is available. Each Fail then goes to the receipt with
+`no lane — the ticket is not on the filing tracker`.
+
+A File answer is posted at once, one finding per turn (`### File`). The Fix-now answers are
+collected and handed to one worker after the last Fail is answered (`### Fix now`).
+
+### Fix now
+
+Fix now hands the collected Fails to **one worker on this branch**, which commits once:
+
+| `Tracker:` | `subagent_type` | Commit reference |
+|---|---|---|
+| `github` | `prd-workflow:prd-worker` | `(#<n>)` as the last characters of the subject, `<n>` the resolved ticket's issue number |
+| `azure-devops` | `ado-workflow:spec-worker` | the `Work-item: AB#<id>` trailer, `<id>` the `[SPEC]`'s id |
+
+The reference is the ticket the receipt goes to — on `azure-devops`, the `[SPEC]` (`### File`
+says how to find it). A rerun's resolver therefore finds the same ticket.
+
+**Before the first dispatch**, confirm that the type is in this session's agent list. A
+`subagent_type` that does not resolve raises no error: the call runs as `general-purpose`, without
+the worker's mandates. When the type is absent — its workflow plugin is not loaded — fix now is not
+available: say so, and ask whether to file instead. Pass `model` per
+`../_shared/model-effort-heuristics.md` in orchestrated mode, and announce the routing call before
+dispatching.
+
+The worker's mandates and report contract live in its agent file. The prompt carries only the
+inputs that agent requires:
+
+- **The issue body**, which the skill writes in place of a finding: a title naming the symptom;
+  `## What to build`, holding for each Fail its flow's name and `start from:` line, the sub-steps up
+  to the failing one, the result the sub-step states, what the grader saw instead, and the artifact
+  path; `## Acceptance criteria`, holding each failing sub-step's stated result and the criteria the
+  coverage map gives it; and `## Worker context`, holding the files the diff shows the flow touching
+  and `**User-visible**: y`. For `spec-worker`, this body is the `[TASK]` body.
+- **The full adapter**, the **branch name**, the **routing call**, and the reference above — the
+  issue number for `prd-worker`, the work-item id for `spec-worker`.
+- For `spec-worker` only, **the `[SPEC]` body**, which the skill fetches: the worker has no tracker
+  access.
+
+The prompt carries no credential and no session path.
+
+**Three rounds at most.** A round is one dispatch. After each round, check for a new commit on the
+branch that carries the reference, and check the tree with `git status --short`:
+
+- **A commit landed** — fix now is done. Post the receipt, naming the commit, then take
+  `## End of pass`, and **stop**. Tell the developer to push, wait for the preview to build the new
+  `HEAD`, and run `/qa:prove-branch` again in a fresh session. The skill never pushes.
+- **No commit** — show the worker's report. While rounds remain, ask whether to dispatch again,
+  with that report added to the prompt. The skill never resets or cleans what a worker left in the
+  tree.
+- **No commit after the third round** — dispatch no more. Ask file or not for each of those Fails;
+  one not filed goes to the receipt as `no lane — three fix-now rounds made no commit`.
+
+### File
+
+File posts the Fail as a `### [FINDING]` to the run's `[FINDINGS]` issue on GitHub or work item on
+Azure DevOps, exactly as `manual-qa` does, and `triage` takes it from there.
+
+**`### [FINDING]` and the `PRD: #<n>` line are hardcoded here and never read from the adapter.**
+They are a parse contract: `prd-workflow:triage` and `ado-workflow:triage` match exactly these
+strings, and a project free to edit them would get a `triage` that silently finds nothing and
+reports a clean run. Both `manual-qa` copies write the same literals; ADR 0020 records that they
+are shared across a plugin boundary.
+
+The `[FINDINGS]` issue or item is created **lazily, on the pass's first filed Fail**. A pass that
+files nothing creates nothing.
+
+#### GitHub: find or create the `[FINDINGS]` issue
+
+Search for the issue whose body carries the whole line `PRD: #<n>`, where `<n>` is the resolved
+ticket's issue number — the PRD for key 1, the ticket for key 3. `/prd-workflow:triage #<n>`
+finds the issue by the same line. **Match the whole line, never a substring** — `PRD: #12` is a
+prefix of `PRD: #127`:
+
+```bash
+gh issue list --repo <owner>/<repo> --state all --limit 500 --json number,title,body,state \
+  --jq '[.[] | select(.body | test("(^|\n)PRD: #<n>[ \t\r]*(\n|$)"))]'
+```
+
+`gh issue list` defaults to `--limit 30`. Raise `--limit` above the repo's issue count: a truncated
+list is a silent miss, and a silent miss here creates a duplicate findings issue.
+
+- **Exactly one open hit** — append to it. When `gh issue view <hit> --json state,stateReason`
+  gives `stateReason` `"REOPENED"`, say so before appending: a reopened findings issue getting new
+  findings is a surprise worth naming.
+- **None open** — no hit, or every hit closed — create one.
+- **More than one open** — stop and ask which.
+
+**Creating it:**
+
+- Title: `[FINDINGS] <ticket title, prefix stripped> — run of <YYYY-MM-DD>`.
+- Body, exactly: one human sentence naming the ticket and the pull request the findings were found
+  against, then the machine line `PRD: #<n>`, then the human line `PR: #<m>`. No finding goes in
+  the body.
+- **Free-standing** — never linked as a sub-issue of the ticket. A ticket's sub-issues are its
+  work, and a findings issue linked there shows up to eligibility as an implementable child.
+- **No labels.** The body's `PRD:` line is the finder.
+
+`gh issue create --repo <owner>/<repo> --title "<title>" --body-file <path>`, with the body written
+to the scratchpad first. Post each finding with
+`gh issue comment <findings-number> --repo <owner>/<repo> --body-file <path>`, then report its
+permalink and a one-line recap.
+
+#### Azure DevOps: the run's `[FINDINGS]` work item
+
+**One `[FINDINGS]` work item per pass.** The first filed Fail creates it, every later filed Fail in
+the same pass appends to it, and a rerun creates its own. The shape belongs to the `ado-workflow`
+plugin's `skills/references/findings-item.md`, the file `ado-workflow:triage` reads it by; where
+that file and this section differ, that file wins.
+
+**The `[SPEC]`** is the resolved ticket when its title carries the `[SPEC]` prefix. Otherwise it is
+the `[SPEC]` named by the ticket's `Spec: #<id>` line. When neither gives one, ask the developer.
+
+- **Create** with `wit_work_item_write`, `action: "add_child"`, against the **work-item project**,
+  under the **parent of the `[SPEC]`** (its `Hierarchy-Reverse`), so the item is a sibling of the
+  `[SPEC]`. Use the adapter's work-item type and its pickable state, and pass
+  **`format: "Markdown"`**. Title: `[FINDINGS] <spec title, prefix stripped> — run of <YYYY-MM-DD>`.
+  The description starts with the line `Spec: #<spec-id>`, then one line naming the pass and the
+  pull request.
+- **Verify the hierarchy**: fetch the parent with `expand: "relations"` and no `fields` filter, and
+  confirm the new item is a `Hierarchy-Forward` relation. Name the item's id, backticked, in the
+  terminal now and in the receipt later.
+- **Append** each finding by read-modify-write: a fresh `wit_work_item` read (`action: "get"`,
+  `expand: "relations"`, no `fields` filter); append to the fetched description and leave every
+  earlier finding byte-identical; write with `wit_work_item_write`, `action: "update_batch"`,
+  carrying `format: "Markdown"` — never plain `update`, which writes HTML and strips the earlier
+  findings; then read the description back and confirm the new finding is there.
+- **Number** each heading `### [FINDING] <ordinal> — <one-line symptom>`, where the ordinal is one
+  more than the `### [FINDING] ` markers already in the description.
+
+#### The finding
+
+The template is `manual-qa`'s:
+
+```
+### [FINDING] <one-line symptom>
+
+**Step:** flow 3 ("search and filter"), sub-step 2
+**From:** #75 #80
+
+**Symptom:** what the user sees.
+
+**Classification:** bug (this repo) · bug (contract boundary) · deferred-by-design · works-as-intended · enhancement
+**Severity:** low / med / high   (severity = technical impact, independent of priority)
+
+**Evidence:** the one decisive probe / screenshot description / log — the thing that removes ambiguity.
+
+**Where:** `<path>:<line>` — where the symptom surfaces.
+
+**Root-cause hypothesis:** *(labelled as hypothesis, separate from the facts above)*
+
+**Repro:** numbered, exact steps.
+```
+
+The fields are filled from the pass:
+
+- **`**Step:**`** — the flow number, the flow's name and the sub-step number, from the approved
+  pass. No permalink: the pass is posted nowhere.
+- **`**From:**`** — the flow's attribution line. On GitHub, `#<n>` with the `#`. On Azure DevOps,
+  backticked ids, `` `#<id>` ``, since a bare `#<id>` adds a relation to the work item.
+- **`**Evidence:**`** — the artifact path the grader named, and the grader's reason in words. The
+  path is on the developer's machine, so the words carry the evidence for every other reader.
+  Screenshots are described, never embedded.
+- **`**Symptom:**`** — what the artifact shows, from the grader's reason.
+- **`**Repro:**`** — the target URL, the flow's `start from:` line and role, and its sub-steps up to
+  the failing one.
+- **`**Classification:**`**, **`**Severity:**`**, **`**Where:**`** and
+  **`**Root-cause hypothesis:**`** — by `manual-qa`'s bounds: investigate only far enough to
+  classify and route, with one decisive probe at most; take the `path:line` from the diff; label the
+  hypothesis as one; never write or test a fix.
+
+## End of pass
+
+A pass that took a verdict on every sub-step of every driven flow, and an answer on every Fail, is
+**completed** — unless fix now made a commit. A pass is **stopped early** when the developer stops
+before that, when the skill stops after a driver started, or when a fix-now commit landed: the
+branch has then moved past the SHA tested, and the rerun is the pass that proves it.
+
+Unable-to-verify verdicts do not make a pass incomplete; they are on the receipt. **Findings do
+not hold `needs-qa` on**: a pass that filed three findings is a completed pass, and the findings are
+`triage`'s queue.
+
+**A completed pass** reads whether the ticket carries `needs-qa`. When it does, offer to remove it,
+naming the escalations still open, and **remove it only on an explicit yes**:
+
+- `github`, a label: `gh issue view <n> --repo <owner>/<repo> --json labels`, then
+  `gh issue edit <n> --repo <owner>/<repo> --remove-label needs-qa`.
+- `azure-devops`, a tag: a **read-modify-write on `System.Tags`**, a single semicolon-separated
+  string. Read the ticket's current tags, drop `needs-qa`, and write the whole remaining list back —
+  a tag value written on its own replaces every tag the item had:
+
+  ```
+  wit_work_item_write  { action: "update", project: <work-item project>,
+                          updates: [{ id: <ticket-id>, op: "add",
+                                      path: "/fields/System.Tags",
+                                      value: "<the remaining tags>" }] }
+  ```
+
+  Then read `System.Tags` back and confirm before reporting it removed.
+- `jira`: a Jira ticket carries neither the label nor the tag, so the offer is skipped. Say so.
+
+**A pass that stopped early leaves `needs-qa` on**, and says so in the receipt and in the final
+print.
+
+The receipt, the `needs-qa` removal, and on a File answer the `[FINDINGS]` writes are the complete
+list of what the pass writes to the tracker. It never closes the ticket, edits an earlier receipt,
+or writes anything to the pull request.
+
+## Final print
+
+The last print follows `../_shared/final-prints.md`: it carries what the browser cannot show.
+
+- **One line per escalation** from `## Escalation`, and one per skip — a Fail with no lane, a lane
+  that was not available, a skipped `needs-qa` offer — however long the list runs.
+- Whether `needs-qa` was removed, or left on and why.
+- After a fix-now commit: push, wait for the preview to build the new `HEAD`, rerun.
+- **One URL**: the receipt comment's. The receipt names the findings issue or item, the pull request
+  and the artifacts, so none of them gets a second URL.
+- Cut the verdict table, the passes and the flow list: the receipt has them.
+
+The last line is the next command, alone on its line:
+
+| The pass | Last line |
+|---|---|
+| filed a finding, on `github` | `/prd-workflow:triage #<n>`, `<n>` the number on the `PRD:` line |
+| filed a finding, on `azure-devops` | `/ado-workflow:triage <spec-id>` |
+| made a fix-now commit, and filed nothing | `/qa:prove-branch` |
+| left an escalation open, and filed and fixed nothing | `/qa:prove-branch`, the rerun once a remedy is applied |
+| left nothing open | none — no skill has work left. The last line is `branch proven at <short SHA tested> — ready for review` |
