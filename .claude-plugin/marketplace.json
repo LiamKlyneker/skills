@@ -78,6 +78,20 @@
       ],
       "category": "development",
       "source": "./plugins/install-skills"
+    },
+    {
+      "name": "qa",
+      "description": "The automated QA pass for Claude Code: resolve the run from the checked-out branch, compose flows from the diff and the ticket's acceptance criteria, drive them in a real browser against the pull request's preview deployment, grade the evidence in a cold-context session, and post one receipt to the ticket",
+      "version": "0.1.0",
+      "keywords": [
+        "qa",
+        "browser",
+        "playwright",
+        "acceptance-criteria",
+        "subagent"
+      ],
+      "category": "development",
+      "source": "./plugins/qa"
     }
   ]
 }
