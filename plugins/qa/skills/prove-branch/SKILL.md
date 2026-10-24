@@ -210,7 +210,7 @@ diff overrule it.
 
 ## What a run prints
 
-Once the run, the target and the criteria are resolved, print them and stop:
+Once the run, the target and the criteria are resolved, print them before composing the flows:
 
 - the ticket, the key that resolved it, and the pull request;
 - the hygiene results;
@@ -219,11 +219,288 @@ Once the run, the target and the criteria are resolved, print them and stop:
 
 ## Composing the flows
 
-Lands in a later slice.
+The composer turns the criteria and the diff into a short list of **flows**. It reads four things,
+all already in hand: the numbered criteria from `## Criteria`, the diff, the commit subjects on the
+branch, and the adapter's *State catalog*. **It reads nothing else to write the flows** — not the
+wider codebase, not the running app.
+
+### Flows test the ticket, not the app
+
+Every flow exists because it checks at least one criterion. **The count follows the criteria**: a
+ticket with two criteria gets a short pass, and nothing the ticket does not ask about earns a flow —
+no tour of neighbouring screens, no regression sweep. The diff decides how a criterion is checked:
+which screen, which control, which result.
+
+### What a flow is
+
+A **flow** is a run of sub-steps that share a starting state and end somewhere the next flow can
+begin from. Each flow has:
+
+- a **name** — what is being exercised, in the ticket's words;
+- an explicit **`start from:` line** — a state named in the adapter's *State catalog*, or a prior
+  flow by number, and the role the flow signs in as;
+- **sub-steps**, numbered `<flow>.<k>`, each naming one **action** and one **observable result** —
+  something the page shows or the app answers, which a driver can see is there or is not;
+- **attribution** — the tickets whose code the flow exercises: the `(#N)` suffixes or ticket-source
+  keys on the commits that touched the files involved, or the resolved ticket itself when the branch
+  carries one ticket.
+
+```
+Flow 2 — <name>
+start from: `<catalog state>` as <role>
+attribution: #228, #229
+  2.1  <action> → <observable result>
+  2.2  <action> → <observable result>
+```
+
+A sub-step whose result is not observable — "the data is saved correctly", "the error is handled" —
+is not a sub-step. Rewrite it as what the page shows, or leave its criterion uncovered.
+
+**The first flow is always "get running"**: open the target URL from `## The target` with each
+role's scenario loaded (`## Scenarios`), and see the app signed in as that role — one sub-step per
+role the pass uses. Its line is `start from: the target URL`, the one flow that starts from neither
+the catalog nor a prior flow. A later flow that needs no particular data starts from it:
+`start from: flow 1 completed, as <role>`.
+
+**A cross-flow dependency is named in `start from:`**, never left implicit. A flow that starts from
+a prior flow inherits that flow's state, and cannot run when that flow cannot.
+
+**The role** a flow signs in as is the one its criterion names. Where none is named, it is the first
+role the adapter's *Credential environment variables* row lists; where that row lists no role, the
+pass uses one role, `default`.
+
+### Flow boundaries
+
+Boundaries follow **cohesion**: same screen, same role, same starting state. **Never "by child" and
+never "every N sub-steps".** A child that touched three unrelated surfaces earns sub-steps in three
+flows; three children that changed one screen share one.
+
+3–7 sub-steps is a smell test, not a rule. A one-sub-step flow is fine. A flow past a dozen
+sub-steps is usually two flows whose shared starting state has not been named yet.
+
+### The coverage map
+
+Beside the flows, build a table from **every** criterion to the sub-steps that check it:
+
+| # | Criterion | Source | Checked by | Status |
+|---|---|---|---|---|
+| 1 | `<criterion>` | #228 | 2.1, 2.3 | covered |
+| 2 | `<criterion>` | inferred | — | uncovered — `<why no sub-step can check it>` |
+| 3 | `<criterion>` | ticket | 3.2 | ambiguous — `<the readings, and the one 3.2 checks>` |
+
+- **Uncovered**: no sub-step checks the criterion, usually because nothing a browser shows can
+  confirm it. Say why in the row. Never stretch a sub-step to claim a criterion it does not observe.
+- **Ambiguous**: the criterion admits more than one reading with different observable results, or
+  names no result at all. Give the readings and say which one a sub-step checks, if any.
+- A criterion checked only by sub-steps in Unable-to-verify flows is marked
+  `unable to verify — flow <n>`.
+
+**Uncovered and ambiguous criteria are escalations.** Both are shown at the approval gate and both
+are handed to `## Receipt`. A row carries a status, never a confidence figure.
+
+### Start states against the catalog
+
+Check each flow's `start from:` against the *State catalog* as soon as the flow is composed:
+
+- **a prior flow** — nothing to check; the flow follows that flow's outcome.
+- **a catalog state** — checked against the target in `## Preparing states`.
+- **a state not in the catalog** — the flow is **Unable to verify** now, with the reason
+  `state "<what the flow needs>" is not in the adapter's state catalog`. Nothing can create a state
+  the catalog does not name, so the flow is neither prepared nor driven. Compose it in full anyway,
+  so the developer sees exactly what could not be checked.
+
+Never stretch a catalog state to fit. A flow that needs a team with an overdue invoice does not
+start from a catalog state whose team has no invoices.
+
+## Scenarios
+
+A **scenario** is a saved login session for one role plus a short description of it. The pass signs
+in through scenarios only: no flow, sub-step or driver ever handles a credential.
+
+Scenarios are settled after the flows are composed, since the flows name the roles, and before
+`## Preparing states`, which signs in with them.
+
+### The scenario directory
+
+Scenarios live in **`.qa-scenarios/`** at the root of the project's working tree, one directory per
+role:
+
+| Path | What it holds |
+|---|---|
+| `.qa-scenarios/<role>/session.json` | the saved session, as a **Playwright storage-state file** (`cookies` and `origins`), the form the driver loads |
+| `.qa-scenarios/<role>/scenario.md` | the description: the role, the session method, the origin the session was captured against, and the date captured |
+
+`<role>` is the role's label in lower case, with every character outside `a-z`, `0-9` and `-`
+replaced by `-`.
+
+**On the first run, exclude the directory before creating it**, so it never shows in `git status`:
+
+```bash
+exclude="$(git rev-parse --git-path info/exclude)"
+grep -qxF '/.qa-scenarios/' "$exclude" 2>/dev/null || printf '/.qa-scenarios/\n' >> "$exclude"
+```
+
+`--git-path` finds the right file in a linked worktree too, where `.git` is a file. Never add the
+line to `.gitignore` instead: that is a tracked change to the project. Then create the directory
+under `umask 077`, so only the developer's user can read a session, and confirm both
+`git check-ignore -q .qa-scenarios/` succeeds and `git status --short` is still empty. If either
+check fails, say which and stop.
+
+The skill writes the exclude line and creates this directory without asking, and says that it did.
+They are the only things it writes on the developer's machine, neither reaches the repository, and
+a later run reuses both.
+
+### Reuse or capture
+
+For each role the flows use, before anything else uses it:
+
+1. **Reuse** the saved session when `session.json` exists, its cookies cover the target's host, at
+   least one of them is unexpired, and the target accepts it: a request made with the session
+   loaded, to a page or endpoint a signed-out visitor cannot use, comes back signed in — not a
+   redirect to sign-in, not a `401` or a `403`.
+2. **Otherwise capture it again**, by the adapter's *Session method* row. A missing row, or a value
+   that is neither `api` nor `manual`, is a stop that names the row.
+
+Say for each role whether its scenario was reused or captured.
+
+**A session is a secret too.** Never print `session.json` or read it into this conversation. Inspect
+it only through a command that prints cookie names, domains and expiry, never a value.
+
+### `api` — one sign-in call
+
+Read the role's two variable names from the *Credential environment variables* row. A role the
+flows use that the row does not list is a stop that names the role. **When a named variable is unset
+in the shell, stop and name it** — the role and the variable — and tell the developer to set it and
+run again. Never ask for a value. If the developer types a credential into the session anyway, do
+not use it and do not repeat it; say to set the variable instead.
+
+Make the sign-in call against the endpoint written after `api` in the *Session method* row,
+resolved against the target URL when it is a path. **Reference each credential by its variable name
+in the command**, so the shell expands it and the command text never holds a value:
+
+```bash
+umask 077
+curl -sS -o /dev/null -w '%{http_code}\n' -c .qa-scenarios/<role>/jar.txt \
+  --data-urlencode "<username-field>=$<USERNAME_VAR>" \
+  --data-urlencode "<password-field>=$<PASSWORD_VAR>" \
+  '<target-url><sign-in-endpoint>'
+```
+
+- The field names and the body format, form or JSON, follow what the endpoint accepts. When the diff
+  does not show them, ask the developer for the shape of the request — field names and content
+  type — never for a value.
+- The response body is discarded and only the status code prints. Never add `-v`, `--trace` or any
+  other option that echoes the request.
+- A failed sign-in is a stop that names the role, the endpoint and the status. **Do not retry with
+  changed input**: a lockout on a shared staging account stops everyone who uses it.
+- Convert the cookie jar into `session.json` with one command that prints only the cookie count.
+  Each jar line becomes a cookie with its `name`, `value`, `domain`, `path`, `expires` (`-1` where
+  the jar gives `0`), `secure`, `httpOnly` (from a `#HttpOnly_` prefix on the line) and
+  `sameSite: "Lax"`; `origins` is an empty list. Then delete the jar.
+- A sign-in that sets no cookie — a token returned in the body for the app to keep — cannot be
+  saved as a session the driver loads. Stop, say so, and suggest `manual` for this project.
+
+Then confirm the target accepts the new session, as in step 1 of *Reuse or capture*.
+
+### `manual` — one login in a visible window
+
+Propose the command and wait for a yes; it opens a browser window and runs until the developer
+closes it:
+
+```bash
+npx playwright open --save-storage=.qa-scenarios/<role>/session.json '<target-url>'
+```
+
+Tell the developer which role to sign in as, to sign in in that window, and to close the window once
+the app shows them signed in. Playwright writes the session when the window closes; the skill never
+sees what was typed. When Playwright or its browser is not available, say which and stop — never
+install anything into the project. Then confirm the target accepts the new session, as in step 1 of
+*Reuse or capture*.
+
+### No credential value leaves the shell
+
+A credential value appears in **none** of these: the adapter, a flow, a sub-step, `scenario.md`, the
+receipt, a prompt to a driver. The only file under `.qa-scenarios/` that holds anything secret is
+the `session.json` a sign-in produced.
+
+**Handed over**, per role: the path to its `session.json` and its `scenario.md` description. A driver
+is given the path, never the file's contents and never a credential.
 
 ## Preparing states
 
-Lands in a later slice.
+Before any driver starts, confirm every flow's starting state on the target the way a tester would:
+through the app or its API, signed in with the flow's scenario. Never through a database, an admin
+console a tester would not have, or the project's code.
+
+### Staging or not
+
+Data is created **only against a staging target**:
+
+- The pull request's preview deployment resolved in `## The target` is staging.
+- A developer-stated URL is staging only when the developer says so in this session. Ask at the
+  approval gate, when a flow needs data created there.
+- **Data is never created against a URL the adapter or the developer names as production**, whatever
+  else says otherwise.
+
+A missing state on a target that is not staging leaves its flow Unable to verify, with the reason
+`target is not confirmed as staging`.
+
+### Check each catalog state
+
+For each catalog state a flow starts from, confirm on the target that the ids the catalog's *Ids*
+column lists are there, as the flow's role, with a request that loads the role's session and prints
+only the status and the ids it checked. Each state comes out as one of these:
+
+| Found | Outcome |
+|---|---|
+| present | the flow is ready |
+| missing, and *Reach it by* has steps | planned for creation, and listed in the QA-created data plan |
+| missing, and *Reach it by* is `none` | the flow is **Unable to verify**: `state "<state>" is missing on the target and the catalog has no steps to create it` |
+| the check could not be made | the flow is **Unable to verify**, with what failed |
+
+A flow that starts from an Unable-to-verify flow is Unable to verify too, naming that flow.
+
+### The one approval gate
+
+Show the composed pass **once**, whole:
+
+- the target URL and the SHA tested;
+- the flows, numbered, each with its name, `start from:` line, attribution and sub-steps;
+- the coverage map, with uncovered and ambiguous criteria called out;
+- the Unable-to-verify flows, each with its reason;
+- the QA-created data plan: for each state to be created, the catalog's steps, the role that runs
+  them and the target — and for a developer-stated target, the question whether it is staging.
+
+The developer may edit — drop or add a flow, change a sub-step, settle an ambiguous criterion,
+decline a creation — or say go. An edit is applied, the coverage map and the Unable-to-verify list
+are recomputed, and the changed list is shown again. **Nothing is created and no driver starts
+without go.** A declined creation leaves its flow Unable to verify, with the reason
+`creation declined by the developer`.
+
+This is the pass's one approval gate. No flow asks for approval again.
+
+### Creating missing states
+
+After go, for each planned state:
+
+1. Run the catalog's *Reach it by* steps on the target as written, as the flow's role.
+2. **Name the data QA-created**: every name or title the steps set starts with
+   `qa-created <short SHA tested>`, so anyone on staging can tell it from real data and trace it to
+   this run.
+3. Check the state again. When it is still missing, the flow is Unable to verify, with the reason
+   `creation steps ran and state "<state>" is still missing`.
+4. Record what was created: the state, each item's name and id, and the target.
+
+The skill does not delete what it created; the record is how a human finds it.
+
+### Handed over
+
+- To `## Driving`: the flows that are ready, each with its role's scenario and the ids of the state
+  it starts from — the catalog's ids, or the ids of the QA-created data.
+- To `## Receipt`: the Unable-to-verify flows with their reasons, the uncovered and ambiguous
+  criteria, and the QA-created data record.
+
+No Unable-to-verify flow is driven.
 
 ## Driving
 
