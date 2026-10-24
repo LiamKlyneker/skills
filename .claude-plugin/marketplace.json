@@ -68,7 +68,7 @@
     {
       "name": "install-skills",
       "description": "Bootstrap a project's `.claude/project/adapter.md` for a skill bundle, and diagnose an install that has rotted — the two jobs no distribution mechanism can do for you. Start here: the PRD and ADO workflows cannot run without the adapter it writes",
-      "version": "1.15.2",
+      "version": "1.15.3",
       "keywords": [
         "bootstrap",
         "adapter",
@@ -78,6 +78,20 @@
       ],
       "category": "development",
       "source": "./plugins/install-skills"
+    },
+    {
+      "name": "qa",
+      "description": "The automated QA pass for Claude Code: resolve the run from the checked-out branch, compose flows from the diff and the ticket's acceptance criteria, drive them in a real browser against the pull request's preview deployment, grade the evidence in a cold-context session, and post one receipt to the ticket",
+      "version": "0.1.0",
+      "keywords": [
+        "qa",
+        "browser",
+        "playwright",
+        "acceptance-criteria",
+        "subagent"
+      ],
+      "category": "development",
+      "source": "./plugins/qa"
     }
   ]
 }

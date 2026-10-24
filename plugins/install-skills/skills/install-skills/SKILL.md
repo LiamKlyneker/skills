@@ -116,8 +116,9 @@ answer for it, but its filing rows sit inside the `## Repo` sub-sections and an 
 both would offer one page spec two filing targets. So on a fresh copy, ask the human which
 tracker this project runs — one question, and the only tracker question this skill ever asks —
 then take the three steps above unchanged: write the line, delete the other sub-section, touch
-nothing in between. "Either" is a question to ask, never a licence to guess, and never the
-same as "neither".
+nothing in between. `qa` is settled the same way, since `prove-branch` reads one tracker's
+sub-section of `## Repo` to find the run's ticket and pull request. "Either" is a question to
+ask, never a licence to guess, and never the same as "neither".
 
 **An adapter that already exists — delete nothing.** Read its `Tracker:` line; **absent
 means `github`**, which is what every adapter written before that line existed is. Then:
@@ -193,6 +194,20 @@ skills read tickets from the `Tracker:` line. Ask once, accept "no"
 as a complete answer, delete the row, and record no warning anywhere. An install that ends with
 an adapter carrying none of them is finished, not half-filled.
 
+**`## QA` is asked only when the bundle declares it, and it takes credential names, never
+credential values.** Ask each of its six rows once, in the template's order: the session method
+(`api` with its sign-in endpoint, or `manual`); the credential environment variables, as a
+variable **name** for the username and one for the password per role the flows need; the state
+catalog, one table row per named state with its staging ids and the steps that create it, or
+`none`; the preview URL pattern, in the template's `<pr-number>` notation or the literal
+`pr-comment`; the feature-flag override, or `none`; and the browser automation consent, which is
+`yes` or the section is not written. **Never ask for a username, a password or a token, never
+write one into the adapter, and never echo one a human volunteers** — the adapter is committed,
+and a value in it is a leaked secret. If a human offers a value, record only the name of the
+variable it belongs in and tell them to export it in their own shell. `doctor` then checks that
+every named variable is set and that the session method is `api` or `manual`; whether the method
+yields a working session is the skill's check at run time, not the installer's.
+
 ### 5. Gates
 
 Offer a gate only when the bundle declares one, or when the interview surfaced a real
@@ -248,6 +263,8 @@ its checks by hand or "spot-check" a subset.
 | `SHARED` | a skill reads `../_shared/x.md` that does not resolve from where it sits |
 | `BUNDLE` | `--bundle` named a slug `install/bundles.md` does not define, or one whose **Status** is not `ready` |
 | `MISSING` | a bundle offers a gate template that canonical does not ship |
+| `QA-ENV` | the adapter's `## QA` names a credential environment variable that is not set in the shell doctor runs in |
+| `QA-SESSION` | the adapter's `## QA` has no *Session method* row, or one whose value is not `api` or `manual` |
 
 `WARN` lines (a loose file in the skills directory, a manifest doctor could not read, a PR
 template recorded as a content snapshot rather than a path) count as warnings, not problems. `OK` and `INFO` are neither, and `--quiet` hides them.
@@ -290,7 +307,7 @@ auditing a machine's leftovers is not this repo's job (ADR 0007).
   finding: that project's tracker facts come from the interview.
 - **Existing adapter, other tracker** → stop. Never rewrite the `Tracker:` line and never
   delete a sub-section from a filled adapter; see step 3a.
-- **Bundle implies *either* tracker** (`figma-tools`) → ask on a fresh copy, then proceed as
+- **Bundle implies *either* tracker** (`figma-tools`, `qa`) → ask on a fresh copy, then proceed as
   a tracker-bound bundle. Against an existing adapter there is nothing to ask and nothing to
   contradict; see step 3a.
 - **The project is the canonical repo** → refuse.
