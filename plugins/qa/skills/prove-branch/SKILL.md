@@ -504,11 +504,151 @@ No Unable-to-verify flow is driven.
 
 ## Driving
 
-Lands in a later slice.
+Each ready flow is driven by its own `qa-driver` agent in a real browser against the target. The
+skill prepares the run folder, checks that Playwright MCP is there, and dispatches the drivers. It
+never drives a flow itself and never judges what a driver saved.
+
+### The agent types
+
+The two agents are dispatched as **`subagent_type: qa:qa-driver`** and
+**`subagent_type: qa:qa-grader`**, always with the `qa:` prefix. A `subagent_type` that does not
+resolve raises no error: the call runs as `general-purpose`, which carries neither agent's model
+pin nor its tool denials, and the run still looks normal. Verifying a change to either agent
+therefore includes reading both names back from the agent list of a fresh
+`claude --plugin-dir plugins/qa` session. Pass no `model` on either call; each agent pins its own.
+
+### The run folder
+
+Every run gets a new folder inside the excluded scenario directory, created under `umask 077`:
+
+```
+.qa-scenarios/runs/<short SHA tested>-<UTC timestamp, YYYYMMDDTHHMMSSZ>/
+  run.md
+  flow-<n>/
+    driver.md
+    step-<k>/
+      screenshot.png
+      snapshot.md
+      console.txt
+      network.txt
+      reload/          after a mutation: the same four files again
+```
+
+- **`run.md`** carries the ticket and the key that resolved it, the pull request, the target URL,
+  the SHA tested (marked `developer-stated` where it applies), the time the run started, and per
+  driven flow its role and the ids of its starting state. It carries no credential and no session
+  contents.
+- The skill writes `run.md` and creates every `flow-<n>/step-<k>/` folder before any driver
+  starts, so a driver only saves files into folders that exist.
+- **`driver.md`** is the driver's report, saved verbatim by the skill when the driver returns.
+- A run never reuses an earlier run's folder, and the skill deletes none. Since the folder sits
+  under `.qa-scenarios/`, `git status --short` stays empty; confirm it after creating the folder,
+  and stop if it does not.
+
+### Playwright MCP readiness
+
+Before any driver starts, confirm that **the Playwright MCP tools are present in this session** —
+`browser_navigate`, `browser_snapshot`, `browser_take_screenshot`, `browser_console_messages` and
+`browser_network_requests` at least. When they are not, stop and name the remedy: add the
+Playwright MCP server, start a fresh session, and run `/qa:prove-branch` again. The shape is
+
+```bash
+claude mcp add playwright -- npx @playwright/mcp@latest --isolated --storage-state <path to a session.json>
+```
+
+and the exact flags are the ones the server documents at run time. **Isolated mode plus a
+storage-state file is how a saved session reaches the browser**: the browser holds its profile in
+memory, starts signed in from the scenario's `session.json`, and writes nothing back to it. The
+server runs headed unless the developer asks for headless, so the developer can watch.
+
+**One driver per flow means one isolated browser context per flow, loaded with that flow's role's
+session.** Confirm the connected server gives each driver its own context. When it can give the
+session only one browser, two drivers would act in the same page, so dispatch the drivers one at
+a time, in flow order, and say why. A role whose session the server cannot load is a stop that
+names the role.
+
+Never install the server or a browser into the project, and never add the server without a yes.
+
+### Dispatching the drivers
+
+**One `qa:qa-driver` per ready flow.** The flows handed over by `## Preparing states` are the
+ready ones; an Unable-to-verify flow is never driven.
+
+- **Every flow that starts from a catalog state or the target URL is dispatched at once, in
+  parallel** — all those `Agent` calls in one message.
+- **A flow that starts from a prior flow** is dispatched when that flow's driver has returned, and
+  only when that driver reported every sub-step `performed`. Otherwise the flow is Unable to
+  verify, with the reason `flow <m> did not complete`, and goes to `## Receipt` undriven.
+
+**The driver prompt carries exactly these:**
+
+- the flow — number, name, `start from:` line and sub-steps, as approved at the gate;
+- the role, and the **absolute path** to that role's `.qa-scenarios/<role>/session.json` — one
+  path per role for a flow that signs in as several;
+- the ids of the starting state;
+- the target URL;
+- the absolute path of the flow's folder, `<run folder>/flow-<n>/`.
+
+**A driver prompt carries a session path, never a credential value** — not a password, not a
+token, not a cookie, not the session file's contents. It carries nothing about the code either:
+no diff, no file names, no commit subjects, no criteria.
+
+When a driver returns, save its report as `flow-<n>/driver.md`. A driver that reports
+`missing input` is re-dispatched once with the input supplied; a driver that reports
+`session not accepted` makes its flow Unable to verify, with that reason.
 
 ## Grading
 
-Lands in a later slice.
+**The skill never grades.** One `qa:qa-grader` call grades every driven flow, in a fresh context.
+
+### What the grader is given
+
+- the driven flows — number, name, `start from:` line and sub-steps;
+- the criteria, numbered, each with its source;
+- the coverage map;
+- the absolute path of the run folder.
+
+**What it is not given**: the diff, the code, the commit subjects, the ticket beyond its
+criteria, the reasoning that produced the flows, the hygiene results, the scenarios, and anything
+from this conversation. The grader judges the evidence the way a tester who never saw the code
+would.
+
+### Checking the grader's table
+
+The grader returns one row per sub-step — `Sub-step`, `Verdict`, `Artifact`, `Criteria`,
+`Reason` — and a `gaps:` line. Before accepting it, check its format:
+
+- every sub-step of every driven flow has exactly one row;
+- every verdict is `Pass`, `Fail`, `Unable to verify` or `Human-only`;
+- every **Pass names an artifact path** that exists under the run folder;
+- no row and no gap carries a score, a percentage or a confidence figure.
+
+A table that fails is **returned for correction**: dispatch `qa:qa-grader` once more with the same
+inputs, the rejected table and each failed check. When the second table fails too, every row that
+still fails becomes **Unable to verify**, with the reason `grader gave no valid verdict`. The skill
+never repairs a row itself.
+
+### Human-only sub-steps
+
+A `Human-only` row goes to the developer, the way `manual-qa` drives a flow:
+
+- **One flow at a time.** Present the flow whole — name, `start from:`, every sub-step — with the
+  grader's verdicts on its other sub-steps and its artifact paths, and say the position: "flow 2
+  of 4". Then ask for a verdict on its human-only sub-steps, each with what the grader said to look
+  for.
+- **Never advance without an explicit verdict.** Not on silence, not on a change of subject, not
+  on "ok". When the reply is not a verdict, answer it and present the flow again.
+- **Natural language, never on ambiguity.** "yep, the email arrived" is a verdict. "I think so" is
+  not: ask one question naming the observable result the sub-step states, and wait.
+- A verdict naming a failing sub-step makes that sub-step **Fail** and the human-only sub-steps
+  before it **Pass**. Any after it are **Unable to verify**, with the reason
+  `not checked — flow failed at <n>.<k>`, unless the developer gives them a verdict too.
+- A developer verdict replaces the `Human-only` row, with `developer` in its `Artifact` column.
+
+### Handed over
+
+To `## Receipt`: the verdict table with every human-only row replaced by the developer's verdict,
+the `gaps:` line, and the run folder's path.
 
 ## Receipt
 
