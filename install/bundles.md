@@ -77,6 +77,7 @@ twice, because the bundle already answers it:
 | `prd-workflow`, `prd-qa` | `github` |
 | `ado-workflow`, `ado-qa` | `azure-devops` |
 | `figma-tools` | **either — ask.** The one bundle that files on both trackers, so it reads the `Tracker:` line rather than implying one |
+| `qa` | **either — ask.** `prove-branch` runs on either tracker and reads the `Tracker:` line rather than implying one; the installer settles that line exactly as it does for `figma-tools` |
 | `grill` | neither — a grill is tracker-agnostic recon that runs *before* `to-prd` or `to-spec`, so there is nothing tracker-shaped to write |
 
 The installer reads this table rather than hardcoding the mapping, exactly as it reads
@@ -270,6 +271,37 @@ been answered.
 `triage` degrades rather than breaks where the adapter says "None": no related repo means
 every finding is a this-repo finding, and no contract-boundary explorer agent means a
 cross-boundary root cause gets filed locally and flagged as unmodelled.
+
+## `qa`
+
+The automated QA pass: `prove-branch` resolves the run from the checked-out branch, composes
+flows from the diff and the ticket's acceptance criteria, drives them in a real browser against
+the pull request's preview deployment, and posts one receipt to the ticket.
+
+- **Status:** ready
+- **Adapter sections:** `## Repo`, `## Commands`, `## Verify ladder`, `## QA`, `## Sources of truth`
+- **Gates:** none
+
+Which skill drives which section:
+
+| Section | Wanted by |
+|---|---|
+| `## Repo` | `prove-branch` — the `Tracker:` line, which decides where the run's ticket and pull request are read from and where the receipt is posted, plus that tracker's sub-section for the repo and default branch |
+| `## Commands` | `prove-branch` — the commands that build and boot what a flow exercises, when a flow needs more than the preview deployment |
+| `## Verify ladder` | `prove-branch` — the **L5** rung, which says what exercising this app means and so what a flow's steps are written against |
+| `## QA` | `prove-branch` alone — the session method, the credential variable **names** per role, the state catalog a flow's `start from:` line names, the preview URL pattern, the feature-flag override and the browser automation consent. Every value is non-secret: the interview never asks for a credential value and never writes one |
+| `## Sources of truth` | `prove-branch` — the project explorer agent, for reading the code behind a flow it composes from the diff |
+
+**Pairs with either loop, and with `prd-qa` or `ado-qa` for `triage`.** `prove-branch` runs
+against a branch that `prd-workflow` or `ado-workflow` produced and reads the `Tracker:` line
+to tell which, so the bundle implies either tracker and the installer settles the line as it
+does for `figma-tools`. The tracker's own `triage` handles what a flow fails, and it arrives with
+the `prd-qa` or `ado-qa` bundle; adopting `qa` alone is legal, and leaves a failed flow for a
+human to file.
+
+Bundle and plugin here share the name `qa`, as `prd-workflow` does, and the shared name proves
+no more here than it does there: the bundle is a set of adapter questions and the plugin is a
+unit of distribution.
 
 ## `grill`
 
