@@ -28,24 +28,34 @@ Three rules fall out, and skills are written against them:
 **Rule 2 is unaffected by how a skill was delivered.** It resolves against the project the
 session is running in, at runtime — so a skill served from a plugin cache directory finds
 the adapter exactly the way a skill loaded from a working tree does. Only *creating* the
-adapter was ever a bootstrapping problem, which is why `install-skills` kept that half and dropped the rest.
+adapter was ever a bootstrapping problem, which is why `setup` keeps that half and does nothing else.
 
 ## Bootstrapping the adapter
 
-Run the `install-skills` skill from the target repo:
+Run the `setup` skill of the plugin you installed, from the target repo:
 
 ```
-/install-skills:install-skills install prd-workflow
+/prd-workflow:setup
 ```
 
-The name doubles because the skill ships inside a plugin of the same name, and a plugin
-namespaces everything it provides.
+Every plugin with a bundle ships one — `prd-workflow`, `ado-workflow`, `figma-tools`, `lk` and
+`qa`. Each is a thin entry point: it names the bundles its plugin ships and follows
+[`setup.md`](setup.md), the one installer they all share. The interview it runs is
+[`interview.md`](interview.md), and the anti-rot check is [`doctor.sh`](doctor.sh). There is no
+per-plugin installer logic; adding a bundle means editing [`bundles.md`](bundles.md) and naming
+it in its plugin's `setup` table.
+
+Each plugin reaches this directory through a packaging symlink, `skills/install ->
+../../../install`, which install dereferences into the plugin's cache copy. Every path in
+`setup.md` is relative to this directory, so it resolves the same from the working tree and
+from a cache copy. Several plugins writing one adapter is safe because `setup` gap-fills an
+existing adapter and never deletes from it.
 
 It resolves the repo and its remote, copies the adapter template if there isn't one
 already, interviews you for the facts no file in your repo states, offers any gate the
 bundle declares, and finishes by running `doctor`. Bundles are defined in
-[`bundles.md`](bundles.md) — `prd-workflow`, `ado-workflow`, `prd-qa`, `grill`,
-`figma-tools` — and a bundle names adapter sections, not skills.
+[`bundles.md`](bundles.md) — `prd-workflow`, `ado-workflow`, `prd-qa`, `ado-qa`, `qa`,
+`grill`, `figma-tools` — and a bundle names adapter sections, not skills.
 
 The template is **tracker-parametric**: `## Repo` and `## One-time repo preconditions` each
 carry a `### GitHub` and an `### Azure DevOps` sub-section, and the bundle decides which
@@ -54,9 +64,7 @@ fresh copy the installer writes the `Tracker:` line and deletes the
 other sub-section, so the adapter you end up filling only ever asks about your own tracker.
 That deletion is the single narrow exception to never-delete, and it applies to a fresh
 template copy only — an install against an adapter that already exists gap-fills and
-deletes nothing. See
-[`plugins/install-skills/skills/install-skills/SKILL.md`](../plugins/install-skills/skills/install-skills/SKILL.md)
-step 3a.
+deletes nothing. See [`setup.md`](setup.md) step 3a.
 
 The other mode is **`doctor`**, the anti-rot check: a leftover `_shared/`, an unfilled
 placeholder, a dead gate pointer, a dangling link. Every one of those is silent today and

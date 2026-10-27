@@ -47,7 +47,7 @@ For a `to-task --out` run that produced no tracker issue, the second answer take
   **Match the whole line, never a substring** — `PRD: #12` is a prefix of `PRD: #127`. More than one hit, or none, is a **stop**: say what you found and ask.
 - **Azure DevOps** — the `[SPEC]` work item's ArtifactLink gives the pull request.
 
-**When the adapter is absent, or has no `## Repo` section, ask for the PR or the ticket instead of failing.** A project that never ran `install-skills` still has a failure worth reporting.
+**When the adapter is absent, or has no `## Repo` section, ask for the PR or the ticket instead of failing.** A project that never ran a plugin's `setup` still has a failure worth reporting.
 
 **The brief chain is known to this skill and is never asked for:**
 

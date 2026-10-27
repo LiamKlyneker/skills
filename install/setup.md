@@ -1,18 +1,17 @@
----
-name: install-skills
-description: Bootstrap a project's adapter (`.claude/project/adapter.md`) for a skill bundle, and diagnose an install that has rotted — a missing or half-filled adapter, a banned `_shared/`, a dead gate pointer. It does not place skills — plugins come from the marketplace. Invoke /install-skills:install-skills to bootstrap or repair a project's skills wiring.
-disable-model-invocation: true
----
+# Setup
 
-# Install Skills
+The procedure every plugin's `setup` skill follows. That skill names the bundles its plugin
+ships and sends you here; this file is the one engine behind all of them. Every path in this
+file is relative to the directory that holds it — `install/` in the canonical repo, and
+`skills/install/` in a plugin, where a packaging symlink dereferences into the install cache.
 
 Two modes, and only two — the two jobs no distribution mechanism can do for you:
 
-- **`install <bundle>`** — bootstrap `<repo-root>/.claude/project/`: the adapter, the
+- **`setup <bundle>`** — bootstrap `<repo-root>/.claude/project/`: the adapter, the
   interview that fills it, and any gate the bundle offers.
 - **`doctor`** — say when an install has rotted, in the failure classes that fail silently.
 
-## What this skill does not do
+## What setup does not do
 
 **It does not place skills.** The platform does that, and does it better — installation,
 versioning and updates are all things it has and a pile of symlinks never did:
@@ -32,9 +31,9 @@ and stop — do not hand-roll it.
 
 The layout being bootstrapped is settled elsewhere and is not up for negotiation here: a
 project owns exactly one directory (`<repo-root>/.claude/project/`), and **a project never
-owns a `_shared/`**. See `../install/README.md`.
+owns a `_shared/`**. See `README.md`.
 
-Bundles are defined in `../install/bundles.md`. **Read that file — never hardcode a
+Bundles are defined in `bundles.md`. **Read that file — never hardcode a
 section list.** A bundle names *adapter sections*, not skills; see that file for why the
 two are separate namespaces from the plugins.
 
@@ -43,9 +42,9 @@ two are separate namespaces from the plugins.
 Both modes need the path to the canonical skills repo on this machine — the adapter
 template, the gate templates and `doctor.sh` all live there.
 
-- If this skill was loaded from the canonical repo — a `--plugin-dir` session, or a
+- If this file was loaded from the canonical repo — a `--plugin-dir` session, or a
   checkout you are sitting in — its own physical location *is* canonical:
-  `cd "$(dirname <this SKILL.md>)/.." && pwd -P`.
+  `cd "$(dirname <this setup.md>)/.." && pwd -P`.
 - If it was loaded from an install cache, that copy carries the templates and `doctor.sh`
   too (they are dereferenced into it), so the same resolution works and needs no clone.
 - Otherwise ask. Never guess a clone path.
@@ -54,7 +53,7 @@ If the target project *is* the canonical repo, stop: it bootstraps nothing into 
 
 ---
 
-## `install <bundle>`
+## `setup <bundle>`
 
 ### 1. Resolve the ground truth
 
@@ -68,7 +67,7 @@ call, settled in step 3a — not a guess from whether `gh` happened to succeed.
 
 ### 2. Read the bundle
 
-Look it up in `../install/bundles.md`. **Status `pending #N` → refuse**, name the issue,
+Look it up in `bundles.md`. **Status `pending #N` → refuse**, name the issue,
 and stop. Do not partially bootstrap, and do not substitute a neighbouring bundle.
 
 ### 3. The adapter
@@ -76,7 +75,7 @@ and stop. Do not partially bootstrap, and do not substitute a neighbouring bundl
 If the bundle's **Adapter sections** field is empty, the bundle is adapter-free — create
 no `.claude/project/`, run no interview, skip to step 5.
 
-Otherwise copy `../install/adapter.template.md` → `<repo-root>/.claude/project/adapter.md`
+Otherwise copy `adapter.template.md` → `<repo-root>/.claude/project/adapter.md`
 **only if absent**. A filled adapter is the project's own work and is never overwritten,
 never re-templated, never reordered. If one already exists, read it and treat the
 interview as a gap-fill for the bundle's required sections only.
@@ -87,7 +86,7 @@ The template is **tracker-parametric**: `## Repo` and `## One-time repo precondi
 ship a `### GitHub` and an `### Azure DevOps` sub-section, and a filled adapter keeps
 exactly one of the two — two sub-sections means every skill gets two answers to the same
 question. Which one is not a question worth asking, because the bundle already decided it:
-read the *Which tracker a bundle implies* table in `../install/bundles.md`, the same way
+read the *Which tracker a bundle implies* table in `bundles.md`, the same way
 you read **Adapter sections**. Never hardcode the mapping here.
 
 **A fresh copy — the file did not exist and you created it this run:**
@@ -114,7 +113,7 @@ to stop on.
 tracker-bound one.** `figma-tools` is the case: it files on both trackers, so the table cannot
 answer for it, but its filing rows sit inside the `## Repo` sub-sections and an adapter keeping
 both would offer one page spec two filing targets. So on a fresh copy, ask the human which
-tracker this project runs — one question, and the only tracker question this skill ever asks —
+tracker this project runs — one question, and the only tracker question setup ever asks —
 then take the three steps above unchanged: write the line, delete the other sub-section, touch
 nothing in between. `qa` is settled the same way, since `prove-branch` reads one tracker's
 sub-section of `## Repo` to find the run's ticket and pull request. "Either" is a question to
@@ -158,7 +157,7 @@ that is always noisy is a check nobody reads.
 
 ### 4. Interview — infer first, ask for the rest
 
-Read `references/interview.md`. The rule: anything a file already states, read; only
+Read `interview.md`. The rule: anything a file already states, read; only
 ask for what no file in the repo can answer. Asking for a test command that is sitting
 in `package.json` is how an install earns a reputation for being tedious.
 
@@ -224,11 +223,11 @@ leave the rest for whenever a bundle asks for it. Offering the gate is one yes/n
 ### 6. Commit boundary
 
 `.claude/project/` is **committed**, always. It is the project's own facts, it is the only
-thing this skill writes, and it is the one part of the wiring that has no distribution
+thing setup writes, and it is the one part of the wiring that has no distribution
 mechanism and never will.
 
 How the skills themselves reach this repo is a separate decision and a platform-level one
-— see [What this skill does not do](#what-this-skill-does-not-do). Say which route applies
+— see [What setup does not do](#what-setup-does-not-do). Say which route applies
 here so it is a decision rather than an omission. Do not commit anything yourself unless
 asked.
 
@@ -241,13 +240,13 @@ Always. A bootstrap that does not end in a clean doctor run is not finished.
 ## `doctor`
 
 ```bash
-<this-skill-dir>/scripts/doctor.sh [--repo <path>] [--bundle <slug>] [--quiet]
+<this-dir>/doctor.sh [--repo <path>] [--bundle <slug>] [--quiet]
 ```
 
-`<this-skill-dir>` is wherever this `SKILL.md` was loaded from — an install cache copy
-or, in the canonical repo, `plugins/install-skills/skills/install-skills/`. The script
-sits beside this file in both, and infers everything else it needs from its own
-location, so never reconstruct the path from a repo root.
+`<this-dir>` is wherever this `setup.md` was loaded from — `skills/install/` inside a plugin's
+install cache copy, or `install/` in the canonical repo. The script sits beside this file in
+both, and infers everything else it needs from its own location, so never reconstruct the
+path from a repo root.
 
 Deterministic on purpose — every check here is mechanical, and a check that is
 paraphrased differently on each run is not a check. Run the script; do not re-implement
@@ -292,7 +291,7 @@ auditing a machine's leftovers is not this repo's job (ADR 0007).
 
 ## Edge cases
 
-- **Asked to install the skills themselves** → not this skill's job any more. Name the
+- **Asked to install the skills themselves** → not setup's job. Name the
   marketplace route and stop. There is no other one.
 - **Adapter exists but predates the bundle** → gap-fill the missing sections; leave
   everything else alone, including sections the bundle doesn't require.

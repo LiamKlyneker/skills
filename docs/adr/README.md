@@ -76,3 +76,4 @@ or the adapter, and stops there.
 | [0018](0018-reading-a-ticket-is-not-filing-work.md) | Reading a ticket is not filing work | Accepted |
 | [0019](0019-one-task-shape-one-executor.md) | One task shape, one executor | Accepted |
 | [0020](0020-the-automated-qa-pass-gets-its-own-plugin.md) | The automated QA pass gets its own plugin | Accepted |
+| [0021](0021-every-plugin-ships-its-own-setup.md) | Every plugin ships its own setup | Accepted |

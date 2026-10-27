@@ -175,14 +175,14 @@ this session.
 Read the adapter. Establish, and stop on any of them:
 
 1. **`### Figma source`** — all of its rows. Absent sub-section → STOP: _this project has no
-   Figma source registered; `install-skills` asks for one._
+   Figma source registered; `/figma-tools:setup` asks for one._
 2. **The seat.** Call `whoami` on the Figma MCP server. It must report the **organisation** and
    the **seat** the `### Figma source` *Account and seat* row names. Any other plan on the same
    login is a STOP: a lesser plan's allowance does not survive one run, and the failure mid-run
    looks like a broken file rather than an exhausted quota.
 3. **`## Design system`** — the catalog pointer, the class-prefix rows, the icon resolution
    ladder and the usage-rules source. An absent section → STOP: _this project has no design
-   system registered; `install-skills` asks for one._
+   system registered; `/figma-tools:setup` asks for one._
 4. **The catalog** — resolve through the `Catalog:` pointer and validate against the shape
    contract, which is the same gate `figma-to-spec` runs and fails the same way. Read the
    "Default chrome" notes and the `## Idiom mapping` table from whichever resolved source
@@ -584,10 +584,10 @@ and node links.
 
 ## STOP gates
 
-1. **No `### Figma source` in the adapter** → stop, and name `install-skills` as what adds one.
+1. **No `### Figma source` in the adapter** → stop, and name `/figma-tools:setup` as what adds one.
 2. **`whoami` does not report the organisation and seat those rows name** → stop, naming the plan
    it did report and its call allowance. Never start a run on a lesser seat.
-3. **No `## Design system` in the adapter** → stop, and name `install-skills` as what adds one.
+3. **No `## Design system` in the adapter** → stop, and name `/figma-tools:setup` as what adds one.
 4. **The URL carries no `node-id`, or names a `/make/` file** → stop, showing the URL and what a
    usable one looks like.
 5. **`get_metadata` does not resolve the node** → stop, naming the file key and the node id. The

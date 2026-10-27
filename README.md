@@ -10,9 +10,9 @@ five top-level directories carry all of it:
 | Directory | What's in it |
 |---|---|
 | `.claude-plugin/` | `marketplace.json` — the catalog, published as marketplace **`liamklyneker`** |
-| `plugins/` | The five packaged plugins: `prd-workflow/`, `figma-tools/`, `ado-workflow/` (the PRD workflow's ADO counterpart), `lk/` (the personal skills) and `install-skills/` (the bootstrapper, its own plugin so reaching it needs nothing else). Their skills live one level down, in `<plugin>/skills/` |
+| `plugins/` | The five packaged plugins: `prd-workflow/`, `figma-tools/`, `ado-workflow/` (the PRD workflow's ADO counterpart), `lk/` (the personal skills) and `qa/` (the automated QA pass). Their skills live one level down, in `<plugin>/skills/` |
 | `_shared/` | **Global reference** — nine docs several skills read that are true in every project, from the eligibility rules to the shape of a QA item. No templates, no project values. Each plugin reaches this one canonical copy through a `skills/_shared` symlink |
-| `install/` | **Templates a project fills in** — `adapter.template.md`, `bundles.md` and `gates/`, plus the layout guide. Also the directory the `install-skills` plugin symlinks in as `skills/install`, which is what keeps its packaged skill reading these files at an unchanged relative path |
+| `install/` | **Templates a project fills in** — `adapter.template.md`, `bundles.md` and `gates/`, plus the layout guide. Also `setup.md`, `interview.md` and `doctor.sh` — the one installer every plugin's `setup` skill follows, reached through each plugin's `skills/install` symlink |
 | `docs/` | The [decision records](docs/adr/README.md), and nothing else. Documentation for humans — no session loads it |
 
 **There are no plain skills left in this repo.** That is a change of shape, not a detail:
@@ -54,11 +54,12 @@ What no distribution mechanism can do is fill in *your project's* facts. From th
 want to wire up:
 
 ```
-/install-skills:install-skills install prd-workflow
+/prd-workflow:setup
 ```
 
-The name is doubled because the `install-skills` skill ships inside the `install-skills`
-plugin, and a plugin namespaces everything it provides. It copies the adapter template,
+Every plugin with a bundle ships a `setup` skill, and each one is an entry point into the same
+installer — `/ado-workflow:setup`, `/figma-tools:setup`, `/lk:setup` and `/qa:setup` work the
+same way. It copies the adapter template,
 interviews you only for the facts your repo doesn't already state, offers any gate the
 bundle declares, and ends with a clean bill of health — or tells you exactly what it
 couldn't finish.
@@ -77,7 +78,7 @@ separate namespaces and only sometimes the same set — `prd-workflow` alone map
 bundles, `prd-workflow` and `prd-qa`, so even a plugin that shares a bundle's name is not
 that bundle.
 
-`/install-skills:install-skills doctor` is the other half, and the more important one.
+`/<plugin>:setup doctor` is the other half, and the more important one.
 Forked copies, leftover `_shared/` directories, half-filled adapters and dead gate
 pointers all fail **silently** — that's how one project ends up with five drifted skills
 nobody notices until they're diffed by hand. Doctor makes each of those a line of output.

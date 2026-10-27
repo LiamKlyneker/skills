@@ -133,7 +133,7 @@ burn this skill exists to replace.
 Read the adapter. Establish, and stop on any of them:
 
 1. **`### Prototype source`** — absent sub-section → STOP: *this project has no prototype
-   source registered; `install-skills` asks for one.* The rows decide the mode: a `Path:` row is
+   source registered; `/figma-tools:setup` asks for one.* The rows decide the mode: a `Path:` row is
    **local mode**, and `Repo:` and `URL → path:` are then not read at all; with no `Path:` row
    both of those are required and the run is **remote mode**. `Spec files:`, `Schema:` and
    `Screenshots:` are required either way.
@@ -502,7 +502,7 @@ rules cannot be written from names. The images land in this session; the brief c
 
 ## STOP gates
 
-1. **No `### Prototype source` in the adapter** → stop, and name `install-skills` as what adds
+1. **No `### Prototype source` in the adapter** → stop, and name `/figma-tools:setup` as what adds
    one. This is the expected stop for a project that does not work this way.
 2. **The preview URL does not resolve through the `URL → path:` rule** (remote mode only) →
    stop, showing the URL, the rule, and how far the match got.

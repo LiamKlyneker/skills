@@ -76,7 +76,7 @@ machine has installed and where the session is rooted.
   broken, it simply is not a library, and this skill refuses there. The role is an **intent,
   never inferred**: a `components/` directory is not evidence, and neither is a package name.
   No adapter or no `## Design system` section at all is a different failure — that is a
-  missing install, and the answer is `install-skills`, not a guess.
+  missing install, and the answer is `/figma-tools:setup`, not a guess.
 - **An existence source (hard requirement) — the *token list*, and no longer necessarily a
   catalog.** Setup assembles one explicit list covering **tokens by tier · typography utilities ·
   dimension tokens · the components this library ships · the icon sources the icon ladder names,

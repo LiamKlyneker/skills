@@ -65,7 +65,7 @@ dependency is detachable:
   **design-spec target** and **DS-gap backlog** rows it files against. Two of that section's
   rows are optional and their absence is the answer, never a warning: no *usage-rules sources*
   row means the spec cites nothing, and no *downstream implementer* means a human picks the spec
-  up. `install-skills` writes both sections — the `figma-tools` bundle asks for them.
+  up. `/figma-tools:setup` writes both sections — the `figma-tools` bundle asks for them.
 - **Figma MCP — two distinct capability checks, do not conflate them:**
   1. **`figma-dev-mode` present (required):** `get_metadata`, `get_variable_defs`,
      `get_screenshot`, `get_design_context`. STOP if this server is absent — no fallback.
