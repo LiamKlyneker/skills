@@ -30,7 +30,7 @@ runner. The only executable is
 |---|---|
 | Build | None — nothing compiles |
 | Test — **verify L2 floor** | `bash -n install/doctor.sh && bash install/doctor.sh --repo . --quiet` |
-| Manifest check — **also L2 floor** | `out=$(for p in plugins/prd-workflow plugins/figma-tools plugins/ado-workflow plugins/lk plugins/qa .; do claude plugin validate "$p" 2>&1 && continue; echo "VALIDATE FAILED: $p"; done); echo "$out"; ! grep -q -e '❯' -e 'VALIDATE FAILED' <(grep -v 'not read — components are read without following symlinks' <<<"$out")` |
+| Manifest check — **also L2 floor** | `rc=0; for p in plugins/prd-workflow plugins/figma-tools plugins/ado-workflow plugins/lk plugins/qa .; do python3 -c 'import json,sys; r=json.loads(sys.stdin.read() or "{}"); bad=[(s["file"],i) for s in [r.get("manifest") or {}]+r.get("contents",[]) for k in ("errors","warnings") for i in s.get(k,[]) if "not read — components are read without following symlinks" not in i.get("message","")]; [print(f,i) for f,i in bad]; ok=r.get("success") and not bad; print(("ok  " if ok else "VALIDATE FAILED  ")+sys.argv[1]); sys.exit(not ok)' "$p" <<<"$(claude plugin validate --json "$p" 2>/dev/null)" && continue; rc=1; done; exit $rc` |
 | Catalog + version gate — **also L2 floor** | `python3 .github/scripts/validate_skills.py --base origin/main` |
 | Micro eval gate — **before any plugin version bump** | `command claude plugin eval plugins/<plugin> --ablation none --scaffold --no-publish --runs 1 --threshold 1.0 --max-cost-usd 5 --model claude-sonnet-5 --judge-model claude-sonnet-5 --allow-tools Write Bash Edit --tag micro` |
 | Boot the app (visual loop) | `claude plugin list` — the loaded-plugin inventory *is* this repo's running state |
@@ -39,6 +39,10 @@ runner. The only executable is
 
 The manifest check covers both plugin manifests and the marketplace catalog (`.`).
 Any new directory carrying a `.claude-plugin/plugin.json` joins that line.
+It fails on a validation error or warning, never on the `directory` or `advice` sections of the
+`--json` report: those are plugin-directory submission checks, and these plugins are not
+submitted there. The one warning it tolerates is the symlink-not-followed one, which the
+packaging symlinks under `skills/` raise by design.
 
 **The micro eval gate runs on the plugin whose version is moving, and only that one.** It
 selects the `micro`-tagged cases — one contract sentence each, against a stub the case owns

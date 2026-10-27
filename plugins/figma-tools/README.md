@@ -78,6 +78,12 @@ adapter's `## Design system` → `Repo role:` row decides which one may run;
 running `figma-to-spec` untouched and only the new skill refuses. Each guard is a
 STOP with a one-line redirect to its sibling, checked before any Figma read.
 
+## Install
+
+```
+/plugin install figma-tools --marketplace LiamKlyneker/skills
+```
+
 ## Naming
 
 Not `figma-to-spec` — plugin skills are invoked as `plugin:skill`, so a plugin
