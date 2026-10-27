@@ -196,15 +196,20 @@ an adapter carrying none of them is finished, not half-filled.
 **`## QA` is asked only when the bundle declares it, and it takes credential names, never
 credential values.** Ask each of its six rows once, in the template's order: the session method
 (`api` with its sign-in endpoint, or `manual`); the credential environment variables, as a
-variable **name** for the username and one for the password per role the flows need; the state
-catalog, one table row per named state with its staging ids and the steps that create it, or
-`none`; the preview URL pattern, in the template's `<pr-number>` notation or the literal
+variable **name** for the username and one for the password per role the flows need; the known
+accounts path, which defaults to `.claude/project/accounts.md` beside the adapter and is taken
+as the default unless the human names another; the preview URL pattern, in the template's `<pr-number>` notation or the literal
 `pr-comment`; the feature-flag override, or `none`; and the browser automation consent, which is
-`yes` or the section is not written. **Never ask for a username, a password or a token, never
-write one into the adapter, and never echo one a human volunteers** — the adapter is committed,
+`yes` or the section is not written. **Never ask for a state, an org or an account id** — the
+known accounts are observed later by `qa:setup-states`, never entered here. When no file exists
+at the known accounts path, write it from the empty skeleton in the `qa` plugin's
+`skills/references/accounts-file.md`, verbatim; when one exists, leave it as it is, since setup
+never deletes from it or from the pointer row. **Never ask for a username, a password or a token,
+never write one into the adapter, and never echo one a human volunteers** — the adapter is committed,
 and a value in it is a leaked secret. If a human offers a value, record only the name of the
 variable it belongs in and tell them to export it in their own shell. `doctor` then checks that
-every named variable is set and that the session method is `api` or `manual`; whether the method
+every named variable is set, that the session method is `api` or `manual`, and that the known
+accounts file exists with its `## Orgs` and `## States` tables; whether the method
 yields a working session is the skill's check at run time, not the installer's.
 
 ### 5. Gates
@@ -264,6 +269,7 @@ its checks by hand or "spot-check" a subset.
 | `MISSING` | a bundle offers a gate template that canonical does not ship |
 | `QA-ENV` | the adapter's `## QA` names a credential environment variable that is not set in the shell doctor runs in |
 | `QA-SESSION` | the adapter's `## QA` has no *Session method* row, or one whose value is not `api` or `manual` |
+| `QA-ACCOUNTS` | the adapter's `## QA` has a *Known accounts* row whose path is not a file, or a file with no `## Orgs` or no `## States` section |
 
 `WARN` lines (a loose file in the skills directory, a manifest doctor could not read, a PR
 template recorded as a content snapshot rather than a path) count as warnings, not problems. `OK` and `INFO` are neither, and `--quiet` hides them.

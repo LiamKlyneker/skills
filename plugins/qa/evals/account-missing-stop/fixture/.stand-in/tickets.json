@@ -1,0 +1,7 @@
+[
+  {
+    "number": 12,
+    "title": "[TASK] Shelf action labels",
+    "body": "## What to build\n\nScreen readers name the shelf each action belongs to on the Shelves page.\n\n## Acceptance criteria\n\n- [ ] The Shelves page title shows the number of shelves that are not archived\n- [ ] An archived shelf shows a Restore button labelled with the shelf's name in the Archived section\n"
+  }
+]

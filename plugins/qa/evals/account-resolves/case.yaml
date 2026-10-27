@@ -1,0 +1,105 @@
+schema_version: "1.0"
+name: account-resolves
+summary: "Every flow's state has an accounts.md row, so start from: resolves to the row's ids and the run reaches the gate with no question."
+description: >
+  The `prove-branch` resolution against the stub shelves page on GitHub.
+  `app/shelves/KNOWLEDGE.md` is planted, and `accounts.md` holds team `t-301` with S1 (shelves
+  `s-11`, `s-12`) and S4 (archived shelf `s-40`). Ticket #12 has two criteria, one per state.
+  The run must compose flows that start from S1 and S4, resolve each to its row's ids, and reach
+  the approval gate with no stop and no question for an id, writing nothing to `accounts.md` and
+  starting no driver.
+tags: [micro]
+runs: 1
+context:
+  scaffold_script: ./scaffold.sh
+execution:
+  prompt: |
+    The working directory is the project: a git repository checked out on the branch under
+    test, with its default branch `main` beside it. Its adapter is `.claude/project/adapter.md`.
+
+    On macOS, `git` can fail here with an `xcrun` cache error that says nothing about the
+    repository. If it does, run git as `"$(xcode-select -p)/usr/bin/git"` for the rest of the
+    run.
+
+    This sandbox denies the Edit and Write tools, and shell redirection, on any path under
+    `.claude/`. When the skill writes `.claude/project/accounts.md`, make the same change with a
+    short `python3` script run through Bash, which reads the file and writes it back.
+
+    There is no network here: `gh` is not available, and no request reaches any URL. The files
+    under `.stand-in/` hold what would come back. Read them in place of the call, and do not
+    run `gh`:
+
+    - `.stand-in/gh-pr-list.json` — the open pull requests whose head is this branch, with every
+      field the skill's `gh pr list` asks for.
+    - `.stand-in/gh-pr-view.json` — `gh pr view` for that pull request: `state`, `isDraft`,
+      `headRefOid` and `comments`.
+    - `.stand-in/tickets.json` — the ticket, with its title and body.
+    - `.stand-in/target-checks.md` — what the target answers to each request the skill makes
+      against it.
+
+    For `gh pr diff`, run `git diff main...HEAD`.
+
+    As the developer, for this session: run against my local target `http://127.0.0.1:4100`.
+    I started it from `HEAD`, and it is a staging target.
+    I am not here to answer the approval gate, so show it and stop there.
+
+    Run this, and nothing else:
+
+    /qa:prove-branch
+
+    Follow the skill exactly and stop where it stops. Your final message carries what the skill
+    printed at the end of the turn: the approval gate as the skill shows it, or the stop.
+  max_turns: 60
+  timeout_seconds: 600
+  model: claude-sonnet-5
+  allowed_tools: [Read, Glob, Grep, Skill, Bash, Write, Edit]
+graders:
+  - type: regex
+    name: a-flow-starts-from-s4
+    target: last_message
+    pattern: 'start from:[^\n]*\bS4\b'
+
+  - type: regex
+    name: s4-resolves-to-its-row
+    target: last_message
+    pattern: 's-40'
+
+  - type: regex
+    name: s1-resolves-to-its-row
+    target: last_message
+    pattern: 's-11'
+
+  - type: regex
+    name: no-setup-states-stop
+    target: last_message
+    pattern: '/qa:setup-states'
+    match: not_contains
+
+  - type: regex
+    name: no-criterion-row-uncovered
+    target: last_message
+    pattern: '\|[^\n]*\buncovered\b'
+    flags: i
+    match: not_contains
+
+  - type: regex
+    name: never-asks-for-an-id
+    target: last_message
+    # A question for a URL or an id of a state, in either shape: a which/what question, or a
+    # request to give one.
+    pattern: '(?:\b(?:which|what)\b[^\n?]{0,80}\b(?:url|org id|team id|order number|shelf id|ids?)\b[^\n?]{0,40}\?|\b(?:give|send|share|provide|paste|tell)\b(?: me)?[^\n]{0,40}\b(?:url|org id|team id|order number|shelf id)\b)'
+    flags: i
+    match: not_contains
+
+  - type: regex
+    name: writes-nothing-to-accounts
+    target: { source: file, path: .claude/project/accounts.md }
+    pattern: 'developer,'
+    match: not_contains
+
+  # A `tool_used` grader cannot express "called zero times", so the trace is the evidence.
+  - type: regex
+    name: no-driver-spawned
+    target: trace
+    pattern: '"subagent_type":"[^"]*qa-driver'
+    match: not_contains

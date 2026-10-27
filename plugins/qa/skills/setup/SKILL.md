@@ -11,7 +11,7 @@ marketplace shares; this file only names the bundles this plugin ships.
 
 | Bundle | Covers |
 |---|---|
-| `qa` | `prove-branch` |
+| `qa` | `build-knowledge`, `setup-states`, `prove-branch` |
 
 ## Picking the bundle
 

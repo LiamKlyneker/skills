@@ -1,0 +1,111 @@
+schema_version: "1.0"
+name: knowledge-repo-fills-answers
+summary: "A --repo run fills the two questions the backend answers, with the rule in product words and the repo as origin, and says where the third rule lives."
+description: >
+  The `build-knowledge` backend read against the stub shelves page, whose `KNOWLEDGE.md` already
+  holds three open backend-rule questions and one staging question. The cloned backend repo
+  `shelves-api` holds two of the rules in full: archiving needs the team's owner or an editor and
+  no book on loan (Q1); creating a shelf needs a paid plan or fewer than five shelves (Q2). The
+  purge rule (Q3) is handed to the records-retention service, which is not cloned. The run must
+  fill Q1 and Q2 with the rule, the repo and origin `backend-repo (shelves-api)`, write each rule
+  into the cells that cite it with the question id kept in brackets, set the `Backend read:` line,
+  name records-retention as where the purge rule lives, leave the staging question open, and keep
+  every cell free of code words.
+tags: [micro]
+runs: 1
+context:
+  scaffold_script: ./scaffold.sh
+execution:
+  prompt: |
+    The working directory is the project: a git repository checked out on a working branch, with
+    its default branch `main` beside it. Its adapter is `.claude/project/adapter.md`. The backend
+    repo the page talks to is cloned at `backends/shelves-api`.
+
+    On macOS, `git` can fail here with an `xcrun` cache error that says nothing about the
+    repository. If it does, run git as `"$(xcode-select -p)/usr/bin/git"` for the rest of the
+    run.
+
+    Run this, and nothing else:
+
+    /qa:build-knowledge app/shelves --repo backends/shelves-api
+
+    Follow the skill exactly and stop where it stops. Your final message carries what the skill
+    prints at the end of the run.
+  max_turns: 40
+  timeout_seconds: 600
+  model: claude-sonnet-5
+  allowed_tools: [Read, Glob, Grep, Skill, Bash, Write, Edit]
+graders:
+  - type: regex
+    name: backend-read-line-set
+    target: { source: file, path: app/shelves/KNOWLEDGE.md }
+    pattern: '\nBackend read: shelves-api · \d{4}-\d{2}-\d{2}'
+
+  # ---- The two rules the repo holds are filled, in product words, with the repo as origin ----
+  - type: regex
+    name: q1-answered-from-the-repo
+    target: { source: file, path: app/shelves/KNOWLEDGE.md }
+    pattern: '\n\| ?Q1 ?\|[^\n]*\b(?:loan|lent|borrow|checked out)[^\n]*\|[^\n]*backend-repo \(shelves-api\)[^\n]*\|'
+    flags: i
+
+  - type: regex
+    name: q1-answer-names-the-roles
+    target: { source: file, path: app/shelves/KNOWLEDGE.md }
+    pattern: '\n\| ?Q1 ?\|(?=[^\n]*\bowner)(?=[^\n]*\beditor)'
+    flags: i
+
+  - type: regex
+    name: q2-answered-from-the-repo
+    target: { source: file, path: app/shelves/KNOWLEDGE.md }
+    pattern: '\n\| ?Q2 ?\|[^\n]*\bpaid\b[^\n]*\|[^\n]*backend-repo \(shelves-api\)[^\n]*\|'
+    flags: i
+
+  - type: regex
+    name: q2-answer-names-the-limit
+    target: { source: file, path: app/shelves/KNOWLEDGE.md }
+    pattern: '\n\| ?Q2 ?\|[^\n]*(?:\bfive\b|\b5\b)'
+    flags: i
+
+  # ---- Each rule is written into the cell that cites it, the id kept as provenance ----
+  - type: regex
+    name: archive-row-carries-the-rule-and-the-repo
+    target: { source: file, path: app/shelves/KNOWLEDGE.md }
+    pattern: '\n\| *[^|\n]*\barchive\b[^|\n]*\|[^\n]*\b(?:loan|lent|borrow|checked out)[^\n]*\[Q1\][^\n]*\|[^\n]*code, backend-repo \(shelves-api\)[^\n]*\|'
+    flags: i
+
+  - type: regex
+    name: new-shelf-row-carries-the-rule-and-the-repo
+    target: { source: file, path: app/shelves/KNOWLEDGE.md }
+    pattern: '\n\| *[^|\n]*\bnew[- ]shelf\b[^|\n]*\|[^\n]*\bpaid\b[^\n]*\[Q2\][^\n]*\|[^\n]*code, backend-repo \(shelves-api\)[^\n]*\|'
+    flags: i
+
+  # ---- The rule that lives outside the repo says where ----
+  - type: regex
+    name: q3-names-where-the-purge-rule-lives
+    target: { source: file, path: app/shelves/KNOWLEDGE.md }
+    pattern: '\n\| ?Q3 ?\|[^\n]*records[- ]retention'
+    flags: i
+
+  - type: regex
+    name: print-names-where-the-purge-rule-lives
+    target: last_message
+    pattern: 'Q3[\s\S]{0,400}?records[- ]retention'
+    flags: i
+
+  # ---- The staging fact is never answered from a repo ----
+  - type: regex
+    name: q4-stays-open
+    target: { source: file, path: app/shelves/KNOWLEDGE.md }
+    pattern: '\n\| ?Q4 ?\|[^\n]*staging[^\n]*\| *— *\| *— *\|'
+    flags: i
+
+  - type: regex
+    name: print-sends-the-staging-fact-to-setup-states
+    target: last_message
+    pattern: 'setup-states'
+
+  - type: regex
+    name: no-code-words
+    target: { source: file, path: app/shelves/KNOWLEDGE.md }
+    pattern: '\b[a-z]+[A-Z][A-Za-z]*\b|\b[a-z]+_[a-z_]+\b|\b[A-Z][a-z]+[A-Z][a-z]\w*\b|\.(?:tsx?|jsx?|py)\b|\b[A-Z]{2,}_[A-Z_]+\b'
+    match: not_contains

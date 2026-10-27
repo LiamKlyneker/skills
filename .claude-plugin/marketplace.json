@@ -9,7 +9,7 @@
     {
       "name": "prd-workflow",
       "description": "PRD-to-merge workflow for Claude Code: turn context into a PRD, slice it into tracer-bullet issues and run the whole thing end-to-end with a per-issue worker subagent, or file and implement one self-contained task, and triage the QA findings that come back into cold-runnable issues. Start with /prd-workflow:setup, which writes the project adapter every skill here reads",
-      "version": "2.2.1",
+      "version": "2.2.2",
       "keywords": [
         "prd",
         "github-issues",
@@ -25,7 +25,7 @@
     {
       "name": "figma-tools",
       "description": "Design-to-spec extraction for Claude Code, from two design sources: a Figma page or component set, and a designer-authored code prototype. Turns a Figma page into a gap spec in a repo that consumes a design system, a Figma component set into a component spec in the repo that is one, and a prototype preview URL into a per-ticket design brief — each resolved against a per-project design-system catalog that its ds-catalog skill generates and annotates, backed by the figma-region-extractor and figma-variant-extractor subagents",
-      "version": "5.8.1",
+      "version": "5.8.2",
       "keywords": [
         "figma",
         "design-to-code",
@@ -40,7 +40,7 @@
     {
       "name": "ado-workflow",
       "description": "The PRD-to-merge workflow brought to Azure DevOps for Claude Code: publish a spec, slice it into tasks, pick the next one, and run the whole thing end-to-end with a per-task worker subagent. Start with /ado-workflow:setup, which writes the project adapter every skill here reads",
-      "version": "1.11.1",
+      "version": "1.11.2",
       "keywords": [
         "azure-devops",
         "ado",
@@ -55,7 +55,7 @@
     {
       "name": "lk",
       "description": "Liam Klyneker's personal Claude Code skills: the grills that interview a plan until every branch is resolved, plus pinpoint, scoped-context, his writing voice, and report-leak, which walks a skill failure back to the hop that leaked it and files it against the skills repo",
-      "version": "1.19.0",
+      "version": "1.19.1",
       "keywords": [
         "personal",
         "writing-voice",
@@ -67,8 +67,8 @@
     },
     {
       "name": "qa",
-      "description": "The automated QA pass for Claude Code: resolve the run from the checked-out branch, compose flows from the diff and the ticket's acceptance criteria, drive them in a real browser against the pull request's preview deployment, grade the evidence in a cold-context session, and post one receipt to the ticket",
-      "version": "0.2.0",
+      "description": "The automated QA pass for Claude Code and the two files it starts from: build-knowledge derives a page's KNOWLEDGE.md from its code, setup-states observes the staging org and records the page states it holds in the project's accounts.md, and prove-branch resolves the run from the checked-out branch, composes flows from the diff, the ticket's acceptance criteria and those two files, drives them in a real browser against the pull request's preview deployment, grades the evidence in a cold-context session, and posts one receipt to the ticket",
+      "version": "0.3.0",
       "keywords": [
         "qa",
         "browser",

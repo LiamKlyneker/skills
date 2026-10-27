@@ -1,16 +1,15 @@
 schema_version: "1.0"
 name: composer-unverifiable-state
-summary: "A flow whose catalog start state is missing with no creation steps is Unable to verify before any driver starts."
+summary: "A flow whose state is set in another application and has no account is Unable to verify, naming the seeder hint, before any driver starts."
 description: >
-  The `prove-branch` composer and state check against a stub project on GitHub. Ticket #12 has
-  three acceptance criteria. Two start from the catalog state `team-with-shelves`, which the
-  target reports present. The third — a Purge button on a shelf archived more than 90 days ago —
-  can only start from `shelf-archived-90-days`, which the catalog lists with `none` under
-  *Reach it by* and the target reports missing. The run must compose that flow from the catalog
-  state, mark it Unable to verify with the state check's reason, show the other two criteria
-  covered, stop at the approval gate, and start no driver. The developer-stated local target, the
-  saved owner session and a stand-in file for what the target answers replace the network the
-  sandbox lacks.
+  The `prove-branch` composer and state resolution against the stub shelves page on GitHub. The
+  branch touches `app/shelves/`, whose `KNOWLEDGE.md` is planted. Ticket #12 has three
+  acceptance criteria. Two start from S1, a team with a shelf that is not archived, which
+  `accounts.md` holds as team `t-301` with shelves `s-11` and `s-12`. The third, the overdue
+  loans banner, can only start from S3, a loan recorded in the library's lending desk app, which
+  `accounts.md` has no row for. The run must compose that flow from S3, mark it Unable to verify
+  because the state is set in another application, name the `seed:overdue-loan` hint, show the
+  other two criteria covered, stop at the approval gate, and start no driver.
 tags: [micro]
 runs: 1
 context:
@@ -24,6 +23,10 @@ execution:
     repository. If it does, run git as `"$(xcode-select -p)/usr/bin/git"` for the rest of the
     run.
 
+    This sandbox denies the Edit and Write tools, and shell redirection, on any path under
+    `.claude/`. When the skill writes `.claude/project/accounts.md`, make the same change with a
+    short `python3` script run through Bash, which reads the file and writes it back.
+
     There is no network here: `gh` is not available, and no request reaches any URL. The files
     under `.stand-in/` hold what would come back. Read them in place of the call, and do not
     run `gh`:
@@ -34,30 +37,29 @@ execution:
       `headRefOid` and `comments`.
     - `.stand-in/tickets.json` — the ticket, with its title and body.
     - `.stand-in/target-checks.md` — what the target answers to each request the skill makes
-      against it: the saved session's check and each catalog state's check.
+      against it.
 
     For `gh pr diff`, run `git diff main...HEAD`.
 
     As the developer, for this session: run against my local target `http://127.0.0.1:4100`.
-    I started it from `HEAD`, and it is a staging target. I am not here to answer the approval
-    gate, so show it and stop there.
+    I started it from `HEAD`, and it is a staging target.
+    I am not here to answer the approval gate, so show it and stop there.
 
     Run this, and nothing else:
 
     /qa:prove-branch
 
-    Follow the skill exactly and stop where it stops. Your final message carries the approval
-    gate as the skill shows it.
+    Follow the skill exactly and stop where it stops. Your final message carries what the skill
+    printed at the end of the turn: the approval gate as the skill shows it, or the stop.
   max_turns: 60
   timeout_seconds: 600
   model: claude-sonnet-5
   allowed_tools: [Read, Glob, Grep, Skill, Bash, Write, Edit]
 graders:
   - type: regex
-    name: flow-starts-from-the-catalog-state
+    name: flow-starts-from-the-another-app-state
     target: last_message
-    pattern: 'start from:[^\n]*shelf-archived-90-days'
-    flags: i
+    pattern: 'start from:[^\n]*\bS3\b'
 
   - type: regex
     name: marks-a-flow-unable-to-verify
@@ -66,12 +68,22 @@ graders:
     flags: i
 
   - type: regex
-    name: reason-names-the-missing-uncreatable-state
+    name: reason-names-another-application-and-no-account
     target: last_message
-    # The skill's reason sentence is prose; this grades the fact, not the wording: the state is
-    # named missing on one line, with a no-creation-steps phrase, near the Unable-to-verify mark.
-    pattern: '(?=[\s\S]{0,400}?unable to verify)(?=[\s\S]{0,400}?(?:shelf-archived-90-days[^\n]{0,80}?\bmissing\b|\bmissing\b[^\n]{0,80}?shelf-archived-90-days))(?=[\s\S]{0,400}?(?:\bno\s+(?:\w+\s+){0,2}steps\b|\bnone\b|\bno\s+way\s+to\s+(?:create|reach)|\b(?:cannot|can''t|can not)\s+(?:be\s+)?(?:create|reach)|\bnot\s+creatable|\buncreatable|\bnothing\s+to\s+create))'
+    # The reason is prose; this grades the fact, not the wording: "another application" on one
+    # line with the missing account.
+    pattern: '(?:another app(?:lication)?[^\n]{0,160}(?:accounts\.md|no (?:known )?(?:account|row))|(?:accounts\.md|no (?:known )?(?:account|row))[^\n]{0,160}another app(?:lication)?)'
     flags: i
+
+  - type: regex
+    name: names-the-seeder-hint
+    target: last_message
+    pattern: 'seed:overdue-loan'
+
+  - type: regex
+    name: s1-resolves-to-its-account
+    target: last_message
+    pattern: 's-11'
 
   - type: regex
     name: criterion-1-covered
@@ -91,6 +103,14 @@ graders:
     pattern: '\|[^\n]*\buncovered\b'
     flags: i
     match: not_contains
+
+  - type: regex
+    name: s3-flow-is-unable-to-verify-not-a-stop
+    target: last_message
+    # The S3 flow is shown with its Unable-to-verify mark beside the S1 flow's account, so the run
+    # reached the gate rather than stopping on S3.
+    pattern: '(?:start from:[^\n]*\bS3\b[\s\S]{0,600}?unable to verify|unable to verify[\s\S]{0,600}?start from:[^\n]*\bS3\b)'
+    flags: i
 
   # A `tool_used` grader cannot express "called zero times", so the trace is the evidence.
   - type: regex

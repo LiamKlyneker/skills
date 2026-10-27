@@ -1,0 +1,93 @@
+schema_version: "1.0"
+name: states-guide-missing
+summary: "A state the org lacks gets numbered steps naming the screen, the control and the input, and no row is written while the state is not seen."
+description: >
+  The `setup-states` guide step against the stub shelves page. The org row is planted and `##
+  States` is empty. The developer asks for S4, an archived shelf; the stand-in shows two shelves
+  in the list and no Archived section. The run must look first, find nothing, and print numbered
+  steps a tester follows in the app — the Shelves page, the "New shelf" and "Archive" controls,
+  and a typed name starting `qa-setup` — then wait, with no S4 row in accounts.md and no agent
+  dispatched.
+tags: [micro]
+runs: 1
+context:
+  scaffold_script: ./scaffold.sh
+execution:
+  prompt: |
+    The working directory is the project: a git repository checked out on a working branch, with
+    its default branch `main` beside it. Its adapter is `.claude/project/adapter.md`.
+
+    On macOS, `git` can fail here with an `xcrun` cache error that says nothing about the
+    repository. If it does, run git as `"$(xcode-select -p)/usr/bin/git"` for the rest of the
+    run.
+
+    This sandbox denies the Edit and Write tools, and shell redirection, on any path under
+    `.claude/`. When the skill writes `.claude/project/accounts.md`, make the same change with a
+    short `python3` script run through Bash, which reads the file and writes it back.
+
+    There is no network and no browser here: the Playwright MCP tools are not in this session,
+    and no request reaches any URL. `.stand-in/target-pages.md` holds what the target would
+    answer — the saved session's check, and what `browser_snapshot` returns for each page. Treat
+    the Playwright MCP readiness check as passed, and read that file in place of the session
+    check, `browser_navigate` and `browser_snapshot`, at the point the skill would make them. Do
+    not run `curl` or any other request.
+
+    As the developer, for this session: my staging target is `http://127.0.0.1:4100`. I am not
+    here to answer questions or to do steps in the app, so when the skill asks me something or
+    waits for me, show it and stop there.
+
+    Run this, and nothing else:
+
+    /qa:setup-states S4
+
+    Follow the skill exactly and stop where it stops. Your final message carries what the skill
+    prints at the end of the turn.
+  max_turns: 40
+  timeout_seconds: 600
+  model: claude-sonnet-5
+  allowed_tools: [Read, Glob, Grep, Skill, Bash, Write, Edit]
+graders:
+  - type: regex
+    name: numbered-steps
+    target: last_message
+    pattern: '\n[ \t>*-]*1\.[^\n]*\n+[ \t>*-]*2\.'
+
+  - type: regex
+    name: a-step-names-the-screen
+    target: last_message
+    pattern: '\n[ \t>*-]*\d+\.[^\n]*(?:shelves page|/shelves)'
+    flags: i
+
+  - type: regex
+    name: a-step-names-the-new-shelf-control
+    target: last_message
+    pattern: '\n[ \t>*-]*\d+\.[^\n]*["“`*]+New shelf["”`*]+'
+
+  - type: regex
+    name: a-step-names-the-archive-control
+    target: last_message
+    pattern: '\n[ \t>*-]*\d+\.[^\n]*["“`*]+Archive["”`*]+'
+
+  - type: regex
+    name: a-step-names-the-input
+    target: last_message
+    pattern: '\n[ \t>*-]*\d+\.[^\n]*\b(?:type|enter)\b[^\n]*qa-setup'
+    flags: i
+
+  - type: regex
+    name: no-row-before-the-state-is-seen
+    target: { source: file, path: .claude/project/accounts.md }
+    pattern: '\| *S4 *\|'
+    match: not_contains
+
+  - type: regex
+    name: never-commits
+    target: trace
+    pattern: '"command":"(?:[^"\\]|\\.)*\bgit\b(?:[^"\\]|\\.)*\s(?:commit|add)\b'
+    match: not_contains
+
+  - type: regex
+    name: no-agent-dispatched
+    target: trace
+    pattern: '"subagent_type":"'
+    match: not_contains

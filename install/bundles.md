@@ -274,9 +274,12 @@ cross-boundary root cause gets filed locally and flagged as unmodelled.
 
 ## `qa`
 
-The automated QA pass: `prove-branch` resolves the run from the checked-out branch, composes
-flows from the diff and the ticket's acceptance criteria, drives them in a real browser against
-the pull request's preview deployment, and posts one receipt to the ticket.
+The automated QA pass and the two files it starts from. `build-knowledge` derives a page's
+`KNOWLEDGE.md` from its code; `setup-states` observes the staging org and records the page states
+it holds in the project's `accounts.md`; `prove-branch` resolves the run from the checked-out
+branch, composes flows from the diff, the ticket's acceptance criteria and those two files, drives
+them in a real browser against the pull request's preview deployment, and posts one receipt to
+the ticket.
 
 - **Status:** ready
 - **Adapter sections:** `## Repo`, `## Commands`, `## Verify ladder`, `## QA`, `## Sources of truth`
@@ -287,10 +290,10 @@ Which skill drives which section:
 | Section | Wanted by |
 |---|---|
 | `## Repo` | `prove-branch` — the `Tracker:` line, which decides where the run's ticket and pull request are read from and where the receipt is posted, plus that tracker's sub-section for the repo and default branch |
-| `## Commands` | `prove-branch` — the commands that build and boot what a flow exercises, when a flow needs more than the preview deployment |
+| `## Commands` | `prove-branch` — the commands that build and boot what a flow exercises, when a flow needs more than the preview deployment; `build-knowledge` — where the end-to-end suite lives and how its data-creation tasks are registered |
 | `## Verify ladder` | `prove-branch` — the **L5** rung, which says what exercising this app means and so what a flow's steps are written against |
-| `## QA` | `prove-branch` alone — the session method, the credential variable **names** per role, the state catalog a flow's `start from:` line names, the preview URL pattern, the feature-flag override and the browser automation consent. Every value is non-secret: the interview never asks for a credential value and never writes one |
-| `## Sources of truth` | `prove-branch` — the project explorer agent, for reading the code behind a flow it composes from the diff |
+| `## QA` | `setup-states` and `prove-branch`; `build-knowledge` reads none of it — the session method and the credential variable **names** per role, which both sign in with; the *Known accounts* row, pointing at the project's `accounts.md`, which `setup` writes empty, `setup-states` fills and `prove-branch` reads; the browser automation consent, which both read; and the preview URL pattern and the feature-flag override, which `prove-branch` reads. Every value is non-secret: the interview never asks for a credential value or a state, and never writes a credential |
+| `## Sources of truth` | `prove-branch` and `build-knowledge` — the project explorer agent, for reading the code behind a flow it composes from the diff, or a component a page imports from far away |
 
 **Pairs with either loop, and with `prd-qa` or `ado-qa` for `triage`.** `prove-branch` runs
 against a branch that `prd-workflow` or `ado-workflow` produced and reads the `Tracker:` line

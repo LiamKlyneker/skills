@@ -1,0 +1,232 @@
+schema_version: "1.0"
+name: knowledge-derive-page
+summary: "A first run on a page folder derives one KNOWLEDGE.md in product words, with every section and action, contiguous ids and only the two kinds of open question."
+description: >
+  The `build-knowledge` derive mode against a stub shelves page with no knowledge file. The page
+  redirects a signed-out visitor, has a loading and an error view, a title count, an overdue-loans
+  banner, an empty state, a shelf list, a flag-guarded archived section and a new-shelf drawer, and
+  reads three permissions from the server as a yes or no — create, archive, purge. A purge needs a
+  shelf archived more than 90 days ago, which only time makes. The run must write one
+  `KNOWLEDGE.md` in the folder with a row for every section and action, no code word outside the
+  seeder and origin columns, contiguous state and question ids, and open questions that are only
+  backend rules or staging facts. A planted `accounts.md` must stay unread, and nothing is
+  committed.
+tags: [micro]
+runs: 1
+context:
+  scaffold_script: ./scaffold.sh
+execution:
+  prompt: |
+    The working directory is the project: a git repository checked out on a working branch, with
+    its default branch `main` beside it. Its adapter is `.claude/project/adapter.md`.
+
+    On macOS, `git` can fail here with an `xcrun` cache error that says nothing about the
+    repository. If it does, run git as `"$(xcode-select -p)/usr/bin/git"` for the rest of the
+    run.
+
+    Run this, and nothing else:
+
+    /qa:build-knowledge app/shelves
+
+    Follow the skill exactly and stop where it stops. Your final message carries what the skill
+    prints at the end of the run.
+  max_turns: 40
+  timeout_seconds: 600
+  model: claude-sonnet-5
+  allowed_tools: [Read, Glob, Grep, Skill, Bash, Write, Edit]
+graders:
+  - type: file_exists
+    name: knowledge-file-written
+    path: app/shelves/KNOWLEDGE.md
+
+  - type: regex
+    name: four-tables-in-order
+    target: { source: file, path: app/shelves/KNOWLEDGE.md }
+    pattern: '## What the user sees[\s\S]*## What the user can do[\s\S]*## States[\s\S]*## Open questions'
+
+  - type: regex
+    name: derived-at-names-a-commit-and-a-date
+    target: { source: file, path: app/shelves/KNOWLEDGE.md }
+    pattern: 'Derived at: [0-9a-f]{7,40} · \d{4}-\d{2}-\d{2}'
+
+  - type: regex
+    name: no-backend-read-line-without-a-repo
+    target: { source: file, path: app/shelves/KNOWLEDGE.md }
+    pattern: 'Backend read:'
+    match: not_contains
+
+  # ---- Every rendered section has a row ----
+  - type: regex
+    name: section-redirect-for-signed-out
+    target: { source: file, path: app/shelves/KNOWLEDGE.md }
+    pattern: '\n\|[^\n]*\bsign(?:ed|s)?[- ]?(?:in|out)\b[^\n]*\|'
+    flags: i
+
+  - type: regex
+    name: section-loading
+    target: { source: file, path: app/shelves/KNOWLEDGE.md }
+    pattern: '\n\|[^\n]*\bloading\b[^\n]*\|'
+    flags: i
+
+  - type: regex
+    name: section-error
+    target: { source: file, path: app/shelves/KNOWLEDGE.md }
+    pattern: '\n\|[^\n]*(?:couldn.t load|could not (?:load|fetch)|error)[^\n]*\|'
+    flags: i
+
+  - type: regex
+    name: section-overdue-banner
+    target: { source: file, path: app/shelves/KNOWLEDGE.md }
+    pattern: '\n\|[^\n]*\boverdue\b[^\n]*\|'
+    flags: i
+
+  - type: regex
+    name: section-empty-state
+    target: { source: file, path: app/shelves/KNOWLEDGE.md }
+    # The visible copy or a description of it, in a row of the sections table only.
+    pattern: '## What the user sees\n(?:(?!\n## )[\s\S])*?\n\|[^\n]*(?:no shelves yet|\bempty\b|\bno shel(?:f|ves)\b)[^\n]*\|'
+    flags: i
+
+  - type: regex
+    name: section-archived
+    target: { source: file, path: app/shelves/KNOWLEDGE.md }
+    pattern: '\n\| *[^|\n]*\barchived\b[^|\n]*\|'
+    flags: i
+
+  - type: regex
+    name: section-title-count
+    target: { source: file, path: app/shelves/KNOWLEDGE.md }
+    pattern: '\n\|[^\n]*\b(?:title|heading|count|number of shelves)\b[^\n]*\|'
+    flags: i
+
+  # ---- Every action has a row ----
+  - type: regex
+    name: action-new-shelf
+    target: { source: file, path: app/shelves/KNOWLEDGE.md }
+    pattern: '\n\| *[^|\n]*new[- ]shelf[^|\n]*\|'
+    flags: i
+
+  - type: regex
+    name: action-keyboard-n
+    target: { source: file, path: app/shelves/KNOWLEDGE.md }
+    pattern: '\n\| *[^|\n]*(?:press(?:es)?\W{0,2}N\b|\bN\b\W{0,2}key|keyboard|shortcut)[^|\n]*\|'
+    flags: i
+
+  - type: regex
+    name: action-share
+    target: { source: file, path: app/shelves/KNOWLEDGE.md }
+    pattern: '\n\| *[^|\n]*\bshare[^|\n]*\|'
+    flags: i
+
+  - type: regex
+    name: action-archive
+    target: { source: file, path: app/shelves/KNOWLEDGE.md }
+    pattern: '\n\| *[^|\n]*\barchive\b[^|\n]*\|'
+    flags: i
+
+  - type: regex
+    name: action-restore
+    target: { source: file, path: app/shelves/KNOWLEDGE.md }
+    pattern: '\n\| *[^|\n]*\brestore[^|\n]*\|'
+    flags: i
+
+  - type: regex
+    name: action-purge
+    target: { source: file, path: app/shelves/KNOWLEDGE.md }
+    pattern: '\n\| *[^|\n]*\bpurge[^|\n]*\|'
+    flags: i
+
+  - type: regex
+    name: action-create-in-drawer
+    target: { source: file, path: app/shelves/KNOWLEDGE.md }
+    pattern: '\n\| *[^|\n]*\bcreate\b[^|\n]*\|'
+    flags: i
+
+  - type: regex
+    name: action-cancel-in-drawer
+    target: { source: file, path: app/shelves/KNOWLEDGE.md }
+    pattern: '\n\| *[^|\n]*\bcancel\b[^|\n]*\|'
+    flags: i
+
+  - type: regex
+    name: action-open-a-shelf
+    target: { source: file, path: app/shelves/KNOWLEDGE.md }
+    pattern: '\n\| *[^|\n]*(?:\bopen\b[^|\n]*shelf|shelf[^|\n]*\bname\b)[^|\n]*\|'
+    flags: i
+
+  # ---- No code word anywhere. The seeder hints here are task names with no identifier shape,
+  #      and the only repo an origin could name has none either, so the check runs file-wide:
+  #      camelCase, snake_case, joined capitalised names, constants, source-file extensions ----
+  - type: regex
+    name: no-code-words
+    target: { source: file, path: app/shelves/KNOWLEDGE.md }
+    pattern: '\b[a-z]+[A-Z][A-Za-z]*\b|\b[a-z]+_[a-z_]+\b|\b[A-Z][a-z]+[A-Z][a-z]\w*\b|\.(?:tsx?|jsx?|py)\b|\b[A-Z]{2,}_[A-Z_]+\b'
+    match: not_contains
+
+  # ---- Ids are contiguous ----
+  - type: regex
+    name: states-start-at-s1
+    target: { source: file, path: app/shelves/KNOWLEDGE.md }
+    pattern: '\n\| ?S1 ?\|'
+
+  - type: regex
+    name: state-ids-have-no-gap
+    target: { source: file, path: app/shelves/KNOWLEDGE.md }
+    pattern: '^(?:(?=[\s\S]*\n\| ?S2 ?\|)(?![\s\S]*\n\| ?S1 ?\|)|(?=[\s\S]*\n\| ?S3 ?\|)(?![\s\S]*\n\| ?S2 ?\|)|(?=[\s\S]*\n\| ?S4 ?\|)(?![\s\S]*\n\| ?S3 ?\|)|(?=[\s\S]*\n\| ?S5 ?\|)(?![\s\S]*\n\| ?S4 ?\|)|(?=[\s\S]*\n\| ?S6 ?\|)(?![\s\S]*\n\| ?S5 ?\|)|(?=[\s\S]*\n\| ?S7 ?\|)(?![\s\S]*\n\| ?S6 ?\|)|(?=[\s\S]*\n\| ?S8 ?\|)(?![\s\S]*\n\| ?S7 ?\|)|(?=[\s\S]*\n\| ?S9 ?\|)(?![\s\S]*\n\| ?S8 ?\|)|(?=[\s\S]*\n\| ?S10 ?\|)(?![\s\S]*\n\| ?S9 ?\|)|(?=[\s\S]*\n\| ?S11 ?\|)(?![\s\S]*\n\| ?S10 ?\|)|(?=[\s\S]*\n\| ?S12 ?\|)(?![\s\S]*\n\| ?S11 ?\|)|(?=[\s\S]*\n\| ?S13 ?\|)(?![\s\S]*\n\| ?S12 ?\|)|(?=[\s\S]*\n\| ?S14 ?\|)(?![\s\S]*\n\| ?S13 ?\|)|(?=[\s\S]*\n\| ?S15 ?\|)(?![\s\S]*\n\| ?S14 ?\|)|(?=[\s\S]*\n\| ?S16 ?\|)(?![\s\S]*\n\| ?S15 ?\|)|(?=[\s\S]*\n\| ?S17 ?\|)(?![\s\S]*\n\| ?S16 ?\|)|(?=[\s\S]*\n\| ?S18 ?\|)(?![\s\S]*\n\| ?S17 ?\|)|(?=[\s\S]*\n\| ?S19 ?\|)(?![\s\S]*\n\| ?S18 ?\|)|(?=[\s\S]*\n\| ?S20 ?\|)(?![\s\S]*\n\| ?S19 ?\|))'
+    match: not_contains
+
+  # A page that reads three permissions from the server cannot end with no open question.
+  - type: regex
+    name: questions-start-at-q1
+    target: { source: file, path: app/shelves/KNOWLEDGE.md }
+    pattern: '\n\| ?Q1 ?\|'
+
+  - type: regex
+    name: question-ids-have-no-gap
+    target: { source: file, path: app/shelves/KNOWLEDGE.md }
+    pattern: '^(?:(?=[\s\S]*\n\| ?Q2 ?\|)(?![\s\S]*\n\| ?Q1 ?\|)|(?=[\s\S]*\n\| ?Q3 ?\|)(?![\s\S]*\n\| ?Q2 ?\|)|(?=[\s\S]*\n\| ?Q4 ?\|)(?![\s\S]*\n\| ?Q3 ?\|)|(?=[\s\S]*\n\| ?Q5 ?\|)(?![\s\S]*\n\| ?Q4 ?\|)|(?=[\s\S]*\n\| ?Q6 ?\|)(?![\s\S]*\n\| ?Q5 ?\|)|(?=[\s\S]*\n\| ?Q7 ?\|)(?![\s\S]*\n\| ?Q6 ?\|)|(?=[\s\S]*\n\| ?Q8 ?\|)(?![\s\S]*\n\| ?Q7 ?\|)|(?=[\s\S]*\n\| ?Q9 ?\|)(?![\s\S]*\n\| ?Q8 ?\|)|(?=[\s\S]*\n\| ?Q10 ?\|)(?![\s\S]*\n\| ?Q9 ?\|)|(?=[\s\S]*\n\| ?Q11 ?\|)(?![\s\S]*\n\| ?Q10 ?\|)|(?=[\s\S]*\n\| ?Q12 ?\|)(?![\s\S]*\n\| ?Q11 ?\|))'
+    match: not_contains
+
+  - type: llm
+    name: open-questions-are-backend-rules-or-staging-facts
+    focus: { source: file, path: app/shelves/KNOWLEDGE.md }
+    criteria: |
+      Read only the `## Open questions` table of this page knowledge file.
+
+      Every question in it must be one of exactly two kinds:
+      1. a backend rule the page reads as a yes or no — who may do something, or when something is
+         allowed, where the page only asks the server and shows or hides a control on the answer;
+      2. a staging fact no code repository holds — which team, org or account on the staging
+         environment has some data in a given state.
+
+      The page reads three yes-or-no permissions from its server: whether the member may create a
+      shelf, may archive (and restore) a shelf, and may purge a shelf. Score it passed only if
+      every question in the table is of one of the two kinds above, and at least one question
+      covers each of those three permissions. Score it failed if any question asks something else
+      — what the page shows, how a control looks, why a rule exists, a design or product choice,
+      a test plan — or if one of the three permissions has no question.
+
+  # ---- It writes nothing else, commits nothing, and never reads accounts.md ----
+  - type: regex
+    name: never-commits
+    target: trace
+    pattern: '"command":"(?:[^"\\]|\\.)*\bgit\b(?:[^"\\]|\\.)*\s(?:commit|add)\b'
+    match: not_contains
+
+  - type: regex
+    name: never-reads-accounts
+    target: trace
+    pattern: '"(?:file_path|path|pattern|command)":"(?:[^"\\]|\\.)*accounts\.md'
+    match: not_contains
+
+  - type: regex
+    name: accounts-row-not-copied-into-the-file
+    target: { source: file, path: app/shelves/KNOWLEDGE.md }
+    pattern: 's-11|t-301'
+    match: not_contains
+
+  # ---- The print names who answers what is left ----
+  - type: regex
+    name: print-sends-the-staging-fact-to-setup-states
+    target: last_message
+    pattern: 'setup-states'
