@@ -68,7 +68,7 @@ The project adapter at `<repo-root>/.claude/project/adapter.md` → `## QA`, by 
 | *Session method* | the `Session method` cell of a new `## Orgs` row, and how a session is captured (`## Signing in`) |
 | *Credential environment variables* | the roles a session may sign in as — names only, never a value |
 | *Browser automation consent* | read as [`browser-readiness.md`](../references/browser-readiness.md) → *Consent* says |
-| the row pointing at `accounts.md` | where the file is; `<repo-root>/.claude/project/accounts.md` when no row names a path |
+| *Known accounts* | where the file is; `<repo-root>/.claude/project/accounts.md` when no row names a path |
 
 **A missing `accounts.md` is a stop**: print `/qa:setup`, which writes the empty skeleton. This
 skill never writes the skeleton.

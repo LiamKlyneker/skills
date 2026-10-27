@@ -469,7 +469,8 @@ fi
 # ---------------------------------------------------------------- 9. the adapter's ## QA section
 #
 # Only the mechanical rows: the credential variables `qa:prove-branch` reads must be
-# set in this shell, and the session method must be one the skill knows. Nothing here
+# set in this shell, the session method must be one the skill knows, and the file the
+# Known accounts row points at must exist with both of its tables. Nothing here
 # opens a browser; whether the method yields a session is the skill's run-time check.
 # Silent when the adapter has no `## QA` section, since only the `qa` bundle asks for it.
 
@@ -507,8 +508,30 @@ if [ -f "$adapter" ] && grep -qE '^## QA[[:space:]]*$' "$adapter"; then
     done < <(printf '%s\n' "${line%%—*}" | grep -o '`[^`]*`' | tr -d '`')
   done < <(printf '%s\n' "$qa_section" | grep -E '^[[:space:]]*[-*][[:space:]]+(\*\*)?Credential environment variables')
 
+  # A relative path resolves against the repo root, the way the `qa` skills read it.
+  accounts_note=""
+  accounts_line="$(printf '%s\n' "$qa_section" | grep -E '^[[:space:]]*[-*][[:space:]]+(\*\*)?Known accounts' | head -1)"
+  if [ -n "$accounts_line" ]; then
+    accounts_path="$(row_value "$accounts_line")"
+    if ! is_unfilled_token "$accounts_path"; then
+      case "$accounts_path" in
+        /*) accounts_file="$accounts_path" ;;
+        *)  accounts_file="$repo/$accounts_path" ;;
+      esac
+      if [ ! -f "$accounts_file" ]; then
+        err "QA-ACCOUNTS" "$(rel "$adapter") points Known accounts at \`$accounts_path\`, which is not a file"
+      else
+        for header in '## Orgs' '## States'; do
+          grep -qE "^$header[[:space:]]*\$" "$accounts_file" ||
+            err "QA-ACCOUNTS" "\`$accounts_path\` has no \`$header\` section"
+        done
+        accounts_note=", known accounts at \`$accounts_path\`"
+      fi
+    fi
+  fi
+
   [ "$errors" -eq "$qa_problems" ] &&
-    ok "$(rel "$adapter") \`## QA\`: session method \`$session\`, $qa_vars credential variable(s) set"
+    ok "$(rel "$adapter") \`## QA\`: session method \`$session\`, $qa_vars credential variable(s) set$accounts_note"
 fi
 
 # ---------------------------------------------------------------- summary
