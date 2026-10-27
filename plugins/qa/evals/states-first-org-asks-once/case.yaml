@@ -1,0 +1,82 @@
+schema_version: "1.0"
+name: states-first-org-asks-once
+summary: "A first run with an empty org table asks for exactly one org id and opens, signs in and writes nothing before the answer."
+description: >
+  The `setup-states` first run. accounts.md is the empty skeleton `qa:setup` writes, so `##
+  Orgs` holds no staging org. The developer asks for S1. The run must ask for one org id, once,
+  ask nothing else, and stop for the answer — writing no row to either table and opening no page
+  before it.
+tags: [micro]
+runs: 1
+context:
+  scaffold_script: ./scaffold.sh
+execution:
+  prompt: |
+    The working directory is the project: a git repository checked out on a working branch, with
+    its default branch `main` beside it. Its adapter is `.claude/project/adapter.md`.
+
+    On macOS, `git` can fail here with an `xcrun` cache error that says nothing about the
+    repository. If it does, run git as `"$(xcode-select -p)/usr/bin/git"` for the rest of the
+    run.
+
+    This sandbox denies the Edit and Write tools, and shell redirection, on any path under
+    `.claude/`. When the skill writes `.claude/project/accounts.md`, make the same change with a
+    short `python3` script run through Bash, which reads the file and writes it back.
+
+    There is no network and no browser here: the Playwright MCP tools are not in this session,
+    and no request reaches any URL. `.stand-in/target-pages.md` holds what the target would
+    answer — the saved session's check, and what `browser_snapshot` returns for each page. Treat
+    the Playwright MCP readiness check as passed, and read that file in place of the session
+    check, `browser_navigate` and `browser_snapshot`, at the point the skill would make them. Do
+    not run `curl` or any other request.
+
+    As the developer, for this session: my staging target is `http://127.0.0.1:4100`. I am not
+    here to answer questions or to do steps in the app, so when the skill asks me something or
+    waits for me, show it and stop there.
+
+    Run this, and nothing else:
+
+    /qa:setup-states S1
+
+    Follow the skill exactly and stop where it stops. Your final message carries what the skill
+    prints at the end of the turn.
+  max_turns: 40
+  timeout_seconds: 600
+  model: claude-sonnet-5
+  allowed_tools: [Read, Glob, Grep, Skill, Bash, Write, Edit]
+graders:
+  - type: regex
+    name: asks-for-the-org
+    target: last_message
+    pattern: '\borg\b[^\n?]*\?'
+    flags: i
+
+  - type: regex
+    name: asks-exactly-one-question
+    target: last_message
+    pattern: '\?[\s\S]*\?'
+    match: not_contains
+
+  - type: regex
+    name: writes-no-row
+    target: { source: file, path: .claude/project/accounts.md }
+    pattern: '\| *staging *\|'
+    match: not_contains
+
+  - type: regex
+    name: opens-no-page-before-the-answer
+    target: trace
+    pattern: '"file_path":"[^"]*target-pages\.md"'
+    match: not_contains
+
+  - type: regex
+    name: never-commits
+    target: trace
+    pattern: '"command":"(?:[^"\\]|\\.)*\bgit\b(?:[^"\\]|\\.)*\s(?:commit|add)\b'
+    match: not_contains
+
+  - type: regex
+    name: no-agent-dispatched
+    target: trace
+    pattern: '"subagent_type":"'
+    match: not_contains
