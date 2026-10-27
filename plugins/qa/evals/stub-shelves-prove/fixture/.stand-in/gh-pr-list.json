@@ -1,0 +1,10 @@
+[
+  {
+    "number": 57,
+    "headRefName": "__BRANCH__",
+    "headRefOid": "__HEAD__",
+    "title": "Shelf actions and the overdue banner",
+    "body": "Labels each shelf's Archive, Restore and Purge buttons with the shelf's name, and rewords the overdue loans banner.\n",
+    "url": "https://github.com/LiamKlyneker/atelier-stub/pull/57"
+  }
+]

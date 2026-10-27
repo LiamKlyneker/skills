@@ -1,6 +1,6 @@
 ---
 name: prove-branch
-description: Run the automated QA pass on the checked-out branch — resolve the ticket, the pull request and the preview deployment from the branch alone, read the ticket's acceptance criteria, drive and grade flows against the preview, and post one receipt to the ticket; it stops with a question wherever the branch is ambiguous, and on a failure asks fix now or file. Runs on user invocation only; neither loop ever invokes it. Invoke /qa:prove-branch with no argument, in a fresh session on the implemented branch.
+description: Run the automated QA pass on the checked-out branch — resolve the ticket, the pull request and the preview deployment from the branch alone, read the ticket's acceptance criteria and the touched pages' KNOWLEDGE.md, start every flow from a state the project's accounts.md already holds — stopping with the one command to run, `/qa:build-knowledge` or `/qa:setup-states`, where either file falls short, and never creating data — drive and grade flows against the preview, and post one receipt to the ticket; it stops with a question wherever the branch is ambiguous, and on a failure asks fix now or file. Runs on user invocation only; neither loop ever invokes it. Invoke /qa:prove-branch with no argument, in a fresh session on the implemented branch.
 disable-model-invocation: true
 ---
 
@@ -17,6 +17,12 @@ files, no fixtures, no configuration, no feature-flag overrides committed anywhe
 project is the same after a run as before it. What a run produces lives on the tracker, never in
 the tree. The one change a pass can lead to is a fix-now commit the developer asks for after
 grading, which a worker makes (`## On a Fail`).
+
+**It never creates data.** It reads what the project already knows — each touched page's
+`KNOWLEDGE.md` and the project's `accounts.md` — and starts every flow from a state those files
+name. Where they fall short it stops and names the one command that fills the gap. Its only writes
+to either file are a developer's own answers, written back (`### Write-backs`), so no run asks the
+same thing twice.
 
 **It runs on user invocation only.** Neither `work-on-prd` nor `work-on-spec` invokes it, and
 nothing else may: ADR 0012 keeps every QA pass on demand, and ADR 0020 applies that to this
@@ -45,7 +51,7 @@ From `## QA`, by row name:
 |---|---|
 | *Session method* | how a flow signs in — `api` against the endpoint written after the value, or `manual` |
 | *Credential environment variables* | per role, the **names** of the variables holding its username and password. Read them from the backticked tokens: roles are unquoted labels separated by ` · `, each followed by `→` and two backticked variable names, and everything after the em dash is guidance. The skill reads only names here and **never reads a credential value from the adapter** |
-| *State catalog* | the named states a flow may `start from:`, the ids that identify each, and how to reach it |
+| *Known accounts* | the path of the project's `accounts.md`; `<repo-root>/.claude/project/accounts.md`, beside the adapter, when the row is absent |
 | *Preview URL pattern* | how the pull request's preview deployment URL is formed, or `pr-comment` — read in `## The target` |
 | *Feature-flag override* | how one session turns a flag on or off, or `none` |
 | *Browser automation consent* | read as [`browser-readiness.md`](../references/browser-readiness.md) → *Consent* says |
@@ -218,12 +224,47 @@ Once the run, the target and the criteria are resolved, print them before compos
 - the target URL and the SHA tested, with `developer-stated` where it applies;
 - the criteria, numbered, each with its source — the ticket, a child, or `inferred`.
 
+## Knowledge
+
+Before composing, read what the project knows about the pages the branch touches. The two formats
+are defined once, in [`knowledge-file.md`](../references/knowledge-file.md) and
+[`accounts-file.md`](../references/accounts-file.md); read both, and where this skill and either
+file seem to disagree, that file wins.
+
+### The touched page folders
+
+List the changed paths with `git diff --name-only <default-branch>...HEAD`. A **page folder** is a
+folder holding a route entry file that the framework renders as a page. Each changed path belongs to
+its nearest page folder at or above it: a change under `app/shelves/components/` touches the page
+folder `app/shelves`. A changed path with no page folder above it touches no page.
+
+Read the `KNOWLEDGE.md` in every touched page folder. **A touched page folder with no
+`KNOWLEDGE.md` is a stop**, before any flow is composed. Name every such folder, and print the
+command for each, alone on its line:
+
+```
+prove-branch cannot compose flows for `<page folder>`: it has no KNOWLEDGE.md.
+/qa:build-knowledge <page folder>
+```
+
+Then say to run `/qa:prove-branch` again once the file exists. **Never run `build-knowledge`
+yourself**: deriving a page writes a file into the tree, and that is the developer's command to
+run. This skill writes to a knowledge file only through `### Write-backs`. No driver starts, and no
+receipt is posted, since nothing was tested.
+
+### `accounts.md`
+
+Find it through the adapter's *Known accounts* row, or beside the adapter when the row is absent.
+Read its `## Orgs` and `## States` tables; `## Preparing states` resolves flows against them. **A
+missing `accounts.md` is a stop** once a composed flow starts from a state: it prints `/qa:setup`,
+which writes the empty file, and nothing else is written or asked.
+
 ## Composing the flows
 
-The composer turns the criteria and the diff into a short list of **flows**. It reads four things,
+The composer turns the criteria and the diff into a short list of **flows**. It reads five things,
 all already in hand: the numbered criteria from `## Criteria`, the diff, the commit subjects on the
-branch, and the adapter's *State catalog*. **It reads nothing else to write the flows** — not the
-wider codebase, not the running app.
+branch, the touched pages' `KNOWLEDGE.md` files, and the project's `accounts.md`. **It reads nothing
+else to write the flows** — not the wider codebase, not the running app.
 
 ### Flows test the ticket, not the app
 
@@ -238,8 +279,8 @@ A **flow** is a run of sub-steps that share a starting state and end somewhere t
 begin from. Each flow has:
 
 - a **name** — what is being exercised, in the ticket's words;
-- an explicit **`start from:` line** — a state named in the adapter's *State catalog*, or a prior
-  flow by number, and the role the flow signs in as;
+- an explicit **`start from:` line** — a state id from the page's `KNOWLEDGE.md` `## States` with
+  the state in user words beside it, or a prior flow by number, and the role the flow signs in as;
 - **sub-steps**, numbered `<flow>.<k>`, each naming one **action** and one **observable result** —
   something the page shows or the app answers, which a driver can see is there or is not;
 - **attribution** — the tickets whose code the flow exercises: the `(#N)` suffixes or ticket-source
@@ -248,7 +289,7 @@ begin from. Each flow has:
 
 ```
 Flow 2 — <name>
-start from: `<catalog state>` as <role>
+start from: S4 — <the state, in user words> — as <role>
 attribution: #228, #229
   2.1  <action> → <observable result>
   2.2  <action> → <observable result>
@@ -260,11 +301,14 @@ is not a sub-step. Rewrite it as what the page shows, or leave its criterion unc
 **The first flow is always "get running"**: open the target URL from `## The target` with each
 role's scenario loaded (`## Scenarios`), and see the app signed in as that role — one sub-step per
 role the pass uses. Its line is `start from: the target URL`, the one flow that starts from neither
-the catalog nor a prior flow. A later flow that needs no particular data starts from it:
+a state nor a prior flow. A later flow that needs no particular data starts from it:
 `start from: flow 1 completed, as <role>`.
 
 **A cross-flow dependency is named in `start from:`**, never left implicit. A flow that starts from
 a prior flow inherits that flow's state, and cannot run when that flow cannot.
+A flow starts from a prior flow only when its criterion is about what that flow did. Data a flow
+merely needs to exist is a state, started from by id: never make it by driving another flow's
+actions first, since that creates data the pass does not own.
 
 **The role** a flow signs in as is the one its criterion names. Where none is named, it is the first
 role the adapter's *Credential environment variables* row lists; where that row lists no role, the
@@ -299,27 +343,131 @@ Beside the flows, build a table from **every** criterion to the sub-steps that c
 **Uncovered and ambiguous criteria are escalations.** Both are shown at the approval gate and both
 are handed to `## Receipt`. A row carries a status, never a confidence figure.
 
-### Start states against the catalog
+### Start states from the knowledge file
 
-Check each flow's `start from:` against the *State catalog* as soon as the flow is composed:
+A flow that needs particular data starts from **a state id in its page's `KNOWLEDGE.md`**. Pick the
+state whose `State, in user terms` cell is what the flow's first sub-step needs, using the
+`What the user sees` and `What the user can do` rows that cite it. Write the id and the state's
+words on the `start from:` line, so the developer reads what the flow needs without opening the
+file.
 
-- **a prior flow** — nothing to check; the flow follows that flow's outcome.
-- **a catalog state** — checked against the target in `## Preparing states`.
-- **a state not in the catalog** — the flow is **Unable to verify** now, with the reason
-  `state "<what the flow needs>" is not in the adapter's state catalog`. Nothing can create a state
-  the catalog does not name, so the flow is neither prepared nor driven. Compose it in full anyway,
-  so the developer sees exactly what could not be checked.
+- **a prior flow** — nothing to resolve; the flow follows that flow's outcome.
+- **a state id** — resolved against `accounts.md` in `## Preparing states`.
+- **no state in the file fits** — the flow is **Unable to verify** now, with the reason
+  `the page's KNOWLEDGE.md names no state "<what the flow needs>"`, and the remedy
+  `/qa:build-knowledge <page folder>`, the regenerate that derives the state. Compose it in full
+  anyway, so the developer sees exactly what could not be checked.
 
-Never stretch a catalog state to fit. A flow that needs a team with an overdue invoice does not
-start from a catalog state whose team has no invoices.
+Never stretch a state to fit. A flow that needs a team with an overdue loan does not start from a
+state whose team has no loans.
+
+## Preparing states
+
+Every flow that starts from a state is resolved to a known instance of it in `accounts.md` before
+the gate. **The skill never creates data, never walks the app looking for data, and never asks the
+developer for a URL, an org id, an order number or any other id of a state** — finding those is
+`qa:setup-states`'s job.
+
+### Staging or not
+
+The target decides which `accounts.md` rows apply, by their `Env` column:
+
+- The pull request's preview deployment resolved in `## The target` is staging: `staging` rows
+  apply.
+- A developer-stated URL is staging only when the developer says so in this session. When they have
+  not, ask once, before resolving any state, whether the target is staging. The question is about
+  the target and names no id.
+- A target the adapter or the developer names as production resolves no row: no skill writes `prod`
+  rows yet, and a prod row permits read-only flows only.
+
+On a target that is not staging, every flow that starts from a state is Unable to verify, with the
+reason `target is not confirmed as staging`.
+
+### Resolve each state
+
+For each flow's state id, find the `## States` rows whose `Env` applies, whose `Page` is the page's
+`Route:` line and whose `State` is the id. A row whose `Last verified` reads `stale …` counts as no
+row. When several rows qualify, take the most recently verified and say which. Each state comes out
+as one of these:
+
+| Found | Outcome |
+|---|---|
+| a row | the flow is **ready**. The row's `Org` and `Ids` are its starting state's ids, shown on an `account:` line under `start from:` |
+| no row, and the state cannot be made in this app | the flow is **Unable to verify**: `state S<n> "<the state, in user words>" <is set in another application · needs time to pass · needs a payment to fail>, and accounts.md has no row for it`. Its remedy names the state's `Seeder (for a human)` hint from `KNOWLEDGE.md`, as written, as the fast path for a human to make the state — or `none known` — and then `/qa:setup-states <page folder> S<n>` to record it |
+| no row, otherwise | a **missing account** — `### The missing-account stop` |
+
+A state **cannot be made in this app** when its `State, in user terms` cell says it is set in
+another application, needs time to pass ("more than 90 days ago", "more than 14 days overdue"), or
+needs a payment to fail. Never run its seeder: the hint is for a human.
+
+A flow that starts from an Unable-to-verify flow is Unable to verify too, naming that flow.
+
+```
+Flow 3 — <name>
+start from: S4 — the team has an archived shelf — as owner
+  account: team `t-301` · archived shelf `s-40` (accounts.md, last verified 2026-10-20)
+attribution: #228
+  3.1  <action> → <observable result>
+```
+
+### The missing-account stop
+
+**Any missing account is a stop before the gate.** Name every one in one message, then end the
+turn:
+
+```
+prove-branch cannot start these flows: accounts.md has no <env> row for their state.
+  flow <n> — <flow name>: S<n> — <the state, in user words> (page <route>)
+/qa:setup-states <page folder> S<n> S<m>
+```
+
+One command per page folder, alone on its line, carrying every missing state id of that page. Then
+say to run `/qa:prove-branch` again once the states are recorded. No scenario is captured, no driver
+starts, and no receipt is posted.
+
+**The stop asks for no id and invites none.** It names the command that finds the state, and
+nothing else: no question, and no offer to take a team, an org, a URL or an id instead. A developer
+who answers with an instance anyway is recorded by `### Write-backs`.
+
+### Write-backs
+
+A developer's answer during a run is written to the file it belongs to, so no later run asks again.
+These are the **only writes** this skill makes to either file:
+
+- **An instance, named after the missing-account stop** — "team `t-301` has archived shelf `s-40`".
+  Append one `accounts.md` `## States` row: the `Env` from `### Staging or not`; the org, which is
+  the `## Orgs` row for that `Env` unless the developer names another; the page's route; the state
+  id; the ids the developer named, in user words; today's date (`date +%F`) as `Last verified`; and
+  origin `developer, <today's date>`. Never change or delete another row. Then resolve the flow from
+  the new row and carry on.
+- **An answer to an open question** of the page's `KNOWLEDGE.md` (`Q<n>`). Write it through
+  `qa:build-knowledge`'s update mode: read
+  [`../build-knowledge/SKILL.md`](../build-knowledge/SKILL.md) → `## Update mode` and apply it to the
+  page folder exactly as `/qa:build-knowledge <page folder> --fact "<Qn>: <answer>"` would, touching
+  nothing that mode does not touch. Name that command in the print.
+
+An answer that is not a fact — a guess, a "probably" — is not written; ask the one question that
+would make it one. Say each write-back in the next print: the file, the row or the question, and the
+origin. A write-back is never committed.
+
+### Handed over
+
+- To `## The approval gate`: every flow with its resolved state, and the Unable-to-verify flows with
+  their reasons and remedies.
+- To `## Driving`: the flows that are ready, each with the ids of the state it starts from — the
+  `accounts.md` row's org and ids.
+- To `## Receipt`: the Unable-to-verify flows with their reasons and remedies, and the uncovered and
+  ambiguous criteria.
+
+No Unable-to-verify flow is driven.
 
 ## Scenarios
 
 A **scenario** is a saved login session for one role plus a short description of it. The pass signs
 in through scenarios only: no flow, sub-step or driver ever handles a credential.
 
-Scenarios are settled after the flows are composed, since the flows name the roles, and before
-`## Preparing states`, which signs in with them.
+Scenarios are settled after `## Preparing states` has resolved every flow's state, since the flows
+name the roles, and before `## The approval gate`.
 
 ### The scenario directory
 
@@ -344,7 +492,8 @@ grep -qxF '/.qa-scenarios/' "$exclude" 2>/dev/null || printf '/.qa-scenarios/\n'
 `--git-path` finds the right file in a linked worktree too, where `.git` is a file. Never add the
 line to `.gitignore` instead: that is a tracked change to the project. Then create the directory
 under `umask 077`, so only the developer's user can read a session, and confirm both
-`git check-ignore -q .qa-scenarios/` succeeds and `git status --short` is still empty. If either
+`git check-ignore -q .qa-scenarios/` succeeds and `git status --short` shows nothing but this run's
+write-backs. If either
 check fails, say which and stop.
 
 The skill writes the exclude line and creates this directory without asking, and says that it did.
@@ -427,81 +576,22 @@ the `session.json` a sign-in produced.
 **Handed over**, per role: the path to its `session.json` and its `scenario.md` description. A driver
 is given the path, never the file's contents and never a credential.
 
-## Preparing states
-
-Before any driver starts, confirm every flow's starting state on the target the way a tester would:
-through the app or its API, signed in with the flow's scenario. Never through a database, an admin
-console a tester would not have, or the project's code.
-
-### Staging or not
-
-Data is created **only against a staging target**:
-
-- The pull request's preview deployment resolved in `## The target` is staging.
-- A developer-stated URL is staging only when the developer says so in this session. Ask at the
-  approval gate, when a flow needs data created there.
-- **Data is never created against a URL the adapter or the developer names as production**, whatever
-  else says otherwise.
-
-A missing state on a target that is not staging leaves its flow Unable to verify, with the reason
-`target is not confirmed as staging`.
-
-### Check each catalog state
-
-For each catalog state a flow starts from, confirm on the target that the ids the catalog's *Ids*
-column lists are there, as the flow's role, with a request that loads the role's session and prints
-only the status and the ids it checked. Each state comes out as one of these:
-
-| Found | Outcome |
-|---|---|
-| present | the flow is ready |
-| missing, and *Reach it by* has steps | planned for creation, and listed in the QA-created data plan |
-| missing, and *Reach it by* is `none` | the flow is **Unable to verify**: `state "<state>" is missing on the target and the catalog has no steps to create it` |
-| the check could not be made | the flow is **Unable to verify**, with what failed |
-
-A flow that starts from an Unable-to-verify flow is Unable to verify too, naming that flow.
-
-### The one approval gate
+## The approval gate
 
 Show the composed pass **once**, whole:
 
 - the target URL and the SHA tested;
-- the flows, numbered, each with its name, `start from:` line, attribution and sub-steps;
+- the flows, numbered, each with its name, `start from:` line, the `account:` line its state
+  resolved to, attribution and sub-steps;
 - the coverage map, with uncovered and ambiguous criteria called out;
-- the Unable-to-verify flows, each with its reason;
-- the QA-created data plan: for each state to be created, the catalog's steps, the role that runs
-  them and the target — and for a developer-stated target, the question whether it is staging.
+- the Unable-to-verify flows, each with its reason and remedy.
 
-The developer may edit — drop or add a flow, change a sub-step, settle an ambiguous criterion,
-decline a creation — or say go. An edit is applied, the coverage map and the Unable-to-verify list
-are recomputed, and the changed list is shown again. **Nothing is created and no driver starts
-without go.** A declined creation leaves its flow Unable to verify, with the reason
-`creation declined by the developer`.
+The developer may edit — drop or add a flow, change a sub-step, settle an ambiguous criterion — or
+say go. An edit is applied, a new flow's state is resolved by `## Preparing states`, the coverage
+map and the Unable-to-verify list are recomputed, and the changed list is shown again. **No driver
+starts without go.**
 
 This is the pass's one approval gate. No flow asks for approval again.
-
-### Creating missing states
-
-After go, for each planned state:
-
-1. Run the catalog's *Reach it by* steps on the target as written, as the flow's role.
-2. **Name the data QA-created**: every name or title the steps set starts with
-   `qa-created <short SHA tested>`, so anyone on staging can tell it from real data and trace it to
-   this run.
-3. Check the state again. When it is still missing, the flow is Unable to verify, with the reason
-   `creation steps ran and state "<state>" is still missing`.
-4. Record what was created: the state, each item's name and id, and the target.
-
-The skill does not delete what it created; the record is how a human finds it.
-
-### Handed over
-
-- To `## Driving`: the flows that are ready, each with its role's scenario and the ids of the state
-  it starts from — the catalog's ids, or the ids of the QA-created data.
-- To `## Receipt`: the Unable-to-verify flows with their reasons, the uncovered and ambiguous
-  criteria, and the QA-created data record.
-
-No Unable-to-verify flow is driven.
 
 ## Driving
 
@@ -543,8 +633,8 @@ Every run gets a new folder inside the excluded scenario directory, created unde
   starts, so a driver only saves files into folders that exist.
 - **`driver.md`** is the driver's report, saved verbatim by the skill when the driver returns.
 - A run never reuses an earlier run's folder, and the skill deletes none. Since the folder sits
-  under `.qa-scenarios/`, `git status --short` stays empty; confirm it after creating the folder,
-  and stop if it does not.
+  under `.qa-scenarios/`, `git status --short` shows nothing but this run's write-backs
+  (`### Write-backs`); confirm it after creating the folder, and stop if it shows anything else.
 
 ### Playwright MCP readiness
 
@@ -558,7 +648,7 @@ its rule for one browser context per driver. When it stops, the remedy it names 
 **One `qa:qa-driver` per ready flow.** The flows handed over by `## Preparing states` are the
 ready ones; an Unable-to-verify flow is never driven.
 
-- **Every flow that starts from a catalog state or the target URL is dispatched at once, in
+- **Every flow that starts from a state or the target URL is dispatched at once, in
   parallel** — all those `Agent` calls in one message.
 - **A flow that starts from a prior flow** is dispatched when that flow's driver has returned, and
   only when that driver reported every sub-step `performed`. Otherwise the flow is Unable to
@@ -636,14 +726,13 @@ the `gaps:` line, and the run folder's path.
 
 ## Escalation
 
-The developer is pulled in for **exactly five things**, and for nothing else:
+The developer is pulled in for **exactly four things**, and for nothing else:
 
 1. an **Unable-to-verify** flow or sub-step — from `## Preparing states`, `## Driving` or
    `## Grading`;
 2. a **Fail**;
 3. an **uncovered** criterion;
-4. a criterion the composer found **ambiguous**;
-5. **QA-created data** — every item `## Preparing states` created on the target.
+4. a criterion the composer found **ambiguous**.
 
 **An item escalates for what it is, never for how sure anyone is.** No model confidence figure
 raises, holds back or ranks an escalation, and none appears anywhere in the pass: not on a verdict,
@@ -652,7 +741,7 @@ sub-step is not one either, because the developer already gave its verdict in `#
 
 Every escalation reaches the developer in two places: in the receipt, in the receipt's order, and
 as its own line in the final print. Uncovered and ambiguous criteria, the flows already Unable to
-verify before driving, and the QA-created data plan are also shown at the approval gate. That
+verify before driving are also shown at the approval gate. That
 showing is a preview; the receipt still carries each one.
 
 ## Receipt
@@ -675,17 +764,17 @@ First, the head:
 - the run folder's absolute path. It is on the developer's machine, nothing in it is uploaded, and
   every artifact path in the receipt is under it;
 - **completed** or **stopped early**, as `## End of pass` defines them, and for a stopped-early
-  pass, where it stopped;
-- the **QA-created data** record from `## Preparing states`: each item's state, name, id and
-  target — or `none`.
+  pass, where it stopped.
 
 Then four sections, **in this order**, each present and reading `none` when empty:
 
 1. **Unable to verify** — each Unable-to-verify flow and sub-step with its reason, then each
    uncovered and each ambiguous criterion with its coverage-map reason. Every item carries a
-   **suggested remedy**: the one change that would make it checkable — the state to add to the
-   adapter's *State catalog*, the variable to set, the target to confirm as staging, the reading of
-   the criterion to settle, or the check a human makes by hand.
+   **suggested remedy**: the one change that would make it checkable — the
+   `/qa:setup-states <page folder> S<n>` or `/qa:build-knowledge <page folder>` command to run, the
+   state's `Seeder (for a human)` hint for a state this app cannot make, the variable to set, the
+   target to confirm as staging, the reading of the criterion to settle, or the check a human makes
+   by hand.
 2. **Fails** — each Fail sub-step with its flow's name, the grader's reason, its **artifact path**,
    and its lane from `## On a Fail`: the finding's link or id, the fix-now commit, or `no lane` with
    the reason.

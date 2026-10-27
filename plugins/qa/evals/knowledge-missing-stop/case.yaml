@@ -1,0 +1,86 @@
+schema_version: "1.0"
+name: knowledge-missing-stop
+summary: "A diff touching a page folder with no KNOWLEDGE.md stops before composing, naming the folder and the build-knowledge command."
+description: >
+  The `prove-branch` knowledge stop against the stub shelves page on GitHub. The branch changes
+  `app/shelves/page.tsx` and `app/shelves/components/ShelfRow.tsx`, and `app/shelves/` has no
+  `KNOWLEDGE.md`. The run must resolve the run, then stop before composing any flow, name the
+  page folder `app/shelves` (never its components sub-folder) and print `/qa:build-knowledge
+  app/shelves`, never run that skill itself, and start no driver.
+tags: [micro]
+runs: 1
+context:
+  scaffold_script: ./scaffold.sh
+execution:
+  prompt: |
+    The working directory is the project: a git repository checked out on the branch under
+    test, with its default branch `main` beside it. Its adapter is `.claude/project/adapter.md`.
+
+    On macOS, `git` can fail here with an `xcrun` cache error that says nothing about the
+    repository. If it does, run git as `"$(xcode-select -p)/usr/bin/git"` for the rest of the
+    run.
+
+    This sandbox denies the Edit and Write tools, and shell redirection, on any path under
+    `.claude/`. When the skill writes `.claude/project/accounts.md`, make the same change with a
+    short `python3` script run through Bash, which reads the file and writes it back.
+
+    There is no network here: `gh` is not available, and no request reaches any URL. The files
+    under `.stand-in/` hold what would come back. Read them in place of the call, and do not
+    run `gh`:
+
+    - `.stand-in/gh-pr-list.json` — the open pull requests whose head is this branch, with every
+      field the skill's `gh pr list` asks for.
+    - `.stand-in/gh-pr-view.json` — `gh pr view` for that pull request: `state`, `isDraft`,
+      `headRefOid` and `comments`.
+    - `.stand-in/tickets.json` — the ticket, with its title and body.
+    - `.stand-in/target-checks.md` — what the target answers to each request the skill makes
+      against it.
+
+    For `gh pr diff`, run `git diff main...HEAD`.
+
+    As the developer, for this session: run against my local target `http://127.0.0.1:4100`.
+    I started it from `HEAD`, and it is a staging target.
+    I am not here to answer questions, so when the skill stops or asks, show it and stop there.
+
+    Run this, and nothing else:
+
+    /qa:prove-branch
+
+    Follow the skill exactly and stop where it stops. Your final message carries what the skill
+    printed at the end of the turn: the approval gate as the skill shows it, or the stop.
+  max_turns: 60
+  timeout_seconds: 600
+  model: claude-sonnet-5
+  allowed_tools: [Read, Glob, Grep, Skill, Bash, Write, Edit]
+graders:
+  - type: regex
+    name: prints-build-knowledge-for-the-page-folder
+    target: last_message
+    pattern: '/qa:build-knowledge\s+(?:\./)?app/shelves/?(?:\s|`|$)'
+    flags: m
+
+  - type: regex
+    name: never-names-the-components-folder-as-the-page
+    target: last_message
+    pattern: '/qa:build-knowledge\s+\S*components'
+    match: not_contains
+
+  - type: regex
+    name: composes-no-flow
+    target: last_message
+    pattern: 'start from:'
+    flags: i
+    match: not_contains
+
+  - type: regex
+    name: never-runs-build-knowledge
+    target: trace
+    pattern: '"skill":"(?:qa:)?build-knowledge'
+    match: not_contains
+
+  # A `tool_used` grader cannot express "called zero times", so the trace is the evidence.
+  - type: regex
+    name: no-driver-spawned
+    target: trace
+    pattern: '"subagent_type":"[^"]*qa-driver'
+    match: not_contains

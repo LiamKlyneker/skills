@@ -1,7 +1,7 @@
 [
   {
     "number": 12,
-    "title": "[TASK] Archive shelves",
-    "body": "## What to build\n\nShelf owners can archive a shelf from the Shelves screen. Archived shelves leave the header total and move to an Archived tab, where a shelf archived more than 90 days ago can be purged.\n\n## Acceptance criteria\n\n- [ ] Each active shelf on the Shelves screen shows an Archive button to its owner\n- [ ] Archiving a shelf removes it from the shelf total in the Shelves header\n- [ ] A shelf archived more than 90 days ago shows a Purge button on the Archived tab\n"
+    "title": "[TASK] Shelf actions and the overdue banner",
+    "body": "## What to build\n\nShelf owners archive shelves from the Shelves page, and the page warns about overdue loans.\n\n## Acceptance criteria\n\n- [ ] Each active shelf on the Shelves page shows an Archive button to a member who may archive it\n- [ ] Archiving a shelf removes it from the number in the Shelves page title\n- [ ] When a loan is more than 14 days overdue, the Shelves page shows a banner with the number of overdue loans\n"
   }
 ]

@@ -5,7 +5,9 @@ and when, the data states behind both, and the questions nobody has answered yet
 file, written in user words only.
 
 Three skills share it: **`qa:build-knowledge` is its only writer** — it derives the file, regenerates
-it, and fills one answer on demand — and **`qa:setup-states` and `qa:prove-branch` read it**. This
+it, and fills one answer on demand — and **`qa:setup-states` and `qa:prove-branch` read it**. The
+one write `qa:prove-branch` makes is `build-knowledge`'s own update mode, applied when a developer
+answers an open question during a run; it never derives or regenerates a row. This
 file is the only definition of the format. No skill restates a column list; each points here
 (`../references/knowledge-file.md`). No project edits the format.
 

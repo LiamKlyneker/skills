@@ -1,7 +1,7 @@
 # Project Adapter — the Atelier shelf ledger
 
-A **stub project**, hand-written for one eval case. It carries only the rows `prove-branch`
-reads: there is no package manager, no test runner and no app in this tree. Nothing here ships.
+A **stub project**, hand-written for the `qa:prove-branch` eval cases that read page knowledge.
+There is no package manager, no test runner and no running app in this tree. Nothing here ships.
 
 ## Repo
 
@@ -18,7 +18,8 @@ reads: there is no package manager, no test runner and no app in this tree. Noth
 | Purpose | Command |
 |---|---|
 | Build | None — nothing compiles |
-| Test — **verify L2 floor** | `test -f app/shelves.tsx` |
+| Test — **verify L2 floor** | `test -f app/shelves/page.tsx` |
+| End-to-end suite | `e2e/` — Cypress; data-creation tasks are registered in `e2e/cypress.config.ts` |
 | Install deps | None |
 | Boot the app (visual loop) | None — the pass runs against the pull request's preview deployment |
 
@@ -31,15 +32,10 @@ reads: there is no package manager, no test runner and no app in this tree. Noth
 
 - Session method: `api` · `/api/session` — `api` signs in with one call against the endpoint written after the value, using the credentials named in the next row.
 - Credential environment variables: owner → `ATELIER_OWNER_USER`, `ATELIER_OWNER_PASS` — per role, the names of the environment variables holding its username and password, never a value.
-- State catalog — the named states a flow may `start from:`, the ids that identify each one on staging, and the steps that create it when it is missing, or `none` when nothing can create it:
-
-  | State | Ids | Reach it by |
-  |---|---|---|
-  | `team-with-shelves` | team `t-301`; shelves `s-11`, `s-12` | as owner, create a team on the Teams screen, then two shelves on its Shelves screen |
-  | `shelf-archived-90-days` | team `t-302`; archived shelf `s-90` | none |
+- Known accounts: `.claude/project/accounts.md` — the observed layer: the staging org the pass uses and the page states known to exist there.
 - Preview URL pattern: `https://atelier-pr-<pr-number>.preview.example.invalid` — how a pull request's preview deployment URL is formed.
 - Feature-flag override: `none` — flags cannot be overridden per session.
-- Browser automation consent: `yes` — `qa:prove-branch` may drive a real browser against the preview deployment.
+- Browser automation consent: `yes` — the `qa` skills may drive a real browser against the target.
 
 ## Sources of truth (recon + hard gates)
 

@@ -1,0 +1,86 @@
+schema_version: "1.0"
+name: developer-answer-written
+summary: "An instance the developer names after the missing-account stop is written to accounts.md with origin developer, and the run carries on to the gate."
+description: >
+  The `prove-branch` write-back against the stub shelves page on GitHub. `accounts.md` holds
+  team `t-301` and one state row, S1; the ticket also needs S4, an archived shelf. The
+  developer's answer to the missing-account stop is given up front: team `t-301` has archived
+  shelf `s-40`. The run must append an S4 row for `/shelves` with `s-40` and origin `developer,
+  <date>`, leave the S1 row as it was, resolve the flow from the new row, reach the approval
+  gate, commit nothing, and start no driver.
+tags: [micro]
+runs: 1
+context:
+  scaffold_script: ./scaffold.sh
+execution:
+  prompt: |
+    The working directory is the project: a git repository checked out on the branch under
+    test, with its default branch `main` beside it. Its adapter is `.claude/project/adapter.md`.
+
+    On macOS, `git` can fail here with an `xcrun` cache error that says nothing about the
+    repository. If it does, run git as `"$(xcode-select -p)/usr/bin/git"` for the rest of the
+    run.
+
+    This sandbox denies the Edit and Write tools, and shell redirection, on any path under
+    `.claude/`. When the skill writes `.claude/project/accounts.md`, make the same change with a
+    short `python3` script run through Bash, which reads the file and writes it back.
+
+    There is no network here: `gh` is not available, and no request reaches any URL. The files
+    under `.stand-in/` hold what would come back. Read them in place of the call, and do not
+    run `gh`:
+
+    - `.stand-in/gh-pr-list.json` — the open pull requests whose head is this branch, with every
+      field the skill's `gh pr list` asks for.
+    - `.stand-in/gh-pr-view.json` — `gh pr view` for that pull request: `state`, `isDraft`,
+      `headRefOid` and `comments`.
+    - `.stand-in/tickets.json` — the ticket, with its title and body.
+    - `.stand-in/target-checks.md` — what the target answers to each request the skill makes
+      against it.
+
+    For `gh pr diff`, run `git diff main...HEAD`.
+
+    As the developer, for this session: run against my local target `http://127.0.0.1:4100`.
+    I started it from `HEAD`, and it is a staging target.
+
+    If the skill stops because a state has no account, this is my answer to that stop: on
+    staging, team `t-301` has an archived shelf, `s-40`. I archived it myself today. Carry on
+    from there. I am not here to answer the approval gate, so show it and stop there.
+
+    Run this, and nothing else:
+
+    /qa:prove-branch
+
+    Follow the skill exactly and stop where it stops. Your final message carries what the skill
+    printed at the end of the turn: the approval gate as the skill shows it, or the stop.
+  max_turns: 60
+  timeout_seconds: 600
+  model: claude-sonnet-5
+  allowed_tools: [Read, Glob, Grep, Skill, Bash, Write, Edit]
+graders:
+  - type: regex
+    name: s4-row-written-with-developer-origin
+    target: { source: file, path: .claude/project/accounts.md }
+    pattern: '\|\s*staging\s*\|[^|\n]*t-301[^|\n]*\|\s*/shelves\s*\|\s*S4\s*\|[^|\n]*s-40[^|\n]*\|[^|\n]*\|\s*developer,\s*\d{4}-\d{2}-\d{2}\s*\|'
+
+  - type: regex
+    name: s1-row-intact
+    target: { source: file, path: .claude/project/accounts.md }
+    pattern: '\| staging \| team `t-301` \| /shelves \| S1 \| shelves `s-11`, `s-12` \| 2026-10-20 \| setup-states 2026-10-20 \|'
+
+  - type: regex
+    name: the-flow-resolves-to-the-new-row
+    target: last_message
+    pattern: 'start from:[^\n]*\bS4\b[\s\S]{0,300}?s-40|s-40[\s\S]{0,300}?start from:[^\n]*\bS4\b'
+
+  - type: regex
+    name: never-commits
+    target: trace
+    pattern: '"command":"(?:[^"\\]|\\.)*\bgit\b(?:[^"\\]|\\.)*\s(?:commit|add)\b'
+    match: not_contains
+
+  # A `tool_used` grader cannot express "called zero times", so the trace is the evidence.
+  - type: regex
+    name: no-driver-spawned
+    target: trace
+    pattern: '"subagent_type":"[^"]*qa-driver'
+    match: not_contains
