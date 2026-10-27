@@ -1,0 +1,61 @@
+schema_version: "1.0"
+name: resolver-commit-suffix
+summary: "A (#N) suffix on the branch's commit subjects resolves the run; a (#N) mid-subject does not."
+description: >
+  The `prove-branch` resolver's third key against a stub project on GitHub. The open pull
+  request's body carries no `PRD: #<n>` line, so key 1 finds nothing. Two commit subjects end in
+  `(#12)` and one carries `(#13)` in the middle of the subject. A subject ending in `(#N)` is
+  the only shape key 3 reads, so the run resolves to #12 — one hit, however many commits carry
+  it — and never to #13. The run then stops at the preview step, since no URL answers offline.
+tags: [micro]
+runs: 1
+context:
+  scaffold_script: ./scaffold.sh
+execution:
+  prompt: |
+    The working directory is the project: a git repository checked out on the branch under
+    test, with its default branch `main` beside it. Its adapter is `.claude/project/adapter.md`.
+
+    On macOS, `git` can fail here with an `xcrun` cache error that says nothing about the
+    repository. If it does, run git as `"$(xcode-select -p)/usr/bin/git"` for the rest of the
+    run.
+
+    There is no network here: `gh` is not available, and no URL answers. The files under
+    `.stand-in/` hold what `gh` would return for this branch. Read them wherever the skill runs
+    `gh`, and do not run `gh`:
+
+    - `.stand-in/gh-pr-list.json` — the open pull requests whose head is this branch, with every
+      field the skill's `gh pr list` asks for.
+    - `.stand-in/gh-pr-view.json` — `gh pr view` for that pull request: `state`, `isDraft`,
+      `headRefOid` and `comments`.
+    - `.stand-in/tickets.json` — the tickets this branch could name, with their titles.
+
+    Run this, and nothing else:
+
+    /qa:prove-branch
+
+    Follow the skill exactly and stop where it stops. Your final message carries what the skill
+    printed up to that point: the run it picked, if it picked one, and the stop.
+  max_turns: 30
+  timeout_seconds: 300
+  model: claude-sonnet-5
+  allowed_tools: [Read, Glob, Grep, Skill, Bash, Write, Edit]
+graders:
+  - type: regex
+    name: resolves-ticket-12
+    target: last_message
+    pattern: '#12\b'
+
+  - type: regex
+    name: never-picks-the-mid-subject-number
+    target: last_message
+    pattern: '(?:ticket|picked|resolved to)\W{0,8}#13\b'
+    flags: i
+    match: not_contains
+
+  - type: regex
+    name: not-the-resolver-stop
+    target: last_message
+    pattern: 'cannot resolve the run'
+    flags: i
+    match: not_contains

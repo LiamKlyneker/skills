@@ -1,0 +1,68 @@
+schema_version: "1.0"
+name: resolver-artifactlink
+summary: "On Azure DevOps, the [SPEC] whose ArtifactLink names the pull request resolves the run."
+description: >
+  The `prove-branch` resolver's second key against a stub project on Azure DevOps. The branch's
+  one active pull request, 318, links two work items, handed over as local files because the
+  Azure DevOps MCP server is not connected here: `[SPEC] Shelf archive` (5101) and
+  `[TASK] Archive toggle on the shelf row` (5102), both carrying a `Pull Request` ArtifactLink
+  whose last segment is 318. Key 2 keeps only a work item whose title carries the `[SPEC]` prefix,
+  so the run resolves to 5101 and never to 5102. The run then stops at the preview step, since no
+  URL answers offline.
+tags: [micro]
+runs: 1
+context:
+  scaffold_script: ./scaffold.sh
+execution:
+  prompt: |
+    The working directory is the project: a git repository checked out on the branch under
+    test, with its default branch `main` beside it. Its adapter is `.claude/project/adapter.md`.
+
+    On macOS, `git` can fail here with an `xcrun` cache error that says nothing about the
+    repository. If it does, run git as `"$(xcode-select -p)/usr/bin/git"` for the rest of the
+    run.
+
+    There is no network here: the Azure DevOps MCP server is not connected, and no URL answers.
+    The files under `.stand-in/` hold what the server would return for this branch. Read them
+    wherever the skill calls an `mcp__ado__*` tool, and do not call one:
+
+    - `.stand-in/ado-pull-requests.json` — `mcp__ado__repo_pull_request` listing the active pull
+      requests whose source branch is this branch, against the repo project and repository, with
+      each pull request's status, last source commit and linked work-item ids.
+    - `.stand-in/ado-work-items.json` — `mcp__ado__wit_work_item` (`action: "get"`,
+      `expand: "relations"`, no `fields` filter) for each of those work-item ids.
+
+    Run this, and nothing else:
+
+    /qa:prove-branch
+
+    Follow the skill exactly and stop where it stops. Your final message carries what the skill
+    printed up to that point: the run it picked, if it picked one, and the stop.
+  max_turns: 30
+  timeout_seconds: 300
+  model: claude-sonnet-5
+  allowed_tools: [Read, Glob, Grep, Skill, Bash, Write, Edit]
+graders:
+  - type: regex
+    name: resolves-spec-5101
+    target: last_message
+    pattern: '\b5101\b'
+
+  - type: regex
+    name: names-pull-request-318
+    target: last_message
+    pattern: '\b318\b'
+
+  - type: regex
+    name: never-picks-the-linked-task
+    target: last_message
+    pattern: '(?:ticket|picked|resolved to)\W{0,8}(?:\[TASK\]\s*)?5102\b'
+    flags: i
+    match: not_contains
+
+  - type: regex
+    name: not-the-resolver-stop
+    target: last_message
+    pattern: 'cannot resolve the run'
+    flags: i
+    match: not_contains

@@ -1,0 +1,10 @@
+[
+  {
+    "number": 57,
+    "headRefName": "__BRANCH__",
+    "headRefOid": "__HEAD__",
+    "title": "SHELF-214 Shelf archive",
+    "body": "SHELF-214: archives shelves from the Shelves screen.\n\nCloses #88\n",
+    "url": "https://github.com/LiamKlyneker/atelier-stub/pull/57"
+  }
+]

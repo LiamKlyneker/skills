@@ -1,0 +1,10 @@
+[
+  {
+    "number": 57,
+    "headRefName": "__BRANCH__",
+    "headRefOid": "__HEAD__",
+    "title": "Shelf archive",
+    "body": "Archives shelves from the Shelves screen, keeps archived shelves out of the header total, and adds a Purge button for long-archived shelves.\n",
+    "url": "https://github.com/LiamKlyneker/atelier-stub/pull/57"
+  }
+]

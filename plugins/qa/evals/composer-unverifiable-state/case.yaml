@@ -1,0 +1,100 @@
+schema_version: "1.0"
+name: composer-unverifiable-state
+summary: "A flow whose catalog start state is missing with no creation steps is Unable to verify before any driver starts."
+description: >
+  The `prove-branch` composer and state check against a stub project on GitHub. Ticket #12 has
+  three acceptance criteria. Two start from the catalog state `team-with-shelves`, which the
+  target reports present. The third — a Purge button on a shelf archived more than 90 days ago —
+  can only start from `shelf-archived-90-days`, which the catalog lists with `none` under
+  *Reach it by* and the target reports missing. The run must compose that flow from the catalog
+  state, mark it Unable to verify with the state check's reason, show the other two criteria
+  covered, stop at the approval gate, and start no driver. The developer-stated local target, the
+  saved owner session and a stand-in file for what the target answers replace the network the
+  sandbox lacks.
+tags: [micro]
+runs: 1
+context:
+  scaffold_script: ./scaffold.sh
+execution:
+  prompt: |
+    The working directory is the project: a git repository checked out on the branch under
+    test, with its default branch `main` beside it. Its adapter is `.claude/project/adapter.md`.
+
+    On macOS, `git` can fail here with an `xcrun` cache error that says nothing about the
+    repository. If it does, run git as `"$(xcode-select -p)/usr/bin/git"` for the rest of the
+    run.
+
+    There is no network here: `gh` is not available, and no request reaches any URL. The files
+    under `.stand-in/` hold what would come back. Read them in place of the call, and do not
+    run `gh`:
+
+    - `.stand-in/gh-pr-list.json` — the open pull requests whose head is this branch, with every
+      field the skill's `gh pr list` asks for.
+    - `.stand-in/gh-pr-view.json` — `gh pr view` for that pull request: `state`, `isDraft`,
+      `headRefOid` and `comments`.
+    - `.stand-in/tickets.json` — the ticket, with its title and body.
+    - `.stand-in/target-checks.md` — what the target answers to each request the skill makes
+      against it: the saved session's check and each catalog state's check.
+
+    For `gh pr diff`, run `git diff main...HEAD`.
+
+    As the developer, for this session: run against my local target `http://127.0.0.1:4100`.
+    I started it from `HEAD`, and it is a staging target. I am not here to answer the approval
+    gate, so show it and stop there.
+
+    Run this, and nothing else:
+
+    /qa:prove-branch
+
+    Follow the skill exactly and stop where it stops. Your final message carries the approval
+    gate as the skill shows it.
+  max_turns: 60
+  timeout_seconds: 600
+  model: claude-sonnet-5
+  allowed_tools: [Read, Glob, Grep, Skill, Bash, Write, Edit]
+graders:
+  - type: regex
+    name: flow-starts-from-the-catalog-state
+    target: last_message
+    pattern: 'start from:[^\n]*shelf-archived-90-days'
+    flags: i
+
+  - type: regex
+    name: marks-a-flow-unable-to-verify
+    target: last_message
+    pattern: 'unable to verify'
+    flags: i
+
+  - type: regex
+    name: reason-names-the-missing-uncreatable-state
+    target: last_message
+    # The skill's reason sentence is prose; this grades the fact, not the wording: the state is
+    # named missing on one line, with a no-creation-steps phrase, near the Unable-to-verify mark.
+    pattern: '(?=[\s\S]{0,400}?unable to verify)(?=[\s\S]{0,400}?(?:shelf-archived-90-days[^\n]{0,80}?\bmissing\b|\bmissing\b[^\n]{0,80}?shelf-archived-90-days))(?=[\s\S]{0,400}?(?:\bno\s+(?:\w+\s+){0,2}steps\b|\bnone\b|\bno\s+way\s+to\s+(?:create|reach)|\b(?:cannot|can''t|can not)\s+(?:be\s+)?(?:create|reach)|\bnot\s+creatable|\buncreatable|\bnothing\s+to\s+create))'
+    flags: i
+
+  - type: regex
+    name: criterion-1-covered
+    target: last_message
+    pattern: '\|\s*1\s*\|[^\n]*\bcovered\b'
+    flags: i
+
+  - type: regex
+    name: criterion-2-covered
+    target: last_message
+    pattern: '\|\s*2\s*\|[^\n]*\bcovered\b'
+    flags: i
+
+  - type: regex
+    name: no-criterion-row-uncovered
+    target: last_message
+    pattern: '\|[^\n]*\buncovered\b'
+    flags: i
+    match: not_contains
+
+  # A `tool_used` grader cannot express "called zero times", so the trace is the evidence.
+  - type: regex
+    name: no-driver-spawned
+    target: trace
+    pattern: '"subagent_type":"[^"]*qa-driver'
+    match: not_contains

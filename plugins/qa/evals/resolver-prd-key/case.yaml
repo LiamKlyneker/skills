@@ -1,0 +1,67 @@
+schema_version: "1.0"
+name: resolver-prd-key
+summary: "A whole-line PRD: #<n> in the pull request body resolves the run; a substring of a longer line does not."
+description: >
+  The `prove-branch` resolver's first key against a stub project on GitHub. The open pull
+  request's body, handed over as a local file because there is no `gh` here, carries
+  `PRD: #40` as a whole line and `PRD: #407` inside a sentence. Key 1 matches whole lines only,
+  so the run resolves to PRD #40 and never to #407; the branch's `(#41)` and `(#42)` commit
+  suffixes are key 3 and are never tried. The run then stops at the preview step, since no URL
+  answers offline.
+tags: [micro]
+runs: 1
+context:
+  scaffold_script: ./scaffold.sh
+execution:
+  prompt: |
+    The working directory is the project: a git repository checked out on the branch under
+    test, with its default branch `main` beside it. Its adapter is `.claude/project/adapter.md`.
+
+    On macOS, `git` can fail here with an `xcrun` cache error that says nothing about the
+    repository. If it does, run git as `"$(xcode-select -p)/usr/bin/git"` for the rest of the
+    run.
+
+    There is no network here: `gh` is not available, and no URL answers. The files under
+    `.stand-in/` hold what `gh` would return for this branch. Read them wherever the skill runs
+    `gh`, and do not run `gh`:
+
+    - `.stand-in/gh-pr-list.json` — the open pull requests whose head is this branch, with every
+      field the skill's `gh pr list` asks for.
+    - `.stand-in/gh-pr-view.json` — `gh pr view` for that pull request: `state`, `isDraft`,
+      `headRefOid` and `comments`.
+    - `.stand-in/tickets.json` — the tickets this branch could name, with their titles.
+
+    Run this, and nothing else:
+
+    /qa:prove-branch
+
+    Follow the skill exactly and stop where it stops. Your final message carries what the skill
+    printed up to that point: the run it picked, if it picked one, and the stop.
+  max_turns: 30
+  timeout_seconds: 300
+  model: claude-sonnet-5
+  allowed_tools: [Read, Glob, Grep, Skill, Bash, Write, Edit]
+graders:
+  - type: regex
+    name: resolves-prd-40
+    target: last_message
+    pattern: '#40\b'
+
+  - type: regex
+    name: names-the-pull-request
+    target: last_message
+    pattern: '#57\b'
+
+  - type: regex
+    name: never-picks-the-substring-hit
+    target: last_message
+    pattern: '(?:ticket|picked|resolved to)\W{0,8}(?:PRD\W{0,3})?#407\b'
+    flags: i
+    match: not_contains
+
+  - type: regex
+    name: not-the-resolver-stop
+    target: last_message
+    pattern: 'cannot resolve the run'
+    flags: i
+    match: not_contains
