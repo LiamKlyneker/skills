@@ -48,7 +48,7 @@ From `## QA`, by row name:
 | *State catalog* | the named states a flow may `start from:`, the ids that identify each, and how to reach it |
 | *Preview URL pattern* | how the pull request's preview deployment URL is formed, or `pr-comment` — read in `## The target` |
 | *Feature-flag override* | how one session turns a flag on or off, or `none` |
-| *Browser automation consent* | `yes` records that the skill may drive a real browser against the preview |
+| *Browser automation consent* | read as [`browser-readiness.md`](../references/browser-readiness.md) → *Consent* says |
 
 A missing `## QA` section is not a stop at this point: `## The target` stops when it needs the
 *Preview URL pattern* row and finds none.
@@ -548,27 +548,10 @@ Every run gets a new folder inside the excluded scenario directory, created unde
 
 ### Playwright MCP readiness
 
-Before any driver starts, confirm that **the Playwright MCP tools are present in this session** —
-`browser_navigate`, `browser_snapshot`, `browser_take_screenshot`, `browser_console_messages` and
-`browser_network_requests` at least. When they are not, stop and name the remedy: add the
-Playwright MCP server, start a fresh session, and run `/qa:prove-branch` again. The shape is
-
-```bash
-claude mcp add playwright -- npx @playwright/mcp@latest --isolated --storage-state <path to a session.json>
-```
-
-and the exact flags are the ones the server documents at run time. **Isolated mode plus a
-storage-state file is how a saved session reaches the browser**: the browser holds its profile in
-memory, starts signed in from the scenario's `session.json`, and writes nothing back to it. The
-server runs headed unless the developer asks for headless, so the developer can watch.
-
-**One driver per flow means one isolated browser context per flow, loaded with that flow's role's
-session.** Confirm the connected server gives each driver its own context. When it can give the
-session only one browser, two drivers would act in the same page, so dispatch the drivers one at
-a time, in flow order, and say why. A role whose session the server cannot load is a stop that
-names the role.
-
-Never install the server or a browser into the project, and never add the server without a yes.
+Before any driver starts, run the readiness check in
+[`browser-readiness.md`](../references/browser-readiness.md) → *Playwright MCP readiness*, including
+its rule for one browser context per driver. When it stops, the remedy it names ends with running
+`/qa:prove-branch` again.
 
 ### Dispatching the drivers
 
