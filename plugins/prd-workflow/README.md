@@ -30,6 +30,12 @@ machinery. Both lived in the `lk` plugin until they didn't — `lk` is the skill
 that talk to the user and the codebase, and a skill that files GitHub issues was
 never one of those.
 
+## Install
+
+```
+/plugin install prd-workflow --marketplace LiamKlyneker/skills
+```
+
 ## Layout
 
 ```

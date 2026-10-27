@@ -28,6 +28,12 @@ argument, including which of 0008's claims about this tracker were wrong; ADR
 it **on the QA-artifact half only** — the tickable comment is gone, the plugin
 membership and the board reasoning behind the title prefixes are not.
 
+## Install
+
+```
+/plugin install ado-workflow --marketplace LiamKlyneker/skills
+```
+
 ## Layout
 
 ```
