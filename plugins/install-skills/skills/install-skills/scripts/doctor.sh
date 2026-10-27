@@ -466,6 +466,51 @@ if [ -n "$bundle" ]; then
   fi
 fi
 
+# ---------------------------------------------------------------- 9. the adapter's ## QA section
+#
+# Only the mechanical rows: the credential variables `qa:prove-branch` reads must be
+# set in this shell, and the session method must be one the skill knows. Nothing here
+# opens a browser; whether the method yields a session is the skill's run-time check.
+# Silent when the adapter has no `## QA` section, since only the `qa` bundle asks for it.
+
+if [ -f "$adapter" ] && grep -qE '^## QA[[:space:]]*$' "$adapter"; then
+  qa_section="$(awk '/^## QA[[:space:]]*$/{flag=1; next} /^## /{flag=0} flag' "$adapter")"
+  qa_problems=$errors
+  session=""
+
+  session_line="$(printf '%s\n' "$qa_section" | grep -E '^[[:space:]]*[-*][[:space:]]+(\*\*)?Session method' | head -1)"
+  if [ -z "$session_line" ]; then
+    err "QA-SESSION" "$(rel "$adapter") has a \`## QA\` section with no Session method row"
+  else
+    session="$(row_value "$session_line")"
+    case "$session" in
+      api|manual) ;;
+      *) is_unfilled_token "$session" ||
+           err "QA-SESSION" "$(rel "$adapter") gives the QA session method as \`$session\` — it must be \`api\` or \`manual\`" ;;
+    esac
+  fi
+
+  # Role labels are unquoted on this row, so every backticked token before the
+  # em dash is a variable name; the prose after the dash may backtick examples.
+  qa_vars=0
+  while IFS= read -r line; do
+    [ -n "$line" ] || continue
+    while IFS= read -r var; do
+      [ -n "$var" ] || continue
+      is_unfilled_token "$var" && continue
+      qa_vars=$((qa_vars + 1))
+      if ! printf '%s' "$var" | grep -qE '^[A-Za-z_][A-Za-z0-9_]*$'; then
+        err "QA-ENV" "$(rel "$adapter") names \`$var\` as a QA credential variable, which is not a valid variable name"
+      elif [ -z "${!var+set}" ]; then
+        err "QA-ENV" "\$$var is not set in this shell, but $(rel "$adapter") names it as a QA credential variable"
+      fi
+    done < <(printf '%s\n' "${line%%—*}" | grep -o '`[^`]*`' | tr -d '`')
+  done < <(printf '%s\n' "$qa_section" | grep -E '^[[:space:]]*[-*][[:space:]]+(\*\*)?Credential environment variables')
+
+  [ "$errors" -eq "$qa_problems" ] &&
+    ok "$(rel "$adapter") \`## QA\`: session method \`$session\`, $qa_vars credential variable(s) set"
+fi
+
 # ---------------------------------------------------------------- summary
 
 echo

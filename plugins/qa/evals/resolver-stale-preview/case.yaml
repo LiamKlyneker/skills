@@ -1,0 +1,77 @@
+schema_version: "1.0"
+name: resolver-stale-preview
+summary: "A preview built from a commit other than HEAD stops and asks for a URL."
+description: >
+  The `prove-branch` target step against a stub project on GitHub whose adapter reads the
+  preview URL from a pull-request comment. The run resolves to #12 by its commit suffixes. The
+  deploy bot's comment, handed over in the `gh pr view` stand-in, posts a preview URL built from
+  `c0ffee1…`, which is not `HEAD`. The run must stop there, give the URL and the commit it found,
+  and ask the developer for a URL — never compose flows against the stale preview.
+tags: [micro]
+runs: 1
+context:
+  scaffold_script: ./scaffold.sh
+execution:
+  prompt: |
+    The working directory is the project: a git repository checked out on the branch under
+    test, with its default branch `main` beside it. Its adapter is `.claude/project/adapter.md`.
+
+    On macOS, `git` can fail here with an `xcrun` cache error that says nothing about the
+    repository. If it does, run git as `"$(xcode-select -p)/usr/bin/git"` for the rest of the
+    run.
+
+    There is no network here: `gh` is not available, and no URL answers. The files under
+    `.stand-in/` hold what `gh` would return for this branch. Read them wherever the skill runs
+    `gh`, and do not run `gh`:
+
+    - `.stand-in/gh-pr-list.json` — the open pull requests whose head is this branch, with every
+      field the skill's `gh pr list` asks for.
+    - `.stand-in/gh-pr-view.json` — `gh pr view` for that pull request: `state`, `isDraft`,
+      `headRefOid` and `comments`.
+    - `.stand-in/tickets.json` — the tickets this branch could name, with their titles.
+
+    Run this, and nothing else:
+
+    /qa:prove-branch
+
+    Follow the skill exactly and stop where it stops. Your final message carries what the skill
+    printed up to that point: the run it picked, if it picked one, and the stop.
+  max_turns: 30
+  timeout_seconds: 300
+  model: claude-sonnet-5
+  allowed_tools: [Read, Glob, Grep, Skill, Bash, Write, Edit]
+graders:
+  - type: regex
+    name: resolves-ticket-12
+    target: last_message
+    pattern: '#12\b'
+
+  - type: regex
+    name: gives-the-preview-url-found
+    target: last_message
+    pattern: 'atelier-git-shelf-archive\.preview\.example\.invalid'
+
+  - type: regex
+    name: gives-the-built-from-commit
+    target: last_message
+    pattern: 'c0ffee1'
+
+  - type: regex
+    name: asks-for-a-url
+    target: last_message
+    pattern: '(?:provide|give|supply|share|send|paste|which|what)[^\n]{0,80}\bURL\b|\bURL\b[^\n]{0,80}\?'
+    flags: i
+
+  - type: regex
+    name: no-flow-composed-against-the-stale-preview
+    target: last_message
+    pattern: 'start from:'
+    flags: i
+    match: not_contains
+
+  - type: regex
+    name: not-the-resolver-stop
+    target: last_message
+    pattern: 'cannot resolve the run'
+    flags: i
+    match: not_contains

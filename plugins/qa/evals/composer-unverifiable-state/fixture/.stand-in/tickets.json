@@ -1,0 +1,7 @@
+[
+  {
+    "number": 12,
+    "title": "[TASK] Archive shelves",
+    "body": "## What to build\n\nShelf owners can archive a shelf from the Shelves screen. Archived shelves leave the header total and move to an Archived tab, where a shelf archived more than 90 days ago can be purged.\n\n## Acceptance criteria\n\n- [ ] Each active shelf on the Shelves screen shows an Archive button to its owner\n- [ ] Archiving a shelf removes it from the shelf total in the Shelves header\n- [ ] A shelf archived more than 90 days ago shows a Purge button on the Archived tab\n"
+  }
+]

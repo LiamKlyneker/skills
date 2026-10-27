@@ -3,10 +3,10 @@
 Canonical source repo for Liam's personal Claude Code skills, and the marketplace
 that publishes them. **Every skill lives inside a plugin**, at
 `plugins/<plugin>/skills/<skill>/`, with that plugin's agents in
-`plugins/<plugin>/agents/`. Five plugins today — `prd-workflow`, `figma-tools`,
-`ado-workflow` (the PRD workflow's ADO counterpart), `lk` (the personal skills) and
-`install-skills` — all catalogued in `.claude-plugin/marketplace.json` as marketplace
-`liamklyneker`.
+`plugins/<plugin>/agents/`. Six plugins today — `prd-workflow`, `figma-tools`,
+`ado-workflow` (the PRD workflow's ADO counterpart), `lk` (the personal skills),
+`install-skills`, and `qa` (the automated QA pass, for both trackers) — all catalogued in
+`.claude-plugin/marketplace.json` as marketplace `liamklyneker`.
 
 **There are no plain skills at the top level any more.** There used to be a second
 route — one top-level directory per unpackaged skill — and it is gone, not deprecated:
@@ -147,7 +147,9 @@ three surviving literals are, and why the loop must not invoke the driver — is
 only**. Both surviving halves are load-bearing here: 0009's, that a PRD's children are still
 native sub-issues; and 0011's plugin-membership rule, which is why `manual-qa` and `triage` sit
 in `prd-workflow` and `ado-workflow` — beside the loop whose literals they share — and never in
-`lk`.
+`lk`. `qa:prove-branch` is the automated pass, in its own plugin for both trackers, and both
+`manual-qa` copies stay until it has completed a run on a real project — ADR
+[0020](docs/adr/0020-the-automated-qa-pass-gets-its-own-plugin.md) amends 0011's membership rule.
 
 GitHub titles carry `[PRD]` · `[TASK]` · `[BUG]` · `[FINDINGS]` · `[LEAK]`, registered in the
 adapter's `## Repo` → *Title prefixes* row, never hardcoded in a skill. **On GitHub they are a human

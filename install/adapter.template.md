@@ -226,6 +226,22 @@ build for one now.
 - **L4** (agent-driven interaction): out of scope v1.
 - **L5 — human**: once per orchestrated run, against the branch, before merge. The run **composes no QA pass**: it labels the PRD (GitHub) or tags the `[SPEC]` (Azure DevOps) `needs-qa` and prints the `manual-qa` invocation. A human runs that on demand; `manual-qa` composes the pass from what actually landed, drives it flow by flow, and — on a failure — files findings on a disposable per-run `[FINDINGS]` issue (GitHub) or work item (Azure DevOps), then `triage` promotes the survivors into cold-runnable work. Say here what exercising this app actually means — `<which entry point, which command, what to look for>` — because the run's steps are written against it and a worker only knows what this line says.
 
+## QA
+
+Read by `qa:prove-branch` alone, which learns from this section how to sign in, which states a flow may start from and where the preview runs; every value here is non-secret, and a project that never runs the automated QA pass deletes the whole section.
+
+- Session method: `<api or manual>` · `<sign-in endpoint, api only>` — `api` signs in with one call against the endpoint written after the value, using the credentials named in the next row; `manual` pauses for a one-time login in a visible browser window and saves that session for later runs.
+- Credential environment variables: <role> → `<username-env-var>`, `<password-env-var>` — per role, the **names** of the environment variables holding its username and password, never a value; roles are free-form labels (`admin`, `member`), written unquoted and separated by ` · `, so every backticked token before this dash is a variable name `doctor` checks is set.
+- State catalog — the named states a flow may `start from:`, the ids that identify each one on staging, and the steps that create it when it is missing, or `none` when nothing can create it:
+
+  | State | Ids | Reach it by |
+  |---|---|---|
+  | `<state name>` | `<staging ids that identify it>` | `<steps that create it, or none>` |
+
+- Preview URL pattern: `<preview-url-pattern>` — how a pull request's preview deployment URL is formed, in this file's placeholder notation (`https://app-pr-<pr-number>.preview.example.com`), or the literal `pr-comment` when a bot posts the URL as a comment on the pull request.
+- Feature-flag override: `<flag override mechanism, or none>` — how one session turns a feature flag on or off (a query parameter, a cookie, an admin toggle), or `none` when flags cannot be overridden per session.
+- Browser automation consent: `<yes>` — `yes` records that `qa:prove-branch` may drive a real browser against the preview deployment; it does so only when a human invokes it, and neither loop ever does.
+
 ## Sources of truth (recon + hard gates)
 
 - **Project explorer agent**: `<subagent_type>` — read-only, one feature/package area per spawn. Or "None — use `Explore`".
@@ -280,11 +296,13 @@ is itself a pattern (`feat/<slug>` on GitHub, `spec/<id>-<slug>` on Azure DevOps
 three survive filling by design. `<ticket>`, `<state-id>`, `<path>` and `<step-id>` are
 screenshot-path notation on the same terms: a filled `Screenshots:` row — in either design-source
 sub-section — states a path *rule*, not one file, so all four survive filling too.
+`<pr-number>` is preview-URL notation in `## QA`: a filled `Preview URL pattern:` row states how
+the URL is formed for any pull request, so the token survives filling as well.
 
 **Delete this whole comment when you fill your copy.** doctor reads the exemption list
 from the template, never from your adapter, so a copy of it here does nothing except
 carry `<token>` into your file — where the placeholder check then reports it, forever.
 
-doctor:not-a-placeholder <repo-root> <n> <id> <slug> <ticket> <state-id> <path> <step-id>
+doctor:not-a-placeholder <repo-root> <n> <id> <slug> <ticket> <state-id> <path> <step-id> <pr-number>
 -->
 
