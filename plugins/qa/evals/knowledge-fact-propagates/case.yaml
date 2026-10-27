@@ -1,0 +1,74 @@
+schema_version: "1.0"
+name: knowledge-fact-propagates
+summary: "--fact fills one question's answer with a developer origin and today's date, writes it into the cell that cites it, and changes nothing else."
+description: >
+  The `build-knowledge` update mode against the stub shelves page, whose `KNOWLEDGE.md` holds four
+  open questions. Q3 asks who may purge an old archived shelf, and the Purge action's
+  `Allowed when` cell cites it. The developer answers Q3. The run must fill Q3's `Answer` with the
+  rule in product words and origin `developer, <date>`, write the rule into the Purge row's
+  condition with `[Q3]` kept and `developer, <date>` added to that row's origin, and leave every
+  other byte of the file as it was — the header, `Derived at:`, every other row.
+tags: [micro]
+runs: 1
+context:
+  scaffold_script: ./scaffold.sh
+execution:
+  prompt: |
+    The working directory is the project: a git repository checked out on a working branch, with
+    its default branch `main` beside it. Its adapter is `.claude/project/adapter.md`.
+
+    On macOS, `git` can fail here with an `xcrun` cache error that says nothing about the
+    repository. If it does, run git as `"$(xcode-select -p)/usr/bin/git"` for the rest of the
+    run.
+
+    Run this, and nothing else:
+
+    /qa:build-knowledge app/shelves --fact "Q3: only the team's owner may purge a shelf"
+
+    Follow the skill exactly and stop where it stops. Your final message carries what the skill
+    prints at the end of the run.
+  max_turns: 25
+  timeout_seconds: 400
+  model: claude-sonnet-5
+  allowed_tools: [Read, Glob, Grep, Skill, Bash, Write, Edit]
+graders:
+  - type: regex
+    name: q3-answered-by-the-developer
+    target: { source: file, path: app/shelves/KNOWLEDGE.md }
+    pattern: '\n\| Q3 \|[^\n]*\|[^|\n]*\bowner\b[^|\n]*\| *developer, \d{4}-\d{2}-\d{2} *\|'
+    flags: i
+
+  - type: regex
+    name: purge-row-carries-the-answer
+    target: { source: file, path: app/shelves/KNOWLEDGE.md }
+    pattern: '\n\| Purge an archived shelf \|[^|\n]*\|[^|\n]*\bowner\b[^|\n]*\[Q3\][^|\n]*\|'
+    flags: i
+
+  - type: regex
+    name: purge-row-origin-gains-the-developer
+    target: { source: file, path: app/shelves/KNOWLEDGE.md }
+    pattern: '\n\| Purge an archived shelf \|[^\n]*\| *code, developer, \d{4}-\d{2}-\d{2} *\|'
+
+  - type: regex
+    name: purge-row-drops-the-app-says-wording
+    target: { source: file, path: app/shelves/KNOWLEDGE.md }
+    pattern: '\n\| Purge an archived shelf \|[^\n]*the app says it may be purged'
+    match: not_contains
+
+  # The whole file, byte for byte, with only the Purge row and the Q3 row left free.
+  - type: regex
+    name: nothing-else-touched
+    target: { source: file, path: app/shelves/KNOWLEDGE.md }
+    pattern: '^# Shelves\n\nRoute: /shelves\nPurpose: A team member sees the team''s shelves, opens one, and archives, restores or purges a shelf\.\nDerived at: 0c1d2e3 · 2026-09-30\nEnvironment: none\n\n## What the user sees\n\n\| Section \| Role \| Shows when \| State \| Origin \|\n\|---\|---\|---\|---\|---\|\n\| Sign-in page in place of the shelves \| Anyone signed out \| the visitor is not signed in; after signing in they return to the shelves \| any \| code \|\n\| "Loading shelves…" \| Any team member \| the team''s shelves have not arrived yet \| any \| code \|\n\| "We couldn''t load your shelves" message \| Any team member \| the app could not fetch the team''s shelves \| any \| code \|\n\| Page title with the number of shelves \| Any team member \| the shelves have loaded; the number leaves out archived shelves \| S1, S2 \| code \|\n\| Overdue loans banner with the number of overdue loans \| Any team member \| at least one loan is more than 14 days overdue \| S3 \| code \|\n\| "No shelves yet\." \| Any team member \| the team has no shelf that is not archived \| S2 \| code \|\n\| Shelf list \| Any team member \| the team has at least one shelf that is not archived \| S1 \| code \|\n\| Each shelf''s name and number of books \| Any team member \| on every shelf in the list and in the Archived section \| S1 \| code \|\n\| Archived section \| Any team member \| the team has at least one archived shelf \| S4 \| code \|\n\| New shelf drawer with a name box \| A member who may create shelves \| the member pressed New shelf or the N key \| S1, S2 \| code \|\n\n## What the user can do\n\n\| Action \| Role \| Allowed when \| Result the user sees \| Origin \|\n\|---\|---\|---\|---\|---\|\n\| Open a shelf from its name \| Any team member \| always \| the shelf''s own page opens \| code \|\n\| New shelf button \| A member who may create shelves \| the app says the member may create a shelf \[Q2\] \| the New shelf drawer opens \| code \|\n\| Press N \| A member who may create shelves \| the app says the member may create a shelf \[Q2\], and the cursor is not in a text box \| the New shelf drawer opens \| code \|\n\| Share shelves link \| Team owner \| the member is the team''s owner \| the sharing page opens \| code \|\n\| Archive a shelf \| A member who may archive that shelf \| the app says the member may archive this shelf \[Q1\] \| the shelf moves to the Archived section and the title''s number drops by one \| code \|\n\| Restore an archived shelf \| A member who may archive that shelf \| the app says the member may archive this shelf \[Q1\] \| the shelf moves back to the shelf list \| code \|\n\| Purge an archived shelf \|[^\n]*\n\| Create, in the New shelf drawer \| A member who may create shelves \| a name is typed \| the drawer closes and the new shelf appears in the list \| code \|\n\| Cancel, in the New shelf drawer \| A member who may create shelves \| always \| the drawer closes and nothing is saved \| code \|\n\n## States\n\n\| Id \| State, in user terms \| Env \| Known account \| Seeder \(for a human\) \| Origin \|\n\|---\|---\|---\|---\|---\|---\|\n\| S1 \| The team has at least one shelf that is not archived \| both \| none known \| `seed:shelf` \| code \|\n\| S2 \| The team has no shelf, or only archived ones \| both \| none known \| none known \| code \|\n\| S3 \| A loan on one of the team''s shelves is more than 14 days overdue \| both \| none known \| `seed:overdue-loan` \| code \|\n\| S4 \| The team has an archived shelf \| both \| none known \| `seed:archived-shelf` \| code \|\n\| S5 \| The team has a shelf archived more than 90 days ago \| both \| none known \| `seed:archived-shelf` \| code \|\n\n## Open questions\n\n\| Id \| Question \| Blocks \| Answer \| Origin \|\n\|---\|---\|---\|---\|---\|\n\| Q1 \| Who may archive or restore a shelf\? The page only asks the app yes or no\. \| S1, S4 \| — \| — \|\n\| Q2 \| Who may create a shelf\? The page only asks the app yes or no\. \| S1, S2 \| — \| — \|\n\| Q3 \|[^\n]*\n\| Q4 \| Which team on staging has a shelf archived more than 90 days ago\? \| S5 \| — \| — \|\n?$'
+
+  - type: regex
+    name: no-code-words
+    target: { source: file, path: app/shelves/KNOWLEDGE.md }
+    pattern: '\b[a-z]+[A-Z][A-Za-z]*\b|\b[a-z]+_[a-z_]+\b|\b[A-Z][a-z]+[A-Z][a-z]\w*\b|\.(?:tsx?|jsx?|py)\b|\b[A-Z]{2,}_[A-Z_]+\b'
+    match: not_contains
+
+  - type: regex
+    name: never-commits
+    target: trace
+    pattern: '"command":"(?:[^"\\]|\\.)*\bgit\b(?:[^"\\]|\\.)*\s(?:commit|add)\b'
+    match: not_contains

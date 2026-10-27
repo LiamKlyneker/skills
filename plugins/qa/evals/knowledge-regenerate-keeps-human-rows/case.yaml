@@ -1,0 +1,116 @@
+schema_version: "1.0"
+name: knowledge-regenerate-keeps-human-rows
+summary: "A regenerate after one condition changes rewrites that code row and leaves the planted developer and backend-repo rows byte-intact."
+description: >
+  The `build-knowledge` regenerate against the stub shelves page. `main` holds the page and a
+  `KNOWLEDGE.md` derived from it, in which the overdue-loans banner shows after 14 days, Q1 is
+  answered from the `shelves-api` repo and written into the Archive and Restore rows, and Q4 is
+  answered by a developer. The branch under test changes one condition: the banner now shows after
+  7 days. The run must rewrite the banner row and the overdue state, both `code`, leave the two
+  backend-repo action rows, the backend-answered Q1, the developer-answered Q4 and the
+  `Backend read:` line byte-intact, move `Derived at:`, and keep every id contiguous.
+tags: [micro]
+runs: 1
+context:
+  scaffold_script: ./scaffold.sh
+execution:
+  prompt: |
+    The working directory is the project: a git repository checked out on a working branch, with
+    its default branch `main` beside it. Its adapter is `.claude/project/adapter.md`.
+
+    On macOS, `git` can fail here with an `xcrun` cache error that says nothing about the
+    repository. If it does, run git as `"$(xcode-select -p)/usr/bin/git"` for the rest of the
+    run.
+
+    Run this, and nothing else:
+
+    /qa:build-knowledge app/shelves
+
+    Follow the skill exactly and stop where it stops. Your final message carries what the skill
+    prints at the end of the run.
+  max_turns: 40
+  timeout_seconds: 600
+  model: claude-sonnet-5
+  allowed_tools: [Read, Glob, Grep, Skill, Bash, Write, Edit]
+graders:
+  # ---- The changed condition is re-derived in both rows that state it ----
+  - type: regex
+    name: banner-row-rewritten-to-seven-days
+    target: { source: file, path: app/shelves/KNOWLEDGE.md }
+    pattern: '\n\|[^\n]*\boverdue\b[^\n]*(?:\b7\b|\bseven\b|\ba week\b)[^\n]*\| *code *\|'
+    flags: i
+
+  - type: regex
+    name: overdue-state-rewritten-to-seven-days
+    target: { source: file, path: app/shelves/KNOWLEDGE.md }
+    pattern: '\n\| ?S\d+ ?\|(?=[^\n]*\boverdue\b)(?=[^\n]*(?:\b7\b|\bseven\b|\ba week\b))'
+    flags: i
+
+  - type: regex
+    name: old-threshold-gone
+    target: { source: file, path: app/shelves/KNOWLEDGE.md }
+    pattern: '\b14 days\b|\btwo weeks\b|\bfourteen\b'
+    flags: i
+    match: not_contains
+
+  - type: regex
+    name: derived-at-moved
+    target: { source: file, path: app/shelves/KNOWLEDGE.md }
+    pattern: 'Derived at: 0c1d2e3'
+    match: not_contains
+
+  - type: regex
+    name: derived-at-names-a-commit-and-a-date
+    target: { source: file, path: app/shelves/KNOWLEDGE.md }
+    pattern: '\nDerived at: [0-9a-f]{7,40} · \d{4}-\d{2}-\d{2}'
+
+  # ---- Every planted row whose origin is not exactly `code` is byte-intact ----
+  - type: regex
+    name: archive-row-from-the-repo-byte-intact
+    target: { source: file, path: app/shelves/KNOWLEDGE.md }
+    pattern: '\n\| Archive a shelf \| Team owner or editor \| the member is the team''s owner or an editor, and no book on the shelf is out on loan \[Q1\] \| the shelf moves to the Archived section and the title''s number drops by one \| code, backend-repo \(shelves-api\) \|(?:\n|$)'
+
+  - type: regex
+    name: restore-row-from-the-repo-byte-intact
+    target: { source: file, path: app/shelves/KNOWLEDGE.md }
+    pattern: '\n\| Restore an archived shelf \| Team owner or editor \| the member is the team''s owner or an editor, and no book on the shelf is out on loan \[Q1\] \| the shelf moves back to the shelf list \| code, backend-repo \(shelves-api\) \|(?:\n|$)'
+
+  - type: regex
+    name: q1-answer-from-the-repo-byte-intact
+    target: { source: file, path: app/shelves/KNOWLEDGE.md }
+    pattern: '\n\| Q1 \| Who may archive or restore a shelf\? The page only asks the app yes or no\. \| S1, S4 \| the team''s owner or an editor, and only while no book on the shelf is out on loan \| backend-repo \(shelves-api\) \|(?:\n|$)'
+
+  - type: regex
+    name: q4-developer-answer-byte-intact
+    target: { source: file, path: app/shelves/KNOWLEDGE.md }
+    pattern: '\n\| Q4 \| Which team on staging has a shelf archived more than 90 days ago\? \| S5 \| the Lantern Readers team on staging keeps one for testing \| developer, 2026-09-30 \|(?:\n|$)'
+
+  - type: regex
+    name: backend-read-line-kept
+    target: { source: file, path: app/shelves/KNOWLEDGE.md }
+    pattern: '\nBackend read: shelves-api · 2026-09-30(?:\n|$)'
+
+  # ---- Ids stay contiguous ----
+  - type: regex
+    name: state-ids-have-no-gap
+    target: { source: file, path: app/shelves/KNOWLEDGE.md }
+    pattern: '^(?:(?=[\s\S]*\n\| ?S2 ?\|)(?![\s\S]*\n\| ?S1 ?\|)|(?=[\s\S]*\n\| ?S3 ?\|)(?![\s\S]*\n\| ?S2 ?\|)|(?=[\s\S]*\n\| ?S4 ?\|)(?![\s\S]*\n\| ?S3 ?\|)|(?=[\s\S]*\n\| ?S5 ?\|)(?![\s\S]*\n\| ?S4 ?\|)|(?=[\s\S]*\n\| ?S6 ?\|)(?![\s\S]*\n\| ?S5 ?\|)|(?=[\s\S]*\n\| ?S7 ?\|)(?![\s\S]*\n\| ?S6 ?\|)|(?=[\s\S]*\n\| ?S8 ?\|)(?![\s\S]*\n\| ?S7 ?\|)|(?=[\s\S]*\n\| ?S9 ?\|)(?![\s\S]*\n\| ?S8 ?\|)|(?=[\s\S]*\n\| ?S10 ?\|)(?![\s\S]*\n\| ?S9 ?\|)|(?=[\s\S]*\n\| ?S11 ?\|)(?![\s\S]*\n\| ?S10 ?\|)|(?=[\s\S]*\n\| ?S12 ?\|)(?![\s\S]*\n\| ?S11 ?\|)|(?=[\s\S]*\n\| ?S13 ?\|)(?![\s\S]*\n\| ?S12 ?\|)|(?=[\s\S]*\n\| ?S14 ?\|)(?![\s\S]*\n\| ?S13 ?\|)|(?=[\s\S]*\n\| ?S15 ?\|)(?![\s\S]*\n\| ?S14 ?\|)|(?=[\s\S]*\n\| ?S16 ?\|)(?![\s\S]*\n\| ?S15 ?\|)|(?=[\s\S]*\n\| ?S17 ?\|)(?![\s\S]*\n\| ?S16 ?\|)|(?=[\s\S]*\n\| ?S18 ?\|)(?![\s\S]*\n\| ?S17 ?\|)|(?=[\s\S]*\n\| ?S19 ?\|)(?![\s\S]*\n\| ?S18 ?\|)|(?=[\s\S]*\n\| ?S20 ?\|)(?![\s\S]*\n\| ?S19 ?\|))'
+    match: not_contains
+
+  - type: regex
+    name: question-ids-have-no-gap
+    target: { source: file, path: app/shelves/KNOWLEDGE.md }
+    pattern: '^(?:(?=[\s\S]*\n\| ?Q2 ?\|)(?![\s\S]*\n\| ?Q1 ?\|)|(?=[\s\S]*\n\| ?Q3 ?\|)(?![\s\S]*\n\| ?Q2 ?\|)|(?=[\s\S]*\n\| ?Q4 ?\|)(?![\s\S]*\n\| ?Q3 ?\|)|(?=[\s\S]*\n\| ?Q5 ?\|)(?![\s\S]*\n\| ?Q4 ?\|)|(?=[\s\S]*\n\| ?Q6 ?\|)(?![\s\S]*\n\| ?Q5 ?\|)|(?=[\s\S]*\n\| ?Q7 ?\|)(?![\s\S]*\n\| ?Q6 ?\|)|(?=[\s\S]*\n\| ?Q8 ?\|)(?![\s\S]*\n\| ?Q7 ?\|)|(?=[\s\S]*\n\| ?Q9 ?\|)(?![\s\S]*\n\| ?Q8 ?\|)|(?=[\s\S]*\n\| ?Q10 ?\|)(?![\s\S]*\n\| ?Q9 ?\|)|(?=[\s\S]*\n\| ?Q11 ?\|)(?![\s\S]*\n\| ?Q10 ?\|)|(?=[\s\S]*\n\| ?Q12 ?\|)(?![\s\S]*\n\| ?Q11 ?\|))'
+    match: not_contains
+
+  - type: regex
+    name: no-code-words
+    target: { source: file, path: app/shelves/KNOWLEDGE.md }
+    pattern: '\b[a-z]+[A-Z][A-Za-z]*\b|\b[a-z]+_[a-z_]+\b|\b[A-Z][a-z]+[A-Z][a-z]\w*\b|\.(?:tsx?|jsx?|py)\b|\b[A-Z]{2,}_[A-Z_]+\b'
+    match: not_contains
+
+  - type: regex
+    name: never-commits
+    target: trace
+    pattern: '"command":"(?:[^"\\]|\\.)*\bgit\b(?:[^"\\]|\\.)*\s(?:commit|add)\b'
+    match: not_contains
