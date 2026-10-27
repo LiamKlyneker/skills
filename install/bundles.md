@@ -1,6 +1,6 @@
 # Bundles
 
-What `install-skills` bootstraps. A **bundle** is a named set of skills that are only
+What each plugin's `setup` skill bootstraps. A **bundle** is a named set of skills that are only
 useful together, described here by the one thing no distribution mechanism can deliver:
 **which `##` sections of the project's adapter they need filled**, plus any gate template
 the set implies.
@@ -84,7 +84,7 @@ The installer reads this table rather than hardcoding the mapping, exactly as it
 **Adapter sections** rather than hardcoding a section list. A project runs one tracker, so
 a bundle whose implied tracker contradicts an **existing** adapter's `Tracker:` line is a
 conflict to surface and stop on — never something to resolve by rewriting the line or
-deleting a section. See the `install-skills` skill's own `SKILL.md`, step 3a, for the one
+deleting a section. See [`setup.md`](setup.md), step 3a, for the one
 narrow case in which a tracker sub-section is deleted at all.
 
 **"Neither" is not a licence to pick one, and "either" is not the same as "neither".** They are

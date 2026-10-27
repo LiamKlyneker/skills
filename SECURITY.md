@@ -5,8 +5,8 @@
 This repo publishes **Claude Code skills and plugins**. A skill is not documentation
 that a human reads and decides about — it is a set of instructions that an agent
 loads and acts on, with that agent's tools, in the user's own working directory, on
-the user's own machine. Some skills here spawn subagents; one (`install-skills`)
-ships an executable, `scripts/doctor.sh`.
+the user's own machine. Some skills here spawn subagents; every plugin's `setup` skill
+ships an executable, `install/doctor.sh`, through a packaging symlink.
 
 So the threat model is closer to a package registry than to a docs site. A change to
 prose *is* a change to behaviour. Treat it that way when reading a diff, and when
@@ -45,7 +45,7 @@ maintained in spare time, not a staffed product; there is no bounty.
 - A skill that would run **destructive or irreversible commands** outside what the
   user asked for: force-pushing, deleting branches or files, rewriting history,
   pushing to remotes, or publishing.
-- Anything in `plugins/install-skills/skills/install-skills/scripts/doctor.sh` — command
+- Anything in `install/doctor.sh` — command
   injection, unsafe path handling, writing outside the target project.
 - A `marketplace.json` or `plugin.json` whose `source` resolves somewhere other than
   where its name implies.

@@ -323,7 +323,7 @@ def check_symlinks() -> None:
 
     - **Packaging** — `plugins/*/skills/_shared`, `plugins/prd-workflow/_shared` (the
       same target one level up, so `prd-worker.md` under `agents/` resolves its own
-      `../_shared/` links), `install-skills`' `skills/install`, and `figma-to-spec`'s
+      `../_shared/` links), every plugin's `skills/install`, and `figma-to-spec`'s
       agent link. Install dereferences these into each cache copy; they are build
       mechanics and they are required.
     - **Delivery** — a link that makes a plugin or skill load. Two shapes of it have
@@ -373,7 +373,7 @@ def check_shared_references() -> None:
 def plugin_pathspecs(directory: Path) -> list[str]:
     """Every path whose contents land inside this plugin's *installed* copy.
 
-    A plugin's `skills/_shared` — and `install-skills`' second link, `skills/install` —
+    A plugin's `skills/_shared` — and its second link, `skills/install` —
     is a symlink that install dereferences into the cache. So editing `_shared/` changes
     what every consumer receives, while `git diff` only ever names `_shared/…` and never
     the plugin. Those targets count as the plugin's own contents for the bump rule; the

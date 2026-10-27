@@ -129,7 +129,7 @@ markers rather than re-asking about them.
 
 **All four default, so an adapter that never gains them still reads unambiguously and needs no
 edit** — the same doctrine as `Repo role:` above. Only `figma-component-to-spec` reads them today,
-so `install-skills` asks for them only in a `library` repo; they are **not library-only in
+so `setup` asks for them only in a `library` repo; they are **not library-only in
 principle** — a consumer repo has exactly the same problem — which is why they sit here rather
 than in the library block below:
 
@@ -286,7 +286,7 @@ the other, exactly as in `## Repo`.
 - The three board states named in `## Repo` must exist on the team's board, spelled exactly as written there — ADO state names are per-process strings and a near-miss is a silent no-op, not an error.
 
 <!--
-`install-skills doctor` flags any `<token>` that appears in **both** this template and a
+`doctor` flags any `<token>` that appears in **both** this template and a
 filled adapter, on the theory that it was never filled in. A few angle-bracket tokens here
 are notation rather than placeholders and are legitimately still there after filling —
 list them below so the check stays quiet about them and loud about everything else.

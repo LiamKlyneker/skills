@@ -24,13 +24,13 @@ repo. That is self-hosting, not a broken install — expect `doctor` to say so.
 
 This is a **prose repo**. There is no build, no package manager, and no test
 runner. The only executable is
-`plugins/install-skills/skills/install-skills/scripts/doctor.sh`.
+`install/doctor.sh`.
 
 | Purpose | Command |
 |---|---|
 | Build | None — nothing compiles |
-| Test — **verify L2 floor** | `bash -n plugins/install-skills/skills/install-skills/scripts/doctor.sh && bash plugins/install-skills/skills/install-skills/scripts/doctor.sh --repo . --quiet` |
-| Manifest check — **also L2 floor** | `out=$(for p in plugins/prd-workflow plugins/figma-tools plugins/ado-workflow plugins/lk plugins/install-skills plugins/qa .; do claude plugin validate "$p" 2>&1 && continue; echo "VALIDATE FAILED: $p"; done); echo "$out"; ! grep -q -e '❯' -e 'VALIDATE FAILED' <(grep -v 'not read — components are read without following symlinks' <<<"$out")` |
+| Test — **verify L2 floor** | `bash -n install/doctor.sh && bash install/doctor.sh --repo . --quiet` |
+| Manifest check — **also L2 floor** | `out=$(for p in plugins/prd-workflow plugins/figma-tools plugins/ado-workflow plugins/lk plugins/qa .; do claude plugin validate "$p" 2>&1 && continue; echo "VALIDATE FAILED: $p"; done); echo "$out"; ! grep -q -e '❯' -e 'VALIDATE FAILED' <(grep -v 'not read — components are read without following symlinks' <<<"$out")` |
 | Catalog + version gate — **also L2 floor** | `python3 .github/scripts/validate_skills.py --base origin/main` |
 | Micro eval gate — **before any plugin version bump** | `command claude plugin eval plugins/<plugin> --ablation none --scaffold --no-publish --runs 1 --threshold 1.0 --max-cost-usd 5 --model claude-sonnet-5 --judge-model claude-sonnet-5 --allow-tools Write Bash Edit --tag micro` |
 | Boot the app (visual loop) | `claude plugin list` — the loaded-plugin inventory *is* this repo's running state |
@@ -60,7 +60,7 @@ plugins now carry a `version`, mirrored in `.claude-plugin/marketplace.json`, an
 warning on every plugin whose `skills/` directory contains a symlink (`directory: … symlink
 and was not read — components are read without following symlinks …`), and every plugin
 here has one by design: the **packaging symlink** `skills/_shared -> ../../../_shared`
-(`install-skills` also `skills/install -> ../../../install`), kept so a `../_shared/x.md`
+and `skills/install -> ../../../install` beside it, kept so a `../_shared/x.md`
 reference resolves identically from `--plugin-dir` and from an install cache — see
 `CLAUDE.md` → "One distribution, one dev mode" and ADR
 [0010](../../docs/adr/0010-one-distribution-one-dev-mode.md). `--strict` has no
@@ -80,8 +80,8 @@ branch exists. Locally, `--base origin/main` is the equivalent.
 
 ## App facts
 
-- Markdown/prose skills repo · one Bash script (`plugins/install-skills/skills/install-skills/scripts/doctor.sh`) · no runtime, no dependencies.
-- **Also a plugin marketplace.** `.claude-plugin/marketplace.json` publishes marketplace `liamklyneker` with six plugins, `plugins/prd-workflow/`, `plugins/figma-tools/`, `plugins/ado-workflow/`, `plugins/lk/`, `plugins/install-skills/` and `plugins/qa/`, each carrying a `version` the catalog mirrors. A plugin's skills live in `<plugin>/skills/<skill>/` and its agents in `<plugin>/agents/`; both inventories are discovered from the directory, not listed in the manifest.
+- Markdown/prose skills repo · one Bash script (`install/doctor.sh`) · no runtime, no dependencies.
+- **Also a plugin marketplace.** `.claude-plugin/marketplace.json` publishes marketplace `liamklyneker` with five plugins, `plugins/prd-workflow/`, `plugins/figma-tools/`, `plugins/ado-workflow/`, `plugins/lk/` and `plugins/qa/`, each carrying a `version` the catalog mirrors. A plugin's skills live in `<plugin>/skills/<skill>/` and its agents in `<plugin>/agents/`; both inventories are discovered from the directory, not listed in the manifest.
 - **Every skill is inside a plugin — there are no plain skills left.** The top level is `.claude-plugin/`, `plugins/`, `_shared/` (global reference read by several skills), `install/` (what a consuming project gets wired with) and `docs/`. Two shapes were deleted and the validator now fails on both: the migration's compat shims (top-level symlinks into `plugins/`, #26) and links under `.claude/skills/` into `plugins/` (the retired self-host route, ADR [0010](../../docs/adr/0010-one-distribution-one-dev-mode.md)).
 - **A plugin namespaces every component it provides.** Skills invoke as `prd-workflow:<skill>`, and agents resolve as `subagent_type: prd-workflow:prd-worker` / `figma-tools:figma-region-extractor` — on every route, `--plugin-dir` included. No bare names remain. An unresolvable `subagent_type` does not error — it silently becomes `general-purpose` — so a wrong type name produces a run that looks entirely normal.
 - **One delivery route, one dev mode.** A plugin installed from the marketplace is a *copy* in a config's cache, keyed by the plugin's **`version`** — the git commit SHA is only the fallback key an *unversioned* plugin gets, and all five here are versioned now. So a cache copy pins to its version, and neither an uncommitted edit nor a committed and pushed one reaches it until the version moves; reinstalling at an unchanged version is a silent no-op. **That is the only way a skill here reaches a machine.** Authoring is `claude --plugin-dir plugins/<plugin>` — session-scoped, branch-agnostic, copies nothing, and takes precedence over an installed copy for that session. `claude plugin validate <path>` checks a manifest without installing. ADR [0010](../../docs/adr/0010-one-distribution-one-dev-mode.md).
@@ -123,7 +123,7 @@ None — no gates beyond the ones the skills carry.
 - **CONTEXT.md**: read the scoped `CONTEXT.md` before touching files in any directory (see the `scoped-context` skill), where one exists.
 - **No project ever owns a `_shared/`.** Project facts live in `<repo-root>/.claude/project/`. `../_shared/…` from any skill can therefore only mean this repo's global reference.
 - Skills address exactly three things: global reference via a relative path into `_shared/`, the project as `<repo-root>/.claude/project/adapter.md`, and project-specific gates **never by name** — the adapter's `## Project gates` registry names them and skills follow the pointer.
-- Prose over scripts. `install-skills` ships the only executable, because mechanical checks must be deterministic. Everything else stays prose.
+- Prose over scripts. `install/doctor.sh` is the only executable, because mechanical checks must be deterministic. Everything else stays prose.
 - Adding a skill is just the directory under `plugins/<plugin>/skills/` — the inventory is discovered, and there is no other kind of skill to add. It loads immediately under `--plugin-dir`; it reaches a consumer when the plugin's `version` moves and they update.
 - **Plugin manifests carry a `version`, and changing a plugin means bumping it** — in `plugins/<plugin>/.claude-plugin/plugin.json` *and* in `.claude-plugin/marketplace.json`, which must agree; the catalog gate fails if they drift. This bullet used to say the opposite (*omit `version` deliberately*), for a reason that has not stopped being true: `version` is the install cache key, and a forgotten bump means installs silently never see the change. Observed, not assumed — `claude plugin install` at an already-cached version prints `already installed` and re-copies nothing, so a missed bump does not merely delay an update, it strands that consumer until they `uninstall --scope local` by hand. Abstaining from versions was the old way to be safe from that; the bump rule in `validate_skills.py` is the new one, so **do not go back to omitting `version`** — dropping the version drops the check with it. A change under `_shared/` or `install/` counts as changing **every** plugin whose `skills/` symlinks it, because install dereferences the link into each cache copy.
 - Distribution claims get **verified against the binary and the live config dirs**, never written from memory or from the platform docs. `INSTALL.md` is written from observed behaviour and is the place a corrected observation lands.

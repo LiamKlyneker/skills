@@ -3,9 +3,9 @@
 Canonical source repo for Liam's personal Claude Code skills, and the marketplace
 that publishes them. **Every skill lives inside a plugin**, at
 `plugins/<plugin>/skills/<skill>/`, with that plugin's agents in
-`plugins/<plugin>/agents/`. Six plugins today — `prd-workflow`, `figma-tools`,
-`ado-workflow` (the PRD workflow's ADO counterpart), `lk` (the personal skills),
-`install-skills`, and `qa` (the automated QA pass, for both trackers) — all catalogued in
+`plugins/<plugin>/agents/`. Five plugins today — `prd-workflow`, `figma-tools`,
+`ado-workflow` (the PRD workflow's ADO counterpart), `lk` (the personal skills), and `qa`
+(the automated QA pass, for both trackers) — all catalogued in
 `.claude-plugin/marketplace.json` as marketplace `liamklyneker`.
 
 **There are no plain skills at the top level any more.** There used to be a second
@@ -20,10 +20,11 @@ adding a skill here means adding it to a plugin. The rest of the top level:
   `ado-eligibility.md`, `ado-workitem-authoring.md`,
   `spec-splitting-seams.md`, `ticket-source.md`, `ui-manifests.md`, `ui-standard.md`. No
   templates, no project values, ever.
-- `install/` — what a project gets wired with: `bundles.md` (the manifest the
-  `install-skills` skill reads), `adapter.template.md`, and `gates/`. See
-  `install/README.md` for the layout a wired project ends up with. Canonical copy,
-  reached from inside the plugin by a packaging symlink — see below.
+- `install/` — what a project gets wired with: `bundles.md` (the manifest the installer
+  reads), `adapter.template.md`, `gates/`, and the installer itself — `setup.md`,
+  `interview.md`, `doctor.sh`. See `install/README.md` for the layout a wired project ends
+  up with. Canonical copy, reached from inside every plugin by a packaging symlink — see
+  below.
 
 Two shapes were deleted rather than deprecated, and the validator now fails on both: the
 migration's compat shims (top-level names that were **symlinks into `plugins/`**, #26,
@@ -48,13 +49,16 @@ plain-skill route that produced them is gone. Getting an agent type wrong does *
 error — it degrades silently to `general-purpose` — so a successful run is never evidence
 that the type resolved. Read the type name in a fresh session.
 
-`install-skills` is **its own plugin**, at `plugins/install-skills/` — not a plain
-skill and not part of a personal bundle. It is the one thing here a stranger needs,
-because `prd-workflow` and `ado-workflow` cannot run without the adapter it writes, so
-reaching it must not require installing anything else. It also ships an executable
-(`plugins/install-skills/skills/install-skills/scripts/doctor.sh`) — the mechanical
-checks have to be deterministic, and a check that gets paraphrased differently on each
-run isn't one.
+**Every plugin with a bundle ships a `setup` skill, and there is one installer behind all of
+them.** `/prd-workflow:setup`, `/ado-workflow:setup`, `/figma-tools:setup`, `/lk:setup` and
+`/qa:setup` each name the bundles their plugin ships and follow `install/setup.md`. The
+plugin a stranger installs therefore already carries what writes its adapter. The installer
+logic lives in `install/` once and is never forked into a plugin; a `setup` skill holds only
+its plugin's bundle table. Several plugins write one adapter safely because setup gap-fills an
+existing adapter and never deletes from it. The installer ships an executable
+(`install/doctor.sh`) — the mechanical checks have to be deterministic, and a check that gets
+paraphrased differently on each run isn't one. ADR
+[0021](docs/adr/0021-every-plugin-ships-its-own-setup.md) has the argument.
 
 **A skill ships a script for that reason and no other: the job is mechanical and must produce
 the same answer twice.** Two do, today. The second is
@@ -256,7 +260,7 @@ creates the release tag and fails if `plugin.json` and the catalog entry disagre
   load. **Gone, and the validator fails on them.** That includes this repo's own former
   self-host links.
 - **Packaging symlinks** — `plugins/*/skills/_shared -> ../../../_shared`,
-  `plugins/install-skills/skills/install -> ../../../install`, and `figma-to-spec`'s agent
+  `plugins/*/skills/install -> ../../../install`, and `figma-to-spec`'s agent
   link. **These are build mechanics and they stay.** Install dereferences them into each
   cache copy, which is the whole reason a relative reference resolves identically from a
   working tree and from a cache directory.
@@ -273,9 +277,9 @@ Rules that follow from this:
   reintroduce a project-side `_shared/`, and don't add "you may have resolved the
   wrong file" warnings back to the skills; the layout is what makes them unnecessary.
 - **A directory a packaged skill reaches by relative path gets a packaging symlink under
-  `skills/`, never a rewritten path.** `install-skills` reads its templates as
-  `../install/bundles.md`, so `plugins/install-skills/skills/install ->
-  ../../../install` is what keeps every one of those references byte-identical — live
+  `skills/`, never a rewritten path.** Every `setup` skill reads the installer as
+  `../install/setup.md`, so `plugins/*/skills/install -> ../../../install` is what keeps
+  every one of those references byte-identical — live
   through the link under `--plugin-dir`, and dereferenced into the cache on install.
   Rewriting the paths instead would have worked in the working tree and broken every
   installed copy, since a cache copy has no repo root above it to reach back into.
@@ -287,7 +291,7 @@ Rules that follow from this:
 - **Packaging never moved the project.** The adapter path resolves against whichever
   project the session is running in, at runtime, so it works unchanged from a plugin
   cache directory. Only *creating* the adapter is a bootstrapping problem, which is
-  why `install-skills` keeps that half and places nothing.
+  why `setup` keeps that half and places nothing.
 - Adding a skill means adding the directory under `plugins/<plugin>/skills/` — nothing
   else; the plugin's inventory is discovered, not listed. There is no other kind of skill
   to add. It is reachable under `--plugin-dir` immediately, and reaches a consumer when

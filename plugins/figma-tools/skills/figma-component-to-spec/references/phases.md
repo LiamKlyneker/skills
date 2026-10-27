@@ -56,9 +56,9 @@ empty is a **complete** run.
      row as part of this run. The role is an **intent** and the row is the record of it; a
      skill that flips it to keep itself runnable has removed the only guard there is. If the
      user believes this really is a library repo, the fix is to set the row — via
-     `install-skills` or `ds-catalog` — and re-invoke.
+     `/figma-tools:setup` or `ds-catalog` — and re-invoke.
    - **No adapter, or no `## Design system` section** → a different failure, and say which:
-     this project has not been wired. Point at `install-skills`. Never infer the role from a
+     this project has not been wired. Point at `/figma-tools:setup`. Never infer the role from a
      `components/` directory, a package name, or an exports map.
 
    `figma-to-spec` carries the mirror image of this gate and refuses in a `library` repo,
@@ -163,7 +163,7 @@ empty is a **complete** run.
 
    So: no *Token pipeline* row and no source behind it, no registered catalog, and nothing
    enumerable → **stop**, name each thing that was looked for and where, and offer the two ways
-   forward: write the *Token pipeline* row (via `install-skills` or `ds-catalog`), or generate a
+   forward: write the *Token pipeline* row (via `/figma-tools:setup` or `ds-catalog`), or generate a
    catalog with `figma-tools:ds-catalog`. Never proceed on a partial list without announcing
    which part is missing (3b), and never proceed on no list at all.
 

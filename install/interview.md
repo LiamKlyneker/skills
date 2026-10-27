@@ -20,7 +20,7 @@ asking things you could have read.
 Two sections are tracker-specific — `## Repo` and `## One-time repo preconditions` — and
 the adapter keeps exactly one branch of each. The tracker is **already settled** by the
 time the interview starts: `SKILL.md` step 3a takes it from the bundle (via the *Which
-tracker a bundle implies* table in `../../install/bundles.md`) on a fresh copy, or reads
+tracker a bundle implies* table in `bundles.md`) on a fresh copy, or reads
 the existing adapter's `Tracker:` line, where **absent means `github`**.
 
 One bundle is the exception, and it is an exception to *who answers*, not to *when*:
@@ -56,7 +56,7 @@ warnings as drive-by scope or treats its own new ones as pre-existing. Both are 
 
 ## Per-bundle question sets
 
-Ask only for the sections the bundle declares in `../../install/bundles.md`.
+Ask only for the sections the bundle declares in `bundles.md`.
 
 **`prd-workflow`** — the full set. The three that carry the most weight, in order:
 

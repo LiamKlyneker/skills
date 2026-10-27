@@ -27,7 +27,7 @@ set -uo pipefail
 # ---------------------------------------------------------------- setup
 
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
-canonical="$(cd "$script_dir/../.." && pwd -P)"
+canonical="$(cd "$script_dir/.." && pwd -P)"
 repo=""
 bundle=""
 quiet=0

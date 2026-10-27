@@ -6,7 +6,7 @@ behaves differently from the docs. Written from what actually worked, not from w
 docs claim.
 
 Everything below is the *distribution* half. The other half — filling in a project's own
-facts — is `install-skills`' job and is described in [`install/README.md`](install/README.md).
+facts — is each plugin's `setup` skill's job and is described in [`install/README.md`](install/README.md).
 They are independent: a plugin can be installed with no adapter, and an adapter is worth
 having before the plugin lands.
 
@@ -18,13 +18,18 @@ having before the plugin lands.
 | `ado-workflow` | `to-spec`, `to-spec-tasks`, `next-task-to-implement`, `work-on-spec`, `manual-qa`, `triage` + the `spec-worker` agent | **two** bundles: `ado-workflow` (the four loop skills) and `ado-qa` (`manual-qa` + `triage`) |
 | `figma-tools` | `figma-to-spec` + the `figma-region-extractor` agent | `figma-tools`. Adapter-free |
 | `lk` | `grill`, `deep-grill`, `pinpoint`, `how-i-write`, `scoped-context` | `grill` (`grill` + `deep-grill`) — one bundle, and not the whole plugin; the other three ask for nothing |
-| `install-skills` | `install-skills` — and `scripts/doctor.sh`, the only executable in the repo | none; it is what *writes* the adapter a bundle needs, so it must be reachable before any bundle is adopted |
+| `qa` | `prove-branch` | `qa` |
 
 All five come from marketplace **`liamklyneker`**. Skills from a plugin are invoked
 namespaced: `/prd-workflow:work-on-prd`, `/ado-workflow:work-on-spec`,
-`/figma-tools:figma-to-spec`, `/lk:grill`, `/install-skills:install-skills`. That last one
-doubles because the skill and its plugin share a name — the prefix is the plugin, the
+`/figma-tools:figma-to-spec`, `/lk:grill`, `/qa:prove-branch` — the prefix is the plugin, the
 suffix is the skill, and neither half is optional.
+
+**Every plugin that has a bundle also ships a `setup` skill** — `/prd-workflow:setup`,
+`/ado-workflow:setup`, `/figma-tools:setup`, `/lk:setup`, `/qa:setup`. Each one is a thin entry
+point into the one shared installer in `install/setup.md`, reached through the plugin's
+`skills/install` packaging symlink, so the plugin a stranger installs already carries what
+writes its adapter.
 
 **Every skill in this repo is inside one of those five plugins, and installing one of those
 plugins is the only way any of them reaches a machine.** There is no second route. Nothing
@@ -354,11 +359,12 @@ Getting the skills is the platform's job. Filling in *your project's* facts is n
 distribution mechanism can do it. From the target repo:
 
 ```
-/install-skills:install-skills install prd-workflow
+/prd-workflow:setup
 ```
 
-The doubled name is the plugin prefix plus the skill name; `install-skills` is its own
-plugin precisely so that reaching it never requires adopting anything else.
+Every plugin with a bundle ships the same `setup` skill. It names the bundles its plugin
+ships — asking which, when there are two — and follows the one shared installer. Run it
+again after updating a plugin; against an adapter that already exists it only fills the gaps.
 
 It copies `install/adapter.template.md` → `.claude/project/adapter.md`, interviews you only
 for the facts your repo does not already state, offers any gate the bundle declares, and
@@ -367,8 +373,8 @@ finishes with `doctor`.
 **Packaging does not touch the adapter.** Skills read it at a path relative to *the project
 the session is running in*, resolved at runtime — so a skill served from a plugin cache
 directory finds the adapter exactly the way a symlinked one did. Only *creating* the adapter
-was ever a bootstrapping problem, which is why `install-skills` kept that half and dropped
-everything else.
+was ever a bootstrapping problem, which is why `setup` keeps that half and does nothing
+else.
 
 **A project never owns a `_shared/`.** Still the rule, and still what makes `../_shared/…`
 from any skill unambiguous. Inside a plugin, `skills/_shared` is a symlink back to this
@@ -389,8 +395,8 @@ claude plugin validate plugins/<name>          # one plugin manifest
 After wiring a project:
 
 ```bash
-bash plugins/install-skills/skills/install-skills/scripts/doctor.sh --repo <path>
-# or, from any session that has the plugin: /install-skills:install-skills doctor
+bash install/doctor.sh --repo <path>
+# or, from any session that has a plugin with a setup skill: /<plugin>:setup doctor
 claude plugin list
 ```
 

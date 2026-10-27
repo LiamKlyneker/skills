@@ -91,7 +91,7 @@ thing that replaced it.
   the output goes — and whether the generated half is the package's own — and the class-prefix and icon-ladder rows carry what a previous
   install-time interview already established — including the *Repo role* row and, where that
   role is `library`, the variant-mechanism, token-pipeline and story-convention rows.
-  `install-skills` writes that section; this skill owns the fingerprint recipe outright, and
+  `/figma-tools:setup` writes that section; this skill owns the fingerprint recipe outright, and
   fills any of the role-gated rows the install never asked for (Phase 6 says which rows it may
   write, which it may only propose, and which it never touches).
 - **The design system itself**, read-only: a repo path, a workspace package, or an installed
@@ -104,7 +104,7 @@ thing that replaced it.
   skill-specific input and knows nothing about this workflow — deliberately, so a design system
   can ship its own generated catalog and a project can stop generating one from the outside.
 
-Missing `## Design system` section entirely → say so, point at `install-skills`, and offer to
+Missing `## Design system` section entirely → say so, point at `/figma-tools:setup`, and offer to
 add the section from this run's answers. Never invent a catalog location: if no row names one,
 ask where it goes and write the row.
 
@@ -154,7 +154,7 @@ Read the adapter section. Establish, in this order:
 
 ### The package ships its generated half
 
-`install-skills` decides this once and records it in the *Catalog* row; this skill reads the row
+`/figma-tools:setup` decides this once and records it in the *Catalog* row; this skill reads the row
 and never probes for a package catalog the row does not name. Where the row names one:
 
 - **That file is not this skill's to generate or refresh, and nothing here writes inside an
@@ -427,7 +427,7 @@ Then write to the adapter's `## Design system` section:
 | *Repo role* | **Writes it when no row exists**, from the Phase 4 answer and from nothing else — never from the tree. Where the row already says `consumer` or `library`, leave it alone; a role changes because a human decides it has, not because a run explored differently. |
 | *Variant mechanism* · *Token pipeline* · *Story convention* | **Writes all three when the role is `library`** and the rows are absent, from the Phase 4 answers. Where the role is `consumer`, write none of them, and **delete only an unfilled one a copied template left behind** — a row still carrying its `<placeholder>` is noise `doctor` will report forever, while a row somebody actually filled is theirs and stays. Where a row already exists and this run's evidence contradicts it, propose rather than overwrite, exactly like the class-prefix rows below. |
 | *Tailwind class prefix* · *CSS variable prefix* · *Consumer-facing emission form* · *Icon resolution ladder* | **Proposes, never silently changes.** Where this run's evidence contradicts what the row says, show the row, show the evidence, and let the human decide. These are three separate facts and one ordered list — collapsing any of them is how a spec recommends a class the app cannot write. |
-| *Gap policy* · *Provisional marker* · *Gap tracker* · *Provisional expiry* | **Never touches, and never deletes.** All four default, so an absent row is a complete state and not a placeholder to tidy — the deletion rule for unfilled `library` rows above does **not** extend here. They are also not inferable: what a project is willing to ship provisionally is a policy, and a catalog run has no evidence about it. `install-skills` asks; a human edits. |
+| *Gap policy* · *Provisional marker* · *Gap tracker* · *Provisional expiry* | **Never touches, and never deletes.** All four default, so an absent row is a complete state and not a placeholder to tidy — the deletion rule for unfilled `library` rows above does **not** extend here. They are also not inferable: what a project is willing to ship provisionally is a policy, and a catalog run has no evidence about it. `/figma-tools:setup` asks; a human edits. |
 | *Design-system source* · *Usage-rules sources* · *Downstream implementer* · *`### Prototype source`* · everything outside `## Design system` | **Never touches.** The two optional rows degrade silently by design: absent means the spec cites nothing, and absent means a human implements. Neither is an error and neither gets a warning. |
 
 ### Phase 7 — Validate and report
