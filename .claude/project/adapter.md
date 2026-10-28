@@ -48,8 +48,8 @@ packaging symlinks under `skills/` raise by design.
 **Two eval gate rows, and each child runs one of them.** A micro case carries `micro` plus
 the tag of every skill its prompt invokes (`tags: [micro, prove-branch]`). A child that touches
 a skill runs the per-skill row with that skill's tag. `--tag` is an OR filter, so the row passes
-the skill tag alone, which works only where skill tags sit on micro cases: `plugins/qa` today.
-In the other plugins a skill tag marks a `full` case, so their children run the full micro row.
+the skill tag alone, and that selects micro cases only because every micro case carries its skill
+tags and no `full` case carries one (`tags: [full]`).
 The child that bumps the plugin's version runs the full micro row once, on that plugin only: it
 selects every `micro`-tagged case — one contract sentence each, against a stub the case owns —
 and every one of them passes before the bump. Its cap fits one full run of `plugins/qa`, the

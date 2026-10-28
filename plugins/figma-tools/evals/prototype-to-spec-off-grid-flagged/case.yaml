@@ -9,7 +9,7 @@ description: >
   `### Prototype source` for `Path:`, `Spec files:`, `Schema:` and `Screenshots:`. The chip's
   padding lands between two steps of a deliberately non-uniform spacing scale, so it has no
   token; the run has to hand that decision over rather than settle it.
-tags: [micro]
+tags: [micro, prototype-to-spec]
 runs: 1
 context:
   scaffold_script: ./scaffold.sh

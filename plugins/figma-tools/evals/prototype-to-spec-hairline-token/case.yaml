@@ -10,7 +10,7 @@ description: >
   border is written as a raw value in the prototype's inline style, and the catalog's spacing
   scale is non-uniform and names that exact value as its hairline step; the run has to resolve
   it by membership in the tier rather than test it against a grid.
-tags: [micro]
+tags: [micro, prototype-to-spec]
 runs: 1
 context:
   scaffold_script: ./scaffold.sh
