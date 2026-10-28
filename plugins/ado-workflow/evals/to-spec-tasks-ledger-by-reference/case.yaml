@@ -11,7 +11,7 @@ description: >
   other section of the task has a reason to quote.
   The stub's adapter carries only the rows this skill reads: `## Repo` with the `### Azure
   DevOps` rows, and `## Commands` and `## Verify ladder` for the task's verify line.
-tags: [micro]
+tags: [micro, to-spec-tasks]
 runs: 1
 context:
   scaffold_script: ./scaffold.sh

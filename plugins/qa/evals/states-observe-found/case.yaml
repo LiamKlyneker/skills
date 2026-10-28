@@ -8,7 +8,7 @@ description: >
   under Archived. The run must write one `## States` row for each, with the shelves' ids,
   today's date in `Last verified` and origin `setup-states` with the same date, ask nothing,
   give no steps and dispatch no agent.
-tags: [micro]
+tags: [micro, setup-states]
 runs: 1
 context:
   scaffold_script: ./scaffold.sh

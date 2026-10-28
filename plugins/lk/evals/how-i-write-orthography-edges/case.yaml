@@ -12,7 +12,7 @@ description: >
   `ill` anywhere, and `well` followed by a bare verb outside `as well`. `were`, `shell` and
   `hell` are real words a correct comment can carry, so no regex separates them from a drop.
   No scaffold: the run needs nothing but an empty working directory.
-tags: [micro]
+tags: [micro, how-i-write]
 runs: 1
 execution:
   prompt: |

@@ -11,7 +11,7 @@ description: >
   into the cells that cite it with the question id kept in brackets, set the `Backend read:` line,
   name records-retention as where the purge rule lives, leave the staging question open, and keep
   every cell free of code words.
-tags: [micro]
+tags: [micro, build-knowledge]
 runs: 1
 context:
   scaffold_script: ./scaffold.sh

@@ -8,7 +8,7 @@ description: >
   so the run resolves to PRD #40 and never to #407; the branch's `(#41)` and `(#42)` commit
   suffixes are key 3 and are never tried. The run then stops at the preview step, since no URL
   answers offline.
-tags: [micro]
+tags: [micro, prove-branch]
 runs: 1
 context:
   scaffold_script: ./scaffold.sh

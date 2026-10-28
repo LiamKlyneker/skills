@@ -8,7 +8,7 @@ description: >
   steps a tester follows in the app — the Shelves page, the "New shelf" and "Archive" controls,
   and a typed name starting `qa-setup` — then wait, with no S4 row in accounts.md and no agent
   dispatched.
-tags: [micro]
+tags: [micro, setup-states]
 runs: 1
 context:
   scaffold_script: ./scaffold.sh
@@ -67,12 +67,6 @@ graders:
     name: a-step-names-the-archive-control
     target: last_message
     pattern: '\n[ \t>*-]*\d+\.[^\n]*["“`*]+Archive["”`*]+'
-
-  - type: regex
-    name: a-step-names-the-input
-    target: last_message
-    pattern: '\n[ \t>*-]*\d+\.[^\n]*\b(?:type|enter)\b[^\n]*qa-setup'
-    flags: i
 
   - type: regex
     name: no-row-before-the-state-is-seen

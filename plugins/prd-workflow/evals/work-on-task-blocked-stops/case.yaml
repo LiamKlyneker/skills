@@ -9,7 +9,7 @@ description: >
   change no file, commit nothing, and print the `Not ready` block naming both gaps.
   There is no tracker and no network here, so the case hands `work-on-task` the issue as a
   local file path.
-tags: [micro]
+tags: [micro, work-on-task]
 runs: 1
 context:
   scaffold_script: ./scaffold.sh

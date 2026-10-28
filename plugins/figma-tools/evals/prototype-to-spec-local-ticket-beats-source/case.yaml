@@ -7,7 +7,7 @@ description: >
   ticket-resolution rule reads the file and calls no tracker — not the Jira site the adapter
   names, and not the GitHub tracker it files on. The brief's title carries the ticket key that
   rule derives from a local file: the file's stem.
-tags: [micro]
+tags: [micro, prototype-to-spec]
 runs: 1
 context:
   scaffold_script: ./scaffold.sh

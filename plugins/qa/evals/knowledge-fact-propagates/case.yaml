@@ -8,7 +8,7 @@ description: >
   rule in product words and origin `developer, <date>`, write the rule into the Purge row's
   condition with `[Q3]` kept and `developer, <date>` added to that row's origin, and leave every
   other byte of the file as it was — the header, `Derived at:`, every other row.
-tags: [micro]
+tags: [micro, build-knowledge]
 runs: 1
 context:
   scaffold_script: ./scaffold.sh

@@ -18,7 +18,7 @@ description: >
   scoped-`CONTEXT.md` rule.
   There is no tracker and no network here, so the case hands `work-on-task` the frozen issue
   as a local file path instead of an issue URL.
-tags: [micro]
+tags: [micro, work-on-task]
 runs: 1
 context:
   scaffold_script: ./scaffold.sh

@@ -9,7 +9,7 @@ description: >
   body with the core and standalone sections of `references/task-body.md`, no fidelity section
   and no question.
   There is no tracker and no network here, so the case passes `--out`.
-tags: [micro]
+tags: [micro, to-task]
 runs: 1
 context:
   scaffold_script: ./scaffold.sh

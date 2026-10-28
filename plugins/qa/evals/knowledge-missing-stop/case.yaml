@@ -7,7 +7,7 @@ description: >
   `KNOWLEDGE.md`. The run must resolve the run, then stop before composing any flow, name the
   page folder `app/shelves` (never its components sub-folder) and print `/qa:build-knowledge
   app/shelves`, never run that skill itself, and start no driver.
-tags: [micro]
+tags: [micro, build-knowledge, prove-branch]
 runs: 1
 context:
   scaffold_script: ./scaffold.sh

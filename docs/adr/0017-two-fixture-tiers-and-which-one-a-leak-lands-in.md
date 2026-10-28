@@ -8,6 +8,10 @@
   `work-on-task`". Everything else in 0015 stands, the synthetic fixture itself first of
   all: the fixture repo, the privacy rule, `--ablation none`, the run policy, and the
   platform constraints the fixture design works around.
+- **Amended**: 2026-10-28 — the micro gate is two adapter rows: a per-skill row, filtered by the
+  skill tag that every micro case carries beside `micro`, on each child that touches a skill; and
+  the full micro row below, once, at the version bump. A `full` case carries `full` alone, and a
+  grader that reads how the run phrased its message lives in a `full` case, never a micro one.
 
 ## The reasoning that got us here, and where it stops
 
@@ -54,6 +58,8 @@ Both tiers live in the same directory, told apart by tag. A case is
 nothing with each other — a stub drifting to serve a second case is how a micro tier grows
 back into a workspace. Every case carries a tier tag alongside any per-skill tag, and the
 six full-workspace cases carry `full`, which costs the gate nothing: it selects on `micro`.
+*(Amended 2026-10-28: the skill tags sit on micro cases only, and a `full` case carries
+`full` alone — see the amendment note above.)*
 
 A micro case grades the artifact the skill produced — the brief, the file on disk, the
 last message. `tool_used` belongs to the full tier, where which file was read is the point.
@@ -69,6 +75,9 @@ command claude plugin eval plugins/<plugin> \
   --model claude-sonnet-5 --judge-model claude-sonnet-5 \
   --allow-tools Write Bash Edit --tag micro
 ```
+
+*(Amended 2026-10-28: this is the full micro row; a per-skill row runs beside it — see the
+amendment note above, and the adapter for both current commands.)*
 
 Every flag carries its weight, and the bare `claude plugin eval plugins/<plugin> --scaffold
 --tag micro` scores 0.00: only read-only tools are granted by default, so a skill that writes

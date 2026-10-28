@@ -8,7 +8,7 @@ description: >
   shelf `s-40`. The run must append an S4 row for `/shelves` with `s-40` and origin `developer,
   <date>`, leave the S1 row as it was, resolve the flow from the new row, reach the approval
   gate, commit nothing, and start no driver.
-tags: [micro]
+tags: [micro, prove-branch]
 runs: 1
 context:
   scaffold_script: ./scaffold.sh

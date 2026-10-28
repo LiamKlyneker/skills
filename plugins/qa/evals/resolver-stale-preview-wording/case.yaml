@@ -1,0 +1,46 @@
+schema_version: "1.0"
+name: resolver-stale-preview-wording
+summary: "The wording half of resolver-stale-preview: the checks that read how the run phrased its message."
+description: >
+  The same prompt and stub project as `resolver-stale-preview`, graded only on the phrasing
+  of its last message. These graders read model wording rather than a literal the skill
+  must print, so they sit in the full tier and stay out of the micro gate.
+tags: [full]
+runs: 1
+context:
+  scaffold_script: ./scaffold.sh
+execution:
+  prompt: |
+    The working directory is the project: a git repository checked out on the branch under
+    test, with its default branch `main` beside it. Its adapter is `.claude/project/adapter.md`.
+
+    On macOS, `git` can fail here with an `xcrun` cache error that says nothing about the
+    repository. If it does, run git as `"$(xcode-select -p)/usr/bin/git"` for the rest of the
+    run.
+
+    There is no network here: `gh` is not available, and no URL answers. The files under
+    `.stand-in/` hold what `gh` would return for this branch. Read them wherever the skill runs
+    `gh`, and do not run `gh`:
+
+    - `.stand-in/gh-pr-list.json` — the open pull requests whose head is this branch, with every
+      field the skill's `gh pr list` asks for.
+    - `.stand-in/gh-pr-view.json` — `gh pr view` for that pull request: `state`, `isDraft`,
+      `headRefOid` and `comments`.
+    - `.stand-in/tickets.json` — the tickets this branch could name, with their titles.
+
+    Run this, and nothing else:
+
+    /qa:prove-branch
+
+    Follow the skill exactly and stop where it stops. Your final message carries what the skill
+    printed up to that point: the run it picked, if it picked one, and the stop.
+  max_turns: 30
+  timeout_seconds: 300
+  model: claude-sonnet-5
+  allowed_tools: [Read, Glob, Grep, Skill, Bash, Write, Edit]
+graders:
+  - type: regex
+    name: asks-for-a-url
+    target: last_message
+    pattern: '(?:provide|give|supply|share|send|paste|which|what)[^\n]{0,80}\bURL\b|\bURL\b[^\n]{0,80}\?'
+    flags: i

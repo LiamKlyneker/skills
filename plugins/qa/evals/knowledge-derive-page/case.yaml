@@ -11,7 +11,7 @@ description: >
   seeder and origin columns, contiguous state and question ids, and open questions that are only
   backend rules or staging facts. A planted `accounts.md` must stay unread, and nothing is
   committed.
-tags: [micro]
+tags: [micro, build-knowledge]
 runs: 1
 context:
   scaffold_script: ./scaffold.sh

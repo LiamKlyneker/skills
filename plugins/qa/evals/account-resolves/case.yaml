@@ -8,7 +8,7 @@ description: >
   The run must compose flows that start from S1 and S4, resolve each to its row's ids, and reach
   the approval gate with no stop and no question for an id, writing nothing to `accounts.md` and
   starting no driver.
-tags: [micro]
+tags: [micro, prove-branch, setup-states]
 runs: 1
 context:
   scaffold_script: ./scaffold.sh
@@ -79,15 +79,6 @@ graders:
     name: no-criterion-row-uncovered
     target: last_message
     pattern: '\|[^\n]*\buncovered\b'
-    flags: i
-    match: not_contains
-
-  - type: regex
-    name: never-asks-for-an-id
-    target: last_message
-    # A question for a URL or an id of a state, in either shape: a which/what question, or a
-    # request to give one.
-    pattern: '(?:\b(?:which|what)\b[^\n?]{0,80}\b(?:url|org id|team id|order number|shelf id|ids?)\b[^\n?]{0,40}\?|\b(?:give|send|share|provide|paste|tell)\b(?: me)?[^\n]{0,40}\b(?:url|org id|team id|order number|shelf id)\b)'
     flags: i
     match: not_contains
 
