@@ -8,7 +8,7 @@ description: >
   does not apply. Both commit subjects and the pull request body carry `SHELF-214`, one hit, so
   the run resolves to it. The body's `Closes #88` is not a ticket key on any of the four keys.
   The run then stops at the preview step, since no URL answers offline.
-tags: [micro]
+tags: [micro, prove-branch]
 runs: 1
 context:
   scaffold_script: ./scaffold.sh

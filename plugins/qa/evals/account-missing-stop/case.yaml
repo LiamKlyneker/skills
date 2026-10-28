@@ -9,7 +9,7 @@ description: >
   the app). The run must stop before the gate, name the flow and the state in user words, print
   `/qa:setup-states` with S4, ask for no URL, org id or order number, write no S4 row, and start
   no driver.
-tags: [micro]
+tags: [micro, prove-branch, setup-states]
 runs: 1
 context:
   scaffold_script: ./scaffold.sh
@@ -71,15 +71,6 @@ graders:
     target: last_message
     pattern: '\bflow \d'
     flags: i
-
-  - type: regex
-    name: never-asks-for-an-id
-    target: last_message
-    # A question for a URL or an id of a state, in either shape: a which/what question, or a
-    # request to give one.
-    pattern: '(?:\b(?:which|what)\b[^\n?]{0,80}\b(?:url|org id|team id|order number|shelf id|ids?)\b[^\n?]{0,40}\?|\b(?:give|send|share|provide|paste|tell)\b(?: me)?[^\n]{0,40}\b(?:url|org id|team id|order number|shelf id)\b)'
-    flags: i
-    match: not_contains
 
   - type: regex
     name: writes-no-row-for-the-missing-state

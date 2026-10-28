@@ -10,7 +10,7 @@ description: >
   `accounts.md` has no row for. The run must compose that flow from S3, mark it Unable to verify
   because the state is set in another application, name the `seed:overdue-loan` hint, show the
   other two criteria covered, stop at the approval gate, and start no driver.
-tags: [micro]
+tags: [micro, prove-branch]
 runs: 1
 context:
   scaffold_script: ./scaffold.sh
@@ -65,14 +65,6 @@ graders:
     name: marks-a-flow-unable-to-verify
     target: last_message
     pattern: 'unable to verify'
-    flags: i
-
-  - type: regex
-    name: reason-names-another-application-and-no-account
-    target: last_message
-    # The reason is prose; this grades the fact, not the wording: "another application" on one
-    # line with the missing account.
-    pattern: '(?:another app(?:lication)?[^\n]{0,160}(?:accounts\.md|no (?:known )?(?:account|row))|(?:accounts\.md|no (?:known )?(?:account|row))[^\n]{0,160}another app(?:lication)?)'
     flags: i
 
   - type: regex

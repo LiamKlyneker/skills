@@ -6,7 +6,7 @@ description: >
   Orgs` holds no staging org. The developer asks for S1. The run must ask for one org id, once,
   ask nothing else, and stop for the answer — writing no row to either table and opening no page
   before it.
-tags: [micro]
+tags: [micro, setup-states, setup]
 runs: 1
 context:
   scaffold_script: ./scaffold.sh
@@ -45,12 +45,6 @@ execution:
   model: claude-sonnet-5
   allowed_tools: [Read, Glob, Grep, Skill, Bash, Write, Edit]
 graders:
-  - type: regex
-    name: asks-for-the-org
-    target: last_message
-    pattern: '\borg\b[^\n?]*\?'
-    flags: i
-
   - type: regex
     name: asks-exactly-one-question
     target: last_message

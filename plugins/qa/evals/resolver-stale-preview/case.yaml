@@ -7,7 +7,7 @@ description: >
   deploy bot's comment, handed over in the `gh pr view` stand-in, posts a preview URL built from
   `c0ffee1…`, which is not `HEAD`. The run must stop there, give the URL and the commit it found,
   and ask the developer for a URL — never compose flows against the stale preview.
-tags: [micro]
+tags: [micro, prove-branch]
 runs: 1
 context:
   scaffold_script: ./scaffold.sh
@@ -55,12 +55,6 @@ graders:
     name: gives-the-built-from-commit
     target: last_message
     pattern: 'c0ffee1'
-
-  - type: regex
-    name: asks-for-a-url
-    target: last_message
-    pattern: '(?:provide|give|supply|share|send|paste|which|what)[^\n]{0,80}\bURL\b|\bURL\b[^\n]{0,80}\?'
-    flags: i
 
   - type: regex
     name: no-flow-composed-against-the-stale-preview

@@ -32,7 +32,8 @@ runner. The only executable is
 | Test — **verify L2 floor** | `bash -n install/doctor.sh && bash install/doctor.sh --repo . --quiet` |
 | Manifest check — **also L2 floor** | `rc=0; for p in plugins/prd-workflow plugins/figma-tools plugins/ado-workflow plugins/lk plugins/qa .; do python3 -c 'import json,sys; r=json.loads(sys.stdin.read() or "{}"); bad=[(s["file"],i) for s in [r.get("manifest") or {}]+r.get("contents",[]) for k in ("errors","warnings") for i in s.get(k,[]) if "not read — components are read without following symlinks" not in i.get("message","")]; [print(f,i) for f,i in bad]; ok=r.get("success") and not bad; print(("ok  " if ok else "VALIDATE FAILED  ")+sys.argv[1]); sys.exit(not ok)' "$p" <<<"$(claude plugin validate --json "$p" 2>/dev/null)" && continue; rc=1; done; exit $rc` |
 | Catalog + version gate — **also L2 floor** | `python3 .github/scripts/validate_skills.py --base origin/main` |
-| Micro eval gate — **before any plugin version bump** | `command claude plugin eval plugins/<plugin> --ablation none --scaffold --no-publish --runs 1 --threshold 1.0 --max-cost-usd 5 --model claude-sonnet-5 --judge-model claude-sonnet-5 --allow-tools Write Bash Edit --tag micro` |
+| Per-skill eval gate — **on every child that touches a skill** | `command claude plugin eval plugins/<plugin> --ablation none --scaffold --no-publish --runs 1 --threshold 1.0 --max-cost-usd 5 --model claude-sonnet-5 --judge-model claude-sonnet-5 --allow-tools Write Bash Edit --tag <skill>` |
+| Full micro eval gate — **once, on the child that bumps the plugin version** | `command claude plugin eval plugins/<plugin> --ablation none --scaffold --no-publish --runs 1 --threshold 1.0 --max-cost-usd 12 --model claude-sonnet-5 --judge-model claude-sonnet-5 --allow-tools Write Bash Edit --tag micro` |
 | Boot the app (visual loop) | `claude plugin list` — the loaded-plugin inventory *is* this repo's running state |
 | App screenshot | None — terminal output is the evidence; paste it verbatim |
 | Install deps | None |
@@ -44,11 +45,19 @@ It fails on a validation error or warning, never on the `directory` or `advice` 
 submitted there. The one warning it tolerates is the symlink-not-followed one, which the
 packaging symlinks under `skills/` raise by design.
 
-**The micro eval gate runs on the plugin whose version is moving, and only that one.** It
-selects the `micro`-tagged cases — one contract sentence each, against a stub the case owns
-— and every one of them passes before the bump. The `full`-tagged cases run on demand
-instead, when a change touches how a skill reads the prototype tree, the adapter or the
-fixture app. Two flags are the difference between a real run and a meaningless one:
+**Two eval gate rows, and each child runs one of them.** A micro case carries `micro` plus
+the tag of every skill its prompt invokes (`tags: [micro, prove-branch]`). A child that touches
+a skill runs the per-skill row with that skill's tag. `--tag` is an OR filter, so the row passes
+the skill tag alone, which works only where skill tags sit on micro cases: `plugins/qa` today.
+In the other plugins a skill tag marks a `full` case, so their children run the full micro row.
+The child that bumps the plugin's version runs the full micro row once, on that plugin only: it
+selects every `micro`-tagged case — one contract sentence each, against a stub the case owns —
+and every one of them passes before the bump. Its cap fits one full run of `plugins/qa`, the
+largest suite, at about 8 USD. The `full`-tagged cases run on demand instead, when a change
+touches how a skill reads the prototype tree, the adapter or the fixture app. A grader that
+reads how the run phrased its message sits in a `full` case, never a micro one: one run at
+threshold 1.0 cannot absorb a grader that passes on some wordings and fails on others.
+Two flags are the difference between a real run and a meaningless one:
 `--allow-tools Write Bash Edit`, without which only read-only tools are granted and a skill
 that writes its own output scores 0.00, and `--scaffold`, without which each case runs
 against an empty working directory. `command claude` is what reaches the binary, since

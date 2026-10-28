@@ -7,7 +7,7 @@ description: >
   whole `PRD: #<n>` line; no commit subject ends in `(#N)`; and the adapter has no
   `Ticket source:` line. Every key yields nothing, so the run stops with the resolver's block:
   the branch, the pull request, each key's result, and the question.
-tags: [micro]
+tags: [micro, prove-branch]
 runs: 1
 context:
   scaffold_script: ./scaffold.sh

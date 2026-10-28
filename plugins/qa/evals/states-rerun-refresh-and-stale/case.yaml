@@ -8,7 +8,7 @@ description: >
   give the S1 row today's date with its origin unchanged, mark the S4 row `stale <date>` with
   its ids and origin kept, delete no row and add none, and name the command that sets S4 up
   again.
-tags: [micro]
+tags: [micro, setup-states]
 runs: 1
 context:
   scaffold_script: ./scaffold.sh

@@ -27,6 +27,7 @@ Human sessions default Opus-class·high, so this file detects downgrades. Orches
 - New shared-primitive API design (the UI-primitive-exception issues from `to-prd-tasks`)
 - Net-new architecture (not following an existing pattern)
 - Many files / multiple modules or packages touched
+  - Eval fixtures, `case.yaml` files and scaffold stubs do not count toward many files. A child whose only heavier signal is fixtures routes Sonnet-class.
 - Ambiguous AC or unresolved decisions in the issue
 
 **Lighter — drop to Sonnet-class, medium effort:**

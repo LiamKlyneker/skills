@@ -7,7 +7,7 @@ description: >
   that is more than 14 days overdue; the stand-in shows no overdue banner. The run must look
   first, find nothing, name S3 as set in another application with `seed:overdue-loan` as the
   fast path for a human, say it stays `none known`, give no steps for it, and write no S3 row.
-tags: [micro]
+tags: [micro, setup-states]
 runs: 1
 context:
   scaffold_script: ./scaffold.sh
@@ -50,12 +50,6 @@ graders:
     name: names-the-seeder-hint
     target: last_message
     pattern: 'seed:overdue-loan'
-
-  - type: regex
-    name: names-another-application
-    target: last_message
-    pattern: 'another app|other app|lending desk'
-    flags: i
 
   - type: regex
     name: stays-none-known

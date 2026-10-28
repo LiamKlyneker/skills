@@ -7,7 +7,7 @@ description: >
   `(#12)` and one carries `(#13)` in the middle of the subject. A subject ending in `(#N)` is
   the only shape key 3 reads, so the run resolves to #12 — one hit, however many commits carry
   it — and never to #13. The run then stops at the preview step, since no URL answers offline.
-tags: [micro]
+tags: [micro, prove-branch]
 runs: 1
 context:
   scaffold_script: ./scaffold.sh

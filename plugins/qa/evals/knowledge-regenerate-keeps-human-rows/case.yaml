@@ -9,7 +9,7 @@ description: >
   7 days. The run must rewrite the banner row and the overdue state, both `code`, leave the two
   backend-repo action rows, the backend-answered Q1, the developer-answered Q4 and the
   `Backend read:` line byte-intact, move `Derived at:`, and keep every id contiguous.
-tags: [micro]
+tags: [micro, build-knowledge]
 runs: 1
 context:
   scaffold_script: ./scaffold.sh
