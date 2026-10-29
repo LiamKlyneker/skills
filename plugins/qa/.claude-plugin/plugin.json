@@ -1,7 +1,7 @@
 {
   "name": "qa",
   "description": "The automated QA pass for Claude Code and the two files it starts from: build-knowledge derives a page's KNOWLEDGE.md from its code, setup-states observes the staging org and records the page states it holds in the project's accounts.md, and prove-branch resolves the run from the checked-out branch, composes flows from the diff, the ticket's acceptance criteria and those two files, drives them in a real browser against the pull request's preview deployment, grades the evidence in a cold-context session, and posts one receipt to the ticket",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "author": {
     "name": "Liam Klyneker",
     "url": "https://github.com/LiamKlyneker"

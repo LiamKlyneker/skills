@@ -99,11 +99,25 @@ Before any browser is driven, confirm that **the Playwright MCP tools are presen
 Playwright MCP server, start a fresh session, and run the skill again. The shape is
 
 ```bash
-claude mcp add playwright -- npx @playwright/mcp@latest --isolated --storage-state <path to a session.json>
+claude mcp add playwright -- npx @playwright/mcp@latest \
+  --isolated \
+  --storage-state <path to a session.json> \
+  --output-dir <cache dir>/playwright-mcp/<project> \
+  --output-max-size 52428800
 ```
 
 with `--config <repo-root>/.qa-scenarios/browser-config.json` added when the adapter has a *Preview
-basic auth* row. The exact flags are the ones the server documents at run time. **Isolated mode plus
+basic auth* row. The exact flags are the ones the server documents at run time.
+
+**Recommend the two output flags; never stop without them.** The server writes a page snapshot and
+a console log on every action, and with no `--output-dir` it writes them into the working
+directory, so the project root collects an untracked `.playwright-mcp/` that grows without bound.
+`--output-dir` moves those auto-named files to a cache outside the repo — `~/Library/Caches` on
+macOS, `~/.cache` on Linux, `%LOCALAPPDATA%` on Windows — and `--output-max-size` evicts the oldest
+once the folder passes that size (52428800 is 50 MB). A file the skill saves under an explicit name
+still resolves against the workspace root, so evidence is unaffected. Snapshots stay on: the skills
+read the page from them, so `--snapshot-mode none` is never the remedy. A server without the flags
+drives the browser correctly; name them once and continue. **Isolated mode plus
 a storage-state file is how a saved session reaches the browser**: the browser holds its profile in
 memory, starts signed in from the scenario's `session.json`, and writes nothing back to it. The
 server runs headed unless the developer asks for headless, so the developer can watch.
