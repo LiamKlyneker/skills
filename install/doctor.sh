@@ -468,8 +468,8 @@ fi
 
 # ---------------------------------------------------------------- 9. the adapter's ## QA section
 #
-# Only the mechanical rows: the credential variables `qa:prove-branch` reads must be
-# set in this shell, the session method must be one the skill knows, and the file the
+# Only the mechanical rows: the credential variables `qa:prove-branch` reads, and the
+# Preview basic auth pair when that optional row is present, must be set in this shell, the session method must be one the skill knows, and the file the
 # Known accounts row points at must exist with both of its tables. Nothing here
 # opens a browser; whether the method yields a session is the skill's run-time check.
 # Silent when the adapter has no `## QA` section, since only the `qa` bundle asks for it.
@@ -508,6 +508,30 @@ if [ -f "$adapter" ] && grep -qE '^## QA[[:space:]]*$' "$adapter"; then
     done < <(printf '%s\n' "${line%%—*}" | grep -o '`[^`]*`' | tr -d '`')
   done < <(printf '%s\n' "$qa_section" | grep -E '^[[:space:]]*[-*][[:space:]]+(\*\*)?Credential environment variables')
 
+  # Optional, so an absent row is silent. Cut at the em dash: the row's prose
+  # backticks `doctor`, which is not a variable name.
+  basic_note=""
+  basic_line="$(printf '%s\n' "$qa_section" | grep -E '^[[:space:]]*[-*][[:space:]]+(\*\*)?Preview basic auth' | head -1)"
+  if [ -n "$basic_line" ]; then
+    basic_vars=()
+    while IFS= read -r var; do
+      [ -n "$var" ] && basic_vars+=("$var")
+    done < <(printf '%s\n' "${basic_line%%—*}" | grep -o '`[^`]*`' | tr -d '`')
+    if [ "${#basic_vars[@]}" -ne 2 ]; then
+      err "QA-BASIC-AUTH" "$(rel "$adapter") gives Preview basic auth ${#basic_vars[@]} variable name(s) — it needs two, the username's and the password's"
+    else
+      for var in "${basic_vars[@]}"; do
+        is_unfilled_token "$var" && continue
+        if ! printf '%s' "$var" | grep -qE '^[A-Za-z_][A-Za-z0-9_]*$'; then
+          err "QA-BASIC-AUTH" "$(rel "$adapter") names \`$var\` for Preview basic auth, which is not a valid variable name"
+        elif [ -z "${!var+set}" ]; then
+          err "QA-BASIC-AUTH" "\$$var is not set in this shell, but $(rel "$adapter") names it for Preview basic auth"
+        fi
+      done
+      basic_note=", preview basic auth variables set"
+    fi
+  fi
+
   # A relative path resolves against the repo root, the way the `qa` skills read it.
   accounts_note=""
   accounts_line="$(printf '%s\n' "$qa_section" | grep -E '^[[:space:]]*[-*][[:space:]]+(\*\*)?Known accounts' | head -1)"
@@ -531,7 +555,7 @@ if [ -f "$adapter" ] && grep -qE '^## QA[[:space:]]*$' "$adapter"; then
   fi
 
   [ "$errors" -eq "$qa_problems" ] &&
-    ok "$(rel "$adapter") \`## QA\`: session method \`$session\`, $qa_vars credential variable(s) set$accounts_note"
+    ok "$(rel "$adapter") \`## QA\`: session method \`$session\`, $qa_vars credential variable(s) set$basic_note$accounts_note"
 fi
 
 # ---------------------------------------------------------------- summary

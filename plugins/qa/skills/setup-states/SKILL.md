@@ -68,6 +68,7 @@ The project adapter at `<repo-root>/.claude/project/adapter.md` → `## QA`, by 
 | *Session method* | the `Session method` cell of a new `## Orgs` row, and how a session is captured (`## Signing in`) |
 | *Credential environment variables* | the roles a session may sign in as — names only, never a value |
 | *Browser automation consent* | read as [`browser-readiness.md`](../references/browser-readiness.md) → *Consent* says |
+| *Preview basic auth* | optional: read as [`browser-readiness.md`](../references/browser-readiness.md) → *Preview Basic Auth* says |
 | *Known accounts* | where the file is; `<repo-root>/.claude/project/accounts.md` when no row names a path |
 
 **A missing `accounts.md` is a stop**: print `/qa:setup`, which writes the empty skeleton. This
@@ -97,7 +98,8 @@ id — finding those is this skill's job.
 ## Readiness
 
 Before any browser is driven, read [`browser-readiness.md`](../references/browser-readiness.md) and
-apply it: the *Consent* row, then *Playwright MCP readiness*. It is the same text `qa:prove-branch`
+apply it: the *Consent* row, *Preview Basic Auth* on the first request against the target, then
+*Playwright MCP readiness*. It is the same text `qa:prove-branch`
 reads. Its rule for one browser context per driver does not apply here: this skill drives one browser
 itself and dispatches no driver. When readiness stops, the remedy it names ends with running
 `/qa:setup-states` again with the same arguments.

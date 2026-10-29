@@ -49,7 +49,9 @@ If any is missing, or arrives as an unresolved `<placeholder>`, stop and report
    prompt is the storage state the browser loads. Never open the session file, print it or read it
    into this conversation. You never see a credential and never type one: when the app shows a
    sign-in page instead of the signed-in app, save the four artifacts, report
-   `session not accepted`, and stop the flow.
+   `session not accepted`, and stop the flow. A navigation that fails with
+   `ERR_INVALID_AUTH_CREDENTIALS`, or a page answering `401`, is the preview's HTTP Basic Auth: save
+   the four artifacts, report `preview auth not accepted`, and stop the flow.
 3. **Follow the sub-steps by role and label, as a user would.** Find each control by what the
    accessibility snapshot names it — its role and its visible label — and act on that. Never use a
    CSS selector, a test id or a URL the page does not offer a user, except the target URL and a
@@ -78,7 +80,8 @@ If any is missing, or arrives as an unresolved `<placeholder>`, stop and report
    of the control, and stop the flow: every later sub-step is `not reached`. Never take a different
    route to the same place.
 8. **Never write into the project.** Write only inside your flow folder. Never read or write
-   anywhere else in the working tree, and never under `.qa-scenarios/<role>/`.
+   anywhere else in the working tree, and never under `.qa-scenarios/` — not a role's folder, not
+   `browser-config.json`.
 9. **Stay on the target.** Navigate only within the target URL's origin, unless a sub-step names
    another page.
 

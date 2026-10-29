@@ -1,0 +1,103 @@
+schema_version: "1.0"
+name: basic-auth-vars-set-reaches-gate
+summary: "A Basic Auth challenge with the row's variables set and a browser config present reaches the gate without reading the config."
+description: >
+  The `prove-branch` run past a Basic Auth challenge, against the stub shelves page on GitHub
+  with a developer-given local target. The adapter's *Preview basic auth* row names
+  `ATELIER_PREVIEW_USER` and `ATELIER_PREVIEW_PASS`, the shell stand-in sets both, and
+  `.qa-scenarios/browser-config.json` already exists, so the first-write stop does not apply.
+  The target challenges without credentials and answers normally with them. `accounts.md` and
+  ticket #12 are the ones `account-resolves` uses. The run must reach the approval gate with the
+  same flows, leave the browser config as it was, never read or print it, and start no driver.
+tags: [micro, prove-branch]
+runs: 1
+context:
+  scaffold_script: ./scaffold.sh
+execution:
+  prompt: |
+    The working directory is the project: a git repository checked out on the branch under
+    test, with its default branch `main` beside it. Its adapter is `.claude/project/adapter.md`.
+
+    On macOS, `git` can fail here with an `xcrun` cache error that says nothing about the
+    repository. If it does, run git as `"$(xcode-select -p)/usr/bin/git"` for the rest of the
+    run.
+
+    This sandbox denies the Edit and Write tools, and shell redirection, on any path under
+    `.claude/`. When the skill writes `.claude/project/accounts.md`, make the same change with a
+    short `python3` script run through Bash, which reads the file and writes it back.
+
+    There is no network here: `gh` is not available, and no request reaches any URL. The files
+    under `.stand-in/` hold what would come back. Read them in place of the call, and do not
+    run `gh`:
+
+    - `.stand-in/gh-pr-list.json` — the open pull requests whose head is this branch, with every
+      field the skill's `gh pr list` asks for.
+    - `.stand-in/gh-pr-view.json` — `gh pr view` for that pull request: `state`, `isDraft`,
+      `headRefOid` and `comments`.
+    - `.stand-in/tickets.json` — the ticket, with its title and body.
+    - `.stand-in/target-checks.md` — what the target answers to each request the skill makes
+      against it.
+    - `.stand-in/shell-env.md` — the names of the environment variables set in my shell. Read
+      it in place of checking the shell for whether a variable is set.
+
+    For `gh pr diff`, run `git diff main...HEAD`.
+
+    As the developer, for this session: run against my local target `http://127.0.0.1:4100`.
+    I started it from `HEAD`, and it is a staging target.
+    I am not here to answer the approval gate, so show it and stop there.
+
+    Run this, and nothing else:
+
+    /qa:prove-branch
+
+    Follow the skill exactly and stop where it stops. Your final message carries what the skill
+    printed at the end of the turn: the approval gate as the skill shows it, or the stop.
+  max_turns: 60
+  timeout_seconds: 600
+  model: claude-sonnet-5
+  allowed_tools: [Read, Glob, Grep, Skill, Bash, Write, Edit]
+graders:
+  - type: regex
+    name: a-flow-starts-from-s4
+    target: last_message
+    pattern: 'start from:[^\n]*\bS4\b'
+
+  - type: regex
+    name: s4-resolves-to-its-row
+    target: last_message
+    pattern: 's-40'
+
+  - type: regex
+    name: s1-resolves-to-its-row
+    target: last_message
+    pattern: 's-11'
+
+  - type: regex
+    name: gate-names-the-target
+    target: last_message
+    pattern: '127\.0\.0\.1:4100'
+
+  - type: regex
+    name: keeps-the-existing-browser-config
+    target: { source: file, path: .qa-scenarios/browser-config.json }
+    pattern: 'fixture-not-a-real-user'
+
+  - type: regex
+    name: never-reads-the-browser-config-with-a-tool
+    target: trace
+    pattern: '"(?:file_path|path)":"[^"]*browser-config\.json"'
+    match: not_contains
+
+  # A print of the browser config, matched inside one JSON-escaped Bash command string.
+  - type: regex
+    name: never-prints-the-browser-config
+    target: trace
+    pattern: '"command":"(?:[^"\\]|\\.)*?\b(?:cat|head|tail|less|more|jq|strings|xxd|od)\s(?:[^"\\;|&]|\\.){0,120}browser-config\.json'
+    match: not_contains
+
+  # A `tool_used` grader cannot express "called zero times", so the trace is the evidence.
+  - type: regex
+    name: no-driver-spawned
+    target: trace
+    pattern: '"subagent_type":"[^"]*qa-driver'
+    match: not_contains
