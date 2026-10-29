@@ -2,7 +2,7 @@
 
 The six skills that travel everywhere Liam does, packaged as a Claude Code
 plugin: `grill` and `deep-grill` for interviewing a plan, `pinpoint`,
-`scoped-context`, `how-i-write`, and `report-leak`.
+`scoped-context`, `how-i-write`, and `report`.
 
 None of them is bound to the **project's** tracker, which is exactly why they
 do not belong to a tracker-bound workflow plugin. Before this plugin they
@@ -14,10 +14,10 @@ catalog pins.
 That criterion — never the project's tracker — is the whole membership rule.
 A skill that writes to the tracker of the repo it is running in belongs to that
 repo's workflow plugin: the PRD QA loop writes to GitHub, so `triage` lives in
-`prd-workflow` and invokes as `/prd-workflow:triage`. `report-leak` passes the
+`prd-workflow` and invokes as `/prd-workflow:triage`. `report` passes the
 rule from the other side. It files issues, but never on the project's tracker —
 its target is `LiamKlyneker/skills`, hardcoded, wherever it runs, and it reads
-one section of the project's adapter and writes nothing to it.
+nothing from the project's adapter and writes nothing to the project.
 
 ## Layout
 
@@ -30,7 +30,7 @@ plugins/lk/
     pinpoint/                          # throwaway-subagent search
     scoped-context/                    # the CONTEXT.md convention
     how-i-write/                       # Liam's voice, with references/
-    report-leak/                       # a skill failure, walked back to its hop
+    report/                            # a session's conclusion, filed upstream
 ```
 
 Nothing sits at the plugin root, and there are no agents. A directory holding

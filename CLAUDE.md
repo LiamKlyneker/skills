@@ -155,7 +155,7 @@ in `prd-workflow` and `ado-workflow` — beside the loop whose literals they sha
 `manual-qa` copies stay until it has completed a run on a real project — ADR
 [0020](docs/adr/0020-the-automated-qa-pass-gets-its-own-plugin.md) amends 0011's membership rule.
 
-GitHub titles carry `[PRD]` · `[TASK]` · `[BUG]` · `[FINDINGS]` · `[LEAK]`, registered in the
+GitHub titles carry `[PRD]` · `[TASK]` · `[BUG]` · `[FINDINGS]` · `[IDEA]`, registered in the
 adapter's `## Repo` → *Title prefixes* row, never hardcoded in a skill. **On GitHub they are a human
 scanning convention and nothing more — no skill filters on them. Azure DevOps is the opposite, so
 read the next paragraph before carrying this rule across.** A PRD's children are its **native GitHub
@@ -165,11 +165,12 @@ invisible — a `[FINDINGS]` issue is deliberately never linked, so it never sho
 one place a prefix is still mechanical is `work-on-prd` stripping a leading
 `[…]` group before slugging the branch. Don't reintroduce a title filter, and don't write a body
 `## Parent` section to stand alongside the link — two sources of truth that can disagree is
-exactly what the links removed. `[LEAK]` is the one prefix written from outside: `lk:report-leak`
-runs in a project where a skill failed, walks the failure back to the hop that leaked it, and
-files one sanitized issue per hop here, carrying `needs-triage` and a proposed grader rather than
-a fix. It is registered in **this repo's** adapter and in no other — a consumer never files a
-`[LEAK]` on its own tracker, so `install/adapter.template.md` does not carry it.
+exactly what the links removed. `lk:report` writes from outside: it runs in a consumer project, takes the session's conclusion
+about a skill, and files it here as a sanitized `[BUG]` or `[IDEA]` carrying `needs-grill`. Its
+sanitizing rule is an allow-list — the body may quote this repo and nothing else — plus a
+mechanical scan, because this repo is public and an issue is permanent. `[IDEA]` is registered in
+**this repo's** adapter and in no other — a consumer never files one on its own tracker, so
+`install/adapter.template.md` does not carry it.
 
 **On Azure DevOps the prefix is load-bearing, and that divergence is deliberate.** ADO titles
 carry `[SPEC]` · `[TASK]` · `[FINDINGS]` · `[BUG]` — registered in the same adapter row, never

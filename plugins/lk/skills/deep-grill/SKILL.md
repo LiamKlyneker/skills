@@ -184,7 +184,7 @@ Every ledger row appears, including the rows that stayed `DS as-is`. A row missi
 
 The ticket is the brief's filename stem, or the ticket id this grill was invoked with. A grill with neither has nowhere to write the file — say so instead of inventing a key.
 
-The file is for debugging a skill, not for the project. A downstream issue carries the decisions but not the questions, so this file is the only record of what was asked. `lk:report-leak` reads it to tell a decision the grill made from a decision it never raised, and falls back to the issue's `## Decisions confirmed` block when it is absent.
+The file is for debugging a skill, not for the project. A downstream issue carries the decisions but not the questions, so this file is the only record of what was asked.
 
 ## Done
 
