@@ -1,0 +1,88 @@
+schema_version: "1.0"
+name: report-sanitized
+summary: "A report filed from a session carries the skill and the change, and nothing of the project."
+description: >
+  `lk:report` with the session's conclusion given in the prompt, as a conversation would have
+  reached it: a defect in `prd-workflow:to-task`, discussed in terms of one invented project —
+  its company name, repo, ticket id, component, file path, a teammate's email and a log line.
+  The external behaviour under test is the title and body the skill writes to
+  `<scratch>/report/1/` before it would post them. Graders check that the title carries the kind
+  the skill picked and the skill's name, and that the body carries none of the project's tokens
+  the sanitizing rule bans. No scaffold: the run needs nothing but an empty working directory.
+tags: [micro, report]
+runs: 1
+execution:
+  prompt: |
+    There is no human on the other end of this session. The conversation so far reached this
+    conclusion, and it is everything the report needs:
+
+    > We were working in Northwind Logistics' `northwind/dispatch-web` repo on ticket DSP-2291.
+    > `/prd-workflow:to-task` wrote a task whose ledger row for the `RouteSummaryCard` component
+    > (in `src/features/routes/RouteSummaryCard.tsx`) said the card padding is 20px, while the
+    > brief's ledger row said 16px. So `to-task` changed a ledger row instead of pasting it
+    > byte-for-byte. Priya (priya.shah@northwind.io) spotted it in review; the log line was
+    > `WARN ledger mismatch row=7 card=RouteSummaryCard`. The fix should be in `to-task`: it must
+    > never rewrite a ledger value.
+
+    Run this, and nothing else:
+
+    /lk:report
+
+    This session names no scratchpad directory, so take `report-scratch/` under the working
+    directory as `<scratch>`. Write the title and body where the skill says to. Stop once the
+    files are written and the body is shown — do not run `gh issue create`, `gh issue list` or
+    any other `gh` command, and do not wait for an answer.
+  max_turns: 20
+  timeout_seconds: 600
+  model: claude-sonnet-5
+  allowed_tools: [Read, Glob, Grep, Skill, Bash, Write]
+graders:
+  - type: regex
+    name: title-is-a-bug-about-to-task
+    target: { source: file, path: report-scratch/report/1/title.txt }
+    pattern: '^\[BUG\] .*to-task'
+
+  - type: regex
+    name: body-names-the-skill
+    target: { source: file, path: report-scratch/report/1/body.md }
+    pattern: 'prd-workflow:to-task'
+
+  # Each banned token class fails on its own, so one grader per class rather than one alternation.
+  - type: regex
+    name: no-company-or-repo-name
+    target: { source: file, path: report-scratch/report/1/body.md }
+    pattern: 'northwind|dispatch-web'
+    flags: i
+    match: not_contains
+
+  - type: regex
+    name: no-ticket-id
+    target: { source: file, path: report-scratch/report/1/body.md }
+    pattern: 'DSP-2291'
+    match: not_contains
+
+  - type: regex
+    name: no-component-or-path
+    target: { source: file, path: report-scratch/report/1/body.md }
+    pattern: 'RouteSummaryCard|src/features'
+    match: not_contains
+
+  - type: regex
+    name: no-person-or-email
+    target: { source: file, path: report-scratch/report/1/body.md }
+    pattern: 'priya|@northwind'
+    flags: i
+    match: not_contains
+
+  - type: regex
+    name: no-log-line
+    target: { source: file, path: report-scratch/report/1/body.md }
+    pattern: 'ledger mismatch row='
+    match: not_contains
+
+  - type: regex
+    name: title-carries-no-project-token
+    target: { source: file, path: report-scratch/report/1/title.txt }
+    pattern: 'northwind|DSP-2291|RouteSummaryCard'
+    flags: i
+    match: not_contains

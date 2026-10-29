@@ -9,7 +9,7 @@
     {
       "name": "prd-workflow",
       "description": "PRD-to-merge workflow for Claude Code: turn context into a PRD, slice it into tracer-bullet issues and run the whole thing end-to-end with a per-issue worker subagent, or file and implement one self-contained task, and triage the QA findings that come back into cold-runnable issues. Start with /prd-workflow:setup, which writes the project adapter every skill here reads",
-      "version": "2.2.4",
+      "version": "2.2.5",
       "keywords": [
         "prd",
         "github-issues",
@@ -54,8 +54,8 @@
     },
     {
       "name": "lk",
-      "description": "Liam Klyneker's personal Claude Code skills: the grills that interview a plan until every branch is resolved, plus pinpoint, scoped-context, his writing voice, and report-leak, which walks a skill failure back to the hop that leaked it and files it against the skills repo",
-      "version": "1.19.3",
+      "description": "Liam Klyneker's personal Claude Code skills: the grills that interview a plan until every branch is resolved, plus pinpoint, scoped-context, his writing voice, and report, which files a session's conclusion about a skill as a sanitized issue on the skills repo",
+      "version": "1.20.0",
       "keywords": [
         "personal",
         "writing-voice",
