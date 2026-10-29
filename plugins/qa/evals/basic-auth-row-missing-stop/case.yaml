@@ -1,0 +1,88 @@
+schema_version: "1.0"
+name: basic-auth-row-missing-stop
+summary: "A target that challenges for HTTP Basic Auth with no Preview basic auth row stops, naming the row and /qa:setup."
+description: >
+  The `prove-branch` Basic Auth stop when the adapter has no *Preview basic auth* row, against
+  the stub shelves page on GitHub with a developer-given local target. The target answers the
+  first request with `401` and two `WWW-Authenticate` headers, one `Bearer` and one `Basic`, so the
+  challenge is the second of them. The run must stop at the target, name the *Preview basic auth*
+  row and `/qa:setup`, compose no flow, touch no browser config, and start no driver.
+tags: [micro, prove-branch]
+runs: 1
+context:
+  scaffold_script: ./scaffold.sh
+execution:
+  prompt: |
+    The working directory is the project: a git repository checked out on the branch under
+    test, with its default branch `main` beside it. Its adapter is `.claude/project/adapter.md`.
+
+    On macOS, `git` can fail here with an `xcrun` cache error that says nothing about the
+    repository. If it does, run git as `"$(xcode-select -p)/usr/bin/git"` for the rest of the
+    run.
+
+    This sandbox denies the Edit and Write tools, and shell redirection, on any path under
+    `.claude/`. When the skill writes `.claude/project/accounts.md`, make the same change with a
+    short `python3` script run through Bash, which reads the file and writes it back.
+
+    There is no network here: `gh` is not available, and no request reaches any URL. The files
+    under `.stand-in/` hold what would come back. Read them in place of the call, and do not
+    run `gh`:
+
+    - `.stand-in/gh-pr-list.json` — the open pull requests whose head is this branch, with every
+      field the skill's `gh pr list` asks for.
+    - `.stand-in/gh-pr-view.json` — `gh pr view` for that pull request: `state`, `isDraft`,
+      `headRefOid` and `comments`.
+    - `.stand-in/tickets.json` — the ticket, with its title and body.
+    - `.stand-in/target-checks.md` — what the target answers to each request the skill makes
+      against it.
+    - `.stand-in/shell-env.md` — the names of the environment variables set in my shell. Read
+      it in place of checking the shell for whether a variable is set.
+
+    For `gh pr diff`, run `git diff main...HEAD`.
+
+    As the developer, for this session: run against my local target `http://127.0.0.1:4100`.
+    I started it from `HEAD`, and it is a staging target.
+    I am not here to answer questions, so when the skill stops or asks, show it and stop there.
+
+    Run this, and nothing else:
+
+    /qa:prove-branch
+
+    Follow the skill exactly and stop where it stops. Your final message carries what the skill
+    printed at the end of the turn: the approval gate as the skill shows it, or the stop.
+  max_turns: 60
+  timeout_seconds: 600
+  model: claude-sonnet-5
+  allowed_tools: [Read, Glob, Grep, Skill, Bash, Write, Edit]
+graders:
+  - type: regex
+    name: names-the-preview-basic-auth-row
+    target: last_message
+    pattern: 'Preview basic auth'
+    flags: i
+
+  - type: regex
+    name: points-at-qa-setup
+    target: last_message
+    pattern: '/qa:setup(?![-\w])'
+
+  - type: regex
+    name: stops-before-composing-flows
+    target: last_message
+    pattern: 'start from:'
+    flags: i
+    match: not_contains
+
+  # Any Bash command naming the browser config, matched inside one JSON-escaped command string.
+  - type: regex
+    name: touches-no-browser-config
+    target: trace
+    pattern: '"command":"(?:[^"\\]|\\.)*browser-config\.json'
+    match: not_contains
+
+  # A `tool_used` grader cannot express "called zero times", so the trace is the evidence.
+  - type: regex
+    name: no-driver-spawned
+    target: trace
+    pattern: '"subagent_type":"[^"]*qa-driver'
+    match: not_contains

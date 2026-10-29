@@ -53,6 +53,7 @@ From `## QA`, by row name:
 | *Credential environment variables* | per role, the **names** of the variables holding its username and password. Read them from the backticked tokens: roles are unquoted labels separated by ` · `, each followed by `→` and two backticked variable names, and everything after the em dash is guidance. The skill reads only names here and **never reads a credential value from the adapter** |
 | *Known accounts* | the path of the project's `accounts.md`; `<repo-root>/.claude/project/accounts.md`, beside the adapter, when the row is absent |
 | *Preview URL pattern* | how the pull request's preview deployment URL is formed, or `pr-comment` — read in `## The target` |
+| *Preview basic auth* | optional: the **names** of the two variables holding the HTTP Basic Auth in front of the preview — read as [`browser-readiness.md`](../references/browser-readiness.md) → *Preview Basic Auth* says |
 | *Feature-flag override* | how one session turns a flag on or off, or `none` |
 | *Browser automation consent* | read as [`browser-readiness.md`](../references/browser-readiness.md) → *Consent* says |
 
@@ -188,6 +189,11 @@ it and gives the URL, and the skill uses that URL.
    URL does not answer, when the preview was built from a commit other than `HEAD`, or when the
    built-from commit cannot be read at all. Say which of these it is, and give the URL and commit
    you found.
+
+**A `401` that challenges for HTTP Basic Auth is an answer, not a URL that does not answer** — from
+a resolved URL or one the developer gave. Apply
+[`browser-readiness.md`](../references/browser-readiness.md) → *Preview Basic Auth* → *Detect the
+challenge* before anything else, and carry the credentials on every later request against the target.
 
 **Record two values now: the target URL and the SHA tested.** The SHA tested is the built-from
 commit when it matches `HEAD`. A URL the developer supplies is recorded with the commit the
@@ -531,11 +537,14 @@ in the command**, so the shell expands it and the command text never holds a val
 ```bash
 umask 077
 curl -sS -o /dev/null -w '%{http_code}\n' -c .qa-scenarios/<role>/jar.txt \
+  [-u "$<BASIC_USER_VAR>:$<BASIC_PASS_VAR>"] \
   --data-urlencode "<username-field>=$<USERNAME_VAR>" \
   --data-urlencode "<password-field>=$<PASSWORD_VAR>" \
   '<target-url><sign-in-endpoint>'
 ```
 
+- The `-u` line is there only when the adapter has a *Preview basic auth* row, with that row's two
+  variable names; drop the brackets.
 - The field names and the body format, form or JSON, follow what the endpoint accepts. When the diff
   does not show them, ask the developer for the shape of the request — field names and content
   type — never for a value.

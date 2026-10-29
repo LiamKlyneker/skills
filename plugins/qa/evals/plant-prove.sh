@@ -14,6 +14,8 @@
 #   stub-shelves-prove/branch/      the branch's overlay: a change under `app/shelves/`
 #   <case-dir>/fixture/             copied last; a case plants its `accounts.md` and its
 #                                   `.stand-in/tickets.json` here
+#   <case-dir>/scenarios/           optional; copied over the shared scenarios, so a case can
+#                                   plant another file under `.qa-scenarios/`
 #   --no-knowledge                  removes `app/shelves/KNOWLEDGE.md` before planting
 #
 # Exit: 0 placed · 1 a step failed · 2 usage error
@@ -42,6 +44,9 @@ cp -R "$evals_dir/stub-shelves-prove/fixture/." "$staged/fixture" || exit 1
 cp -R "$evals_dir/stub-shelves-prove/branch/." "$staged/branch" || exit 1
 if [ -d "$case_dir/fixture" ]; then
   cp -R "$case_dir/fixture/." "$staged/fixture" || exit 1
+fi
+if [ -d "$case_dir/scenarios" ]; then
+  cp -R "$case_dir/scenarios/." "$staged/scenarios" || exit 1
 fi
 if [ "$no_knowledge" -eq 1 ]; then
   rm -f "$staged/fixture/app/shelves/KNOWLEDGE.md" || exit 1
