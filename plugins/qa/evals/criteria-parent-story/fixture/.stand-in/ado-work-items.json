@@ -1,0 +1,42 @@
+[
+  {
+    "id": 5100,
+    "fields": {
+      "System.Title": "Shelf actions name their shelf, and the overdue banner reads plainly",
+      "System.WorkItemType": "User Story",
+      "System.State": "Active",
+      "System.Description": "<h2>Why</h2><p>A screen reader announces three identical Archive buttons on a page of shelves, so a member cannot tell which shelf a button acts on. The overdue loans banner reads awkwardly.</p><h2>Out of Scope</h2><ul><li>The Purge button. Purging is being redesigned under story 5200, so its label and behaviour belong to that story.</li></ul>",
+      "Microsoft.VSTS.Common.AcceptanceCriteria": "<ul><li>A screen reader announces each active shelf's Archive button with the shelf's name, for example \"Archive Picture books\".</li><li>A screen reader announces each archived shelf's Restore button with the shelf's name.</li><li>When at least one loan is more than 14 days overdue, the Shelves page banner reads \"&lt;n&gt; overdue loans — more than two weeks late\".</li></ul>"
+    },
+    "relations": [
+      { "rel": "System.LinkTypes.Hierarchy-Forward", "url": "https://dev.azure.com/atelier-stub/_apis/wit/workItems/5101", "attributes": { "name": "Child" } },
+      { "rel": "System.LinkTypes.Hierarchy-Forward", "url": "https://dev.azure.com/atelier-stub/_apis/wit/workItems/5102", "attributes": { "name": "Child" } }
+    ]
+  },
+  {
+    "id": 5101,
+    "fields": {
+      "System.Title": "[SPEC] Shelf actions name their shelf, and the overdue banner reads plainly",
+      "System.WorkItemType": "Task",
+      "System.State": "Active",
+      "System.Description": "<h2>Scope</h2><p>Implements decisions for:</p><ul><li>#5100 — Shelf actions name their shelf, and the overdue banner reads plainly</li></ul><h2>Implementation Decisions</h2><ul><li>ShelfRow builds each action button's aria-label from the shelf's name, so the visible text stays one word.</li><li>The banner copy lives inline in the Shelves page; no translation key is added.</li></ul>"
+    },
+    "relations": [
+      { "rel": "System.LinkTypes.Hierarchy-Reverse", "url": "https://dev.azure.com/atelier-stub/_apis/wit/workItems/5100", "attributes": { "name": "Parent" } },
+      { "rel": "ArtifactLink", "url": "vstfs:///Git/PullRequestId/7c1e2f3a-8b4d-4c5e-9f6a-1b2c3d4e5f60%2F4a2b9c1e-7d3f-4e8a-9b6c-0f1e2d3c4b5a%2F318", "attributes": { "name": "Pull Request" } }
+    ]
+  },
+  {
+    "id": 5102,
+    "fields": {
+      "System.Title": "[TASK] Label shelf actions and reword the overdue banner",
+      "System.WorkItemType": "Task",
+      "System.State": "Closed",
+      "System.Description": "<p>Spec: #5101</p><h2>What to build</h2><p>Give ShelfRow's action buttons an aria-label carrying the shelf's name, and reword the overdue loans banner.</p><h2>Acceptance criteria</h2><ul><li>ShelfRow.test.tsx asserts the aria-label of the Archive and Restore buttons.</li><li>The lint command passes with no new warnings.</li></ul>"
+    },
+    "relations": [
+      { "rel": "System.LinkTypes.Hierarchy-Reverse", "url": "https://dev.azure.com/atelier-stub/_apis/wit/workItems/5100", "attributes": { "name": "Parent" } },
+      { "rel": "ArtifactLink", "url": "vstfs:///Git/PullRequestId/7c1e2f3a-8b4d-4c5e-9f6a-1b2c3d4e5f60%2F4a2b9c1e-7d3f-4e8a-9b6c-0f1e2d3c4b5a%2F318", "attributes": { "name": "Pull Request" } }
+    ]
+  }
+]

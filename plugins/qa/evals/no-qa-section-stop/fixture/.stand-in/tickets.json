@@ -1,0 +1,7 @@
+[
+  {
+    "number": 12,
+    "title": "[TASK] Shelf archive",
+    "body": "## What to build\n\nShelf owners archive shelves from the Shelves screen.\n\n## Acceptance criteria\n\n- [ ] Each active shelf shows an Archive button to a member who may archive it\n- [ ] Archived shelves are left out of the number in the Shelves screen title\n"
+  }
+]

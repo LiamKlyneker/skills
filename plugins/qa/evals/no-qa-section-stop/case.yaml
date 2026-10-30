@@ -1,0 +1,86 @@
+schema_version: "1.0"
+name: no-qa-section-stop
+summary: "An adapter with no QA section stops at the target, says prove-branch drives a web preview only, prints /qa:setup, and never asks for a URL."
+description: >
+  The `prove-branch` stop for a project whose adapter has no `## QA` section, against a stub
+  project on GitHub. The branch `shelf-archive` resolves to ticket #12 by its `(#12)` commit
+  suffixes and has one open pull request, #57, so the run resolves cleanly and reaches the target.
+  There the missing section is a stop: the skill drives a web preview deployment and nothing else,
+  so it says so, prints `/qa:setup` alone on its line, and never asks the developer for a URL.
+tags: [micro, prove-branch]
+runs: 1
+context:
+  scaffold_script: ./scaffold.sh
+execution:
+  prompt: |
+    The working directory is the project: a git repository checked out on the branch under
+    test, with its default branch `main` beside it. Its adapter is `.claude/project/adapter.md`.
+
+    On macOS, `git` can fail here with an `xcrun` cache error that says nothing about the
+    repository. If it does, run git as `"$(xcode-select -p)/usr/bin/git"` for the rest of the
+    run.
+
+    There is no network here: `gh` is not available, and no URL answers. The files under
+    `.stand-in/` hold what `gh` would return for this branch. Read them wherever the skill runs
+    `gh`, and do not run `gh`:
+
+    - `.stand-in/gh-pr-list.json` — the open pull requests whose head is this branch, with every
+      field the skill's `gh pr list` asks for.
+    - `.stand-in/gh-pr-view.json` — `gh pr view` for that pull request: `state`, `isDraft`,
+      `headRefOid` and `comments`.
+    - `.stand-in/tickets.json` — the tickets this branch could name, with their titles and bodies.
+
+    I am not here to answer questions, so when the skill stops or asks, show it and stop there.
+
+    Run this, and nothing else:
+
+    /qa:prove-branch
+
+    Follow the skill exactly and stop where it stops. Your final message carries what the skill
+    printed up to that point: the run it picked, and the stop.
+  max_turns: 30
+  timeout_seconds: 300
+  model: claude-sonnet-5
+  allowed_tools: [Read, Glob, Grep, Skill, Bash, Write, Edit]
+graders:
+  - type: regex
+    name: resolves-ticket-12
+    target: last_message
+    pattern: '#12\b'
+
+  - type: regex
+    name: names-the-missing-qa-section
+    target: last_message
+    pattern: '## QA'
+
+  - type: regex
+    name: says-web-preview-only
+    target: last_message
+    pattern: 'web preview'
+    flags: i
+
+  - type: regex
+    name: prints-qa-setup-alone-on-its-line
+    target: last_message
+    pattern: '(?:^|\n)[ \t]*`?/qa:setup`?[ \t]*(?:\n|$)'
+
+  - type: regex
+    name: never-asks-for-a-url
+    target: last_message
+    pattern: '\bURL\b[^\n]*\?'
+    flags: i
+    match: not_contains
+
+  - type: regex
+    name: stops-before-composing-flows
+    target: last_message
+    pattern: 'start from:'
+    flags: i
+    match: not_contains
+
+  # A `tool_used` grader cannot express "called zero times", so the trace is the evidence.
+  - type: regex
+    name: no-driver-spawned
+    target: trace
+    pattern: '"subagent_type":"[^"]*qa-driver'
+    match: not_contains

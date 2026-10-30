@@ -1,6 +1,6 @@
 ---
 name: prove-branch
-description: Run the automated QA pass on the checked-out branch — resolve the ticket, the pull request and the preview deployment from the branch alone, read the ticket's acceptance criteria and the touched pages' KNOWLEDGE.md, start every flow from a state the project's accounts.md already holds — stopping with the one command to run, `/qa:build-knowledge` or `/qa:setup-states`, where either file falls short, and never creating data — drive and grade flows against the preview, and post one receipt to the ticket; it stops with a question wherever the branch is ambiguous, and on a failure asks fix now or file. Runs on user invocation only; neither loop ever invokes it. Invoke /qa:prove-branch with no argument, in a fresh session on the implemented branch.
+description: Run the automated QA pass on the checked-out branch of a web project — resolve the ticket, the pull request and the preview deployment from the branch alone, read the acceptance criteria from the highest product source the branch reaches and the touched pages' KNOWLEDGE.md, start every flow from a state the project's accounts.md already holds — stopping with the one command to run, `/qa:build-knowledge` or `/qa:setup-states`, where either file falls short, and never creating data — drive and grade flows against the preview, and post one receipt to the ticket, or to the pull request when the branch names no ticket; it stops with a question wherever the branch is ambiguous, and on a failure asks fix now or file. Runs on user invocation only; neither loop ever invokes it. Invoke /qa:prove-branch with no argument, in a fresh session on the implemented branch.
 disable-model-invocation: true
 ---
 
@@ -57,8 +57,8 @@ From `## QA`, by row name:
 | *Feature-flag override* | how one session turns a flag on or off, or `none` |
 | *Browser automation consent* | read as [`browser-readiness.md`](../references/browser-readiness.md) → *Consent* says |
 
-A missing `## QA` section is not a stop at this point: `## The target` stops when it needs the
-*Preview URL pattern* row and finds none.
+A missing `## QA` section stops the run at `## The target`, after the run is resolved, so the stop
+can name the branch it was run on.
 
 `[PRD]`, `[SPEC]` and `[FINDINGS]` below are shorthand for the adapter's *Title prefixes* row. On
 `azure-devops` the prefix is load-bearing, so read it from the row; if the row names different
@@ -71,8 +71,10 @@ cannot be performed at all is a stop, never a silent omission.
 
 ## Resolving the run
 
-The run is two things: the **ticket** whose criteria the pass proves, and the **pull request** the
-preview deployment belongs to. Both are found from the branch.
+The run is two things: the **ticket** the run is anchored to — the item the receipt, the findings
+and a fix-now commit name — and the **pull request** the preview deployment belongs to. Both are
+found from the branch. The criteria come from the product source the ticket reaches, which
+`## Criteria` finds; a branch that names no ticket still runs, on its pull request alone.
 
 ### First, read the branch
 
@@ -131,10 +133,23 @@ commits carrying `(#12)` and `(#13)` are two.
 
 A key that does not apply to this tracker reports `not applicable` and counts as yielding nothing.
 
+### No key wins
+
+When no key yields exactly one hit, the result depends on what the keys and the pull requests
+found:
+
+- **Every key found nothing, and the branch has exactly one open pull request** — the run has
+  **no ticket**. It is not a stop: the run continues on that pull request, and `## Criteria` reads
+  the criteria from it or from the diff.
+- **A key found several hits** — a stop. The branch names more than one ticket, and only the
+  developer knows which this pass proves.
+- **Every key found nothing, and the branch has no open pull request or several** — a stop. There
+  is no pull request to anchor the run to, or no way to choose one.
+
 ### The stop
 
-**Zero or several hits at every key is a stop.** Name the branch, say what each key found, and ask
-the developer which ticket and pull request this run is for:
+Name the branch, say what each key found, and ask the developer which ticket and pull request this
+run is for:
 
 ```
 prove-branch cannot resolve the run for branch `<branch>`.
@@ -157,6 +172,10 @@ has no preview deployment to run against.
 **Before anything else**, state the ticket and the pull request picked: the ticket (its key and
 title), the key that resolved it, and the pull request (number or id, head branch, title).
 
+With no ticket, say `ticket: none`, give each key's result on the stop block's lines, and say that
+the criteria come from the pull request's title and body or from the diff alone, every one
+`inferred` unless the pull request's body carries an acceptance-criteria list.
+
 ## Session hygiene: check and report, stop on anything unexpected
 
 Before reading the target, confirm and say what you found:
@@ -178,6 +197,20 @@ The pass runs against the pull request's **preview deployment**. **The skill nev
 A local target happens only when the developer asks for one in this session; the developer starts
 it and gives the URL, and the skill uses that URL.
 
+**An adapter with no `## QA` section is a stop**, before any URL is looked for. prove-branch drives
+a web preview deployment and nothing else, and a project without the section — a native app, a
+library — has none to drive. Say so, and print the command for a web project alone on its line:
+
+```
+prove-branch cannot run on `<branch>`: the adapter has no `## QA` section.
+prove-branch drives a web preview deployment only. For a web project, add the section with:
+/qa:setup
+```
+
+**Never ask for a URL in this case**, and never take one offered: the session method and the
+credential variables live in the same section, so a URL alone cannot sign a flow in. No receipt is
+posted.
+
 1. **Find the URL** from the adapter's `## QA` → *Preview URL pattern* row:
    - a **pattern**: substitute the pull-request number for `<pr-number>`, and confirm the URL
      answers before using it;
@@ -185,7 +218,8 @@ it and gives the URL, and the skill uses that URL.
      the preview URL from the most recent comment that posts one.
 2. **Read the commit the preview was built from** — the commit the deployment record, the status
    check or the posting comment names for that preview. Compare it with `HEAD`.
-3. **Stop and ask the developer for a URL** when the row is absent, when no URL resolves, when the
+3. **Stop and ask the developer for a URL** when the section is there but the *Preview URL
+   pattern* row is absent, when no URL resolves, when the
    URL does not answer, when the preview was built from a commit other than `HEAD`, or when the
    built-from commit cannot be read at all. Say which of these it is, and give the URL and commit
    you found.
@@ -201,20 +235,99 @@ developer states it serves, marked `developer-stated`. The receipt names both.
 
 ## Criteria
 
-Read the ticket through `../_shared/ticket-source.md` — its resolution order (§1), its one reader
-per system (§2) and where each system keeps acceptance criteria. The resolving key decides the
-system:
+**The criteria come from the highest product source the run reaches.** The ticket anchors the run,
+but it is not always where the product is described: a `[SPEC]` and its `[TASK]`s are written for
+implementation agents, carry mostly code-level criteria, and never restate the product's scope.
 
-- keys 1, 2 and 3 resolve an item the loop filed, which lives on the filing tracker and is read
-  from the `Tracker:` line (`../_shared/ticket-source.md` §4);
-- key 4 resolves a ticket on the system its key belongs to, read from the `Ticket source:` line.
+Read every item through `../_shared/ticket-source.md` — its one reader per system (§2) and where
+each system keeps acceptance criteria. The resolving key decides the system: keys 1, 2 and 3
+resolve an item the loop filed, read from the `Tracker:` line (§4), and key 4 resolves a ticket on
+the system its key belongs to, read from the `Ticket source:` line. An item reached by walking up
+lives on the same system as the item it was reached from.
 
-Where the ticket is a PRD or a `[SPEC]` with children, each landed child's acceptance criteria join
-the list, attributed to that child.
+### The ladder
 
-**A ticket with no acceptance-criteria list is still valid input.** Infer the criteria from the
-description and summary, and label each one `inferred`. An inferred criterion is the skill's
-reading of the ticket, never the ticket's own words, and the receipt keeps the label.
+Take the first rung the run reaches:
+
+1. **The product source** — the item that says what the user gets:
+   - a `jira` ticket resolved by key 4: that ticket;
+   - on `azure-devops`: the parent of a resolved item whose title carries one of the *Title
+     prefixes* row's prefixes, found by `### Walking up`; a resolved item with no prefix is the
+     product source itself;
+   - on `github`: the PRD key 1 resolved; for key 3, the issue's parent, found by
+     `### Walking up`, or the issue itself when it has no parent — a standalone `[TASK]`.
+2. **The pull request's title and body**, when the run has no ticket.
+3. **The diff alone**, when the pull request's title and body say nothing a user could observe —
+   an empty body, a title that names only code.
+
+### Walking up
+
+**On `azure-devops`**, from a resolved `[SPEC]` or `[TASK]`:
+
+1. Read its `System.Parent` — the `Hierarchy-Reverse` relation on the fetch with
+   `expand: "relations"` and no `fields` filter — and fetch the parent the same way.
+2. Check the parent's **title**: it carries none of the *Title prefixes* row's prefixes. Never
+   check a work-item type name; process templates disagree about them, and `to-spec` checks its
+   lead the same way.
+3. Find the `[SPEC]`: the resolved item, or for a `[TASK]` the `[SPEC]` its `Spec: #<id>` line
+   names. Read the items on the `[SPEC]`'s `Implements decisions for:` line, under `## Scope`.
+   The parent must be the **first** item there. A line that is missing or names no item counts
+   as a disagreement.
+4. **Every further item on that line is a follower** — the group case `to-spec` writes. Fetch
+   each one the same way. Each must carry a `Related` link whose url ends in the `[SPEC]`'s id.
+   A follower's criteria and Out of Scope join the parent's, attributed to that follower.
+
+**On `github`**, key 1 already gives the PRD. For key 3, read the issue's parent:
+
+```bash
+gh api graphql -F n=<n> -f o=<owner> -f r=<repo> \
+  -f query='query($o:String!,$r:String!,$n:Int!){repository(owner:$o,name:$r){issue(number:$n){parent{number title}}}}' \
+  --jq '.data.repository.issue.parent'
+```
+
+A `null` parent means the issue itself is the product source.
+
+**These are stops**, each one before any flow is composed:
+
+- the `[SPEC]` or `[TASK]` has no parent;
+- the parent carries a title prefix;
+- the parent is not the first item on the `[SPEC]`'s `Implements decisions for:` line;
+- a follower has no `Related` link to the `[SPEC]`.
+
+```
+prove-branch cannot find the product source for `<resolved item>`.
+  <the check that failed, with the ids it read>
+Which work item holds the acceptance criteria for this run?
+```
+
+The developer's answer gives the product source; record that it came from the developer.
+
+### The criteria list
+
+- **The product source's criteria come first.** A GitHub PRD has no acceptance-criteria section:
+  its criteria are its `## User Stories`, one criterion per story. Every other item keeps them
+  where `../_shared/ticket-source.md` §2 says.
+- **Each follower's criteria follow**, attributed to that follower.
+- **Each landed child's acceptance criteria join** — a PRD's children, or a `[SPEC]`'s `[TASK]`s —
+  attributed to that child. A child's user-visible criteria are often more exact than the product
+  source's, so they stay.
+- **The `[SPEC]` body gives no criteria.** Every implementation decision in it is in the diff.
+- **A product source with no criteria** leaves the children's criteria alone on the list. Say so
+  in the print and in the receipt.
+- **Rung 2**: the pull request's acceptance-criteria list where its body carries one, attributed to
+  the pull request; otherwise criteria inferred from its title and body. **Rung 3**: criteria
+  inferred from the diff.
+
+**An item with no criteria and no child criteria is still valid input.** Infer the criteria from
+its description and summary, and label each one `inferred`. An inferred criterion is the skill's
+reading, never the item's own words, and the receipt keeps the label.
+
+### Out of Scope
+
+Read the product source's **Out of Scope**, and each follower's, the way acceptance criteria are
+found: a field whose name contains `Out of Scope` or `OutOfScope`, case-insensitively, then a
+section of the description or body headed `Out of Scope`, in any heading level or case. An item
+with neither sets no limit. The items are handed to `## Composing the flows`, which they limit.
 
 **The diff is the authority.** Read it — `github`: `gh pr diff <n> --repo <owner>/<repo>`;
 `azure-devops`: `git diff <default-branch>...HEAD`, since the MCP exposes no diff tool. Any planned
@@ -225,10 +338,18 @@ diff overrule it.
 
 Once the run, the target and the criteria are resolved, print them before composing the flows:
 
-- the ticket, the key that resolved it, and the pull request;
+- the ticket, the key that resolved it, and the pull request — or `ticket: none`;
+- the **anchor**: the item the receipt, the findings and a fix-now commit will name — the ticket,
+  or the pull request when there is none;
+- the **product source**: its id and title and how it was reached — the resolving key, the
+  `[SPEC]`'s parent, the issue's parent, the developer — with each follower; or the rung the run
+  fell to;
+- the **Out of Scope** items, each with its source, or `none`;
 - the hygiene results;
 - the target URL and the SHA tested, with `developer-stated` where it applies;
-- the criteria, numbered, each with its source — the ticket, a child, or `inferred`.
+- the criteria, numbered, each with its source — the product source, a follower, a child, the
+  pull request, or `inferred` — and, when the product source gave none, that the children's
+  criteria stand alone.
 
 ## Knowledge
 
@@ -267,9 +388,10 @@ which writes the empty file, and nothing else is written or asked.
 
 ## Composing the flows
 
-The composer turns the criteria and the diff into a short list of **flows**. It reads five things,
-all already in hand: the numbered criteria from `## Criteria`, the diff, the commit subjects on the
-branch, the touched pages' `KNOWLEDGE.md` files, and the project's `accounts.md`. **It reads nothing
+The composer turns the criteria and the diff into a short list of **flows**. It reads six things,
+all already in hand: the numbered criteria and the Out of Scope items from `## Criteria`, the diff,
+the commit subjects on the branch, the touched pages' `KNOWLEDGE.md` files, and the project's
+`accounts.md`. **It reads nothing
 else to write the flows** — not the wider codebase, not the running app.
 
 ### Flows test the ticket, not the app
@@ -278,6 +400,13 @@ Every flow exists because it checks at least one criterion. **The count follows 
 ticket with two criteria gets a short pass, and nothing the ticket does not ask about earns a flow —
 no tour of neighbouring screens, no regression sweep. The diff decides how a criterion is checked:
 which screen, which control, which result.
+
+**Out of Scope limits what a flow asserts.** No sub-step states a result that an Out of Scope item
+from `## Criteria` excludes — not as the action's result, and not as a detail of another result.
+Where a flow passes through an excluded area, its sub-steps assert what the criterion asks and say
+nothing about the rest. An observation in an excluded area — a grader gap, or something the
+developer points out — goes to the receipt's **Noted** section with the item it falls under, and
+is never a verdict.
 
 ### What a flow is
 
@@ -337,17 +466,25 @@ Beside the flows, build a table from **every** criterion to the sub-steps that c
 |---|---|---|---|---|
 | 1 | `<criterion>` | #228 | 2.1, 2.3 | covered |
 | 2 | `<criterion>` | inferred | — | uncovered — `<why no sub-step can check it>` |
-| 3 | `<criterion>` | ticket | 3.2 | ambiguous — `<the readings, and the one 3.2 checks>` |
+| 3 | `<criterion>` | story #5100 | 3.2 | ambiguous — `<the readings, and the one 3.2 checks>` |
+| 4 | `<criterion>` | PRD #40 | — | not in this branch |
+| 5 | `<criterion>` | #229 | — | not browser-observable |
 
-- **Uncovered**: no sub-step checks the criterion, usually because nothing a browser shows can
-  confirm it. Say why in the row. Never stretch a sub-step to claim a criterion it does not observe.
+- **Not in this branch**: the diff does not touch what the criterion describes — a user story
+  another child delivers, a story criterion a later branch carries.
+- **Not browser-observable**: the criterion is about code — tests, lint, documentation, file
+  layout, generated types — and no page could show it.
+- **Uncovered**: the branch touches the criterion and a user could see it, yet no sub-step checks
+  it. Say why in the row. Never stretch a sub-step to claim a criterion it does not observe.
 - **Ambiguous**: the criterion admits more than one reading with different observable results, or
   names no result at all. Give the readings and say which one a sub-step checks, if any.
 - A criterion checked only by sub-steps in Unable-to-verify flows is marked
   `unable to verify — flow <n>`.
 
 **Uncovered and ambiguous criteria are escalations.** Both are shown at the approval gate and both
-are handed to `## Receipt`. A row carries a status, never a confidence figure.
+are handed to `## Receipt`. **Not in this branch and not browser-observable are not escalations**:
+they are shown in the map and listed under the receipt's **Noted**. A row carries a status, never a
+confidence figure.
 
 ### Start states from the knowledge file
 
@@ -634,10 +771,10 @@ Every run gets a new folder inside the excluded scenario directory, created unde
       reload/          after a mutation: the same four files again
 ```
 
-- **`run.md`** carries the ticket and the key that resolved it, the pull request, the target URL,
-  the SHA tested (marked `developer-stated` where it applies), the time the run started, and per
-  driven flow its role and the ids of its starting state. It carries no credential and no session
-  contents.
+- **`run.md`** carries the ticket and the key that resolved it, the product source, the pull
+  request, the target URL, the SHA tested (marked `developer-stated` where it applies), the time
+  the run started, and per driven flow its role and the ids of its starting state. It carries no
+  credential and no session contents.
 - The skill writes `run.md` and creates every `flow-<n>/step-<k>/` folder before any driver
   starts, so a driver only saves files into folders that exist.
 - **`driver.md`** is the driver's report, saved verbatim by the skill when the driver returns.
@@ -746,7 +883,8 @@ The developer is pulled in for **exactly four things**, and for nothing else:
 **An item escalates for what it is, never for how sure anyone is.** No model confidence figure
 raises, holds back or ranks an escalation, and none appears anywhere in the pass: not on a verdict,
 a criterion, a receipt line or the final print. A Pass is never an escalation. A Human-only
-sub-step is not one either, because the developer already gave its verdict in `## Grading`.
+sub-step is not one either, because the developer already gave its verdict in `## Grading`, and
+neither is a criterion marked `not in this branch` or `not browser-observable`.
 
 Every escalation reaches the developer in two places: in the receipt, in the receipt's order, and
 as its own line in the final print. Uncovered and ambiguous criteria, the flows already Unable to
@@ -755,10 +893,11 @@ showing is a preview; the receipt still carries each one.
 
 ## Receipt
 
-The receipt is **one free-form comment on the ticket** the run resolved — the PRD, the `[SPEC]`, or
-the ticket on the `Ticket source:` system. Nothing parses it: it is output, never input, and no
-skill reads it back. **The pull request gets nothing** from the pass: no comment, no label, no
-review.
+The receipt is **one free-form comment on the anchor**: the ticket the run resolved — the PRD, the
+`[SPEC]`, or the ticket on the `Ticket source:` system — or, when the run has no ticket, the pull
+request. Nothing parses it: it is output, never input, and no skill reads it back. **The product
+source gets nothing** when it is not the anchor: the receipt names it, and no pointer goes on it.
+**A run with a ticket writes nothing to the pull request**: no comment, no label, no review.
 
 The receipt is posted once, after `## On a Fail` has settled every Fail, so it can say what
 happened to each. A pass that stops before any driver starts posts no receipt, since nothing was
@@ -768,7 +907,10 @@ tested.
 
 First, the head:
 
-- the ticket, and the pull request;
+- the ticket, or `no ticket`, and the pull request;
+- the **product source** and how it was reached, or the rung the run fell to, and when it gave no
+  criteria, that the children's criteria stood alone;
+- the **Out of Scope** items the composer kept to, or `none`;
 - the **target URL** and the **SHA tested**, marked `developer-stated` where it applies;
 - the run folder's absolute path. It is on the developer's machine, nothing in it is uploaded, and
   every artifact path in the receipt is under it;
@@ -793,17 +935,22 @@ Then four sections, **in this order**, each present and reading `none` when empt
 4. **Noted** — what the pass saw that is not a verdict on this branch: each entry of the grader's
    `gaps:` line, and each Fail the developer said is **present on the base target too** — the
    default branch's deployment — so this branch did not cause it. The skill never drives the base
-   target; each item says who placed it here, `grader gap` or `developer`.
+   target; each item says who placed it here, `grader gap` or `developer`. An observation in an
+   Out of Scope area also names the item it falls under. Then, compactly, one line per status,
+   the criteria marked `not in this branch` and those marked `not browser-observable`, by number.
 
 Every criterion keeps its source wherever it appears, and an inferred one is labelled `inferred`.
 The receipt carries no credential, no session contents and no cookie.
 
 ### Posting it
 
-Write the body to the scratchpad, then post it to the system the ticket was read from:
+Write the body to the scratchpad, then post it to the system the ticket was read from, or to the
+pull request when the run has no ticket:
 
-| Ticket read from | Call |
+| Anchor | Call |
 |---|---|
+| the pull request, `github` | `gh pr comment <n> --repo <owner>/<repo> --body-file <path>` |
+| the pull request, `azure-devops` | a new thread on the pull request through `mcp__ado__repo_pull_request_thread_write`, against the **repo project** and **repository** |
 | `github` | `gh issue comment <n> --repo <owner>/<repo> --body-file <path>` |
 | `azure-devops` | `mcp__ado__wit_work_item_comment_write` (`action: "add"`) against the **work-item project**, with **`format: "Markdown"`** — without it the comment lands as HTML and its headings and code spans arrive as literal text. Escape angle brackets when writing the body, and use inline code spans, never fenced blocks: a fence in an Azure DevOps comment comes back empty. |
 | `jira` | `mcp__atlassian__addCommentToJiraIssue`, with `cloudId` the site host from the `Ticket source:` line, `issueIdOrKey` the ticket key, `commentBody` the receipt and `contentFormat: "markdown"` |
@@ -829,6 +976,11 @@ now needs it because the worker's commit names it; file needs it because `triage
 findings by it. When the run resolved a ticket on another system, such as a Jira ticket through
 key 4, say that neither lane is available. Each Fail then goes to the receipt with
 `no lane — the ticket is not on the filing tracker`.
+
+**A run with no ticket has neither lane either**: no commit reference to name and no item for
+`triage` to find the findings by. Report every Fail — flow, sub-step, grader's reason, artifact
+path — and ask the developer what to do with them. What they do happens outside the pass; each
+Fail goes to the receipt with `no lane — the run has no ticket`, beside the developer's answer.
 
 A File answer is posted at once, one finding per turn (`### File`). The Fix-now answers are
 collected and handed to one worker after the last Fail is answered (`### Fix now`).
@@ -1027,13 +1179,14 @@ naming the escalations still open, and **remove it only on an explicit yes**:
 
   Then read `System.Tags` back and confirm before reporting it removed.
 - `jira`: a Jira ticket carries neither the label nor the tag, so the offer is skipped. Say so.
+- no ticket: there is nothing to carry the label or the tag, so the offer is skipped. Say so.
 
 **A pass that stopped early leaves `needs-qa` on**, and says so in the receipt and in the final
 print.
 
 The receipt, the `needs-qa` removal, and on a File answer the `[FINDINGS]` writes are the complete
 list of what the pass writes to the tracker. It never closes the ticket, edits an earlier receipt,
-or writes anything to the pull request.
+or writes anything to the pull request but the receipt of a run with no ticket.
 
 ## Final print
 
