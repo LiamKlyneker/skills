@@ -1,0 +1,111 @@
+schema_version: "1.0"
+name: criteria-parent-story
+summary: "On Azure DevOps, the criteria come from the [SPEC]'s parent story, the [SPEC] stays the anchor, and no sub-step asserts what the story's Out of Scope excludes."
+description: >
+  The `prove-branch` criteria ladder against the stub shelves page on Azure DevOps. Key 2 resolves
+  the `[SPEC]` 5101 through its `ArtifactLink` to pull request 318. The `[SPEC]`'s parent is story
+  5100, the first item on its `Implements decisions for:` line, with three user-visible acceptance
+  criteria and an Out of Scope section that excludes the Purge button. The landed `[TASK]` 5102
+  carries two code-level criteria. The diff labels the Archive, Restore and Purge buttons with the
+  shelf's name and rewords the overdue banner. The run must print the story as the product source
+  with its criteria attributed to 5100, keep 5101 as the anchor, list the Purge exclusion, mark the
+  `[TASK]`'s criteria not browser-observable, compose no sub-step about Purge, stop at the approval
+  gate, and start no driver.
+tags: [micro, prove-branch]
+runs: 1
+context:
+  scaffold_script: ./scaffold.sh
+execution:
+  prompt: |
+    The working directory is the project: a git repository checked out on the branch under
+    test, with its default branch `main` beside it. Its adapter is `.claude/project/adapter.md`.
+
+    On macOS, `git` can fail here with an `xcrun` cache error that says nothing about the
+    repository. If it does, run git as `"$(xcode-select -p)/usr/bin/git"` for the rest of the
+    run.
+
+    This sandbox denies the Edit and Write tools, and shell redirection, on any path under
+    `.claude/`. When the skill writes `.claude/project/accounts.md`, make the same change with a
+    short `python3` script run through Bash, which reads the file and writes it back.
+
+    There is no network here: the Azure DevOps MCP server is not connected, and no request
+    reaches any URL. The files under `.stand-in/` hold what would come back. Read them in place
+    of the call, and do not call an `mcp__ado__*` tool:
+
+    - `.stand-in/ado-pull-requests.json` — `mcp__ado__repo_pull_request` listing the active pull
+      requests whose source branch is this branch, against the repo project and repository, with
+      each pull request's status, last source commit, linked work-item ids and threads.
+    - `.stand-in/ado-work-items.json` — `mcp__ado__wit_work_item` (`action: "get"`,
+      `expand: "relations"`, no `fields` filter) for every work item this run can reach: the
+      pull request's linked items and their parent.
+    - `.stand-in/target-checks.md` — what the target answers to each request the skill makes
+      against it.
+
+    Ignore the `gh-*.json` files under `.stand-in/`: this project is not on GitHub.
+
+    As the developer, for this session: run against my local target `http://127.0.0.1:4100`.
+    I started it from `HEAD`, and it is a staging target.
+    I am not here to answer the approval gate, so show it and stop there.
+
+    Run this, and nothing else:
+
+    /qa:prove-branch
+
+    Follow the skill exactly and stop where it stops. Your final message carries everything the
+    skill printed: the run it picked, the product source, the Out of Scope items, the criteria
+    with their sources, and the approval gate as the skill shows it, or the stop.
+  max_turns: 60
+  timeout_seconds: 600
+  model: claude-sonnet-5
+  allowed_tools: [Read, Glob, Grep, Skill, Bash, Write, Edit]
+graders:
+  - type: regex
+    name: product-source-is-the-parent-story
+    target: last_message
+    pattern: 'product source[^\n]*\b5100\b'
+    flags: i
+
+  - type: regex
+    name: spec-stays-the-anchor
+    target: last_message
+    pattern: 'anchor[^\n]*\b5101\b'
+    flags: i
+
+  - type: regex
+    name: story-criterion-printed-with-its-source
+    target: last_message
+    pattern: '(?:^|\n)[^\n]*screen reader[^\n]*\b5100\b'
+    flags: i
+
+  - type: regex
+    name: lists-the-out-of-scope-item
+    target: last_message
+    pattern: 'out of scope[\s\S]{0,400}?\bpurge\b'
+    flags: i
+
+  - type: regex
+    name: task-criteria-not-browser-observable
+    target: last_message
+    pattern: 'not browser-observable'
+    flags: i
+
+  - type: regex
+    name: no-sub-step-asserts-purge
+    target: last_message
+    pattern: '(?:^|\n)[ \t|]*\d+\.\d+\b[^\n]*\bpurge\b'
+    flags: i
+    match: not_contains
+
+  - type: regex
+    name: not-a-product-source-stop
+    target: last_message
+    pattern: 'cannot find the product source'
+    flags: i
+    match: not_contains
+
+  # A `tool_used` grader cannot express "called zero times", so the trace is the evidence.
+  - type: regex
+    name: no-driver-spawned
+    target: trace
+    pattern: '"subagent_type":"[^"]*qa-driver'
+    match: not_contains

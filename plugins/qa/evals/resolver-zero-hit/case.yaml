@@ -1,12 +1,14 @@
 schema_version: "1.0"
 name: resolver-zero-hit
-summary: "A branch with no key anywhere stops, naming the branch and what each key found."
+summary: "A branch with no key anywhere and one open pull request runs with no ticket, its criteria inferred, and never asks which ticket."
 description: >
-  The `prove-branch` resolver's stop against a stub project on GitHub. The branch `shelf-archive`
-  has one open pull request, #57, whose body mentions `PRD #40` without the colon and never as a
-  whole `PRD: #<n>` line; no commit subject ends in `(#N)`; and the adapter has no
-  `Ticket source:` line. Every key yields nothing, so the run stops with the resolver's block:
-  the branch, the pull request, each key's result, and the question.
+  The `prove-branch` resolver's no-ticket path against a stub project on GitHub. The branch
+  `shelf-archive` has one open pull request, #57, whose body mentions `PRD #40` without the colon
+  and never as a whole `PRD: #<n>` line; no commit subject ends in `(#N)`; and the adapter has no
+  `Ticket source:` line. Every key yields nothing, and the branch has exactly one open pull
+  request, so the run is not a stop: it says it has no ticket, lists what each key found, and says
+  its criteria are inferred from the pull request. It then stops at the preview, since no URL
+  answers offline.
 tags: [micro, prove-branch]
 runs: 1
 context:
@@ -35,7 +37,7 @@ execution:
     /qa:prove-branch
 
     Follow the skill exactly and stop where it stops. Your final message carries what the skill
-    printed up to that point: the run it picked, if it picked one, and the stop.
+    printed up to that point: the run it picked, what each key found, and the stop.
   max_turns: 30
   timeout_seconds: 300
   model: claude-sonnet-5
@@ -47,10 +49,30 @@ graders:
     pattern: 'shelf-archive'
 
   - type: regex
-    name: stop-asks-which-ticket
+    name: says-there-is-no-ticket
+    target: last_message
+    pattern: '(?:ticket\W{0,4}none|no ticket)'
+    flags: i
+
+  - type: regex
+    name: says-the-criteria-are-inferred
+    target: last_message
+    pattern: 'inferred'
+    flags: i
+
+  - type: regex
+    name: never-asks-which-ticket
     target: last_message
     pattern: 'which ticket[^\n]*\?'
     flags: i
+    match: not_contains
+
+  - type: regex
+    name: not-the-resolver-stop
+    target: last_message
+    pattern: 'cannot resolve the run'
+    flags: i
+    match: not_contains
 
   - type: regex
     name: names-the-open-pull-request

@@ -1,0 +1,15 @@
+[
+  {
+    "pullRequestId": 318,
+    "status": "active",
+    "isDraft": false,
+    "title": "Shelf actions and the overdue banner",
+    "description": "Labels each shelf's Archive, Restore and Purge buttons with the shelf's name, and rewords the overdue loans banner.",
+    "sourceRefName": "refs/heads/__BRANCH__",
+    "targetRefName": "refs/heads/main",
+    "lastMergeSourceCommit": { "commitId": "__HEAD__" },
+    "repository": { "id": "4a2b9c1e-7d3f-4e8a-9b6c-0f1e2d3c4b5a", "name": "atelier-web", "project": { "name": "Atelier Code" } },
+    "workItemRefs": [ { "id": "5101" }, { "id": "5102" } ],
+    "threads": []
+  }
+]
