@@ -21,6 +21,8 @@ Work the tree in **rounds**. The **frontier** is every decision whose prerequisi
 
 A question whose answer depends on another question still open in this round belongs to a **later** round. Each round of answers reshapes the tree: recompute the frontier and ask again.
 
+**A round closes before the next one opens.** The next round goes out only when every question in this round has an answer and nothing I asked back is still open. When my reply asks a question, pushes back, or skips a question, answer it and stop. Do not open the next round in the same message. List the questions still open and wait. When my question changes one of this round's questions, re-ask that question with a new recommendation; it stays in this round.
+
 **A round is numbered questions, never a form.** Each carries its own recommended answer. Asking me to fill in a table or mark up a list is not a round — that hands back the reconciliation the recon fan-out below exists to do for me.
 
 ```
@@ -106,8 +108,19 @@ Once the briefs are in, fold them all in at once and compute the frontier from t
 
 **Each brief returns fixed sections**: (1) patterns/conventions found (`file:line`), (2) **already answered by the code** — questions this area settles, with the precedent as evidence, (3) genuinely-open questions, (4) manifest feedstock (contract/access rows from the boundary lane — tables touched, clients used, policies observed).
 
+**Every claim in a brief carries a confidence label**, and the label is set by the evidence, not by how sure the explorer feels. State this in every spawn prompt:
+
+| Label | Means | Required evidence |
+|---|---|---|
+| `verified` | the explorer read it | the `file:line` or URL it read. On the web lane, a primary source — the library's docs or source, the vendor's page. |
+| `inferred` | reasoned from nearby evidence, not read directly | the evidence it reasoned from. A blog post, a forum answer or any second-hand source is `inferred` at best. |
+| `unchecked` | assumed | none — say what would settle it |
+
+A `verified` label with no source counts as `unchecked`. A label goes on each claim, not on a section: one weak line inside a section marked `verified` is the line that ends up in a PRD.
+
 **Consolidate on this thread** once every brief is in, before Round 1:
-- **Surface a short "Resolved by the code" list up-front** — the questions recon settled, each with its precedent. Do **not** silently drop them: I can reopen any row if a precedent is stale or wrong. Everything on this list is a question you will *not* ask.
+- **Verify what a decision rests on.** A brief is a compressed report, and the compression can hide what matters. Any claim that a decision, a recommendation or a "Resolved by the code" row rests on, and that is not `verified` — or that two briefs disagree on — gets read on this thread: open the cited file or page and check it. That is a single known file, so it is not the raw digging this thread delegates. A claim that only adds colour stays as the brief reported it, label and all. A claim you cannot settle by one read becomes a question.
+- **Surface a short "Resolved by the code" list up-front** — the questions recon settled, each with its precedent. Only a `verified` claim, or one you verified on this thread, goes on this list. Do **not** silently drop them: I can reopen any row if a precedent is stale or wrong. Everything on this list is a question you will *not* ask.
 - The **open-questions** set drives the interview.
 - The **manifest feedstock** pre-populates the Data & Access Manifest below, so that gate *confirms* rather than builds from scratch.
 
