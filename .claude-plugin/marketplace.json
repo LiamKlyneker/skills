@@ -55,7 +55,7 @@
     {
       "name": "lk",
       "description": "Liam Klyneker's personal Claude Code skills: the grills that interview a plan until every branch is resolved, plus pinpoint, scoped-context, his writing voice, and report, which files a session's conclusion about a skill as a sanitized issue on the skills repo",
-      "version": "1.20.0",
+      "version": "1.21.0",
       "keywords": [
         "personal",
         "writing-voice",

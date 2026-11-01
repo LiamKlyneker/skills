@@ -14,6 +14,8 @@ Work the tree in **rounds**. The **frontier** is every decision whose prerequisi
 
 A question whose answer depends on another question still open in this round belongs to a **later** round, not this one. Each round of answers reshapes the tree: settled decisions push the frontier outward and unblock what depended on them. Recompute the frontier and ask again.
 
+**A round closes before the next one opens.** The next round goes out only when every question in this round has an answer and nothing I asked back is still open. When my reply asks a question, pushes back, or skips a question, answer it and stop. Do not open the next round in the same message. List the questions still open and wait. When my question changes one of this round's questions, re-ask that question with a new recommendation; it stays in this round.
+
 **A round is numbered questions, never a form.** Each carries its own recommended answer. Asking me to fill in a table, mark up a list, or confirm a batch of rows is not a round — it hands the reconciliation back to me, which is the work you are here to do.
 
 Format a round like this:
