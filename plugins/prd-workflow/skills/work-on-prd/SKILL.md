@@ -34,7 +34,7 @@ whichever form your route provides.
 
 - Max **2 self-fix attempts** per worker; attempts must be announced in the worker report.
 - **2 consecutive failed issues** → full stop with summary.
-- **Never** force-push, amend, or rewrite published history. **Never** merge the PR. **Never** close the PRD issue.
+- **Never** force-push, amend, or rewrite published history. **Never** merge the PR. **Never** close the PRD issue — the merge closes it, through the `Closes` line.
 - `git reset --hard` / `git clean` only ever on the PRD branch, only to discard a stale claim's uncommitted work.
 
 ## Setup (idempotent — cold start and resume are the same code path)
@@ -205,7 +205,7 @@ State lives in git + GitHub only (branch commits, issue labels, PR body). Zero s
 
    Then **append the machine block as the last thing in the body**, per `## The machine block`.
 
-4. **Reconstruct**: an issue is done ⇔ a commit referencing `(#N)` exists on the branch. Labels/PR body are cache, not truth — repair them to match commits if drifted (check off children, fix labels).
+4. **Reconstruct**: an issue is done ⇔ a commit referencing `(#N)` exists on the branch. Labels/PR body are cache, not truth — repair them to match commits if drifted (check off children, fix labels, and keep the PRD's own `closes #<n>` on the `Closes` line only while no child is open — see `## The machine block`).
 
    **The machine block joins that cache; it does not join the truth.** Its checklist and its `Closes`
    line get repaired against the commits exactly as labels and the old body checklist did, and are
@@ -225,7 +225,7 @@ One collapsed block, appended as the last thing in the PR body, holding everythi
 |---|---|---|
 | **`PRD: #<n>`**, matched as a whole line | this skill, Setup step 1 | finding the run — the resume key, and the only search there is |
 | the child anchor `- [ ] #<c> ` / `- [x] #<c> ` | this skill, Setup step 4 and Loop step 8 | ticking a landed child, and repairing the checklist against commits |
-| the **`Closes` line**, keyword repeated per issue | **GitHub**, on merge | closing the children — the one consumer here that cannot be changed to match us |
+| the **`Closes` line**, keyword repeated per issue | **GitHub**, on merge | closing the children, and the PRD once none is open — the one consumer here that cannot be changed to match us |
 | the `<summary>` text `Run bookkeeping — <code>work-on-prd</code>` | this skill, Loop step 8 and step 1's legacy retrofit | locating the block in a body to edit it, and knowing whether one is there already |
 | `<details>`, `<summary>`, and the blank line after `</summary>` | GitHub's renderer | collapsing the block, and rendering markdown inside it at all |
 
@@ -252,6 +252,7 @@ Copy what is inside the fence, not the prose around it. The rules are deliberate
 - **`PRD: #<n>` is the resume key**, and the only line in the block that is an identifier rather than cache. Its own line, exactly that shape: `PRD`, colon, space, `#`, the number, nothing after it. Setup step 1 finds the entire run by matching this line, so a stray character here is not a cosmetic defect — it is the duplicate branch and duplicate PR, arriving silently.
 - **The checklist is the children**, one `- [ ] #<c> <title>` per child, ticked as each lands. It is cache, repaired from commits by Setup step 4; see there for why it is never the truth about what landed.
 - **The `Closes` line repeats the keyword per issue** — `Closes #41, closes #42`. A bare `#42` after a comma does **not** close, and nothing tells you: the PR merges, one issue closes, the other sits open looking like a loop that forgot it.
+- **The PRD closes on the same line, last, and only once no child is open.** Loop end appends `closes #<n>` for the PRD itself after the children. GitHub does not close a parent when its sub-issues close, so without this entry every merged run leaves its PRD open. While any child is open — not yet landed, or a merge-blocker `triage` linked after loop end — the entry must be absent: a merge then closes the children that landed and leaves the PRD open, which is the truthful state. `triage` removes the entry when it links a merge-blocker, Setup step 4 removes it when it finds an open child, and the next loop end restores it.
 - **The `Closes` line lives inside the block, and that is verified rather than assumed.** A PR whose body carried a closing keyword *only* inside a `<details>` element was squash-merged into a repo's default branch: the PR's `closingIssuesReferences` already listed that issue **before** the merge, and after it the issue closed with `stateReason: COMPLETED`. Collapsing hides a keyword from the reader, not from the parser. There was a specced fallback — the `Closes` line sitting above the block, out in the open — and it was dropped on that evidence. Do not re-add it and do not re-run the experiment: the question needs a real merge to answer, and it has been answered under the conditions this loop actually uses (squash merge, default branch as target, repo auto-close at its default).
 - **The blank line after `</summary>` is load-bearing.** Without it GitHub renders no markdown inside the element and the checklist arrives as literal text with no checkboxes.
 - **Appended last, always.** After everything the template contributed, so a reviewer meets the team's PR first and the bookkeeping only if they open it.
@@ -309,7 +310,7 @@ The same pass, four more things:
 - **Tick the team's own checkboxes** that actually became true, and only those. One left unticked with a reason beside it is a fine outcome; one ticked because the template offered it is a false claim made in the team's own words.
 - **The `QA:` line** — literally `QA: run /prd-workflow:manual-qa #<prd-number>`, the same invocation §1 printed. It goes in the template's own testing or QA section if it has one; absent that, on its own line directly above the machine block. Not *inside* the block: the block holds three things and this is not one of them. Omit the line entirely when §1 applied no label, and say in the final summary that nothing in this run is manually testable. **After loop end this line is `manual-qa`'s alone** — the loop writes it once and never touches it again; a completed pass replaces it with the link to its receipt on the PRD.
 - **The workers' deviation logs** — code-review notes, observations about the diff, edge cases a reviewer should know about — land here, in whichever section of the template takes notes on the change. They have nowhere else to go — §1 posts nothing — so this is where a worker's deviation log lands.
-- **The machine block's final state** — every landed child ticked, the `Closes` line complete. Loop step 8 has been maintaining both, so this is a check and not a rewrite; where it disagrees with the commits on the branch, the commits win (Setup step 4).
+- **The machine block's final state** — every landed child ticked, the `Closes` line complete, and `closes #<prd-number>` appended last when no child is open (`## The machine block`). Loop step 8 has been maintaining both, so this is a check and not a rewrite; where it disagrees with the commits on the branch, the commits win (Setup step 4).
 
 The PR stays a **draft**.
 
@@ -335,7 +336,7 @@ Rules for it:
 - **One URL, and it is the PR.** Not the PRD, not the branch, not a child issue: the PR is what the human opens next and everything else is one click from it.
 - **The QA handoff is a fact plus the command** — `needs-qa applied`, or the explicit `no needs-qa — nothing in this run is manually testable`, with the reason. Then the invocation on its own clean line, last thing on screen.
 
-Leave the PR open (still draft) for human QA (verify ladder L5: run `manual-qa` against the branch, work its flows, then merge manually). The PRD issue is **not** closed by the loop — `Closes` keywords fire on merge. Do not remove `needs-qa` and do not post a receipt of your own: `manual-qa` owns both, and they are the only signals that a pass was ever run.
+Leave the PR open (still draft) for human QA (verify ladder L5: run `manual-qa` against the branch, work its flows, then merge manually). The PRD issue is **not** closed by the loop — GitHub closes it and its landed children on merge, through the `Closes` line. Do not remove `needs-qa` and do not post a receipt of your own: `manual-qa` owns both, and they are the only signals that a pass was ever run.
 
 Then release keep-awake — mirror of Setup step 0, no-op if never started:
 

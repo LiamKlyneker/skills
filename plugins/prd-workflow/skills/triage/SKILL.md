@@ -23,7 +23,7 @@ Establish PRD scope before the first finding, and hold it for the whole session:
 
 - **Which PRD / PR.** Resolve the PRD, then its run's PR via the machine block's `PRD: #<n>` resume key in the PR body — the same key `manual-qa` uses to locate a run, matched as a whole line (`PRD: #12` is a prefix of `PRD: #127`). Ask if not given.
 - **PRD issue** (`gh issue view <n> --json body,comments`) — the body for its cross-repo dependencies, deferred / out-of-scope notes, and explicit locked decisions. The same call's `comments` array carries `manual-qa`'s **receipt** from any pass that has run — which flows it walked and where it stopped. Read it as **context only, never matched**: it is free-form by design, nothing parses it, and it is not a source of findings. The findings are on the run's `[FINDINGS]` issue — see `## Input`.
-- **Child issues** + the PR's **Closes map** (#c1…#cN → their file areas) — this is the *owning-slice* attribution map, near-free.
+- **Child issues** + the PR's **Closes map** (#c1…#cN → their file areas) — this is the *owning-slice* attribution map, near-free. The PRD's own `closes #<prd>` entry on that line is not a slice; skip it.
 - **Touched `CONTEXT.md`** for the feature dir(s) under test (use the `scoped-context` skill if available), plus code comments in those files marked "deferred", "later slice", "no resolver yet", placeholder. Together with the PRD body and the children, this is what powers the gap classification below — there is no QA comment to read, and a PRD whose run landed only refactors or bumps has no QA artifact at all, which is normal rather than a gap. The PRD's `needs-qa` label is worth noting — it means no pass has completed yet — but it does not change the classification.
 
 ## Input
@@ -230,6 +230,11 @@ Two rules, both non-negotiable:
   parented; reading the PRD's sub-issue list back is. **The link is the only thing discovery
   reads** (`../_shared/prd-eligibility.md`), and the body carries no `## Parent` section to fall
   back on — there is no text-search safety net, so a silently failed link is an invisible child.
+- **Drop the PRD's own entry from the run PR's `Closes` line** once at least one merge-blocker is
+  linked. Loop end appends `closes #<prd-number>` to the machine block when no child is open; a new
+  merge-blocker makes that entry false, and a merge would then close the PRD over an open child.
+  Edit only that entry and leave the rest of the block alone. The next `work-on-prd` loop end
+  restores it once the blocker lands.
 - **Write links one at a time — never fan them out.** File → link → verify one bug, then start
   the next. GitHub warns that creating or removing sub-issues "too quickly" trips secondary rate
   limiting, and publishes no threshold to aim under.

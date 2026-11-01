@@ -78,3 +78,4 @@ or the adapter, and stops there.
 | [0020](0020-the-automated-qa-pass-gets-its-own-plugin.md) | The automated QA pass gets its own plugin | Accepted |
 | [0021](0021-every-plugin-ships-its-own-setup.md) | Every plugin ships its own setup | Accepted |
 | [0022](0022-knowledge-is-derived-accounts-are-observed.md) | Knowledge is derived, accounts are observed | Accepted |
+| [0023](0023-the-merge-closes-the-prd.md) | The merge closes the PRD | Accepted |
