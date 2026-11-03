@@ -1,0 +1,49 @@
+schema_version: "1.0"
+name: to-prd-no-readiness-section
+summary: "A conversation with no readiness block yields a PRD with no `## Readiness` section."
+description: >
+  `to-prd` after a grill with no `/lk:readiness` pass: no block anywhere in the conversation.
+  The PRD body must carry no `## Readiness` section, not even a stub. Sibling of
+  `to-prd-readiness-section`. There is no tracker and no network here, so the prompt has the
+  run write the body to a file instead of publishing it.
+tags: [micro, to-prd]
+runs: 1
+context:
+  scaffold_script: ./scaffold.sh
+execution:
+  prompt: |
+    The working directory is the project, already a git repository with one commit
+    (`fixture: scaffold snapshot`). Its adapter is `.claude/project/adapter.md`.
+
+    There is no network and no tracker credential here, so do not run `gh` and do not publish.
+    Write the PRD body, exactly as it would be published, to `./prd.md`. Do not interview me
+    and do not ask the module-confirmation questions; treat them as confirmed.
+
+    The grill settled this plan:
+
+    - `countShelves` in `lib/shelf-count.ts` counts archived shelves, so the header total
+      overstates what a user can open. It must count only shelves whose `archived` is `false`.
+    - Archived shelves never count toward the total. Nothing calls the function with an
+      "include archived" option.
+    - The archive action itself is out of scope.
+
+    Run this, and nothing else:
+
+    /prd-workflow:to-prd
+
+    Follow the skill exactly and stop where it stops.
+  max_turns: 30
+  timeout_seconds: 300
+  model: claude-sonnet-5
+  allowed_tools: [Read, Glob, Grep, Skill, Bash, Write]
+graders:
+  - type: regex
+    name: no-readiness-section
+    target: { source: file, path: prd.md }
+    pattern: '^## Readiness'
+    flags: m
+    match: not_contains
+  - type: regex
+    name: title-carries-the-prd-prefix
+    target: { source: file, path: prd.md }
+    pattern: '\[PRD\]'

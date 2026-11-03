@@ -71,6 +71,16 @@ slice; a row two slices both touch is the signal the seam is wrong, not a licenc
 
 Read the PRD's `## Project gates` section if present — one sub-section per extra gate this project registers in its adapter, each carrying that gate's table. Slice its ⚠️ rows the same way: the fix lands **in, or as a `Blocked by` of**, the slice that first introduces the offending operation, never a slice later. A gate row that resolves in another repo becomes a cross-repo dependency, listed under the slice's `## External steps` or `## Blocked by` as appropriate. Never assume which gates exist — the PRD section and the adapter registry are the only sources.
 
+Read the PRD's `## Readiness` section if present. Route each item to the place the loop already reads, by class:
+
+- **Missing context** given in the section goes into the owning slice's `## What to build` or `## Worker context`.
+- **Credential or access** becomes an unchecked line in the `## External steps` of the slice that first needs it.
+- **External dependency** that is a ticket becomes an entry in that slice's `## Blocked by`; one that is not a ticket becomes an `## External steps` line.
+- **Ambiguous acceptance criterion** becomes a decision stated in the slice body, in `## What to build` or in the criterion itself, using the sharpened wording the section recorded.
+- An item marked `deferred` or `open` is carried into no slice as a fact. Name it in the step 4 quiz so the human sees it.
+
+Do not paste the section into any child.
+
 While drafting each slice, also gather its `## Worker context` and `## QA notes` (see `../references/task-body.md`): explore the codebase for the real file paths, scoped `CONTEXT.md`s, and prior-art examples the slice needs; take verify commands from the **project adapter** at `<repo-root>/.claude/project/adapter.md` (never hardcode them) — when the adapter registers both a per-skill and a full eval gate row, the per-skill row goes into each slice that touches a skill, and the full row only into the slice that bumps the version; mark **User-visible: y/n** (y = app boot + screenshot verification applies). These two sections are what let an isolated orchestrated worker (`/work-on-prd`) implement the slice without plan mode — vague pointers here mean a blind worker there.
 
 ### 4. Quiz the user
@@ -146,6 +156,8 @@ sections for a User-visible slice whose PRD carries a `## Fidelity ledger`. That
 normative writer for every heading and sentinel the loop parses; do not restate the template here.
 
 Once all child issues are published, transition the parent PRD's triage label from `needs-triage` to `ready-to-start` (it has now been broken down and is ready to be picked up). Do NOT close the parent issue or modify anything else about it.
+
+**Sprint plan row.** When the PRD carries `## Readiness` with no item marked `open`, and a sprint plan file exists at the root of the projects directory, ask whether to set this PRD's row to `runnable`. The row states are `planned`, `grilled`, `runnable`, `running`, `ran`, `done`, `blocked` and `needs-human`. Set it only after a yes. When there is no plan file, or the section has an open item, say nothing about it.
 
 ### 6. Final print
 
