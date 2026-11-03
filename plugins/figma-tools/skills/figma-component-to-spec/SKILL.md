@@ -100,7 +100,8 @@ machine has installed and where the session is rooted.
   run reconstructs it across many files every time, and a derived catalog starts paying for
   itself again. `figma-tools:ds-catalog` writes one; this skill never authors one mid-run.
 - **Three library-only adapter rows**, all in `## Design system`, none of them inferable from
-  the tree:
+  the tree. This skill reads all three; `figma-to-brief` also reads the first two in a library
+  repo, to assemble its existence list:
   - **Variant mechanism** — a **ladder**, read in its order, stopping at the first rung that
     resolves, honouring the trap the row names. It is the **primary** current-state read: where
     this library declares a component's axes and values. Absent → ask; never pick a mechanism by
@@ -117,7 +118,7 @@ machine has installed and where the session is rooted.
   marker is `PROVISIONAL(<id>): <what should replace it>`; provisionals file where the spec files;
   nothing is surfaced as overdue. They are **not library-only in principle** — a consumer repo has
   the same problem — which is why they sit outside the library block, even though this skill is the
-  only reader today. Setup announces which came from a row and which from a default, because a
+  only reader of these four today. Setup announces which came from a row and which from a default, because a
   policy the project chose and this skill's opinion are not the same thing to agree to.
 - **The rest of `## Design system`**: the **icon resolution ladder** (needed *verbatim* by
   every extraction spawn — the variant agent is deliberately adapter-blind and catalog-blind)

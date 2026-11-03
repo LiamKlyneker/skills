@@ -106,7 +106,7 @@ tree at run time, which is why every line is here rather than left to a skill.
 
 - Repo role: `<consumer|library>` — **an absent `Repo role:` row means `consumer`.** Which side of the design system this repo sits on: a `consumer` renders the design system and files gaps against it; a `library` **is** the design system, so a spec written here changes the thing everyone else resolves against. Every adapter written before this row existed belongs to a consumer repo, so an adapter that never gained the row still reads unambiguously and needs no edit. The role is an **intent, not an inference** — a repo that happens to contain a `components/` directory is not thereby a library — so it is always asked and never guessed from the tree.
 - Design-system source: `<where the design system itself lives — repo path, workspace package, or published package + version>` — the thing a catalog is generated *from* and a gap is eventually built *in*. Or "None — `<how the design system is consumed instead>`". In a `library` repo this points at this repo itself.
-- Catalog: `<path>` · `<further path, optional>` — this project's design-system catalog: the existence source `figma-to-spec` resolves every component, token, type utility and icon against. **This row is the only place the catalog is ever named**, exactly as `## Project gates` is the only place a gate is named — skills follow the pointer and never a filename. **One path or several**, separated by ` · `; each is a file, or a directory meaning every markdown file directly inside it, and the catalog is the **union** of all of them. Each path is relative to this file, or anywhere in the repo — including inside an installed dependency, where the design-system package ships its own generated catalog; the usual shape is then that file followed by the project's own usage notes. Which source wins where two state the same entry, and the required shape of the whole, are the `figma-to-spec` skill's `references/catalog-contract.md`; a catalog that fails that contract stops the run loudly rather than degrading, and so does a path that does not exist — for a path inside a dependency, the fix is installing the project's dependencies.
+- Catalog: `<path>` · `<further path, optional>` — this project's design-system catalog: the existence source `figma-to-spec` resolves every component, token, type utility and icon against. **This row is the only place the catalog is ever named**, exactly as `## Project gates` is the only place a gate is named — skills follow the pointer and never a filename. **One path or several**, separated by ` · `; each is a file, or a directory meaning every markdown file directly inside it, and the catalog is the **union** of all of them. Each path is relative to this file, or anywhere in the repo — including inside an installed dependency, where the design-system package ships its own generated catalog; the usual shape is then that file followed by the project's own usage notes. Which source wins where two state the same entry, and the required shape of the whole, are the `figma-to-spec` skill's `references/catalog-contract.md`; a catalog that fails that contract stops the run loudly rather than degrading, and so does a path that does not exist — for a path inside a dependency, the fix is installing the project's dependencies. **In a `library` repo the row is optional** — the library's own source is the existence source there, and a registered catalog is a cross-check only.
 - Fingerprint command: `<the command that recomputes the catalog's stamp>` — the recipe behind the catalog's line-1 `fingerprint:` value. The catalog carries the *value*; this row carries the *recipe*, so the two never drift into two definitions. Hash **content only** — anything path-dependent differs between two checkouts of the same commit and turns every check into a false warning. Or "None — staleness unchecked", which is a real answer: the staleness check is soft and never fails a run.
 - Class prefixes — **three separate facts, and they are not interchangeable.** A design system routinely prefixes its build internally, its CSS custom properties differently, and emits something else again to consumers; collapsing them is how a spec recommends a class the app cannot write:
   - Tailwind class prefix: `<prefix, or "None">` — what the Tailwind theme prefixes emitted utilities with, if anything.
@@ -128,7 +128,7 @@ inventory of every place the implementation is ahead of the design, and a later 
 markers rather than re-asking about them.
 
 **All four default, so an adapter that never gains them still reads unambiguously and needs no
-edit** — the same doctrine as `Repo role:` above. Only `figma-component-to-spec` reads them today,
+edit** — the same doctrine as `Repo role:` above. Only `figma-component-to-spec` reads these four today,
 so `setup` asks for them only in a `library` repo; they are **not library-only in
 principle** — a consumer repo has exactly the same problem — which is why they sit here rather
 than in the library block below:
@@ -143,8 +143,10 @@ decide how a spec written *against this repo* is allowed to phrase a change. A r
 `Repo role:` is `consumer` (including one with no role row at all) **deletes these three**, the
 same way a project that never runs `figma-tools` deletes the two filing rows in `## Repo`. This
 applies to the three below and to nothing above it — the four provisional rows are not part of
-this block. None of the three is inferable from the tree at run time, and a wrong answer here
-does not error — it produces a spec whose edits land in the wrong file:
+this block. `figma-component-to-spec` reads all three; `figma-to-brief` reads the variant
+mechanism and the token pipeline, which name the source it assembles a library repo's existence
+list from. None of the three is inferable from the tree at run time, and a wrong answer here
+does not error — it produces a spec or a brief whose edits land in the wrong file:
 
 - Variant mechanism: `<source 1 → source 2 → … → what happens when none matches>` — how this
   library declares a component's variant axes and their values, **in the order a reader tries

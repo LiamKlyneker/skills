@@ -13,6 +13,7 @@ after the grill.
 ```markdown
 # Design brief — <ticket> · <design name>
 Pinned at figma <fileKey> · node <nodeId> · version <versionId or YYYY-MM-DD> · brief .claude/briefs/<ticket>.md
+Repo role: consumer
 Catalog: <fingerprint> · Generated: <YYYY-MM-DD> · Figma calls: <n>
 
 ## Scope
@@ -91,6 +92,14 @@ scope, not per screenshot. Same element in two states with different content = o
 - `<rule name>` — from `<usage-rules source>`
 ```
 
+In a `library` repo the lines under the pin line read instead:
+
+```markdown
+Repo role: library
+Source: <git sha>[+dirty] · Generated: <YYYY-MM-DD> · Figma calls: <n>
+Assembled from: `<token source>` · `<component directory>` · `<icon source>` …
+```
+
 ---
 
 ## Rules the template does not show
@@ -102,6 +111,14 @@ scope, not per screenshot. Same element in two states with different content = o
   Figma URL. A brief that cannot say which design state it describes cannot be checked against
   anything later. It is written in the contract's form, character for character, because every
   consumer copies it.
+- **The header always names the repo role and the matching pin.** `Repo role: consumer` or
+  `Repo role: library`, on every brief. A consumer brief pins the catalog it resolved against,
+  `Catalog: <fingerprint>`. A library brief pins the commit its existence list was read from,
+  `Source: <git sha>`, with `+dirty` appended where the working tree had uncommitted changes, and
+  lists every source path the list was assembled from on its `Assembled from:` line — the token
+  source, the component directory, each icon source, and each catalog path where a registered
+  catalog contributed. **The assembled list itself is never written into the brief**; the paths
+  and the sha are enough to rebuild it. `existence-source.md`, beside this file, has both origins.
 - **Screenshots are saved to disk and referenced by path plus node link**, never embedded and
   never linked to a `figma.com` image export — those URLs expire within the hour and are not
   public.
@@ -119,6 +136,12 @@ scope, not per screenshot. Same element in two states with different content = o
   `OPEN`, and nothing else. **A composite is never `DS as-is` without evidence** — the full
   classification rule set is in `SKILL.md`, Phase 4, *Classification rules*. Every row that is not
   `DS as-is` says **grill question** in its notes.
+- **In a library repo the classes keep their names and two change meaning.** `local component` is
+  a component the library does not export, and `DS change` is work in this repo. The `DS candidate`
+  cell carries the component and the declaration file the variant ladder resolved at —
+  `Button — src/components/button/button.tsx` — and, on a `DS change` row whose variant only the
+  ladder's trap accepts, the trap and its file as well. The `Tokens` cell writes each token as the
+  token source declares it, then its emitted form — `color.text.secondary → text-text-secondary`.
 - **The ledger's nine columns are fixed, `Interaction` among them.** `Interaction` names the
   element that owns the prototype reaction — "the whole value area opens the filter", not
   "clickable" — plus the trigger and the destination state. `—` only where the element is
@@ -161,7 +184,9 @@ scope, not per screenshot. Same element in two states with different content = o
   column, using the same element names the ledger uses. A token that attaches to no element is
   removed, not carried.
 - **`## DS gaps (proposed, not filed)` may not read `None`** while any ledger row is
-  `local component` or `DS change`. Each such row is a proposed gap. An icon that matches neither
+  `local component` or `DS change`. Each such row is a proposed gap. In a library repo
+  (`Repo role: library`) the section reads `None — library repo` instead: neither class is a gap
+  there, because the design system is this repo. An icon that matches neither
   source of the adapter's ladder is **not** a gap — it is a design question for the designer.
 - **`Source` cites the element node** — `<fileKey>:<nodeId>`, never a frame id and never a page
   root. A frame id in that cell is a broken row, because a frame read answers with the whole

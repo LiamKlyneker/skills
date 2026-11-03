@@ -34,10 +34,14 @@ Five skills:
   pipeline* row, which a catalog contributes to where one is registered.
 - **`figma-to-brief`** — one Figma node plus one ticket → a **design brief** at
   `.claude/briefs/<ticket>.md`, with one PNG per in-scope state saved beside it.
-  Runs in a **consumer** repo, reads the canvas once through the local
-  `figma-dev-mode` server at a pinned file version, filters it to the ticket,
-  renders the ticket's overrides on top, and resolves every element and token
-  against the catalog into a **per-element fidelity ledger**. **Same brief slot as
+  Runs in a **consumer** repo or a **library** repo, reads the canvas once through
+  the local `figma-dev-mode` server at a pinned file version, filters it to the
+  ticket, renders the ticket's overrides on top, and resolves every element and
+  token against the **existence source** into a **per-element fidelity ledger**:
+  the catalog in a consumer repo, and in a library repo a list assembled from the
+  library's own source through the *Variant mechanism* and *Token pipeline* rows,
+  with a registered catalog as a cross-check only. In a library repo a `DS change`
+  row is work in this repo, never a gap filed against another one. **Same brief slot as
   `prototype-to-spec`, a different source**: a canvas instead of a committed
   prototype spec. It asks nothing and files nothing — every judgement becomes a
   row, and `deep-grill` is where a human answers it. No subagents: a brief covers
@@ -70,13 +74,16 @@ is the agent (two now, with different call disciplines and different return
 schemas), the unit of extraction (a region vs. a variant frame), and the
 catalog's status — a hard requirement for `figma-to-spec`, an optional
 cross-check for `figma-component-to-spec`, which stops only when **no** existence
-source resolves at all.
+source resolves at all. `figma-to-brief` takes the catalog either way, by the repo
+role: required in a consumer repo, a cross-check in a library one.
 
 **The two spec skills are mutually exclusive by repo, and both enforce it.** The
 adapter's `## Design system` → `Repo role:` row decides which one may run;
 **an absent row means `consumer`**, so an install that predates the row keeps
 running `figma-to-spec` untouched and only the new skill refuses. Each guard is a
 STOP with a one-line redirect to its sibling, checked before any Figma read.
+`figma-to-brief` has no such guard: it runs on both sides and reads the same row
+to choose its existence source and what a `DS change` row means.
 
 ## Install
 
