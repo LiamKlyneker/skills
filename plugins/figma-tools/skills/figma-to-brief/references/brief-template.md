@@ -184,7 +184,9 @@ Assembled from: `<token source>` · `<component directory>` · `<icon source>` �
   column, using the same element names the ledger uses. A token that attaches to no element is
   removed, not carried.
 - **`## DS gaps (proposed, not filed)` may not read `None`** while any ledger row is
-  `local component` or `DS change`. Each such row is a proposed gap. An icon that matches neither
+  `local component` or `DS change`. Each such row is a proposed gap. In a library repo
+  (`Repo role: library`) the section reads `None — library repo` instead: neither class is a gap
+  there, because the design system is this repo. An icon that matches neither
   source of the adapter's ladder is **not** a gap — it is a design question for the designer.
 - **`Source` cites the element node** — `<fileKey>:<nodeId>`, never a frame id and never a page
   root. A frame id in that cell is a broken row, because a frame read answers with the whole

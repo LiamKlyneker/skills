@@ -115,7 +115,8 @@ says which input failed and what would fix it. There is no degraded mode and no 
   - `## Repo` → the `Ticket source:` and `Tracker:` lines, which decide where the ticket is read
     from, per `../_shared/ticket-source.md`, plus the locator rows that file names for the chosen
     system; and the **DS-gap backlog**, which this skill only ever _names_ in a proposed gap row.
-    It files nothing there.
+    It files nothing there. In a `library` repo the backlog is not read: a gap there is work in
+    this repo, so the brief names no backlog.
 - **The Figma file**, read-only through the local `figma-dev-mode` MCP server, at one pinned
   version. The file must be open in Figma Desktop — the local server's tools resolve against the
   running app.
@@ -351,7 +352,7 @@ naming the nearest catalog token and the delta.
 **An off-grid value stays raw, and the decision belongs to the grill.** Four things happen to it
 together: it appears in the ledger's `Layout facts` **unchanged**; it carries its `⚠ off-grid`
 flag with the nearest token and the delta; it gets a row in `## DS gaps (proposed, not filed)`,
-the way an unbound hex does; and its ledger row is marked **grill question** with both options
+the way an unbound hex does, in a consumer repo; and its ledger row is marked **grill question** with both options
 spelled out — the raw value, and the nearest token. Writing the nearest token in place of the
 value is the same failure as carrying the value bare, and a row that presents the choice as
 already made is the same failure again. This is how a text size with no type token survives too:
@@ -395,6 +396,10 @@ things are specific to this side.
 
 **Every `OPEN` row that looks like a genuine design-system gap** also gets a row in
 `## DS gaps (proposed, not filed)`, naming the adapter's DS-gap backlog as where it would go.
+**In a library repo, `## DS gaps (proposed, not filed)` reads `None — library repo`.** The design
+system is this repo, so there is no backlog to name: a `DS change` row is work in this repo, a
+`local component` row is a component the library does not export, and an off-grid value or an
+unbound hex keeps its flag and its grill question on its ledger row with no gap row.
 **Proposing is the whole of it.** Filing is a decision, the grill is where it gets made, and a
 gap filed by a skill that asks nothing is a gap nobody agreed to. An icon that resolves from
 neither source of the adapter's ladder is **not** a DS gap — it is a design question for the
@@ -535,7 +540,8 @@ implementer to invent one.
    them.
 6. **`## DS gaps (proposed, not filed)` may not read `None` while any row is `local component` or
    `DS change`.** Each such row becomes a DS-gap entry, proposed, not filed — naming the adapter's
-   DS-gap backlog as where it would go, per the rule above.
+   DS-gap backlog as where it would go, per the rule above. **In a library repo this rule does not
+   apply**: neither class becomes a DS-gap entry, and the section reads `None — library repo`.
 
 ##### Where the facts come from, and who wins
 
