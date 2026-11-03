@@ -277,6 +277,7 @@ the other, exactly as in `## Repo`.
 - GitHub Settings → General → "Auto-close issues with merged linked pull requests" must be **on** (not API-queryable — check in the web UI once). If off, `Closes #N` silently does nothing.
 - The `needs-triage` label must exist in the repo — `to-prd` applies it on CREATE.
 - The `needs-qa` label must exist in the repo — `work-on-prd` applies it to the PRD at loop end and cannot create it.
+- The `needs-human` label must exist in the repo — `work-on-prd --unattended` applies it to a child it escalated instead of pausing on, and cannot create it.
 
 ### Azure DevOps
 

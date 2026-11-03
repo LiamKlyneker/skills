@@ -1,0 +1,97 @@
+schema_version: "1.0"
+name: work-on-prd-unattended-continues
+summary: "Unattended, a failed child is escalated and the loop moves on; the second failure stops it non-zero."
+description: >
+  `work-on-prd --gate=end --unattended` against a hand-written stub project, resumed at Loop
+  step 6 for child #41, whose worker has already reported a failure. There is no tracker and no
+  network here, so `tracker/` stands in for GitHub as local files, and the prompt maps each `gh`
+  write onto them; no agent is spawned either, so each worker report is a frozen file. Child #42
+  fails the same way and #43 would succeed. The contract under test: #41 takes the continue
+  path — escalation comment, `needs-human`, an unchecked line in its `## External steps` — and
+  the loop picks #42 instead of pausing; #42's failure is the second consecutive one, a Stop,
+  so #43 is never reached and the session ends non-zero. Killing the session's own process
+  would kill the eval harness, so the prompt has the run record the exit status in a file in
+  place of the `kill`; that substitution is the only place this case does not exercise the
+  real mechanism.
+tags: [micro, work-on-prd]
+runs: 1
+context:
+  scaffold_script: ./scaffold.sh
+execution:
+  prompt: |
+    The working directory is the project, a git repository on the branch `prd/40-shelf-count`,
+    one empty `prd #40: loop start` commit ahead of `main`. Its adapter is
+    `.claude/project/adapter.md`. There is no git remote: skip every `git push`.
+
+    There is no network and no tracker credential here, so do not run `gh`. The tracker is the
+    directory `./tracker/`, and every `gh` operation the skill names maps onto it:
+
+    - Issue `#<n>` is `tracker/issues/<n>.md`; its first line is the title. Editing an issue
+      body means editing that file in place.
+    - Its labels are `tracker/issues/<n>.labels`, one per line. Adding a label appends a line;
+      removing one deletes its line.
+    - Posting a comment on `#<n>` means appending it to `tracker/issues/<n>.comments.md`
+      (create the file if absent), preceded by a line `---`. That comment's URL is
+      `tracker/issues/<n>.comments.md`.
+    - The PR body is `tracker/pr.md`.
+    - PRD #40's sub-issues are #41, #42 and #43, in that order. All three are open and none
+      has a blocker.
+
+    Setup has already run and found this run, so skip Setup entirely. The loop is at Loop
+    step 6 for #41: its worker has reported, and the report is `tracker/reports/41.md`.
+
+    Do not spawn any agent. When the loop reaches Loop step 5 for a child `<c>`, append the
+    line `<c>` to `./spawned.txt`, then treat `tracker/reports/<c>.md` as that worker's report.
+
+    The skill ends some sessions by running `kill -TERM "$PPID"`. Here that would kill this
+    harness, so never run `kill`: wherever the skill says to run it, run
+    `echo 143 > ./exit-status` instead, and end the session there.
+
+    Run this, and nothing else:
+
+    /prd-workflow:work-on-prd #40 --gate=end --unattended
+
+    Follow the skill exactly from Loop step 6 for #41, and stop where it stops.
+  max_turns: 60
+  timeout_seconds: 600
+  model: claude-sonnet-5
+  allowed_tools: [Read, Glob, Grep, Skill, Bash, Write, Edit]
+graders:
+  # ---- #41 took the continue path ----
+  - type: regex
+    name: failed-child-gets-the-external-step-line
+    target: { source: file, path: tracker/issues/41.md }
+    pattern: '^- \[ \] needs-human:'
+    flags: m
+  - type: regex
+    name: failed-child-gets-needs-human
+    target: { source: file, path: tracker/issues/41.labels }
+    pattern: '^needs-human\s*$'
+    flags: m
+  - type: regex
+    name: failed-child-gets-the-escalation-comment
+    target: { source: file, path: tracker/issues/41.comments.md }
+    pattern: '\S'
+
+  # ---- the run continued to the next child instead of pausing ----
+  - type: regex
+    name: continued-to-the-next-child
+    target: { source: file, path: spawned.txt }
+    pattern: '42'
+
+  # ---- the second consecutive failure is a Stop, and it exits non-zero ----
+  - type: regex
+    name: second-failure-gets-the-external-step-line
+    target: { source: file, path: tracker/issues/42.md }
+    pattern: '^- \[ \] needs-human:'
+    flags: m
+  - type: regex
+    name: stopped-before-the-third-child
+    target: { source: file, path: spawned.txt }
+    pattern: '43'
+    match: not_contains
+  - type: regex
+    name: stop-exits-non-zero
+    target: { source: file, path: exit-status }
+    pattern: '^143\s*$'
+    flags: m

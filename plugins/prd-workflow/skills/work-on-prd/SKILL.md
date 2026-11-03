@@ -13,7 +13,7 @@ Project facts (repo, title prefixes, commands, verify ladder) come from the **pr
 
 ## Invocation
 
-`/work-on-prd #N [--gate=issue|events|end]`
+`/work-on-prd #N [--gate=issue|events|end] [--unattended]`
 
 **Every skill in this plugin is namespaced**, on every route — installed from the
 marketplace or loaded with `claude --plugin-dir`: `/prd-workflow:work-on-prd`,
@@ -28,12 +28,44 @@ whichever form your route provides.
   - `events` — run free; pause only on: verify failure after retries · deviation from spec · destructive/irreversible action · ambiguity.
   - `end` — pause only at QA (loop end).
   - Graduation path: issue → events → end.
-- **Regardless of gate**: an issue with unmet `## External steps` always pauses and asks the human.
+- **Regardless of gate**: an issue with unmet `## External steps` always pauses and asks the human — except under `--unattended`, where it is skipped (Loop step 2).
+- `--unattended` (off by default) — no human is available, so nothing may wait for one. See `### Unattended` below. Without the flag, everything in this skill behaves exactly as written and none of the unattended clauses applies.
+
+### Unattended
+
+Under `--unattended` the loop never pauses. **Every place this skill would pause or ask the human resolves one of two ways**, and the list below is exhaustive:
+
+| Resolution | When | What the loop does |
+|---|---|---|
+| **Continue** | a failed child (Loop step 9) · a deviation or an ambiguity the gate would pause on (Loop step 7) · a destructive or irreversible action (Loop step 7) | the child takes the **continue path** below, and the loop picks the next child |
+| **Skip** | a child with an unmet `## External steps` item (Loop step 2) | the child is not claimed and gets one `Skipped` line in the final print; the loop picks the next child |
+| **Stop** | zero children · a cycle in `Blocked by` (Setup step 1) · two open PRs claiming this PRD (Setup step 1) · a branch-name collision (Setup step 2) · a blocker outside this PRD (Loop step 1) · the second consecutive failure (Loop step 9) | print exactly what that stop prints today, then the **unattended exit** below |
+
+**The continue path**, for one child, in this order:
+
+1. Post the **escalation comment** on the child — the same comment Loop step 9 posts: what was tried, what failed or what needs a decision, the evidence.
+2. `gh issue edit <c> --add-label needs-human`. The label is the human queue, a scanning convention like `needs-qa`; the loop applies it and cannot create it (one-time precondition, see the adapter). **Nothing reads it back** — not the pick, not Setup step 4.
+3. Append one unchecked line to the child's `## External steps`, naming the escalation:
+
+   ```
+   - [ ] needs-human: <one-line reason> — see the escalation comment <comment-url>
+   ```
+
+   If the body has no `## External steps` heading, add the heading with this line as its only item, directly above `## What to build` (at the end of the body when there is no such heading). Edit the body in place; change nothing else in it. **This line is what keeps the child out of every later run**, attended or not, because Loop step 2 already refuses a child with an unmet external step. A human clears it by acting on the escalation, ticking the line and removing the label.
+4. Record one `Escalation` line for the final print (Loop end §3), and pick the next child.
+
+**The unattended exit.** A Stop ends the session with a **non-zero exit**, and a run that reaches Loop end exits 0 — whatever was skipped, escalated or failed on the way, since each of those already sits in the human queue. The exit code is the only thing a caller reads; there is no machine-readable block, file or comment for a stop. After the stop's print, release keep-awake (Loop end §3), then end the process from a Bash call as the last action of the session:
+
+```bash
+kill -TERM "$PPID"
+```
+
+`$PPID` of the Bash tool's shell is the Claude Code process itself, so this is the session ending with a non-zero status. Under a headless `--output-format json` run it leaves no result JSON; the stop's print stays in the session transcript, reachable by the session id the caller assigned. A caller that runs the loop under a deny-by-default permission mode must allow this command, or the stop exits 0.
 
 ## Non-negotiables (circuit breakers)
 
-- Max **2 self-fix attempts** per worker; attempts must be announced in the worker report.
-- **2 consecutive failed issues** → full stop with summary.
+- Max **2 self-fix attempts** per worker; attempts must be announced in the worker report. Under `--unattended`, a verify failure at the boot, screenshot or end-to-end rung gets **zero** self-fix attempts, and unit-level verification keeps two — the worker learns this from its prompt (Loop step 5).
+- **2 consecutive failed issues** → full stop with summary. The counter lives in this session only, attended or not; across runs, the continue path's external-step line is what keeps a failed child out.
 - **Never** force-push, amend, or rewrite published history. **Never** merge the PR. **Never** close the PRD issue — the merge closes it, through the `Closes` line.
 - `git reset --hard` / `git clean` only ever on the PRD branch, only to discard a stale claim's uncommitted work.
 
@@ -49,7 +81,7 @@ State lives in git + GitHub only (branch commits, issue labels, PR body). Zero s
    command -v caffeinate >/dev/null && ! pgrep -F /tmp/work-on-prd.caffeinate.pid >/dev/null 2>&1 && { caffeinate -dimsu & echo $! > /tmp/work-on-prd.caffeinate.pid; }
    ```
 
-1. **Fetch state**: PRD + children per `../_shared/prd-eligibility.md` — the children are the PRD's **native sub-issues**, read back in one `gh api …/sub_issues` call. Everything that call returns is a child by construction: there are no filters, so nothing is dropped and there is nothing to report as dropped. Zero children → **nothing is linked to this PRD**, which is not the same as "never sliced". Stop, and tell the user to link the PRD's children as sub-issues — explicitly **do not** tell them to re-run `/to-prd-tasks`, and say so: re-slicing a PRD that already has children doubles every one of them, and that plausible-sounding message is the expensive wrong move this branch exists to prevent. Cycle in `Blocked by` → report it, stop.
+1. **Fetch state**: PRD + children per `../_shared/prd-eligibility.md` — the children are the PRD's **native sub-issues**, read back in one `gh api …/sub_issues` call. Everything that call returns is a child by construction: there are no filters, so nothing is dropped and there is nothing to report as dropped. Zero children → **nothing is linked to this PRD**, which is not the same as "never sliced". Stop, and tell the user to link the PRD's children as sub-issues — explicitly **do not** tell them to re-run `/to-prd-tasks`, and say so: re-slicing a PRD that already has children doubles every one of them, and that plausible-sounding message is the expensive wrong move this branch exists to prevent. Cycle in `Blocked by` → report it, stop. Under `--unattended` both are a Stop (`### Unattended`).
 
    **Then find the run, and find it by its pull request.** A run *is* its open PR: that PR's body
    carries the machine block, and the block carries a literal `PRD: #<n>` line (`## The machine
@@ -67,6 +99,7 @@ State lives in git + GitHub only (branch commits, issue labels, PR body). Zero s
    `--limit` above the repo's open-PR count: a truncated list is a silent miss, and a silent miss is
    exactly the duplicate branch and duplicate PR this design exists to remove. **Two matches → stop
    and report** both PR numbers; two open PRs claiming one PRD is a state no run should extend.
+   Under `--unattended` this is a Stop.
 
    **One hit → this is a resume.** Take that PR's `headRefName` as the branch — whatever it is
    called, including a name the adapter's pattern would never produce and a name a human renamed by
@@ -148,7 +181,7 @@ State lives in git + GitHub only (branch commits, issue labels, PR body). Zero s
    the name is already taken, find out whose it is — an **open PR whose head is that branch and
    whose body runs a different PRD** means it belongs to that run. **Stop and report**: name the
    branch, the PR, and the PRD it is running, and ask the human for a different pattern or a
-   different name. Do not improvise a suffix, and never stack two PRDs on one branch — the second
+   different name — under `--unattended`, a Stop. Do not improvise a suffix, and never stack two PRDs on one branch — the second
    PRD's commits land in the first one's PR, the first one's `Closes` line closes the second one's
    issues on merge, and Setup step 4 reconstructs "done" from a commit history that is two runs
    interleaved. The two innocent cases stay ordinary: an existing branch whose open PR runs *this*
@@ -261,8 +294,8 @@ Copy what is inside the fence, not the prose around it. The rules are deliberate
 
 ## Loop (per issue)
 
-1. **Pick** the next eligible child per `../_shared/prd-eligibility.md` (open ∧ blockers closed; picking order as specced) — with one orchestrated-mode relaxation: a blocker **inside this PRD** is also satisfied when its commit exists on the PRD branch (`state:done-on-branch`), since children only close on merge; without this, every `Blocked by` chain would deadlock the loop. None eligible but open blocked children exist → report the blocking chain; if the blockers are outside this PRD, pause for the human. None open at all → go to **Loop end**.
-2. **External steps**: any unmet `- [ ]` under `## External steps` → pause, list them, wait for the human. Always, regardless of gate.
+1. **Pick** the next eligible child per `../_shared/prd-eligibility.md` (open ∧ blockers closed; picking order as specced) — with one orchestrated-mode relaxation: a blocker **inside this PRD** is also satisfied when its commit exists on the PRD branch (`state:done-on-branch`), since children only close on merge; without this, every `Blocked by` chain would deadlock the loop. None eligible but open blocked children exist → report the blocking chain; if the blockers are outside this PRD, pause for the human (under `--unattended`, a Stop). None open at all → go to **Loop end**.
+2. **External steps**: any unmet `- [ ]` under `## External steps` → pause, list them, wait for the human. Always, regardless of gate. **Under `--unattended`, skip instead**: do not claim the child, record one `Skipped` line naming its first unmet step for the final print, and go back to step 1. A skipped child is not re-picked in this run and is not a failure — the consecutive-failure counter does not move. A child whose blockers include a skipped child is therefore never eligible this run, and that is the blocking chain step 1 reports.
 3. **Claim**: remove `ready-to-start`, add `state:in-progress` (remove-old-before-add-new — always this order; one state per axis).
 4. **Route model**: apply `../_shared/model-effort-heuristics.md` **in orchestrated mode** — the default flips: workers start Sonnet-class and *upgrade* to Opus-class on the file's heavier/risk signals. Announce the routing call (tier + matched signals) before spawning.
 5. **Spawn worker**: Agent tool, `subagent_type: prd-workflow:prd-worker` (see *Agent type by route* below), `model` per the routing call, `run_in_background: false`. Flat hierarchy — workers never spawn workers. Isolation is total: everything the worker needs must be in its prompt, the issue, or the repo. The **mandates and the report contract live in `../../agents/prd-worker.md`** — never restate them in the prompt, which carries only the per-call inputs:
@@ -271,6 +304,7 @@ Copy what is inside the fence, not the prose around it. The rules are deliberate
    - The **branch name as Setup resolved it** — step 1's PR head on a resume, step 2's created name on a cold start. The actual name, never the adapter's pattern and never recomputed here. Plus the **issue number** for the `(#N)` commit suffix.
    - The **routing call** you announced in step 4.
    - The **brief path** pinned in the PRD's `## Fidelity ledger` section, when the PRD has that section, so the worker can open the full ledger. That is the only fidelity input the prompt carries — the mandates stay in the worker file.
+   - **`Unattended run: yes`**, on its own line, only when this run carries `--unattended`. It switches the worker's self-fix allowance at the boot, screenshot and end-to-end rungs to zero; the rule itself is the worker file's. Omit the line otherwise.
 
    **Agent type — get this right before you fall back.** A plugin namespaces every component it provides, so the type is **`prd-workflow:prd-worker`** however the plugin was loaded: installed from the marketplace, or via `claude --plugin-dir`. There is no unprefixed form; the bare `prd-worker` only ever came from a hand-placed `.claude/agents/` file on the retired pre-plugin route. Use the namespaced name — treating the bare name as primary is what silently produced a whole run of `general-purpose` workers once already.
 
@@ -280,9 +314,11 @@ Copy what is inside the fence, not the prose around it. The rules are deliberate
    **One more check when the child issue carries a `## Fidelity ledger (in scope)` table.** The report must contain the evidence line — "read ledger (N rows), N screenshots, N source slices" — and the per-ledger-row self-audit table, with no row marked deviated and left without a reason. A report missing either is judged **not done** and takes step 9's failure path, exactly like a failed L2.
 
    **An eval gate that fails only on cases whose skill and fixtures this child did not touch does not fail the child.** The commit stands, and the failing cases, their graders and the gate row go beside the workers' deviation logs in the PR body's notes at loop end §2. A failure on any case the child touched takes step 9's failure path as usual.
-7. **Gate** per `--gate` mode (see Invocation). On pause: present the report + your judgement, wait for the human.
+7. **Gate** per `--gate` mode (see Invocation). On pause: present the report + your judgement, wait for the human. **Under `--unattended` there is no pause**: a deviation or an ambiguity the gate would pause on, on a child whose commit landed, takes the continue path (`### Unattended`) after step 8 — the commit stands and the escalation asks a human to review it. A destructive or irreversible action is never taken unattended: the child is judged not done and takes step 9.
 8. **Success path**: push the branch → labels: remove `state:in-progress`, add `state:done-on-branch` → PR body: **edit the machine block, and nothing else**. Tick that child in the block's checklist, and append it to the block's `Closes` line with the **keyword repeated per issue** — `Closes #41, closes #42` (a bare `#42` after a comma does NOT close). The team's prose stays exactly as PR open left it until loop end: an in-progress placeholder that stays honest for nine issues and is filled once beats a running summary rewritten nine times and read by nobody.
 9. **Failure path** (worker exhausted its 2 attempts, or report judged unacceptable): discard uncommitted work (reset/clean, branch only) → backward label transition: remove `state:in-progress`, re-add `ready-to-start` (failure is a backward transition, not a new label) → post an **escalation comment** on the issue: what was tried, what failed, evidence → pause per gate (`issue`/`events` pause; `end` records and continues) → increment the consecutive-failure counter; at 2, full stop with summary. A success resets the counter. A failed issue is not re-picked in this run unless the human unblocks it.
+
+   **Under `--unattended`**, the escalation comment is the continue path's first step: after the backward label transition, run the whole continue path (`### Unattended`) — comment, `needs-human`, the external-step line — whatever the gate. Then the counter: below 2, pick the next child; at 2, the full stop with summary is a Stop, and ends with the unattended exit.
 
 ## Loop end (no eligible children left)
 
@@ -335,10 +371,11 @@ Rules for it:
 - **The deviation lines are the alert, not the detail.** The workers' full deviation logs are already in the PR description (§2) — a line here says a reviewer needs to look, and where.
 - **One URL, and it is the PR.** Not the PRD, not the branch, not a child issue: the PR is what the human opens next and everything else is one click from it.
 - **The QA handoff is a fact plus the command** — `needs-qa applied`, or the explicit `no needs-qa — nothing in this run is manually testable`, with the reason. Then the invocation on its own clean line, last thing on screen.
+- **Under `--unattended`**, each child skipped for an unmet external step gets its own `Skipped` line, and each child that took the continue path gets its own `Escalation` line naming the child and the reason — `needs-human` is on it. Same protected class, same one line each. A run that reaches this print exits 0; only a Stop exits non-zero (`### Unattended`).
 
 Leave the PR open (still draft) for human QA (verify ladder L5: run `manual-qa` against the branch, work its flows, then merge manually). The PRD issue is **not** closed by the loop — GitHub closes it and its landed children on merge, through the `Closes` line. Do not remove `needs-qa` and do not post a receipt of your own: `manual-qa` owns both, and they are the only signals that a pass was ever run.
 
-Then release keep-awake — mirror of Setup step 0, no-op if never started:
+Then release keep-awake — mirror of Setup step 0, no-op if never started. An unattended Stop runs this too, before its exit:
 
 ```bash
 [ -f /tmp/work-on-prd.caffeinate.pid ] && kill "$(cat /tmp/work-on-prd.caffeinate.pid)" 2>/dev/null; rm -f /tmp/work-on-prd.caffeinate.pid
@@ -355,3 +392,5 @@ Normative home for the label vocabulary — `to-prd-tasks` and this loop apply t
 Two families, and the difference is who clears the label. **`state:*` is machine state**: the loop applies it, the loop removes it, and a human touching one only confuses the reconstruction in Setup step 4. **`needs-*` means a human owes something** and only a human clears it — `needs-triage` on an untriaged issue, and **`needs-qa` on a PRD whose run landed something a human can exercise** (Loop end §1), where it means *not yet QA'd*. That is why `needs-qa` is not `state:qa-pending`: the loop applies it and then has no further business with it, and the operator's queue is exactly the set of PRDs carrying it. The loop never removes `needs-qa`, on this run or any later one — `manual-qa` does, at the end of a completed pass.
 
 `needs-triage` arrives from `to-prd`, which applies it on CREATE, and this loop never writes it. It means an issue nobody has decided anything about yet, and a human clears it.
+
+**`needs-human`** is the third of the family: a child a `--unattended` run escalated instead of pausing on (`### Unattended`). The loop applies it and never removes it; a human removes it after acting on the escalation. Like `ready-to-start` it gates nothing — **the pick never reads it**. What keeps an escalated child out of the next run is the unchecked line the same continue path appends to its `## External steps`, which Loop step 2 already honours. The label is only how a human finds the queue.
