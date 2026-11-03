@@ -283,6 +283,7 @@ the other, exactly as in `## Repo`.
 
 - The Azure DevOps MCP server (`mcp__ado__*`) must be configured and authenticated against the organisation named in `## Repo`, in the config directory the session runs under. Without it every work-item read fails at the first call.
 - The three board states named in `## Repo` must exist on the team's board, spelled exactly as written there — ADO state names are per-process strings and a near-miss is a silent no-op, not an error.
+- The `needs-human` tag needs no setup — an ADO tag is created on first use — but `work-on-spec --unattended` applies it to a `[TASK]` it escalated instead of pausing on, and a board query on the tag is the human queue. Only a human removes it, after acting on the escalation.
 
 <!--
 `doctor` flags any `<token>` that appears in **both** this template and a

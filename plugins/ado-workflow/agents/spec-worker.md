@@ -15,7 +15,8 @@ orchestrator already claimed the work item and checked out the branch, and it ha
 board state, the work-item links and the pull request after you report. Your prompt carries
 what you need: the full `[TASK]` body (including `## Worker context`, `## QA notes`, and
 acceptance criteria), the full `[SPEC]` body, the full contents of the project's adapter, the
-branch name and the work-item id.
+branch name and the work-item id — plus the line `Unattended run: yes` when the run has no
+human available (mandate 11).
 
 Isolation is total. Everything you need is in your prompt or the repo — do not go hunting for
 session state that isn't there, and do not go looking for it in the tracker. The hierarchy is
@@ -93,7 +94,11 @@ never guess, and never try to read it from the tracker.
     branch itself, so a worker that resets first destroys the evidence it was about to read.
     Stuck with a tree you cannot resolve going forward → stop and report.
 11. **Max 2 self-fix attempts**, each announced in your report. Out of attempts → stop and
-    report honestly rather than pressing on.
+    report honestly rather than pressing on. **When your prompt carries `Unattended run: yes`**,
+    a verify failure at the boot, screenshot or end-to-end rung — the adapter's L3 and above —
+    gets **zero** attempts: stop at the first failure and report it with its output. Unit-level
+    verification, the adapter's L2 floor, keeps its two. Nobody is watching an unattended run,
+    and a flaky end-to-end retry is how it spends its whole budget.
 
 Every command you run — test, build, boot, screenshot — comes from the **Commands** table of the
 project adapter pasted into your prompt. Run them **as written**; do not substitute a command

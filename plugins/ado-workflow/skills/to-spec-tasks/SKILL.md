@@ -130,6 +130,22 @@ Read the brief named in the spec's pin line as well. The screenshot blocks carry
 `../_shared/fidelity-ledger.md` §3 names, so confirm each of those PNGs is on disk before the
 task cites it.
 
+Read the spec's `## Readiness` section if present. Route each item to the place `work-on-spec`
+already reads, by class:
+
+- **Missing context** given in the section goes into the owning slice's `## What to build` or
+  `## Worker context`.
+- **Credential or access** becomes an unchecked line in the `## External steps` of the slice that
+  first needs it.
+- **External dependency** that is a work item becomes an entry in that slice's `## Blocked by`;
+  one that is not a work item becomes an `## External steps` line.
+- **Ambiguous acceptance criterion** becomes a decision stated in the slice body, in
+  `## What to build` or in the criterion itself, using the sharpened wording the section recorded.
+- An item marked `deferred` or `open` is carried into no slice as a fact. Name it when the slice
+  list is presented in step 5 so the human sees it.
+
+Do not paste the section into any `[TASK]`.
+
 ### 4. Decide where to cut
 
 Apply [`_shared/spec-splitting-seams.md`](../_shared/spec-splitting-seams.md) — the normative
@@ -309,6 +325,13 @@ The fidelity ledger rows stay on the `[SPEC]` for the same reason, and the `[TAS
 Element and States only. The pointer's revision is what lets a reader recover the rows as they
 stood when the slice was cut: `mcp__ado__wit_work_item` reads a work item `asOf` a point in time,
 and its revision history lists every earlier body.
+
+**Sprint plan row.** When the `[SPEC]` carries `## Readiness` with no item marked `open`, the
+`[TASK]`s were created (not written with `--out`), and a sprint plan file exists at the root of
+the projects directory, ask whether to set this spec's row to `runnable`. The row states are
+`planned`, `grilled`, `runnable`, `running`, `ran`, `done`, `blocked` and `needs-human`. Set it
+only after a yes. When there is no plan file, or the section has an open item, say nothing about
+it.
 
 ### 7. Report
 

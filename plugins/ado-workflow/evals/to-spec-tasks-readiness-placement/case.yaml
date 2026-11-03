@@ -1,0 +1,77 @@
+schema_version: "1.0"
+name: to-spec-tasks-readiness-placement
+summary: "Each readiness class lands where `work-on-spec` already reads it, and the section is not pasted."
+description: >
+  The `to-spec-tasks` hop against a hand-written stub project, with the `[SPEC]` given as a
+  local file and the `[TASK]` written with `--out`. The spec holds one small slice and a
+  `## Readiness` section with one item per class plus one deferred item. The contract under
+  test: the given context lands in the body, the credential becomes an unchecked line under
+  `## External steps`, the dependency work item becomes a `## Blocked by` entry, the sharpened
+  criterion lands as a decision in the body, the deferred item is carried as no fact, and the
+  section itself is pasted nowhere. The `runnable` offer needs created `[TASK]`s and a plan
+  file, so this case, which writes files with `--out`, leaves it unexercised.
+tags: [micro, to-spec-tasks]
+runs: 1
+context:
+  scaffold_script: ./scaffold.sh
+execution:
+  prompt: |
+    The working directory is the project, already a git repository with one commit
+    (`fixture: scaffold snapshot`). Its adapter is `.claude/project/adapter.md`.
+
+    A run's read scope ends at the plugin directory, and the skill reaches its shared
+    references through a symlink that points out of it. So wherever the skill says
+    `../_shared/<name>.md` or `_shared/<name>.md`, read `<name>.md` in this working directory —
+    `fidelity-ledger.md`, `spec-splitting-seams.md`, `ado-workitem-authoring.md` and
+    `final-prints.md` are placed here for that reason.
+
+    There is no network and no tracker here. The `[SPEC]` is the local file `./spec.md`, and
+    the run writes its `[TASK]`s with `--out`. Do not call any `mcp__ado__*` tool.
+
+    Run this, and nothing else:
+
+    /ado-workflow:to-spec-tasks ./spec.md --out ./out
+
+    Follow the skill exactly and stop where it stops.
+  max_turns: 40
+  timeout_seconds: 600
+  model: claude-sonnet-5
+  allowed_tools: [Read, Glob, Grep, Skill, Bash, Write]
+graders:
+  - type: regex
+    name: credential-is-an-unchecked-external-step
+    target: { source: file, path: out/task-1.md }
+    pattern: '^- \[ \] .*platform team'
+    flags: m
+  - type: regex
+    name: dependency-is-a-blocked-by-entry
+    target: { source: file, path: out/task-1.md }
+    pattern: '## Blocked by[\s\S]*#4801'
+  - type: regex
+    name: given-context-is-in-the-body
+    target: { source: file, path: out/task-1.md }
+    pattern: 'lib/export\.ts'
+  - type: regex
+    name: sharpened-criterion-is-in-the-body
+    target: { source: file, path: out/task-1.md }
+    pattern: 'skips archived shelves'
+  - type: regex
+    name: deferred-item-is-carried-as-no-fact
+    target: { source: file, path: out/task-1.md }
+    pattern: 'Telemetry'
+    match: not_contains
+  - type: regex
+    name: readiness-section-is-not-pasted
+    target: { source: file, path: out/task-1.md }
+    pattern: '^## Readiness'
+    flags: m
+    match: not_contains
+  - type: regex
+    name: template-intact-spec-line
+    target: { source: file, path: out/task-1.md }
+    pattern: 'Spec: #4820'
+  - type: regex
+    name: blocked-by-sentinel-is-gone
+    target: { source: file, path: out/task-1.md }
+    pattern: 'None — can start immediately\.'
+    match: not_contains

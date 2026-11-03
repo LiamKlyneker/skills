@@ -1,0 +1,115 @@
+schema_version: "1.0"
+name: work-on-spec-unattended-continues
+summary: "Unattended, a failed [TASK] is escalated and the loop moves on; the second failure stops it non-zero."
+description: >
+  `work-on-spec --gate=end --unattended` against a hand-written stub project, resumed at Loop
+  step 6 for `[TASK]` 41, whose worker has already reported a failure. There is no tracker and
+  no network here, so `tracker/` stands in for Azure DevOps as local files, and the prompt maps
+  each `mcp__ado__*` write onto them; no agent is spawned either, so each worker report is a
+  frozen file. `[TASK]` 42 fails the same way and 43 would succeed. The contract under test: 41
+  takes the continue path — escalation comment, the `needs-human` tag appended to the tags it
+  already had, the template's "None" sentence in `## External steps` replaced by an unchecked
+  line — and the loop picks 42 instead of pausing; 42's failure is the second consecutive one, a
+  Stop, so 43 is never reached and the session ends non-zero. Killing the session's own process
+  would kill the eval harness, so the prompt has the run record the exit status in a file in
+  place of the `kill`; that substitution is the only place this case does not exercise the real
+  mechanism.
+tags: [micro, work-on-spec]
+runs: 1
+context:
+  scaffold_script: ./scaffold.sh
+execution:
+  prompt: |
+    The working directory is the project, a git repository on the branch `spec/40-shelf-count`,
+    one empty `spec AB#40: loop start` commit ahead of `main`. Its adapter is
+    `.claude/project/adapter.md`. There is no git remote: skip every `git push`.
+
+    There is no network and no tracker credential here, so do not call any `mcp__ado__*` tool.
+    The tracker is the directory `./tracker/`, and every Azure DevOps operation the skill names
+    maps onto it:
+
+    - Work item `<n>` is `tracker/items/<n>.md`; its first line is the title and the rest is its
+      description. Editing the description, with `update_batch` or any other call, means editing
+      that file in place.
+    - Its `System.Tags` string is the one line in `tracker/items/<n>.tags`. Writing the field
+      replaces that whole line; reading it back means reading the file.
+    - Its `System.State` is the one line in `tracker/items/<n>.state`. Moving it writes the
+      state's name there.
+    - Posting a comment on `<n>` means appending it to `tracker/items/<n>.comments.md` (create
+      the file if absent), preceded by a line `---`. That comment's URL is
+      `tracker/items/<n>.comments.md`.
+    - Attaching `<n>` to the pull request means appending a line `<n>` to
+      `tracker/pr-workitems.txt`. The pull-request body is `tracker/pr.md`.
+    - `[SPEC]` 40's `[TASK]`s are 41, 42 and 43, in that order. None has a blocker.
+
+    Setup has already run and found this run, so skip Setup entirely. The loop is at Loop
+    step 6 for `[TASK]` 41: its worker has reported, and the report is `tracker/reports/41.md`.
+
+    Do not spawn any agent. When the loop reaches Loop step 5 for a `[TASK]` `<c>`, append the
+    line `<c>` to `./spawned.txt`, then treat `tracker/reports/<c>.md` as that worker's report.
+
+    The skill ends some sessions by running `kill -TERM "$PPID"`. Here that would kill this
+    harness, so never run `kill`: wherever the skill says to run it, run
+    `echo 143 > ./exit-status` instead, and end the session there.
+
+    Run this, and nothing else:
+
+    /ado-workflow:work-on-spec 40 --gate=end --unattended
+
+    Follow the skill exactly from Loop step 6 for `[TASK]` 41, and stop where it stops.
+  max_turns: 60
+  timeout_seconds: 600
+  model: claude-sonnet-5
+  allowed_tools: [Read, Glob, Grep, Skill, Bash, Write, Edit]
+graders:
+  # ---- 41 took the continue path ----
+  - type: regex
+    name: failed-task-gets-the-external-step-line
+    target: { source: file, path: tracker/items/41.md }
+    pattern: '^- \[ \] needs-human:'
+    flags: m
+  - type: regex
+    name: none-sentence-is-replaced
+    target: { source: file, path: tracker/items/41.md }
+    pattern: 'None — fully implementable from the editor'
+    match: not_contains
+  - type: regex
+    name: failed-task-gets-the-needs-human-tag
+    target: { source: file, path: tracker/items/41.tags }
+    pattern: 'needs-human'
+  - type: regex
+    name: tag-write-keeps-the-existing-tags
+    target: { source: file, path: tracker/items/41.tags }
+    pattern: 'shelf; plates'
+  - type: regex
+    name: failed-task-gets-the-escalation-comment
+    target: { source: file, path: tracker/items/41.comments.md }
+    pattern: '\S'
+  - type: regex
+    name: failed-task-goes-back-to-pickable
+    target: { source: file, path: tracker/items/41.state }
+    pattern: '^To Do\s*$'
+    flags: m
+
+  # ---- the run continued to the next [TASK] instead of pausing ----
+  - type: regex
+    name: continued-to-the-next-task
+    target: { source: file, path: spawned.txt }
+    pattern: '42'
+
+  # ---- the second consecutive failure is a Stop, and it exits non-zero ----
+  - type: regex
+    name: second-failure-gets-the-external-step-line
+    target: { source: file, path: tracker/items/42.md }
+    pattern: '^- \[ \] needs-human:'
+    flags: m
+  - type: regex
+    name: stopped-before-the-third-task
+    target: { source: file, path: spawned.txt }
+    pattern: '43'
+    match: not_contains
+  - type: regex
+    name: stop-exits-non-zero
+    target: { source: file, path: exit-status }
+    pattern: '^143\s*$'
+    flags: m

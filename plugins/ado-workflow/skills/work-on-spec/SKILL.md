@@ -15,7 +15,7 @@ a GitHub one.
 
 ## Invocation
 
-`/ado-workflow:work-on-spec <spec-url|id> [--gate=task|events|end]`
+`/ado-workflow:work-on-spec <spec-url|id> [--gate=task|events|end] [--unattended]`
 
 **Every skill in this plugin is namespaced**, on every route — installed from the
 marketplace or loaded with `claude --plugin-dir`: `/ado-workflow:work-on-spec`,
@@ -33,7 +33,68 @@ route provides.
   - `end` — pause only at QA (loop end).
   - Graduation path: task → events → end.
 - **Regardless of gate**: a `[TASK]` with unmet `## External steps` always pauses and asks the
-  human.
+  human — except under `--unattended`, where it is skipped (Loop step 2).
+- `--unattended` (off by default) — no human is available, so nothing may wait for one. See
+  `### Unattended` below. Without the flag, everything in this skill behaves exactly as written
+  and none of the unattended clauses applies.
+
+### Unattended
+
+Under `--unattended` the loop never pauses. **Every place this skill would pause or ask the human
+resolves one of three ways**, and the list below is exhaustive:
+
+| Resolution | When | What the loop does |
+|---|---|---|
+| **Continue** | a failed `[TASK]` (Loop step 9) · a deviation or an ambiguity the gate would pause on (Loop step 7) · a destructive or irreversible action (Loop step 7) | the `[TASK]` takes the **continue path** below, and the loop picks the next `[TASK]` |
+| **Skip** | a `[TASK]` with an unmet `## External steps` item (Loop step 2) | the `[TASK]` is not claimed and gets one `Skipped` line in the final print; the loop picks the next `[TASK]` |
+| **Stop** | no argument · the ADO MCP server cannot be reached or set up (*Readiness*) · a tool step the running server cannot perform (*Tool names come from the running server*) · zero `[TASK]`s · a cycle in `Blocked by` (Setup step 1) · a blocker outside this spec (Loop step 1) · the second consecutive failure (Loop step 9) | print exactly what that stop prints today, then the **unattended exit** below |
+
+**The continue path**, for one `[TASK]`, in this order:
+
+1. Post the **escalation comment** on the `[TASK]` — the same comment Loop step 9 posts: what was
+   tried, what failed or what needs a decision, the evidence.
+2. Tag the `[TASK]` **`needs-human`**. `System.Tags` is a single semicolon-separated string, so
+   this is the same read-modify-write as the `needs-qa` tag in *Loop end* §1: read the `[TASK]`'s
+   current tags, append `needs-human`, write the whole list back, then read `System.Tags` back
+   and confirm. Re-tagging an item that already carries it is a no-op. The tag is the human
+   queue, a scanning convention like `needs-qa`; a tag is created implicitly on first use, so
+   there is nothing to arrange first (see the adapter). **Nothing reads it back** — not the pick,
+   not Setup step 4.
+3. Append one unchecked line to the `[TASK]`'s `## External steps`, naming the escalation:
+
+   ```
+   - [ ] needs-human: <one-line reason> — see the escalation comment <comment-url>
+   ```
+
+   The template always writes the heading, so the usual `[TASK]` has it: when it holds only the
+   sentence `None — fully implementable from the editor.`, replace that sentence with the line,
+   and otherwise add the line after the last item. If the body has no `## External steps` heading
+   (a `[TASK]` that predates the template), add the heading with this line as its only item,
+   directly above `## What to build` (at the end of the body when there is no such heading). Edit
+   the body in place; change nothing else in it. A `[TASK]` body is a Markdown
+   field, so write it with `wit_work_item_write` `action: "update_batch"` and `format: "Markdown"`,
+   never plain `update`, which would rewrite the body as HTML
+   ([`../_shared/ado-workitem-authoring.md`](../_shared/ado-workitem-authoring.md) §1). **This line
+   is what keeps the `[TASK]` out of every later run**, attended or not, because Loop step 2
+   already refuses a `[TASK]` with an unmet external step. A human clears it by acting on the
+   escalation, ticking the line and removing the tag.
+4. Record one `Escalation` line for the final print (Loop end §3), and pick the next `[TASK]`.
+
+**The unattended exit.** A Stop ends the session with a **non-zero exit**, and a run that reaches
+Loop end exits 0 — whatever was skipped, escalated or failed on the way, since each of those
+already sits in the human queue. The exit code is the only thing a caller reads; there is no
+machine-readable block, file or comment for a stop. After the stop's print, release keep-awake
+(Loop end §3), then end the process from a Bash call as the last action of the session:
+
+```bash
+kill -TERM "$PPID"
+```
+
+`$PPID` of the Bash tool's shell is the Claude Code process itself, so this is the session ending
+with a non-zero status. Under a headless `--output-format json` run it leaves no result JSON; the
+stop's print stays in the session transcript, reachable by the session id the caller assigned. A
+caller that runs the loop under a deny-by-default permission mode must allow this command, or the
+stop exits 0.
 
 ## Project facts
 
@@ -94,8 +155,13 @@ Requires the Azure DevOps MCP server (`mcp__ado__*` tools).
 
 ## Non-negotiables (circuit breakers)
 
-- Max **2 self-fix attempts** per worker; attempts must be announced in the worker report.
-- **2 consecutive failed `[TASK]`s** → full stop with summary.
+- Max **2 self-fix attempts** per worker; attempts must be announced in the worker report. Under
+  `--unattended`, a verify failure at the boot, screenshot or end-to-end rung gets **zero**
+  self-fix attempts, and unit-level verification keeps two — the worker learns this from its
+  prompt (Loop step 5).
+- **2 consecutive failed `[TASK]`s** → full stop with summary. The counter lives in this session
+  only, attended or not; across runs, the continue path's external-step line is what keeps a
+  failed `[TASK]` out.
 - **Never** force-push, amend, or rewrite published history. **Never** complete, merge or publish
   the pull request — it stays a **draft** for its entire life. **Never** close the `[SPEC]`.
 - `git reset --hard` / `git clean` only ever on the spec branch, only to discard a stale claim's
@@ -121,7 +187,8 @@ Requires the Azure DevOps MCP server (`mcp__ado__*` tools).
   Product.
 - **No status feed.** The loop's only writes to work items are board-state moves on `[TASK]`s, the
   single `[SPEC]` state move above, escalation comments on failed `[TASK]`s, and the `needs-qa`
-  tag on the `[SPEC]` at loop end.
+  tag on the `[SPEC]` at loop end. Under `--unattended` the continue path adds two writes to the
+  escalated `[TASK]` itself: the `needs-human` tag and one `## External steps` line.
 
 ## Setup (idempotent — cold start and resume are the same code path)
 
@@ -143,7 +210,7 @@ discarded by design.
    with [`../_shared/eligibility-policy.md`](../_shared/eligibility-policy.md); neither half
    decides a pick alone. Every read passes `expand: "relations"` and **no** `fields` filter.
    Zero `[TASK]`s → tell the user to run `/ado-workflow:to-spec-tasks` first, stop. Cycle in
-   `Blocked by` → report it, stop.
+   `Blocked by` → report it, stop. Under `--unattended` both are a Stop (`### Unattended`).
 2. **Branch**: name it from the adapter's **branch pattern**, with the `[SPEC]` work-item id and
    a slug from its title (e.g. `spec/<id>-<slug>`). Check it out if it exists (local or remote),
    else create it from an up-to-date default branch. One branch per spec, on both a cold start
@@ -298,9 +365,13 @@ transition anything.
    grep in Setup step 4, not by reading `System.State`. Tasks close on PR completion rather than
    on commit, so without this every `Blocked by` chain would deadlock the loop. None eligible but
    open blocked `[TASK]`s exist → report the blocking chain; if the blockers are outside this
-   spec, pause for the human. None open at all → go to **Loop end**.
+   spec, pause for the human (under `--unattended`, a Stop). None open at all → go to **Loop end**.
 2. **External steps**: any unmet `- [ ]` under `## External steps` → pause, list them, wait for
-   the human. Always, regardless of gate.
+   the human. Always, regardless of gate. **Under `--unattended`, skip instead**: do not claim
+   the `[TASK]`, record one `Skipped` line naming its first unmet step for the final print, and
+   go back to step 1. A skipped `[TASK]` is not re-picked in this run and is not a failure — the
+   consecutive-failure counter does not move. A `[TASK]` whose blockers include a skipped
+   `[TASK]` is therefore never eligible this run, and that is the blocking chain step 1 reports.
 3. **Claim**: move the `[TASK]` to the adapter's **claimed** state. On the **first** claim of the
    run, also move the `[SPEC]` to the claimed state if it is not already past pickable — once,
    ever (see *What the loop must not write*).
@@ -325,6 +396,9 @@ transition anything.
      the tax that keeps gates out of the adapter in the first place.
    - The **branch name** and the **work-item id** for the `Work-item: AB#<id>` commit trailer.
    - The **routing call** you announced in step 4.
+   - **`Unattended run: yes`**, on its own line, only when this run carries `--unattended`. It
+     switches the worker's self-fix allowance at the boot, screenshot and end-to-end rungs to
+     zero; the rule itself is the worker file's. Omit the line otherwise.
    - The **brief path** pinned in the `[SPEC]`'s `## Fidelity ledger` section — the `brief
      <path>` field of its `Pinned at figma … · brief <path>` line — when the `[SPEC]` has that
      section, so the worker can open the full ledger. That is the only fidelity input the prompt
@@ -357,7 +431,11 @@ transition anything.
    report missing either is judged **not done** and takes step 9's failure path, exactly like a
    failed L2.
 7. **Gate** per `--gate` mode (see Invocation). On pause: present the report + your judgement,
-   wait for the human.
+   wait for the human. **Under `--unattended` there is no pause**: a deviation or an ambiguity
+   the gate would pause on, on a `[TASK]` whose commit landed, takes the continue path
+   (`### Unattended`) after step 8 — the commit stands and the escalation asks a human to review
+   it. A destructive or irreversible action is never taken unattended: the `[TASK]` is judged not
+   done and takes step 9.
 8. **Success path**: push the branch → move the `[TASK]` to the adapter's
    **committed-awaiting-merge** state → attach its id to the pull request (see *Pull-request
    wiring*) → tick its checkbox in the PR body. The PR stays a draft.
@@ -368,6 +446,12 @@ transition anything.
    `end` records and continues) → increment the consecutive-failure counter; at 2, full stop with
    summary. A success resets the counter. A failed `[TASK]` is not re-picked in this run unless
    the human unblocks it.
+
+   **Under `--unattended`**, the escalation comment is the continue path's first step: after the
+   move back to the pickable state, run the whole continue path (`### Unattended`) — comment,
+   `needs-human` tag, the external-step line — whatever the gate. Then the counter: below 2, pick
+   the next `[TASK]`; at 2, the full stop with summary is a Stop, and ends with the unattended
+   exit.
 
 ## Loop end (no eligible `[TASK]`s left)
 
@@ -495,6 +579,10 @@ Rules for it:
 - **The QA handoff is a fact plus the command** — `needs-qa tagged`, or the explicit
   `no needs-qa — nothing in this run is manually testable`, with the reason. Then the invocation on
   its own clean line, last thing on screen.
+- **Under `--unattended`**, each `[TASK]` skipped for an unmet external step gets its own `Skipped`
+  line, and each `[TASK]` that took the continue path gets its own `Escalation` line naming the
+  `[TASK]` and the reason — the `needs-human` tag is on it. Same protected class, same one line
+  each. A run that reaches this print exits 0; only a Stop exits non-zero (`### Unattended`).
 
 This is a **sibling of `work-on-prd`'s summary, not a shared template**: same shape, ADO's own
 dialect throughout — work-item ids where the other has issue numbers, *tagged* where it says
@@ -507,7 +595,8 @@ a QA comment or a receipt of any kind — `manual-qa` owns the pass, its receipt
 removal, and those are the only record in the tracker that it was ever run — and write no field of
 the parent.
 
-Then release keep-awake — mirror of Setup step 0, no-op if never started:
+Then release keep-awake — mirror of Setup step 0, no-op if never started. An unattended Stop runs
+this too, before its exit:
 
 ```bash
 [ -f /tmp/work-on-spec.caffeinate.pid ] && kill "$(cat /tmp/work-on-spec.caffeinate.pid)" 2>/dev/null; rm -f /tmp/work-on-spec.caffeinate.pid
