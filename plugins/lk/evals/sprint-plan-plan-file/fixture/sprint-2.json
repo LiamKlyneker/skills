@@ -1,0 +1,10 @@
+{
+  "site": "example.atlassian.net",
+  "jql": "sprint in openSprints() AND project = ATL",
+  "issues": [
+    {"key": "ATL-12", "summary": "Archived filter on the shelf list", "issuetype": "Story", "status": "In Progress", "parent": "ATL-10", "components": ["Web"], "labels": ["shelves"], "issuelinks": []},
+    {"key": "ATL-14", "summary": "Empty state for a shelf list with every shelf archived", "issuetype": "Story", "status": "To Do", "parent": "ATL-10", "components": ["Web"], "labels": ["shelves"], "issuelinks": []},
+    {"key": "ATL-15", "summary": "Remember the archived filter across visits", "issuetype": "Story", "status": "To Do", "parent": "ATL-10", "components": ["Web"], "labels": ["shelves"], "issuelinks": []},
+    {"key": "ATL-20", "summary": "archived query parameter on GET /shelves", "issuetype": "Story", "status": "To Do", "parent": "ATL-19", "components": ["API"], "labels": ["shelves"], "issuelinks": []}
+  ]
+}
