@@ -13,6 +13,7 @@ after the grill.
 ```markdown
 # Design brief — <ticket> · <design name>
 Pinned at figma <fileKey> · node <nodeId> · version <versionId or YYYY-MM-DD> · brief .claude/briefs/<ticket>.md
+Repo role: consumer
 Catalog: <fingerprint> · Generated: <YYYY-MM-DD> · Figma calls: <n>
 
 ## Scope
@@ -91,6 +92,14 @@ scope, not per screenshot. Same element in two states with different content = o
 - `<rule name>` — from `<usage-rules source>`
 ```
 
+In a `library` repo the lines under the pin line read instead:
+
+```markdown
+Repo role: library
+Source: <git sha>[+dirty] · Generated: <YYYY-MM-DD> · Figma calls: <n>
+Assembled from: `<token source>` · `<component directory>` · `<icon source>` …
+```
+
 ---
 
 ## Rules the template does not show
@@ -102,6 +111,14 @@ scope, not per screenshot. Same element in two states with different content = o
   Figma URL. A brief that cannot say which design state it describes cannot be checked against
   anything later. It is written in the contract's form, character for character, because every
   consumer copies it.
+- **The header always names the repo role and the matching pin.** `Repo role: consumer` or
+  `Repo role: library`, on every brief. A consumer brief pins the catalog it resolved against,
+  `Catalog: <fingerprint>`. A library brief pins the commit its existence list was read from,
+  `Source: <git sha>`, with `+dirty` appended where the working tree had uncommitted changes, and
+  lists every source path the list was assembled from on its `Assembled from:` line — the token
+  source, the component directory, each icon source, and each catalog path where a registered
+  catalog contributed. **The assembled list itself is never written into the brief**; the paths
+  and the sha are enough to rebuild it. `existence-source.md`, beside this file, has both origins.
 - **Screenshots are saved to disk and referenced by path plus node link**, never embedded and
   never linked to a `figma.com` image export — those URLs expire within the hour and are not
   public.

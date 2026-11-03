@@ -76,8 +76,9 @@ a skill nobody runs twice.
 
 The only stops are hard input failures, all in Phase 0 and Phase 1: `whoami` does not report the
 organisation and seat the adapter's `### Figma source` rows name, the URL carries no `node-id`,
-the node does not resolve, there is no catalog, the ticket can be neither read nor fetched, or
-the adapter has no `### Figma source`. Each
+the node does not resolve, there is no existence source — no catalog in a consumer repo, nothing
+to assemble one from in a library repo — the ticket can be neither read nor fetched, or the
+adapter has no `### Figma source`. Each
 says which input failed and what would fix it. There is no degraded mode and no partial brief.
 
 ## Invocation
@@ -105,9 +106,11 @@ says which input failed and what would fix it. There is no degraded mode and no 
   - `## Design system` → `### Figma source` — the rows this skill runs on: the **account and
     seat**, the **servers**, the **URL → pin** rule, the **screenshot** export rule and the
     **call budget**. **Absent is a STOP**: it means this project has no Figma source registered.
-  - `## Design system` → the **catalog pointer** (`Catalog:`), the **class-prefix** rows, the
-    **icon resolution ladder**, and the **usage-rules source**. An absent `## Design system` is
-    a STOP.
+  - `## Design system` → the **`Repo role:` row** (absent means `consumer`), the **catalog
+    pointer** (`Catalog:`), the **class-prefix** rows, the **icon resolution ladder**, and the
+    **usage-rules source**; in a `library` repo also the **`Variant mechanism`**,
+    **`Token pipeline`** and **`Design-system source`** rows. An absent `## Design system` is a
+    STOP.
   - `## Repo` → the `Ticket source:` and `Tracker:` lines, which decide where the ticket is read
     from, per `../_shared/ticket-source.md`, plus the locator rows that file names for the chosen
     system; and the **DS-gap backlog**, which this skill only ever _names_ in a proposed gap row.
@@ -115,9 +118,12 @@ says which input failed and what would fix it. There is no degraded mode and no 
 - **The Figma file**, read-only through the local `figma-dev-mode` MCP server, at one pinned
   version. The file must be open in Figma Desktop — the local server's tools resolve against the
   running app.
-- **The catalog**, per `../figma-to-spec/references/catalog-contract.md` — the existence source
-  every element and token resolves against. Validate the resolved file against that contract and
-  fail loudly rather than degrade, exactly as `figma-to-spec` Phase 0 does.
+- **The existence source**, per `references/existence-source.md` — what every element and token
+  resolves against. In a consumer repo it is the catalog, per
+  `../figma-to-spec/references/catalog-contract.md`: validate the resolved file against that
+  contract and fail loudly rather than degrade, exactly as `figma-to-spec` Phase 0 does. In a
+  library repo it is a list assembled from the library's own source, with a registered catalog as
+  an optional cross-check.
 - **The resolution rules**, `../figma-to-spec/references/resolution-rules.md` — property-kind
   filtering, colour tiers and tolerance, typography and spacing, and the icon ladder's mechanics.
   **Cited, never restated**: this skill adds the fidelity classification on top of them and does
@@ -140,7 +146,7 @@ to be re-flattened into ledger rows anyway — the flattening is where fidelity 
 
 | Phase                    | Does                                                                                                                              |
 | ------------------------ | --------------------------------------------------------------------------------------------------------------------------------- |
-| **0 — Resolve**          | `whoami` (the adapter's organisation and seat) · adapter rows · catalog validated · ticket fetched.                               |
+| **0 — Resolve**          | `whoami` (the adapter's organisation and seat) · adapter rows · `Repo role:` · existence source (catalog validated, or list assembled) · ticket fetched. |
 | **1 — Locate and pin**   | URL → file key + node id · `get_metadata` for the frame tree · version or date · the pin line.                                    |
 | **2 — Filter by ticket** | Keep the state frames the ticket covers; record every drop with its reason.                                                       |
 | **3 — Overrides**        | Render the ticket's divergences on top of the design's.                                                                           |
@@ -183,8 +189,23 @@ Read the adapter. Establish, and stop on any of them:
 3. **`## Design system`** — the catalog pointer, the class-prefix rows, the icon resolution
    ladder and the usage-rules source. An absent section → STOP: _this project has no design
    system registered; `/figma-tools:setup` asks for one._
-4. **The catalog** — resolve through the `Catalog:` pointer and validate against the shape
-   contract, which is the same gate `figma-to-spec` runs and fails the same way. Read the
+4. **The repo role, then the existence source.** Read the `Repo role:` row first. **An absent
+   row means `consumer`.** The role is an adapter fact, never a run-time flag or a parameter,
+   and never inferred from the tree. `references/existence-source.md` carries both origins in
+   full.
+   - **`consumer`** — resolve the catalog through the `Catalog:` pointer and validate it against
+     the shape contract, which is the same gate `figma-to-spec` runs and fails the same way.
+   - **`library`** — where the `Catalog:` pointer names a catalog, resolve and validate it exactly
+     as a consumer does; it is then a cross-check. Assemble the existence list from the library's
+     own source per `references/existence-source.md`: tokens, typography and dimensions from the
+     `Token pipeline` source, the components and their axes through the `Variant mechanism`
+     ladder, and the icon sources the icon ladder names, each enumerated once. Pin it —
+     `git rev-parse HEAD`, plus `+dirty` where `git status --porcelain` prints anything — and
+     keep the source paths it was read from; Phase 5 writes both into the header. An absent
+     `Variant mechanism`, `Token pipeline` or `Icon resolution ladder` row, or no token source
+     and no registered catalog, is a STOP — gates 6c and 6b.
+
+   On both sides, read the
    "Default chrome" notes and the `## Idiom mapping` table from whichever resolved source
    carries them. **Where no resolved source carries a "Default chrome" note for a component**,
    every rule below that reads one reads the catalog's variant axes and the node render instead;
@@ -547,10 +568,15 @@ the loser noted inline. The node still wins on **layout**.
    without the images is a ledger written from names.
 
 3. **Write the brief** per `references/brief-template.md`, to `--out` or to the default path.
-   Before writing it, check the ledger against its own rules: one row set per kept state, **one
-   `content container` row per kept state**, an icon name, a size and a colour token on every icon
-   and a type token and a colour token on every text run, an element node id in every `Source`
-   cell, and `grill question` in the notes of every row that is not `DS as-is`.
+   **The header always carries `Repo role: consumer` or `Repo role: library`**, then the pin for
+   that role: `Catalog: <fingerprint>` in a consumer repo; `Source: <git sha>`, or
+   `Source: <git sha>+dirty` for an uncommitted tree, in a library repo, followed by the list of
+   source paths the existence list was assembled from. **The assembled list itself is never
+   written into the brief.** Before writing it, check the ledger against its own rules: one row
+   set per kept state, **one `content container` row per kept state**, an icon name, a size and
+   a colour token on every icon and a type token and a colour token on every text run, an element
+   node id in every `Source` cell, and `grill question` in the notes of every row that is not
+   `DS as-is`.
 
 4. **Print**, per `../_shared/final-prints.md`, exactly three things: **the path**, **the counts**
    — states kept and dropped, rows at each of the three confidences, ledger rows at each fidelity
@@ -593,8 +619,16 @@ and node links.
 5. **`get_metadata` does not resolve the node** → stop, naming the file key and the node id. The
    usual cause is a file that is not open in Figma Desktop, because the local server reads the
    running app — say so.
-6. **No catalog, or a catalog that fails the shape contract** → stop exactly as `figma-to-spec`
-   does, naming the resolved paths, the rule and the fix.
+6. **No existence source.** The origin follows `Repo role:`, and so does the gate. On both sides,
+   a registered catalog that fails the shape contract or names a path that does not exist stops
+   exactly as `figma-to-spec` does, naming the resolved paths, the rule and the fix.
+   - **(a) Consumer: no catalog** → stop exactly as `figma-to-spec` does, naming the resolved
+     paths, the rule and the fix.
+   - **(b) Library: no token source behind the `Token pipeline` row, and no registered catalog**
+     → stop, naming each thing looked for and where: the row's value, each file it names and
+     whether it exists, and the `Catalog:` pointer or its absence.
+   - **(c) Library: an absent `Variant mechanism`, `Token pipeline` or `Icon resolution ladder`
+     row** → stop, naming the row and `/figma-tools:setup` as what writes it.
 7. **The ticket can be neither read nor fetched** → stop, naming the ref, the system it was
    resolved against per `../_shared/ticket-source.md`, and the project or site. Where the ref
    looked like a path, say that no file exists there too.
