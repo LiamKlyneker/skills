@@ -54,7 +54,9 @@ the brief's closing `|`, so the whole edit is ` <Decision> | <Instruction> |` ad
   paraphrase is a defect, and so is a cell that opens with the override words instead of the class.
 - **Instruction** — imperative, and built only out of the row's own cells and that decision: "build
   local `<X>`", "use `<DS candidate>` + override `<the named override>`", "use as-is, no overrides".
-  A `DS change` instruction names the DS repo issue it depends on.
+  A `DS change` instruction names the DS repo issue it depends on. Where the brief's header reads
+  `Repo role: library`, the design system is this repo, and a `DS change` instruction names the
+  declaration file from the row's `DS candidate` cell instead of a DS repo issue.
 
 **4 — Check the paste before publishing.** With N as the brief's column count, each pasted row cut
 to its first N+1 pipe-separated fields is byte-equal to the row the command printed, cut the same

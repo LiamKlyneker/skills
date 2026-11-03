@@ -5,7 +5,8 @@ description: >
   and the file version, reads the in-scope state frames through the local Figma MCP
   server, saves one PNG per state to disk, filters the design to what the ticket covers,
   renders the ticket's overrides on top, and resolves every element and token against the
-  project's design-system catalog into a per-element fidelity ledger. Asks nothing —
+  project's existence source — its design-system catalog, or in a library repo the library's
+  own source — into a per-element fidelity ledger. Asks nothing —
   every judgement becomes a row the grill can question.
   Invoke /figma-tools:figma-to-brief <figma-url> <ticket>.
 disable-model-invocation: true
@@ -150,7 +151,7 @@ to be re-flattened into ledger rows anyway — the flattening is where fidelity 
 | **1 — Locate and pin**   | URL → file key + node id · `get_metadata` for the frame tree · version or date · the pin line.                                    |
 | **2 — Filter by ticket** | Keep the state frames the ticket covers; record every drop with its reason.                                                       |
 | **3 — Overrides**        | Render the ticket's divergences on top of the design's.                                                                           |
-| **4 — Resolve elements** | Every element and token against the catalog, at three confidences · one fidelity-ledger row per element, with its fidelity class. |
+| **4 — Resolve elements** | Every element and token against the existence source, at three confidences · one fidelity-ledger row per element, with its fidelity class. |
 | **5 — Write and stop**   | The brief, the saved PNGs, then the path and the counts. Nothing else.                                                            |
 
 ### The Figma call budget, per phase
@@ -304,7 +305,7 @@ own:
 Both halves stay visible. An override with the design's text deleted reads as the design, and the
 next person to open the file finds a disagreement with no record of which way it was settled.
 
-### Phase 4 — Resolve elements against the catalog
+### Phase 4 — Resolve elements against the existence source
 
 Three populations, one resolution pass:
 
@@ -323,21 +324,24 @@ from the wrong property kind is a **wrong** row, not a lucky one; and **vector i
 an icon are drawing data** — the icon resolves as a whole through the adapter's ladder, while its
 own box size and its applied colour stay in scope.
 
-Propose a design-system mapping for each, using the catalog's `## Components` table. **Three
-confidences, and they are the brief's whole interface to the grill:**
+Propose a design-system mapping for each, using the existence source's components — the
+catalog's `## Components` table in a consumer repo, the assembled list in a library repo, per
+*In a library repo* below. **Three confidences, on both sides, and they are the brief's whole
+interface to the grill:**
 
-| Confidence | Means                                                                 | What the grill does                                   |
-| ---------- | --------------------------------------------------------------------- | ----------------------------------------------------- |
-| `exact`    | the catalog names this component and rule 3 below allows a name match | treats it as resolved and never asks                  |
-| `likely`   | name similarity, or exactly one plausible candidate                   | one confirm question, batched with the others         |
-| `OPEN`     | nothing in the catalog matches                                        | a round-one question, with the three standard answers |
+| Confidence | Means                                                                          | What the grill does                                   |
+| ---------- | ------------------------------------------------------------------------------ | ----------------------------------------------------- |
+| `exact`    | the existence source names this component and rule 3 below allows a name match | treats it as resolved and never asks                  |
+| `likely`   | name similarity, or exactly one plausible candidate                            | one confirm question, batched with the others         |
+| `OPEN`     | nothing in the existence source matches                                        | a round-one question, with the three standard answers |
 
 **Never promote a guess to `exact` to tidy the table.** An `exact` row is never asked about
 again, so a wrong one is the only kind of error in this brief that reaches implementation
 unchallenged.
 
-**Tokens** resolve against the catalog's `## Tokens` tiers. The bound variable name comes from
-`get_variable_defs` on the node; a value with no bound variable and no catalog token is flagged —
+**Tokens** resolve against the existence source's token tiers — the catalog's `## Tokens` in a
+consumer repo, the assembled list in a library repo. The bound variable name comes from
+`get_variable_defs` on the node; a value with no bound variable and no existing token is flagged —
 not silently mapped to the nearest thing. The canvas is allowed to hold a raw value; the
 implementation is not. An unbound colour is flagged `⚠ no equivalent, do not invent`. An unbound
 spacing, radius, size or font size — a padding, gap, corner radius, dimension or text size the
@@ -366,6 +370,28 @@ grill question like any other. Never present an inferred assignment as verified.
 column, and the names it writes there are element names the fidelity ledger also uses. A token row
 with no element is dead text: nobody can act on it. **Remove a token that attaches to no element**
 rather than carrying it unattached.
+
+#### In a library repo
+
+Where `Repo role:` is `library`, Phase 4 resolves against the list Phase 0 assembled, and the
+library's source is what a match is checked against. Everything above still applies; three
+things are specific to this side.
+
+- **Components resolve source-first, through the `Variant mechanism` ladder.** Walk it in its
+  stated order, stop at the first rung that resolves, and honour the trap the row names — the
+  same walk as `../figma-component-to-spec/references/phases.md`, *3.1 — The source read*.
+  **Name the file the ladder resolved at**: the `DS candidate` cell carries the component name
+  and that declaration file, `<Component> — <declaration file>`. A registered catalog is a cross-check only, per
+  `references/existence-source.md`, and where it disagrees with the source the source wins.
+- **A variant only the trap accepts is `DS change`.** A value the declaration does not list but
+  the trap accepts anyway — a runtime alias map outside the declaration, a values list in a
+  stylesheet — exists only as a side door. The row's fidelity class is `DS change`, and its
+  `DS candidate` cell names the trap and the file it lives in after the declaration file.
+- **Tokens carry the source name and the emitted form.** The `Tokens` cell writes each token as
+  the token source declares it, then its emitted form per the adapter's *Consumer-facing emission
+  form* row — `<source name> → <emitted form>`. A raw hex with no token in the source is flagged
+  `⚠ no equivalent, do not invent` exactly as on the consumer side, and an unbound dimension is
+  flagged `⚠ off-grid` against the nearest source token.
 
 **Every `OPEN` row that looks like a genuine design-system gap** also gets a row in
 `## DS gaps (proposed, not filed)`, naming the adapter's DS-gap backlog as where it would go.
@@ -443,8 +469,8 @@ Where the intent was derived from positions rather than read from auto-layout, t
 | Layout facts       | in words: nesting (which parts share one wrapping flow), stack direction, full-width or not, divider placement and **which element owns it**, which element owns the padding, gap, corner radius, size, and — per icon — **icon name, size and colour token**, and — per text run — its **type token and colour token** |
 | Interaction        | the Figma prototype reaction on the node, named as an element: "the whole value area opens the editor", plus the trigger and the destination state. `—` **plus a grill question** where the node carries no reaction — see below                                                        |
 | Source             | `<fileKey>:<nodeId>` — the **element** node, never a frame and never a page root                                                                                                                                                                                                       |
-| DS candidate       | the component from `## Element → DS mapping`, or `—`                                                                                                                                                                                                                                   |
-| **Fidelity class** | `DS as-is` · `DS with overrides` · `local component` · `DS change` · `OPEN`                                                                                                                                                                                                            |
+| DS candidate       | the component from `## Element → DS mapping`, or `—`. In a library repo, also the declaration file the variant ladder resolved at, and the trap where only the trap accepts the variant                                                                                                |
+| **Fidelity class** | `DS as-is` · `DS with overrides` · `local component` · `DS change` · `OPEN`. In a library repo, `local component` is a component the library does not export, and `DS change` is work in this repo                                                                                   |
 
 **An icon written without a name, a size and a colour token is an incomplete row, and so is a text
 run written without a type token and a colour token.** Both are invisible in a screenshot at the
@@ -480,6 +506,11 @@ implementer to invent one.
    - **A difference that should not be solved locally because the design system itself is wrong
      or missing the affordance** → `DS change`, against the design system the adapter's
      *Design-system source* row names.
+
+   **In a library repo the five classes stay, and two of them read differently.** The design
+   system is this repo, so `local component` means a component the library does not export —
+   an internal part of the change — and `DS change` means work in this repo, against the
+   declaration file the `DS candidate` cell names, never a request to another team.
 3. **Only a chromeless root may be `exact` and `DS as-is` on name alone: `Popover`, `Dialog` and
    `Tooltip` (the roots, not their `*Content`), and an icon rendered through the adapter's icon
    ladder.** They render nothing the caller did not ask for, so name-matching them is safe.
@@ -649,3 +680,7 @@ and node links.
   remote server. That tool lives on the remote Figma server, so per-property bindings are then out
   of reach by construction and the row says so rather than guessing.
 - **It does not ask.** Anything it cannot settle is a row, at a confidence, for the grill.
+- **It never writes a catalog.** In a library repo the existence list is assembled for the run
+  and never saved; `figma-tools:ds-catalog` is what writes a catalog.
+- **It never edits the library.** In a library repo it reads the source and names the files a
+  `DS change` would touch; the change itself is the work the brief feeds.

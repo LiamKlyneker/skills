@@ -136,6 +136,12 @@ Assembled from: `<token source>` · `<component directory>` · `<icon source>` �
   `OPEN`, and nothing else. **A composite is never `DS as-is` without evidence** — the full
   classification rule set is in `SKILL.md`, Phase 4, *Classification rules*. Every row that is not
   `DS as-is` says **grill question** in its notes.
+- **In a library repo the classes keep their names and two change meaning.** `local component` is
+  a component the library does not export, and `DS change` is work in this repo. The `DS candidate`
+  cell carries the component and the declaration file the variant ladder resolved at —
+  `Button — src/components/button/button.tsx` — and, on a `DS change` row whose variant only the
+  ladder's trap accepts, the trap and its file as well. The `Tokens` cell writes each token as the
+  token source declares it, then its emitted form — `color.text.secondary → text-text-secondary`.
 - **The ledger's nine columns are fixed, `Interaction` among them.** `Interaction` names the
   element that owns the prototype reaction — "the whole value area opens the filter", not
   "clickable" — plus the trigger and the destination state. `—` only where the element is
