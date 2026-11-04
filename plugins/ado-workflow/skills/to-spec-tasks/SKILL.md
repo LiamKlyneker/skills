@@ -267,8 +267,9 @@ Then, under the list:
   screenshot block per in-scope state, copied from §3 as written — the local PNG path, the pinned
   Figma node link and the `Scorecard element` line.
 - The sentence from `../_shared/fidelity-ledger.md` §4 above the node blocks, then one node block
-  per row whose Decision is not `DS as-is`, per §4 — the `get_design_context` read on that element
-  node, plus `get_variable_defs` where the row's Tokens cell names a bound variable.
+  per element id in the `Source` cell of each row whose Decision is not `DS as-is`, per §4 — the
+  `get_design_context` read on that element node, plus `get_variable_defs` where the row's Tokens
+  cell names a bound variable.
 
 Omit the whole section for a slice with no ledger rows.
 

@@ -81,13 +81,19 @@ cell, stop — that is the rewrite the extraction command exists to prevent.
 
 **Figma briefs — the Source column and the pin line.** In a brief produced by `figma-to-brief` the
 **Source** cell holds `<fileKey>:<nodeId>`, and that node is the **element** node — never a frame,
-never a page root. A frame id in that cell is a broken row: send it back to the brief rather than
-reading the frame. A consumer that copies the rows also copies the brief's pin line, character for
-character:
+never a page root. A Source cell may instead hold two element ids joined with ` · ` —
+`<fileKey>:<nodeId> · <fileKey>:<nodeId>` — where the brief merged one element from two source
+nodes; each half is an element node and a valid single cell on its own. A frame id in that cell is
+a broken row: send it back to the brief rather than reading the frame. A consumer that copies the
+rows also copies the brief's pin line, character for character:
 
 ```
 Pinned at figma <fileKey> · node <nodeId> · version <versionId or YYYY-MM-DD> · brief <path>
 ```
+
+Where the brief was read from several nodes of one file, the `node <nodeId>` segment repeats, one
+per source node, in invocation order — `· node <nodeId> · node <nodeId> ·` — and nothing else
+about the line changes. A brief read from one node carries exactly the line above.
 
 The pin line is what lets a later session re-read the same design state. A row copied without it is
 unpinned, and an unpinned row is an opinion.
@@ -231,6 +237,9 @@ and, where the row's **Tokens** cell names a bound variable, the second read on 
 ```
 mcp__figma-dev-mode__get_variable_defs(fileKey: "<fileKey>", nodeId: "<nodeId>", clientLanguages: "typescript", clientFrameworks: "react")
 ```
+
+Where the row's **Source** cell holds two element ids joined with ` · `, emit one such block per id,
+in the cell's order. Each block is its own node read and counts against the budget.
 
 `mcp__figma-dev-mode__get_metadata` (the node's own id, name, type and size) and
 `mcp__figma-dev-mode__get_screenshot` (a render of that one node) are available on the same server
