@@ -28,6 +28,9 @@ execution:
     There is no network and no tracker here. The `[SPEC]` is the local file `./spec.md`, and
     the run writes its `[TASK]`s with `--out`. Do not call any `mcp__ado__*` tool.
 
+    The `[SPEC]` is one slice. Propose exactly one `[TASK]` for all of it and take that split as
+    confirmed, so the whole spec lands in `out/task-1.md`.
+
     Run this, and nothing else:
 
     /ado-workflow:to-spec-tasks ./spec.md --out ./out

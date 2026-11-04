@@ -26,13 +26,20 @@ execution:
     - Repo map: component `Web` → `atelier-web`, component `API` → `atelier-api`.
     - Accept every group proposal exactly as you offer it, and every placement of a new ticket.
 
-    Do these three steps in order, following the skill exactly:
+    Do these three steps in order, following the skill exactly. Steps 1 and 3 each run the
+    skill; the command line is on its own line below the step.
 
-    1. Run `/lk:sprint-plan sprint-1.json`.
-    2. Acting as the developer, use one Edit on `.sprint/plan.md` to set the Note cell of the
-       row holding ATL-12 to `hand-edited: keep`. Change nothing else, and do not touch
-       `.sprint/plan.snapshot.md`.
-    3. Run `/lk:sprint-plan sprint-2.json`.
+    Step 1:
+
+    /lk:sprint-plan sprint-1.json
+
+    Step 2: acting as the developer, use one Edit on `.sprint/plan.md` to set the Note cell of
+    the row holding ATL-12 to `hand-edited: keep`. Change nothing else, and do not touch
+    `.sprint/plan.snapshot.md`.
+
+    Step 3:
+
+    /lk:sprint-plan sprint-2.json
 
     Stop after the second run's final print.
   max_turns: 40

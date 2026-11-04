@@ -139,7 +139,7 @@ Print the server checklist, filled in with this plan's repos:
 Server checklist — do these by day, not at 03:00
 - [ ] A dedicated clone per repo on the server, under the root: <root>/<repo> for each of <repos>. Nothing else uses those clones.
 - [ ] A long-lived auth token: `claude setup-token`, stored as CLAUDE_CODE_OAUTH_TOKEN.
-- [ ] <root>/.sprint/night.env, mode 0600: the token, NIGHT_MODEL (orchestrator), NIGHT_WORKER_MODEL (cheaper, for workers), NIGHT_ALLOWED_TOOLS (each project's git, tracker and test commands), the caps (NIGHT_MAX_RUNS, NIGHT_TIMEOUT_SECONDS, NIGHT_MAX_TURNS, NIGHT_MAX_BUDGET_USD), and PATH. `night.sh --help` lists every variable.
+- [ ] <root>/.sprint/night.env, mode 0600: the token, NIGHT_MODEL (orchestrator), NIGHT_WORKER_MODEL (cheaper, for workers), NIGHT_ALLOWED_TOOLS (each project's git, tracker and test commands, plus `Bash(kill:*)`, which an unattended Stop needs to end the run non-zero; night.sh adds it when missing), the caps (NIGHT_MAX_RUNS, NIGHT_TIMEOUT_SECONDS, NIGHT_MAX_TURNS, NIGHT_MAX_BUDGET_USD), and PATH. `night.sh --help` lists every variable.
 - [ ] The cron line: 0 1 * * * <root>/.sprint/night.sh >> <root>/.sprint/cron.log 2>&1
 - [ ] On every filing tracker: the labels needs-human, needs-qa, needs-triage, ready-to-start, state:in-progress, state:done-on-branch.
 - [ ] A dry run on the server: <root>/.sprint/night.sh --dry-run

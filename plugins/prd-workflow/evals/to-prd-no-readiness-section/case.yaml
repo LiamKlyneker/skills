@@ -16,7 +16,7 @@ execution:
     (`fixture: scaffold snapshot`). Its adapter is `.claude/project/adapter.md`.
 
     There is no network and no tracker credential here, so do not run `gh` and do not publish.
-    Write the PRD body, exactly as it would be published, to `./prd.md`. Do not interview me
+    Write the PRD exactly as it would be published, title line first and then the body, to `./prd.md`. Do not interview me
     and do not ask the module-confirmation questions; treat them as confirmed.
 
     The grill settled this plan:

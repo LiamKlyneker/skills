@@ -20,7 +20,8 @@
 #   CLAUDE_CODE_OAUTH_TOKEN  long-lived token from `claude setup-token`
 #   NIGHT_MODEL              orchestrator model, passed as --model
 #   NIGHT_WORKER_MODEL       worker model, exported as CLAUDE_CODE_SUBAGENT_MODEL
-#   NIGHT_ALLOWED_TOOLS      comma-separated allow-list passed as --allowedTools
+#   NIGHT_ALLOWED_TOOLS      comma-separated allow-list passed as --allowedTools;
+#                            Bash(kill:*) is always added: an unattended Stop ends the run with it
 #   NIGHT_PERMISSION_MODE    default dontAsk: a tool off the allow-list is denied
 #   NIGHT_MAX_RUNS           rows run per night (default 3)
 #   NIGHT_TIMEOUT_SECONDS    outer wall-clock cap per run (default 14400)
@@ -99,6 +100,7 @@ if [ "$dry_run" -eq 0 ]; then
   command -v "$claude_bin" >/dev/null || { echo "night.sh: '$claude_bin' not on PATH" >&2; exit 2; }
   command -v timeout >/dev/null || { echo "night.sh: 'timeout' (coreutils) not on PATH" >&2; exit 2; }
 fi
+case ",$allowed," in *",Bash(kill:*),"*) ;; *) allowed="${allowed:+$allowed,}Bash(kill:*)" ;; esac
 [ -n "${NIGHT_WORKER_MODEL:-}" ] && export CLAUDE_CODE_SUBAGENT_MODEL="$NIGHT_WORKER_MODEL"
 
 # ---------------------------------------------------------------- lock
