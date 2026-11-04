@@ -100,6 +100,24 @@ Source: <git sha>[+dirty] · Generated: <YYYY-MM-DD> · Figma calls: <n>
 Assembled from: `<token source>` · `<component directory>` · `<icon source>` …
 ```
 
+Read from several nodes of one file, the header reads instead — the title joins the node names
+with ` + `, the pin line repeats `node <nodeId>` once per source node in invocation order,
+`Figma calls` is one total, and `Renamed states:` appears only where Phase 5 prefixed a colliding
+state id:
+
+```markdown
+# Design brief — <ticket> · <node name> + <node name>
+Pinned at figma <fileKey> · node <nodeId> · node <nodeId> · version <versionId or YYYY-MM-DD> · brief .claude/briefs/<ticket>.md
+Repo role: consumer
+Catalog: <fingerprint> · Generated: <YYYY-MM-DD> · Figma calls: <n>
+Renamed states: `default` → `2-default`
+
+## Scope
+
+Kept: `default` (node `<nodeId>`), `2-default` (node `<nodeId>`), `filter-open` (node `<nodeId>`) …
+Dropped: `export-dialog` (node `<nodeId>`) (export flow — separate ticket) …
+```
+
 ---
 
 ## Rules the template does not show
@@ -108,9 +126,10 @@ Assembled from: `<token source>` · `<component directory>` · `<icon source>` �
   `None — <why>`. An absent heading and an empty one are indistinguishable to the grill, and
   "the design had no business rules" and "nobody looked" are very different facts.
 - **The pin line is required and carries a file key, a node id and a version**, never a bare
-  Figma URL. A brief that cannot say which design state it describes cannot be checked against
-  anything later. It is written in the contract's form, character for character, because every
-  consumer copies it.
+  Figma URL. A brief read from several nodes of one file repeats the `node <nodeId>` segment, one
+  per source node in invocation order, and changes nothing else on the line. A brief that cannot
+  say which design state it describes cannot be checked against anything later. It is written in
+  the contract's form, character for character, because every consumer copies it.
 - **The header always names the repo role and the matching pin.** `Repo role: consumer` or
   `Repo role: library`, on every brief. A consumer brief pins the catalog it resolved against,
   `Catalog: <fingerprint>`. A library brief pins the commit its existence list was read from,
@@ -125,6 +144,9 @@ Assembled from: `<token source>` · `<component directory>` · `<icon source>` �
 - **`## Scope` carries `⚠ inferred`** where the ticket named no component and the state frames
   were scored. The scored list — every frame, with its score, not only the kept ones — goes under
   the heading so the guess is checkable at a glance.
+- **With several source nodes, every frame in `## Scope` and `## Out of scope` names its source
+  node id** beside its name, and the scored list is one list across all nodes. A brief read from
+  one node names none.
 - **`## Overrides` keeps both halves** — the design's text struck through, the ticket's text
   after it. An override with the original deleted reads as the design.
 - **Confidence is `exact`, `likely` or `OPEN`, and nothing else.** They are the grill's
@@ -189,8 +211,10 @@ Assembled from: `<token source>` · `<component directory>` · `<icon source>` �
   there, because the design system is this repo. An icon that matches neither
   source of the adapter's ladder is **not** a gap — it is a design question for the designer.
 - **`Source` cites the element node** — `<fileKey>:<nodeId>`, never a frame id and never a page
-  root. A frame id in that cell is a broken row, because a frame read answers with the whole
-  screen and buries the row's facts inside it.
+  root. A row that merges one element from two source nodes cites both element ids joined with
+  ` · `, each a valid single cell on its own, per `../../_shared/fidelity-ledger.md` §1. A frame
+  id in that cell is a broken row, because a frame read answers with the whole screen and buries
+  the row's facts inside it.
 - **A bound variable name beats a hex, and a hex is only written where no variable is bound.**
   Where the adapter's `### Figma source` *Servers* row registers no remote server, per-property
   bindings are unavailable, so a node binding several variables whose property assignment is not

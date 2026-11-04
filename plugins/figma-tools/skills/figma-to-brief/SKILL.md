@@ -1,14 +1,14 @@
 ---
 name: figma-to-brief
 description: >
-  Turn one Figma node into a design brief for one ticket. Pins the file key, the node id
-  and the file version, reads the in-scope state frames through the local Figma MCP
-  server, saves one PNG per state to disk, filters the design to what the ticket covers,
-  renders the ticket's overrides on top, and resolves every element and token against the
-  project's existence source — its design-system catalog, or in a library repo the library's
-  own source — into a per-element fidelity ledger. Asks nothing —
-  every judgement becomes a row the grill can question.
-  Invoke /figma-tools:figma-to-brief <figma-url> <ticket>.
+  Turn one or more Figma nodes from one file into a design brief for one ticket. Pins the
+  file key, every node id and the file version, reads the in-scope state frames through the
+  local Figma MCP server, saves one PNG per state to disk, filters the design to what the
+  ticket covers, renders the ticket's overrides on top, and resolves every element and token
+  against the project's existence source — its design-system catalog, or in a library repo the
+  library's own source — into a per-element fidelity ledger. Asks nothing — every judgement
+  becomes a row the grill can question.
+  Invoke /figma-tools:figma-to-brief <figma-url>... <ticket>.
 disable-model-invocation: true
 metadata:
   author: liam
@@ -18,15 +18,15 @@ metadata:
 # Figma → Brief
 
 A **design source in the brief slot**, beside `prototype-to-spec` and in the same place in the
-flow. The input is a canvas: one Figma node in the organisation the adapter's `### Figma source`
-rows name, read through the local `figma-dev-mode` MCP server against the file open in Figma
-Desktop.
+flow. The input is a canvas: one Figma node, or several from one file, in the organisation the
+adapter's `### Figma source` rows name, read through the local `figma-dev-mode` MCP server against
+the file open in Figma Desktop.
 
 ```
-/figma-tools:figma-to-brief <figma-url> <ticket-ref>   → writes a brief + screenshots, asks nothing
-/lk:deep-grill <ticket> .claude/briefs/<ticket>.md     → design rows are answers, OPEN rows are questions
-/ado-workflow:to-spec                                  → Tracker azure-devops: the ledger and the pin line reach the [SPEC]
-/prd-workflow:to-task <ticket> <brief-path>            → Tracker github: the ledger and the pin line reach one issue
+/figma-tools:figma-to-brief <figma-url>... <ticket-ref> → writes a brief + screenshots, asks nothing
+/lk:deep-grill <ticket> .claude/briefs/<ticket>.md      → design rows are answers, OPEN rows are questions
+/ado-workflow:to-spec                                   → Tracker azure-devops: the ledger and the pin line reach the [SPEC]
+/prd-workflow:to-task <ticket> <brief-path>             → Tracker github: the ledger and the pin line reach one issue
 ```
 
 The third step follows the adapter's `Tracker:` line — the system work is **filed** on — and never
@@ -40,8 +40,8 @@ DevOps, the issue on GitHub.
 
 That is the deliberate difference from `figma-tools:figma-to-spec`, which files a `[DESIGN-SPEC]`
 work item and has to freeze what it saw because the canvas moves under it. This skill files
-nothing, on any tracker. What keeps the brief checkable is the **pin line** — file key, node id
-and version — not a filed copy.
+nothing, on any tracker. What keeps the brief checkable is the **pin line** — file key, every
+node id and version — not a filed copy.
 
 ## What this replaces, and why it exists
 
@@ -76,24 +76,28 @@ carrying its confidence, and the grill is where a human answers it. A skill that
 a skill nobody runs twice.
 
 The only stops are hard input failures, all in Phase 0 and Phase 1: `whoami` does not report the
-organisation and seat the adapter's `### Figma source` rows name, the URL carries no `node-id`,
-the node does not resolve, there is no existence source — no catalog in a consumer repo, nothing
-to assemble one from in a library repo — the ticket can be neither read nor fetched, or the
-adapter has no `### Figma source`. Each
-says which input failed and what would fix it. There is no degraded mode and no partial brief.
+organisation and seat the adapter's `### Figma source` rows name, a URL carries no `node-id`,
+two URLs name different files, a node does not resolve, there is no existence source — no catalog
+in a consumer repo, nothing to assemble one from in a library repo — the ticket can be neither
+read nor fetched, or the adapter has no `### Figma source`. Each says which input failed and what
+would fix it. There is no degraded mode and no partial brief.
 
 ## Invocation
 
 ```
-/figma-tools:figma-to-brief <figma-url> <ticket-ref> [--out <path>]
+/figma-tools:figma-to-brief <figma-url>... <ticket-ref> [--out <path>]
 ```
 
-- `<figma-url>` — a Figma design URL carrying a `node-id`. Required. A URL with no `node-id` is
-  a STOP, never a guess: the node is what everything downstream is pinned to.
-- `<ticket-ref>` — the ticket this brief is for: an id or key, a URL, or **a path to a local file
-  holding the ticket body**. Required; it is what the filter runs against, so a brief without one
-  would be the whole canvas again. Which forms resolve, and against which system, is
-  `../_shared/ticket-source.md` §1–§2.
+- `<figma-url>` — a Figma design URL carrying a `node-id`. Required, at least one. A URL with no
+  `node-id` is a STOP, never a guess: the node is what everything downstream is pinned to.
+  **Every argument that parses as a Figma design URL is a source node**, kept in the order given;
+  that order is the node's **position** — 1 for the first URL — and the pin line, the state-id
+  renames and the title all follow it. **Every URL carries the same file key.** A second file key
+  is a STOP that names both keys: one brief pins one file at one version.
+- `<ticket-ref>` — the ticket this brief is for, and the one positional left once the Figma URLs
+  are taken: an id or key, a URL, or **a path to a local file holding the ticket body**. Required;
+  it is what the filter runs against, so a brief without one would be the whole canvas again.
+  Which forms resolve, and against which system, is `../_shared/ticket-source.md` §1–§2.
 - `--out` — where the brief goes. Default `<repo-root>/.claude/briefs/<ticket>.md`, with the
   screenshots beside it at `<repo-root>/.claude/briefs/<ticket>/screenshots/`. `<ticket>` is the
   **ticket key**, per `../_shared/ticket-source.md` §3 — `ABC-123` for a Jira issue, the number
@@ -149,7 +153,7 @@ to be re-flattened into ledger rows anyway — the flattening is where fidelity 
 | Phase                    | Does                                                                                                                              |
 | ------------------------ | --------------------------------------------------------------------------------------------------------------------------------- |
 | **0 — Resolve**          | `whoami` (the adapter's organisation and seat) · adapter rows · `Repo role:` · existence source (catalog validated, or list assembled) · ticket fetched. |
-| **1 — Locate and pin**   | URL → file key + node id · `get_metadata` for the frame tree · version or date · the pin line.                                    |
+| **1 — Locate and pin**   | each URL → file key + node id · `get_metadata` per node for the frame tree · version or date · the pin line.                      |
 | **2 — Filter by ticket** | Keep the state frames the ticket covers; record every drop with its reason.                                                       |
 | **3 — Overrides**        | Render the ticket's divergences on top of the design's.                                                                           |
 | **4 — Resolve elements** | Every element and token against the existence source, at three confidences · one fidelity-ledger row per element, with its fidelity class. |
@@ -164,7 +168,7 @@ with every other session on this machine. Only `whoami` is free; every read coun
 | Phase | Calls                                                                                                          |
 | ----- | ---------------------------------------------------------------------------------------------------------------- |
 | 0     | `whoami` — free, and the only free call there is.                                                              |
-| 1     | one `get_metadata` on the node in the URL. One more per kept state frame **only** where the tree is nested deeper than the first response returned. |
+| 1     | one `get_metadata` on the node in each URL. One more per kept state frame **only** where the tree is nested deeper than the first response returned. |
 | 2     | none. The filter runs on the ticket and the metadata already read.                                             |
 | 3     | none.                                                                                                          |
 | 4     | per in-scope element node: one `get_design_context`, one `get_variable_defs`, and `get_screenshot` **only** where the row is ambiguous without a render. Read each node once. |
@@ -230,16 +234,23 @@ Read the adapter. Establish, and stop on any of them:
    the **node id**, and the node id is written `<a>:<b>` in every tool call and in the ledger. A
    `/design/branch/<branchKey>/` URL pins the **branch key** as the file key. A URL with no
    `node-id` is a STOP. A `/make/` URL is a STOP — the local server does not read them.
+
+   With several URLs, parse every one before any read. A file key that differs from the first
+   URL's is a STOP naming both keys, and it costs no call.
 2. **Read the tree.** `get_metadata` on that node returns the children, names, types, positions
    and sizes. That is the **state frame list** Phase 2 filters and the **element node ids**
    Phase 4 resolves. Read it once and work from the response.
+
+   With several URLs, read every node here, in invocation order, before Phase 2 starts, and keep
+   each node's state frame list together with its source node id. A node that does not resolve
+   stops the run at gate 5, before any Phase 4 read is spent.
 
    **Hidden nodes carry state.** A `visible:false` child whose name implies a state or a variant —
    a banner, a chip, an empty state, an error message — is in-scope content, not noise. Keep it,
    and say which state it represents. Only a clearly scaffolding node (spacer, guide,
    placeholder, `_`-prefixed) is pruned, and a pruned node is named in the brief's `## Scope`.
-3. **Pin the version.** Read the file's newest version id over the REST API, which does not spend
-   the MCP budget:
+3. **Pin the version**, once for the file however many nodes it carries. Read the file's newest
+   version id over the REST API, which does not spend the MCP budget:
 
    ```
    curl -sS -H "X-Figma-Token: $FIGMA_PAT" \
@@ -254,6 +265,13 @@ Read the adapter. Establish, and stop on any of them:
 
    ```
    Pinned at figma <fileKey> · node <nodeId> · version <versionId or YYYY-MM-DD> · brief <path>
+   ```
+
+   With several URLs the `node <nodeId>` segment repeats, one per source node, in invocation
+   order, and nothing else about the line changes:
+
+   ```
+   Pinned at figma <fileKey> · node <nodeId> · node <nodeId> · version <versionId or YYYY-MM-DD> · brief <path>
    ```
 
    It is what lets a later session re-read the same design state. Every consumer copies it
@@ -278,13 +296,20 @@ With a component named, keep:
 `## Out of scope`, which is not padding: the failure this pipeline exists to fix produced
 implementations of things nobody asked for, because the design showed them.
 
+**With several source nodes, the filter runs once over all of them.** The keep table applies to
+every node's frames the same way, and every kept or dropped frame carries its source node id
+beside its name — `` `default` (node `<nodeId>`) `` — in `## Scope` and in `## Out of scope`. A
+single-node run carries no node id there.
+
 **With no component named**, score instead of guessing. Tokenise the ticket's acceptance criteria
 and each frame's name, drop stopwords, and score each frame by how many distinct tokens it shares
 with the AC text, weighting a token by how _few_ frames carry it — a term appearing in every
 frame separates nothing. Then:
 
 - **Print the whole scored list in the brief**, every frame with its score, not just the kept
-  ones. The scoring is a guess and showing its working is what makes it checkable in one glance.
+  ones. With several source nodes, every node's frames are scored in **one** list and printed
+  together, each with its source node id. The scoring is a guess and showing its working is what
+  makes it checkable in one glance.
 - Keep the frames that score above the natural break in the list, and where there is no natural
   break, keep the top-scoring frame group whole rather than slicing one down the middle.
 - **Mark the `## Scope` section `⚠ inferred`.** Still no question: the grill confirms scope, and
@@ -575,6 +600,12 @@ the loser noted inline. The node still wins on **layout**.
    `ado-workflow:to-spec-tasks` and `prd-workflow:to-task` match the two on that string, so a
    mismatch orphans the screenshot. Create the directory first.
 
+   **State ids stay unique across source nodes.** Where two kept frames under different source
+   nodes slug to the same id, the later one, by its node's position in the pin line, is prefixed
+   with that position and a hyphen — `2-default`. The first keeps the bare id. The renamed id is
+   the one the screenshot path and the `States` cell use, and the header lists every rename. A run
+   with no collision writes exactly the slugged frame names.
+
    The local `get_screenshot` returns an **image into this session, not a file**, so the PNG
    reaches disk over the Figma REST images endpoint, which does **not** spend the MCP budget:
 
@@ -609,7 +640,10 @@ the loser noted inline. The node still wins on **layout**.
    that role: `Catalog: <fingerprint>` in a consumer repo; `Source: <git sha>`, or
    `Source: <git sha>+dirty` for an uncommitted tree, in a library repo, followed by the list of
    source paths the existence list was assembled from. **The assembled list itself is never
-   written into the brief.** Before writing it, check the ledger against its own rules: one row
+   written into the brief.** With several source nodes, the title joins the node names with
+   ` + `, `Figma calls` is one total across nodes, and a `Renamed states:` line under the header
+   lists every state id Phase 5 prefixed, as `<slug> → <prefixed id>`; a run with no rename
+   writes no such line. Before writing it, check the ledger against its own rules: one row
    set per kept state, **one `content container` row per kept state**, an icon name, a size and
    a colour token on every icon and a type token and a colour token on every text run, an element
    node id in every `Source` cell, and `grill question` in the notes of every row that is not
@@ -617,7 +651,8 @@ the loser noted inline. The node still wins on **layout**.
 
 4. **Print**, per `../_shared/final-prints.md`, exactly three things: **the path**, **the counts**
    — states kept and dropped, rows at each of the three confidences, ledger rows at each fidelity
-   class, PNGs saved — and **the Figma calls spent**. Close with the next command,
+   class, PNGs saved — and **the Figma calls spent**. With several source nodes, every count and
+   the call figure are totals across nodes, never one per node. Close with the next command,
    `/lk:deep-grill <ticket> <brief path>`.
 
 The brief's content is not summarised into the print. It is a file, one click away, and it is
@@ -631,6 +666,9 @@ pinned address:
 ```
 Screenshot: .claude/briefs/<ticket>/screenshots/<state-id>.png · node https://www.figma.com/design/<fileKey>/?node-id=<nodeId>
 ```
+
+With several source nodes, each state's node link points at **its own** source node — the node
+whose state frame list the state came from — never at the first URL.
 
 Both halves are required and neither replaces the other. The path is what
 `ado-workflow:to-spec-tasks` and `prd-workflow:to-task` copy into the task; the node link is what a human opens to see the
@@ -673,6 +711,8 @@ and node links.
    variable.
 9. **The daily Figma call cap is reached mid-run** → stop, report the calls spent and the nodes
    still unread, and write no partial brief.
+10. **Two URLs carry different file keys** → stop in Phase 1, before any read, naming both keys.
+    A brief pins one file at one version; run once per file instead.
 
 ## What this skill does not do
 

@@ -32,8 +32,9 @@ Five skills:
   see (unbound raw hex above all). A shortlist of **zero** is a complete run. Its
   existence source is a **token list** assembled from the adapter's *Token
   pipeline* row, which a catalog contributes to where one is registered.
-- **`figma-to-brief`** — one Figma node plus one ticket → a **design brief** at
-  `.claude/briefs/<ticket>.md`, with one PNG per in-scope state saved beside it.
+- **`figma-to-brief`** — one or more Figma nodes from one file plus one ticket →
+  a **design brief** at `.claude/briefs/<ticket>.md`, with one PNG per in-scope
+  state saved beside it.
   Runs in a **consumer** repo or a **library** repo, reads the canvas once through
   the local `figma-dev-mode` server at a pinned file version, filters it to the
   ticket, renders the ticket's overrides on top, and resolves every element and
