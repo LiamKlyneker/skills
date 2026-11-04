@@ -47,7 +47,8 @@ only a nicer branch name to aim for.
    key already stands in the PRD is replaced wholesale by the newer row — every column, including
    Decision. A row with a new key is appended. A row the newer grill did not cover is left
    byte-intact. Never merge two rows into one and never keep two rows under the same key.
-7. **Never re-prefix an already-prefixed title.** UPDATE enriches a PRD that already exists, so its title normally already starts with `[PRD]` and must be left alone. Add the prefix here only when the title genuinely lacks one — a PRD that predates the convention. `[PRD] [PRD] …` is the failure to avoid, and it is silent: nothing rejects the title, and `work-on-prd` slugs the branch from it.
+7. **Merge `## Readiness` by class, later block wins.** When a `## Readiness` block is in the conversation, add the section if the PRD has none, in template order. When the PRD already carries one, replace the sub-list of each class the new block covers and leave the other classes byte-intact. Without a block in the conversation, leave an existing `## Readiness` untouched.
+8. **Never re-prefix an already-prefixed title.** UPDATE enriches a PRD that already exists, so its title normally already starts with `[PRD]` and must be left alone. Add the prefix here only when the title genuinely lacks one — a PRD that predates the convention. `[PRD] [PRD] …` is the failure to avoid, and it is silent: nothing rejects the title, and `work-on-prd` slugs the branch from it.
 
 ## Hard rules
 
@@ -157,6 +158,10 @@ Client ∈ user-scoped (policies apply) / privileged (policies bypassed — admi
 ## Project gates
 
 One section **per extra gate this project registers** in the adapter's `## Project gates` table (at `<repo-root>/.claude/project/adapter.md`) that the grill actually ran — heading named after the gate, carrying its table through verbatim, so `to-prd-tasks` can slice any ⚠️ row into the right issue. The gate file owns its row schema; read it through the adapter's pointer and never assume its name. Omit the section entirely when the adapter registers no gates, or when none of them triggered.
+
+## Readiness
+
+Only when a `## Readiness` block from `/lk:readiness` is in the conversation. Carry the block through as printed: one sub-list per class (missing context, credential or access, external dependency, ambiguous acceptance criterion), each item with its recorded answer (`given`, `external step`, `deferred` or `open`). Do not rewrite, reorder or complete it. Omit the section entirely when no block is in the conversation; never write a stub or a "None" placeholder. No skill reads it back mechanically; `to-prd-tasks` reads it as prose.
 
 ## Testing Decisions
 

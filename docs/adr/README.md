@@ -79,3 +79,4 @@ or the adapter, and stops there.
 | [0021](0021-every-plugin-ships-its-own-setup.md) | Every plugin ships its own setup | Accepted |
 | [0022](0022-knowledge-is-derived-accounts-are-observed.md) | Knowledge is derived, accounts are observed | Accepted |
 | [0023](0023-the-merge-closes-the-prd.md) | The merge closes the PRD | Accepted |
+| [0024](0024-nights-run-the-loops-unattended.md) | Nights run the loops unattended | Accepted |

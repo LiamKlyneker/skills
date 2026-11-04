@@ -87,6 +87,13 @@ Requires the Azure DevOps MCP server (`mcp__ado__*` tools).
    step 4 below. `action: "update"` has no `format` flag and falls back to HTML, so a merged body
    that carries a markdown pipe table loses the table.
 
+9. **Merge `## Readiness` by class, later block wins.** When a `## Readiness` block is in the
+   conversation, add the section if the spec has none, in template order. When the spec already
+   carries one, replace the sub-list of each class the new block covers and leave the other
+   classes byte-intact. Without a block in the conversation, leave an existing `## Readiness`
+   untouched. The body goes through `action: "update"` as HTML, so re-emit the whole section on
+   every UPDATE as `<ul>`/`<li>` markup, per the emission rule in step 4.
+
 UPDATE mode stays useful after `to-spec-tasks` has run: a spec that keeps absorbing detail is
 what keeps the `[TASK]` bodies slim, because they point at the spec instead of restating it.
 
@@ -168,6 +175,13 @@ turns a pipe table into a run of plain text and the eleven columns are gone with
   character from the brief, with `<code>` in place of the brief's backticks and the `·` separators
   left as they are.
 
+**How the `## Readiness` section is emitted.** Write each sub-list as literal HTML `<ul>`/`<li>`
+markup, one `<li>` per item, never as markdown bullets, and put the class name in an `<h3>` above
+its list. `action: "update"` falls back to HTML (§1), so the first UPDATE pass turns a markdown
+list into one run of plain text with no error anywhere. The `<ul>` markup survives both a
+`format: "Markdown"` create and every HTML fallback after it. Escape `<` and `>` inside item text
+per §1.
+
 <spec-template>
 
 ## Scope
@@ -213,6 +227,17 @@ One line above the table pins what the rows are true at:
 Pinned at figma `<fileKey>` · node `<nodeId>` · version `<versionId or YYYY-MM-DD>` · brief `<path>`.
 
 Omit the section for specs with no brief.
+
+## Readiness
+
+Only when a `## Readiness` block from `/lk:readiness` is in the conversation. Carry the block
+through as printed: one sub-list per class (missing context, credential or access, external
+dependency, ambiguous acceptance criterion), each item with its recorded answer (`given`,
+`external step`, `deferred` or `open`). Do not rewrite, reorder or complete it. Omit the section
+entirely when no block is in the conversation; never write a stub or a "None" placeholder. No
+skill reads it back mechanically; `to-spec-tasks` reads it as prose.
+
+Emitted as HTML `<ul>`/`<li>` markup per the emission rule above.
 
 ## Migration risk
 

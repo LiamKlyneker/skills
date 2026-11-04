@@ -61,10 +61,14 @@ paraphrased differently on each run isn't one. ADR
 [0021](docs/adr/0021-every-plugin-ships-its-own-setup.md) has the argument.
 
 **A skill ships a script for that reason and no other: the job is mechanical and must produce
-the same answer twice.** Two do, today. The second is
+the same answer twice.** Three do, today. The second is
 `plugins/figma-tools/skills/ds-catalog/scripts/generate_catalog.py`, which enumerates a design
 system's declarations into the generated half of a catalog — an enumeration that differed
-between two runs would make "absent from the catalog means it does not exist" untrue. Prose is
+between two runs would make "absent from the catalog means it does not exist" untrue. The third
+is `plugins/lk/skills/sprint-plan/scripts/night.sh`, which runs the implementation loop once per
+`runnable` row of a sprint plan under caps set outside the agent, and sets each row from the
+run's exit code — a schedule read differently from one night to the next is one nobody can
+predict the morning before. Prose is
 still the default and the rest of the repo is prose; a script is the exception that has to earn
 itself, and a script whose output is a judgement never does.
 

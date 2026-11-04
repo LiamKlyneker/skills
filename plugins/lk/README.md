@@ -1,14 +1,15 @@
 # lk
 
-The six skills that travel everywhere Liam does, packaged as a Claude Code
-plugin: `grill` and `deep-grill` for interviewing a plan, `pinpoint`,
-`scoped-context`, `how-i-write`, and `report`.
+The eight skills that travel everywhere Liam does, packaged as a Claude Code
+plugin: `grill` and `deep-grill` for interviewing a plan, `readiness` for
+what a cold worker would lack, `sprint-plan` for the day/night split,
+`pinpoint`, `scoped-context`, `how-i-write`, and `report`.
 
 None of them is bound to the **project's** tracker, which is exactly why they
 do not belong to a tracker-bound workflow plugin. Before this plugin they
 reached a machine only as hand-made symlinks, one per skill per config
 directory, recorded nowhere the repo could check. This plugin ended that:
-`/plugin install lk@liamklyneker` places all six at once, at a version the
+`/plugin install lk@liamklyneker` places all eight at once, at a version the
 catalog pins.
 
 That criterion — never the project's tracker — is the whole membership rule.
@@ -31,6 +32,8 @@ plugins/lk/
     scoped-context/                    # the CONTEXT.md convention
     how-i-write/                       # Liam's voice, with references/
     report/                            # a session's conclusion, filed upstream
+    readiness/                         # what a cold worker would lack, before filing
+    sprint-plan/                       # sprint groups, the plan file, the night script
 ```
 
 Nothing sits at the plugin root, and there are no agents. A directory holding

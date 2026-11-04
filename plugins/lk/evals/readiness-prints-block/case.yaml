@@ -1,0 +1,75 @@
+schema_version: "1.0"
+name: readiness-prints-block
+summary: "The readiness check prints a four-class block into the conversation and files nothing."
+description: >
+  `lk:readiness` after a grill, with the whole conversation and the developer's answers to the
+  one round given in the prompt. The external behaviour under test is the `## Readiness` block
+  in the last message: one sub-list per class, the answer recorded per item. Graders check the
+  four class headings and the recorded answers. The case grants no `Write` or `Bash`, so a
+  file or a `gh` call is impossible, not merely ungraded. No scaffold:
+  the run needs nothing but an empty working directory.
+tags: [micro, readiness]
+runs: 1
+execution:
+  prompt: |
+    There is no human on the other end of this session, and no network. The grill that just
+    ended settled this plan, and everything in it is the whole context:
+
+    > Add an "archived" filter to the shelf list of the Atelier app. The list endpoint gets a
+    > query parameter `archived=true|false`. The export job must "behave sensibly" with
+    > archived shelves. The new endpoint reads from the staging catalog, which needs a read-only
+    > API key that only the platform team can issue. The filter depends on the shelf-schema
+    > ticket ATL-88 landing first.
+
+    The developer already answered the one round of questions, so do not ask again:
+
+    - Missing context: the export job reads `lib/export.ts`, which the plan never named. Answer: give it now, the path is `lib/export.ts`.
+    - Credential or access: the read-only staging key. Answer: make it an external step, the developer requests it from the platform team.
+    - External dependency: ATL-88. Answer: make it an external step, wait for ATL-88.
+    - Ambiguous acceptance criterion: "behave sensibly". Answer: give it now, the export skips archived shelves.
+
+    Run this, and nothing else:
+
+    /lk:readiness
+
+    Take the answers above as the round's replies, print the block and stop. Follow the skill exactly.
+  max_turns: 15
+  timeout_seconds: 300
+  model: claude-sonnet-5
+  allowed_tools: [Read, Glob, Grep, Skill]
+graders:
+  - type: regex
+    name: block-heading
+    target: last_message
+    pattern: '^## Readiness\s*$'
+    flags: m
+
+  - type: regex
+    name: class-missing-context
+    target: last_message
+    pattern: 'Missing context'
+    flags: i
+  - type: regex
+    name: class-credential-or-access
+    target: last_message
+    pattern: 'Credential or access'
+    flags: i
+  - type: regex
+    name: class-external-dependency
+    target: last_message
+    pattern: 'External dependency'
+    flags: i
+  - type: regex
+    name: class-ambiguous-criterion
+    target: last_message
+    pattern: 'Ambiguous acceptance criterion'
+    flags: i
+
+  - type: regex
+    name: records-the-given-answer
+    target: last_message
+    pattern: 'lib/export\.ts'
+  - type: regex
+    name: records-the-external-step
+    target: last_message
+    pattern: 'ATL-88'

@@ -23,8 +23,9 @@ repo. That is self-hosting, not a broken install — expect `doctor` to say so.
 ## Commands
 
 This is a **prose repo**. There is no build, no package manager, and no test
-runner. The only executable is
-`install/doctor.sh`.
+runner. Two executables ship: `install/doctor.sh`, and the night script
+`plugins/lk/skills/sprint-plan/scripts/night.sh`, which `lk:sprint-plan` copies into a projects
+directory.
 
 | Purpose | Command |
 |---|---|
@@ -32,6 +33,7 @@ runner. The only executable is
 | Test — **verify L2 floor** | `bash -n install/doctor.sh && bash install/doctor.sh --repo . --quiet` |
 | Manifest check — **also L2 floor** | `rc=0; for p in plugins/prd-workflow plugins/figma-tools plugins/ado-workflow plugins/lk plugins/qa .; do python3 -c 'import json,sys; r=json.loads(sys.stdin.read() or "{}"); bad=[(s["file"],i) for s in [r.get("manifest") or {}]+r.get("contents",[]) for k in ("errors","warnings") for i in s.get(k,[]) if "not read — components are read without following symlinks" not in i.get("message","")]; [print(f,i) for f,i in bad]; ok=r.get("success") and not bad; print(("ok  " if ok else "VALIDATE FAILED  ")+sys.argv[1]); sys.exit(not ok)' "$p" <<<"$(claude plugin validate --json "$p" 2>/dev/null)" && continue; rc=1; done; exit $rc` |
 | Catalog + version gate — **also L2 floor** | `python3 .github/scripts/validate_skills.py --base origin/main` |
+| Night script check — **on every child that touches it** | `bash -n plugins/lk/skills/sprint-plan/scripts/night.sh && bash plugins/lk/skills/sprint-plan/scripts/night.sh --dry-run --plan plugins/lk/evals/sprint-plan-plan-file/dry-run/.sprint/plan.md` |
 | Per-skill eval gate — **on every child that touches a skill** | `command claude plugin eval plugins/<plugin> --ablation none --scaffold --no-publish --runs 1 --threshold 1.0 --max-cost-usd 5 --model claude-sonnet-5 --judge-model claude-sonnet-5 --allow-tools Write Bash Edit --tag <skill>` |
 | Full micro eval gate — **once, on the child that bumps the plugin version** | `command claude plugin eval plugins/<plugin> --ablation none --scaffold --no-publish --runs 1 --threshold 1.0 --max-cost-usd 12 --model claude-sonnet-5 --judge-model claude-sonnet-5 --allow-tools Write Bash Edit --tag micro` |
 | Boot the app (visual loop) | `claude plugin list` — the loaded-plugin inventory *is* this repo's running state |
@@ -93,7 +95,7 @@ branch exists. Locally, `--base origin/main` is the equivalent.
 
 ## App facts
 
-- Markdown/prose skills repo · one Bash script (`install/doctor.sh`) · no runtime, no dependencies.
+- Markdown/prose skills repo · two Bash scripts (`install/doctor.sh`, `plugins/lk/skills/sprint-plan/scripts/night.sh`) · no runtime, no dependencies.
 - **Also a plugin marketplace.** `.claude-plugin/marketplace.json` publishes marketplace `liamklyneker` with five plugins, `plugins/prd-workflow/`, `plugins/figma-tools/`, `plugins/ado-workflow/`, `plugins/lk/` and `plugins/qa/`, each carrying a `version` the catalog mirrors. A plugin's skills live in `<plugin>/skills/<skill>/` and its agents in `<plugin>/agents/`; both inventories are discovered from the directory, not listed in the manifest.
 - **Every skill is inside a plugin — there are no plain skills left.** The top level is `.claude-plugin/`, `plugins/`, `_shared/` (global reference read by several skills), `install/` (what a consuming project gets wired with) and `docs/`. Two shapes were deleted and the validator now fails on both: the migration's compat shims (top-level symlinks into `plugins/`, #26) and links under `.claude/skills/` into `plugins/` (the retired self-host route, ADR [0010](../../docs/adr/0010-one-distribution-one-dev-mode.md)).
 - **A plugin namespaces every component it provides.** Skills invoke as `prd-workflow:<skill>`, and agents resolve as `subagent_type: prd-workflow:prd-worker` / `figma-tools:figma-region-extractor` — on every route, `--plugin-dir` included. No bare names remain. An unresolvable `subagent_type` does not error — it silently becomes `general-purpose` — so a wrong type name produces a run that looks entirely normal.
@@ -136,7 +138,7 @@ None — no gates beyond the ones the skills carry.
 - **CONTEXT.md**: read the scoped `CONTEXT.md` before touching files in any directory (see the `scoped-context` skill), where one exists.
 - **No project ever owns a `_shared/`.** Project facts live in `<repo-root>/.claude/project/`. `../_shared/…` from any skill can therefore only mean this repo's global reference.
 - Skills address exactly three things: global reference via a relative path into `_shared/`, the project as `<repo-root>/.claude/project/adapter.md`, and project-specific gates **never by name** — the adapter's `## Project gates` registry names them and skills follow the pointer.
-- Prose over scripts. `install/doctor.sh` is the only executable, because mechanical checks must be deterministic. Everything else stays prose.
+- Prose over scripts. `install/doctor.sh` and `plugins/lk/skills/sprint-plan/scripts/night.sh` are the only executables, because mechanical checks and an unattended night's schedule must be deterministic. Everything else stays prose.
 - Adding a skill is just the directory under `plugins/<plugin>/skills/` — the inventory is discovered, and there is no other kind of skill to add. It loads immediately under `--plugin-dir`; it reaches a consumer when the plugin's `version` moves and they update.
 - **Plugin manifests carry a `version`, and changing a plugin means bumping it** — in `plugins/<plugin>/.claude-plugin/plugin.json` *and* in `.claude-plugin/marketplace.json`, which must agree; the catalog gate fails if they drift. This bullet used to say the opposite (*omit `version` deliberately*), for a reason that has not stopped being true: `version` is the install cache key, and a forgotten bump means installs silently never see the change. Observed, not assumed — `claude plugin install` at an already-cached version prints `already installed` and re-copies nothing, so a missed bump does not merely delay an update, it strands that consumer until they `uninstall --scope local` by hand. Abstaining from versions was the old way to be safe from that; the bump rule in `validate_skills.py` is the new one, so **do not go back to omitting `version`** — dropping the version drops the check with it. A change under `_shared/` or `install/` counts as changing **every** plugin whose `skills/` symlinks it, because install dereferences the link into each cache copy.
 - Distribution claims get **verified against the binary and the live config dirs**, never written from memory or from the platform docs. `INSTALL.md` is written from observed behaviour and is the place a corrected observation lands.
@@ -146,3 +148,4 @@ None — no gates beyond the ones the skills carry.
 - GitHub Settings → General → "Auto-close issues with merged linked pull requests" must be **on** (not API-queryable — check in the web UI once). If off, `Closes #N` silently does nothing.
 - The `needs-triage` label must exist in `LiamKlyneker/skills` — `to-prd` applies it on CREATE.
 - The `needs-qa` label must exist in `LiamKlyneker/skills` — `work-on-prd` applies it to the PRD at loop end (iff the run landed something a human can exercise) and cannot create it. It means **"not yet QA'd"**: it is the operator's queue, and only a completed `manual-qa` pass removes it. Created once with `gh label create needs-qa --description "PRD awaiting a manual QA pass"`.
+- The `needs-human` label must exist in `LiamKlyneker/skills` — `work-on-prd --unattended` applies it to a child it escalated instead of pausing on, and cannot create it. It is the human queue: only a human removes it, after acting on the escalation, and nothing in the pick path reads it. Created once with `gh label create needs-human --description "A night run escalated here; a human decides"`.
