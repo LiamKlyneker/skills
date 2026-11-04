@@ -215,6 +215,12 @@ Dropped: `export-dialog` (node `<nodeId>`) (export flow — separate ticket) …
   ` · `, each a valid single cell on its own, per `../../_shared/fidelity-ledger.md` §1. A frame
   id in that cell is a broken row, because a frame read answers with the whole screen and buries
   the row's facts inside it.
+- **With several source nodes, two element nodes share a row only on a name match plus the same
+  existence-source component** — the pairing rule in `SKILL.md`, Phase 4. A paired row's `States`
+  lists both nodes' state ids, and a token, layout fact or exact copy the two nodes disagree on is
+  written as both values, each tagged with its node id, with `grill question: sources disagree on
+  <fact>` in the notes. Any weaker match is two rows, each noting
+  `grill question: possible duplicate of <fileKey>:<nodeId>` with the other row's element node.
 - **A bound variable name beats a hex, and a hex is only written where no variable is bound.**
   Where the adapter's `### Figma source` *Servers* row registers no remote server, per-property
   bindings are unavailable, so a node binding several variables whose property assignment is not

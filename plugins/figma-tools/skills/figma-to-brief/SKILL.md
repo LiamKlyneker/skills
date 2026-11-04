@@ -397,6 +397,15 @@ column, and the names it writes there are element names the fidelity ledger also
 with no element is dead text: nobody can act on it. **Remove a token that attaches to no element**
 rather than carrying it unattached.
 
+**With several source nodes, an element pairs across nodes on a strong key only.** Two element
+nodes under different source nodes become **one** ledger row only when their names match **and**
+both resolve, in this phase, to the same existence-source component. Any weaker match — the same
+name resolving to different components or to none, a similar name, a similar look — stays **two
+rows**, and each row's notes carry `grill question: possible duplicate of <fileKey>:<nodeId>`,
+naming the other row's element node. A false pair hides a real difference behind one row; a false
+split costs the grill one question, so the rule errs toward two rows. A brief read from one node
+pairs nothing.
+
 #### In a library repo
 
 Where `Repo role:` is `library`, Phase 4 resolves against the list Phase 0 assembled, and the
@@ -457,6 +466,15 @@ element; content differs: <state A> renders …, <state B> renders …`. Never t
 anatomies. Two anatomies is what makes an implementer build two components with two tokens and
 two icons for one design element.
 
+**One element paired from two source nodes — one row, both nodes cited.** Where Phase 4 paired
+two element nodes, the row's `Source` holds both element ids in full, joined with ` · ` —
+`<fileKey>:<nodeId> · <fileKey>:<nodeId>`, per `../_shared/fidelity-ledger.md` §1 — and `States`
+lists the state ids from both nodes. Where the two nodes disagree on a token, a layout fact or the
+exact copy, the cell carries **both** values, each tagged with its node id — `node <nodeId>:
+<value> · node <nodeId>: <value>` — and the notes carry `grill question: sources disagree on
+<fact>`, one per disagreement. The brief never picks one. `Fidelity class` is whatever Phase 4
+resolved for the pair; `OPEN` keeps its meaning, nothing in the existence source matches.
+
 **The content container is an element, and it gets a row.** Every kept state wraps the in-scope
 elements in something — a panel, a section card, a list wrapper, or the page surface itself — and
 that immediate wrapper is a row like any other. `Element` reads `content container`, in those
@@ -498,7 +516,7 @@ Where the intent was derived from positions rather than read from auto-layout, t
 | Tokens             | the bound variable names the node reports, mapped to the catalog's consumer-facing class or CSS custom property, and — listed separately in the same cell — every raw hex that still needs a mapping                                                                                    |
 | Layout facts       | in words: nesting (which parts share one wrapping flow), stack direction, full-width or not, divider placement and **which element owns it**, which element owns the padding, gap, corner radius, size, and — per icon — **icon name, size and colour token**, and — per text run — its **type token and colour token** |
 | Interaction        | the Figma prototype reaction on the node, named as an element: "the whole value area opens the editor", plus the trigger and the destination state. `—` **plus a grill question** where the node carries no reaction — see below                                                        |
-| Source             | `<fileKey>:<nodeId>` — the **element** node, never a frame and never a page root                                                                                                                                                                                                       |
+| Source             | `<fileKey>:<nodeId>` — the **element** node, never a frame and never a page root; on a row paired from two source nodes, both element ids joined with ` · `                                                                                                                          |
 | DS candidate       | the component from `## Element → DS mapping`, or `—`. In a library repo, also the declaration file the variant ladder resolved at, and the trap where only the trap accepts the variant                                                                                                |
 | **Fidelity class** | `DS as-is` · `DS with overrides` · `local component` · `DS change` · `OPEN`. In a library repo, `local component` is a component the library does not export, and `DS change` is work in this repo                                                                                   |
 
@@ -590,6 +608,11 @@ A Figma node answers through three tools that disagree in predictable ways, so t
 Where a ticket's text disagrees with the node on **copy**, the ticket wins and the row says so —
 Phase 3 already rendered it, and the ledger's `Exact copy` cell carries the winning string with
 the loser noted inline. The node still wins on **layout**.
+
+Where the two element nodes of a paired row disagree with **each other**, nothing above settles
+it: both are the design's own statement, so the row carries both values tagged by node id and a
+`sources disagree on <fact>` grill question, per *The fidelity ledger* above. The order above
+still decides, within each node, which read supplies that node's value.
 
 ### Phase 5 — Write the brief, and save the screenshots
 
