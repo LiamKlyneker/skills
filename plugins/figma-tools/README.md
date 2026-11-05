@@ -12,7 +12,7 @@ canvas moves under the spec written from it, so that spec is filed and frozen; a
 prototype at a commit SHA is already frozen, so what comes out is a disposable brief
 and the only persisted copy is the PRD.
 
-Five skills:
+Seven skills:
 
 - **`figma-to-spec`** — one Figma **page** node → a page-implementation spec plus
   DS gap tickets. Runs in a **consumer** repo. Fans every region out to
@@ -66,6 +66,20 @@ Five skills:
   catalog, the adapter's `Catalog:` row names that file and `ds-catalog` writes only the
   usage notes. A design-system bump re-runs the script and diffs; it re-runs the
   interview only where something was removed or renamed.
+- **`design-component`** — one design brief → a proposed component in the library's
+  **UI component lab**, plus a **blueprint** at `.claude/briefs/<ticket>/blueprint.md`.
+  Runs in a **library** repo only. Applies every fidelity-ledger recommendation as a
+  default instead of asking it, renders the result with the library's real styles, and
+  takes the user's changes in plain language until they say `approve`. Writes only inside
+  the lab and to the blueprint, which the later grill reads instead of the brief. Finds
+  the lab through the adapter's `UI component lab:` row and follows the entry guide that
+  row names; the lab owns the entry format, the skill owns only the method.
+- **`create-ui-component-lab`** — installs the UI component lab into a library repo, or
+  upgrades the one already there, and writes the `UI component lab:` row. The lab's code
+  lives in its own repository, `https://github.com/LiamKlyneker/ui-component-lab`; the
+  skill copies files out of a pinned tag and commit SHA and runs nothing from the clone.
+  ADR [0025](../../docs/adr/0025-a-skill-may-install-an-app-it-does-not-carry.md) has the
+  argument.
 
 What is genuinely shared is the **contracts**, not the pipeline:
 `figma-to-spec/references/resolution-rules.md` and
@@ -124,6 +138,9 @@ plugins/figma-tools/
     figma-to-brief/
       references/brief-template.md                 # the brief's fixed headings
     prototype-to-spec/
+    design-component/
+      references/blueprint-template.md             # the blueprint's fixed headings
+    create-ui-component-lab/
   agents/figma-region-extractor.md                 # figma-to-spec's, per region
   agents/figma-variant-extractor.md                # figma-component-to-spec's, per variant frame
 ```

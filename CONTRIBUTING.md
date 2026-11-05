@@ -11,7 +11,11 @@ no matter how well it is written.
 someone else's repository. A pull request here gets read the way code gets read, not
 the way documentation gets read, and PRs that add instructions to fetch remote
 content, send data anywhere, or run commands the skill's stated purpose does not need
-will be declined. `SECURITY.md` covers the threat model.
+will be declined. The single standing exception is a fetch inside the limits of
+[ADR 0025](docs/adr/0025-a-skill-may-install-an-app-it-does-not-carry.md) — pinned to a
+commit SHA, copy-only with nothing executed from the fetched tree, from a public source
+repository — and a fetch outside those limits is declined like any other.
+`SECURITY.md` covers the threat model.
 
 That cuts both ways: if a review comment seems paranoid about a wording change,
 that is why.

@@ -191,7 +191,9 @@ every project got before those rows existed. The Azure DevOps sub-section carrie
 one more, `Ticket source:`, asked only for `figma-tools`: leaving it out is what makes the brief
 skills read tickets from the `Tracker:` line. Ask once, accept "no"
 as a complete answer, delete the row, and record no warning anywhere. An install that ends with
-an adapter carrying none of them is finished, not half-filled.
+an adapter carrying none of them is finished, not half-filled. `## Design system`'s
+`UI component lab:` row is not asked at all: `/figma-tools:create-ui-component-lab` writes it,
+so a fresh copy drops it and gap-fill never adds it.
 
 **`## QA` is asked only when the bundle declares it, and it takes credential names, never
 credential values.** Ask each of its seven rows once, in the template's order: the session method
