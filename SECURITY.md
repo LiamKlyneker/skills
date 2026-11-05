@@ -45,6 +45,9 @@ maintained in spare time, not a staffed product; there is no bounty.
 - A skill that would run **destructive or irreversible commands** outside what the
   user asked for: force-pushing, deleting branches or files, rewriting history,
   pushing to remotes, or publishing.
+- A skill that **fetches code outside the limits of ADR 0025** — from a branch or an
+  unpinned tag, without checking the commit it resolved to, or that runs anything from
+  the fetched tree.
 - Anything in `install/doctor.sh` — command
   injection, unsafe path handling, writing outside the target project.
 - A `marketplace.json` or `plugin.json` whose `source` resolves somewhere other than

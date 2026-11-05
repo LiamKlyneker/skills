@@ -180,7 +180,9 @@ it makes sense to someone who has never read a skill:
    named-and-dropped overrides, this costs a `library` install one question rather than four.
 6. **The rest of `## Design system`**, per the inference row above: the catalog pointer first
    (nothing else in the section matters without it), then the fingerprint command, the three
-   class-prefix facts, the icon ladder, and last the two optional rows.
+   class-prefix facts, the icon ladder, and last the two optional rows. Never the
+   `UI component lab:` row: `/figma-tools:create-ui-component-lab` writes it when it installs
+   the lab.
 
    **In a `library` repo the catalog question is a different question.** The library's own
    source is the existence source there, so a catalog is never required: ask **"do you want a

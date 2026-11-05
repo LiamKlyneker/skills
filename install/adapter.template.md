@@ -138,6 +138,10 @@ than in the library block below:
 - Gap tracker *(optional)*: `<where a provisional decision files, and under what prefix>` — the tracker and prefix a provisional's ticket is opened under, which is frequently **not** where the spec itself files: the spec is work in this repo, the gap it defers is often the design system's or the designer's. Absent means this repo's own `## Repo` rows — the same target the spec uses.
 - Provisional expiry *(optional)*: `<how long before a provisional is surfaced as overdue>` — so something provisional since eight months ago gets raised rather than quietly becoming permanent. Absent means **no expiry is surfaced**, which is a real answer and nothing warns about it; the decision is still recorded and still findable, it simply never ages into a complaint.
 
+One row a skill writes and `setup` never asks for:
+
+- UI component lab *(optional)*: `<path>` · start: `<command>` · url: `<url>` · guide: `<path to the entry guide>` — the lab this repo renders proposed components in: its folder, the command that serves it, the address it answers on, and the guide that defines its entry format. **Exists only in a `library` repo that has a lab; absent means there is no lab**, and a consumer repo never has the row. Written by `/figma-tools:create-ui-component-lab` when it installs the lab — never by hand and never by `setup`, so a fresh copy of this template drops the row and an adapter without it is not a gap. Read by `/figma-tools:design-component`, which stops without it and names the skill that writes it. Named for its kind, because a repo may register other kinds of lab, each on its own row.
+
 Three rows only a **library** repo fills — the conventions of the design system itself, which
 decide how a spec written *against this repo* is allowed to phrase a change. A repo whose
 `Repo role:` is `consumer` (including one with no role row at all) **deletes these three**, the

@@ -60,6 +60,12 @@ existing adapter and never deletes from it. The installer ships an executable
 paraphrased differently on each run isn't one. ADR
 [0021](docs/adr/0021-every-plugin-ships-its-own-setup.md) has the argument.
 
+**One adapter row is written by a skill, never by `setup`.** `## Design system` → `UI component
+lab:` exists only in a library repo that has a lab: `/figma-tools:create-ui-component-lab` writes
+it when it installs one, and `/figma-tools:design-component` reads it and follows its `guide:`
+to turn a design brief into a proposed component the user steers in the lab. `setup` never asks
+for the row and never treats its absence as a gap; absent means there is no lab.
+
 **A skill ships a script for that reason and no other: the job is mechanical and must produce
 the same answer twice.** Three do, today. The second is
 `plugins/figma-tools/skills/ds-catalog/scripts/generate_catalog.py`, which enumerates a design
@@ -78,6 +84,14 @@ state the run was given. Its numbers are probabilistic, which is exactly what th
 refuses — so it sits beside the release gate and never inside it, pins its model id, and never
 edits the runner's output. ADR
 [0016](docs/adr/0016-a-scorer-beside-the-gate.md) carves that exception and states its limits.
+
+**One skill installs an app it does not carry.** `figma-tools:create-ui-component-lab` puts a
+UI component lab — a Vite + React app — into a library repo, and the app's code lives in its own
+repository, `https://github.com/LiamKlyneker/ui-component-lab`, never in this one. The skill pins
+a tag and the commit SHA that tag must resolve to, stops if they disagree, copies files out of a
+shallow clone and runs nothing from it. The pin moves only with a plugin version bump. ADR
+[0025](docs/adr/0025-a-skill-may-install-an-app-it-does-not-carry.md) has the argument and the
+limits that keep it from becoming a general licence to fetch code.
 
 `INSTALL.md` is the guide for getting any of it onto a machine — marketplace, config
 directories, scopes, the dev mode, and the traps. Keep it accurate; it is written
