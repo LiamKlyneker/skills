@@ -43,8 +43,8 @@ set of adapter questions; a plugin is a unit of distribution. Nothing requires t
 up, and here they demonstrably do not.
 
 `figma-tools` used to prove something else as well — that a bundle could ask *nothing*, since
-its skills read global reference only. **It no longer does.** `figma-to-spec` resolves against a
-per-project catalog and files what it produces, and both of those are project facts, so the
+its skills read global reference only. **It no longer does.** Its brief skills resolve against a
+per-project existence source and name a project gap backlog, and both of those are project facts, so the
 bundle now needs `## Repo` and `## Design system` filled like any other. Every bundle in this
 file asks for at least one section today; the empty-list case below is schema that nothing
 currently uses, not a live example.
@@ -95,13 +95,12 @@ two different rows and they behave differently at install time:
   tracker-bound bundle is installed next. That later install finds an adapter with no
   `Tracker:` line and **both** sub-sections still present, which is the gap-fill case in step
   3a and not a contradiction to stop on.
-- **`figma-tools` — either, so it asks.** `figma-to-spec` files a page spec and its escalated
-  gaps on whichever tracker the project runs, and its two filing rows live *inside* the
-  tracker sub-sections of `## Repo`. An adapter that kept both would hand one page spec two
-  filing targets, so this bundle settles a tracker exactly like a tracker-bound one — it just
-  gets the answer from the human instead of from this table. On a fresh copy: ask, write the
+- **`figma-tools` — either, so it asks.** Its *DS-gap backlog* row lives *inside* the tracker
+  sub-sections of `## Repo`, and the brief skills read the ticket from the `Tracker:` line when
+  there is no `Ticket source:` line. So this bundle settles a tracker exactly like a tracker-bound
+  one — it just gets the answer from the human instead of from this table. On a fresh copy: ask, write the
   `Tracker:` line, delete the other sub-section. Against an adapter that already names a
-  tracker: **never a conflict** — either tracker is one it can file into, so gap-fill and ask
+  tracker: **never a conflict** — either tracker can carry its row, so gap-fill and ask
   nothing. Against `grill`'s leftover (no `Tracker:` line, both sub-sections): ask, and that
   answer settles it for good.
 
@@ -354,52 +353,35 @@ Which skill drives which section:
 
 | Section | Wanted by |
 |---|---|
-| `## Repo` | `figma-to-spec` — the `Tracker:` line its filing phase branches on, plus the two filing rows inside that tracker's sub-section: the **design-spec target** (where a page spec files) and the **DS-gap backlog** (where an escalated gap files). `prototype-to-spec` and `figma-to-brief` read the second of those too, but only to *name* a proposed gap in a brief — they file nothing. Those two also read the optional **`Ticket source:`** line, through `_shared/ticket-source.md`: where the ticket they are handed is read from, when that is not the filing tracker. Absent means the `Tracker:` line, and no other skill reads it. Two rows rather than one because a design system's gaps routinely belong to a different repo or ADO project than the code being specced, and a single row would send them to whichever of the two was written down |
-| `## Design system` | `figma-to-spec` — the design-system source; the **catalog pointer**, which is the only place the catalog is ever named; the **fingerprint command** behind its soft staleness check; the **three class-prefix facts** (Tailwind class prefix, CSS variable prefix, consumer-facing emission form — separate facts, and collapsing them makes a spec recommend a class the app cannot write); and the **icon resolution ladder**, which is per-project and multi-source. Plus three optional rows that degrade silently: the usage-rules sources (absent → the spec cites nothing; **the row may name several**, because UI rules routinely sit in more than one skill), the downstream implementer (absent → a human), and the **fixed scorecard**, the one row here that `figma-tools` does not read — `prd-workflow`'s `to-task`, `work-on-task` and `to-prd-tasks` take a ticket's `## Scorecard` and `## Polish checklist` from the file it names, and derive them from the design brief's fidelity ledger when it is absent. Plus the optional `### Prototype source` sub-section, which `prototype-to-spec` alone reads — its rows say which repo the designers' prototypes live in and how a preview URL resolves to a ref and a path — or, instead of that pair, which directory in this tree holds one — plus which files form the spec there, what shape that spec is, and where a step's screenshot sits. **Absent means this project's designers ship no code prototypes**, and that skill stops when invoked; nothing else notices. Also the **repo role**; the four **provisional-decision** rows, which all default and are asked only in a `library` repo because only `figma-component-to-spec` reads them today; and, where that role is `library`, the three library conventions below, which `figma-component-to-spec` reads in full and `figma-to-brief` reads in part. Last, the optional **`UI component lab:`** row, which `design-component` reads and `create-ui-component-lab` writes when it installs a lab in a `library` repo — never asked, so it is not a gap when absent |
+| `## Repo` | `figma-to-brief` and `prototype-to-brief` — the **DS-gap backlog**, only to *name* a proposed gap in a brief; they file nothing. Also the optional **`Ticket source:`** line, through `_shared/ticket-source.md`: where the ticket they are handed is read from, when that is not the `Tracker:` line. Absent means the `Tracker:` line, and no other skill reads it. |
+| `## Design system` | `figma-to-brief` and `prototype-to-brief` — the design-system source; the **catalog pointer**, which is the only place the catalog is ever named; the **fingerprint command** behind its soft staleness check; the **three class-prefix facts** (Tailwind class prefix, CSS variable prefix, consumer-facing emission form — separate facts, and collapsing them makes a brief recommend a class the app cannot write); and the **icon resolution ladder**, which is per-project and multi-source. Plus two optional rows that degrade silently: the usage-rules sources (absent → the brief cites nothing; **the row may name several**, because UI rules routinely sit in more than one skill), and the **fixed scorecard**, the one row here that `figma-tools` does not read — `prd-workflow`'s `to-task`, `work-on-task` and `to-prd-tasks` take a ticket's `## Scorecard` and `## Polish checklist` from the file it names, and derive them from the design brief's fidelity ledger when it is absent. Plus the optional `### Prototype source` sub-section, which `prototype-to-brief` alone reads — its rows say which repo the designers' prototypes live in and how a preview URL resolves to a ref and a path — or, instead of that pair, which directory in this tree holds one — plus which files form the spec there, what shape that spec is, and where a step's screenshot sits. **Absent means this project's designers ship no code prototypes**, and that skill stops when invoked; nothing else notices. Also the **repo role**; the optional **`Provisional marker`** row, which `design-component` reads; and, where that role is `library`, the two library conventions below. Last, the optional **`UI component lab:`** row, which `design-component` reads and `create-ui-component-lab` writes when it installs a lab in a `library` repo — never asked, so it is not a gap when absent |
 
 **One question in `## Design system` gates the rest.** The **repo role** — `consumer` or
 `library`, and an absent row means `consumer` — is asked first, because it decides whether the
 rest of the section exists at all:
 
-- **`consumer`** (the default, and every adapter written before the row existed): the three
+- **`consumer`** (the default, and every adapter written before the row existed): the two
   library-convention rows are **not asked and not written** — left out of a fresh copy the way
   any inapplicable template row is. A consumer repo renders the design system and files gaps
   against it; it has no variant mechanism of its own to declare.
-- **`library`**: three more rows, all of them facts about the design system's own source that no
+- **`library`**: two more rows, all of them facts about the design system's own source that no
   file states outright — the **variant mechanism** (a ladder in the icon ladder's shape: the
   primary declaration, the fallback, the shapes that are the *implementation* rather than the
   declaration, plus the repo's own trap), the **token pipeline** (a generator plus the source it
   consumes → a spec may state a literal source edit; no generator → a coordinated file-edit
-  list), and the **story convention** (where stories live, and whether `argTypes` are generated
-  from the variants or hand-written — which is what decides whether adding a variant value is
-  also a story edit). `figma-component-to-spec` reads all three; `figma-to-brief` reads the
-  variant mechanism and the token pipeline, which name the source it assembles a library repo's
-  existence list from.
+  list). `figma-to-brief` and `prototype-to-brief` read both, because they name the source a
+  library repo's existence list is assembled from.
 
-**The four provisional rows are gated the same way but for a different reason, and the difference
-matters.** *Gap policy*, *Provisional marker*, *Gap tracker* and *Provisional expiry* are asked
-only in a `library` repo because `figma-component-to-spec` is the only skill reading these four today —
-**not** because a consumer repo has no use for them. It has exactly the same problem, so when the
-consumer side gains the same disposition these rows are already in the right place and no adapter
-has to move. Until then, asking every consumer install four questions nothing consumes is a cost
-with no benefit.
-
-**All four default**, which is what separates them from the three above: an adapter that never
-gains them is not incomplete, it runs on the skill's stated defaults. So a "no" is a complete
-answer to any of them and nothing warns — the same doctrine as the section's two optional rows.
-The one worth actually asking is *Gap policy*, because it is the only one whose default a project
-might genuinely disagree with.
+**`Provisional marker` is optional in a `library` repo.** `design-component` reads it, and an
+adapter without it uses the skill's default, so a "no" is a complete answer and nothing warns.
 
 The role is an **intent, not an inference**: a repo containing a `components/` directory is not
 thereby a library, so it is asked and never read off the tree. `ds-catalog` asks the same
 questions where the adapter has no answer yet, and writes the rows — an install is not the only
 route into the section.
 
-**No longer adapter-free**, and that changed for a reason rather than by drift. These skills
-used to read global reference only, so a repo could run them with no `.claude/project/` at
-all. `figma-to-spec` now resolves every value against a **per-project catalog** it reaches by
-pointer, and **files** what it produces onto the project's tracker — an existence source and a
-filing target are both project facts, and neither has anywhere else to live. So this bundle
+**Not adapter-free.** The brief skills resolve every value against a per-project existence source
+and name a project gap backlog, and neither has anywhere else to live. So this bundle
 runs a real interview like every other one.
 
 Neither optional row is a question worth pressing on. "There is no best-practices doc" and

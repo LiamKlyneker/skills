@@ -1,37 +1,15 @@
 # figma-tools
 
-The design-to-spec skills, packaged as a Claude Code plugin, plus **an
-extraction agent each** for the two Figma ones — `figma-region-extractor` for pages,
-`figma-variant-extractor` for component sets — and `ds-catalog`, which authors
-the per-project design-system catalog every one of them resolves against.
+The design-to-brief skills, packaged as a Claude Code plugin, plus `ds-catalog`, which authors
+the per-project design-system catalog they resolve against.
 
-**Two design sources, one slot in the flow.** A Figma canvas and a designer-authored
-code prototype produce the same downstream artifact — something `deep-grill` can
-grill from — by different routes, and the difference is what each source *is*: a
-canvas moves under the spec written from it, so that spec is filed and frozen; a
-prototype at a commit SHA is already frozen, so what comes out is a disposable brief
-and the only persisted copy is the PRD.
+**One spec per piece of work.** Design work gets no spec of its own. A Figma canvas and a
+designer-authored code prototype each produce a disposable **brief**, the grill resolves it, and
+the grill's output is the one spec. ADR
+[0026](../../docs/adr/0026-design-work-enters-through-a-brief.md) has the argument.
 
-Seven skills:
+Five skills:
 
-- **`figma-to-spec`** — one Figma **page** node → a page-implementation spec plus
-  DS gap tickets. Runs in a **consumer** repo. Fans every region out to
-  `figma-region-extractor`, and resolves against a project catalog it cannot run
-  without.
-- **`figma-component-to-spec`** — one Figma **component set** → one component
-  spec. Runs in a **library** repo: the repo that *is* the design system. **Same
-  resolution rules and same catalog contract; a different extractor agent, a
-  different existence source, and no regions.** The **whole spec skeleton comes
-  from three set-level reads** — root `get_metadata` (the axis lattice), root
-  `get_variable_defs` (every named binding across the set) and one wide root
-  `get_screenshot` — made once per run, so the pre-checkpoint cost is a fixed
-  constant independent of how many variants the set draws.
-  `figma-variant-extractor` then runs as a **verification pass on a single-digit
-  shortlist**: one agent per shortlisted frame, spawned to confirm or contradict
-  the skeleton's slice and to find the things a variable dump structurally cannot
-  see (unbound raw hex above all). A shortlist of **zero** is a complete run. Its
-  existence source is a **token list** assembled from the adapter's *Token
-  pipeline* row, which a catalog contributes to where one is registered.
 - **`figma-to-brief`** — one or more Figma nodes from one file plus one ticket →
   a **design brief** at `.claude/briefs/<ticket>.md`, with one PNG per in-scope
   state saved beside it.
@@ -43,14 +21,14 @@ Seven skills:
   library's own source through the *Variant mechanism* and *Token pipeline* rows,
   with a registered catalog as a cross-check only. In a library repo a `DS change`
   row is work in this repo, never a gap filed against another one. **Same brief slot as
-  `prototype-to-spec`, a different source**: a canvas instead of a committed
+  `prototype-to-brief`, a different source**: a canvas instead of a committed
   prototype spec. It asks nothing and files nothing — every judgement becomes a
   row, and `deep-grill` is where a human answers it. No subagents: a brief covers
   one ticket's states, and a region agent's JSON would have to be re-flattened into
   ledger rows anyway. Its Figma seat, call budget, pin rule and screenshot export
   come from the adapter's `## Design system` → `### Figma source` rows, and an
   absent sub-section is a STOP.
-- **`prototype-to-spec`** — one preview URL plus one ticket → a **design brief** at
+- **`prototype-to-brief`** — one preview URL plus one ticket → a **design brief** at
   `.claude/briefs/<ticket>.md`. Runs in a **consumer** repo, reads the designers'
   committed spec at a pinned SHA, filters it to the ticket, renders the ticket's
   overrides on top, and resolves every element and token against the catalog at three
@@ -81,24 +59,14 @@ Seven skills:
   ADR [0025](../../docs/adr/0025-a-skill-may-install-an-app-it-does-not-carry.md) has the
   argument.
 
-What is genuinely shared is the **contracts**, not the pipeline:
-`figma-to-spec/references/resolution-rules.md` and
-`figma-to-spec/references/catalog-contract.md` are one file each with three
-readers, referenced by relative path and never copied. What stopped being shared
-is the agent (two now, with different call disciplines and different return
-schemas), the unit of extraction (a region vs. a variant frame), and the
-catalog's status — a hard requirement for `figma-to-spec`, an optional
-cross-check for `figma-component-to-spec`, which stops only when **no** existence
-source resolves at all. `figma-to-brief` takes the catalog either way, by the repo
-role: required in a consumer repo, a cross-check in a library one.
+The brief skills share two contracts, `figma-to-brief/references/resolution-rules.md` and
+`figma-to-brief/references/catalog-contract.md`, and `references/existence-source.md`. They are
+referenced by relative path and never copied. Those paths resolve identically in this working tree
+and in an install cache copy, because every skill ships in one plugin.
 
-**The two spec skills are mutually exclusive by repo, and both enforce it.** The
-adapter's `## Design system` → `Repo role:` row decides which one may run;
-**an absent row means `consumer`**, so an install that predates the row keeps
-running `figma-to-spec` untouched and only the new skill refuses. Each guard is a
-STOP with a one-line redirect to its sibling, checked before any Figma read.
-`figma-to-brief` has no such guard: it runs on both sides and reads the same row
-to choose its existence source and what a `DS change` row means.
+Both brief skills read the adapter's `Repo role:` row to choose the existence source: the catalog
+in a consumer repo, and a list assembled from the library's own source in a library repo, with a
+registered catalog as a cross-check. An absent row means `consumer`.
 
 ## Install
 
@@ -108,10 +76,7 @@ to choose its existence source and what a `DS change` row means.
 
 ## Naming
 
-Not `figma-to-spec` — plugin skills are invoked as `plugin:skill`, so a plugin
-named after its own skill would double up as `/figma-to-spec:figma-to-spec`.
-
-And not plain `figma` either, which is what PRD #16 originally specified. That
+Not plain `figma`, which is what PRD #16 originally specified. That
 name is **already taken by `figma@claude-plugins-official`**, Anthropic's own
 Figma integration, which is installed and enabled in `~/.claude` — and all three
 config dirs have that marketplace added, so the other two are one install away
@@ -120,7 +85,7 @@ from the same clash. The collision is not marketplace-only: linking a second
 `✘ Not loaded — the name "figma" is already taken`, and a `--plugin-dir` load
 collides with an installed `figma` just as readily.
 
-`figma-tools` collides with nothing and yields `/figma-tools:figma-to-spec`.
+`figma-tools` collides with nothing and yields `/figma-tools:figma-to-brief`.
 
 ## Layout
 
@@ -129,36 +94,19 @@ plugins/figma-tools/
   .claude-plugin/plugin.json
   skills/
     _shared -> ../../../_shared                    # symlink
-    figma-to-spec/
-      agents/figma-region-extractor.md -> ../../../agents/figma-region-extractor.md
-    figma-component-to-spec/
-      references/regression/                       # fixture format + assertion style
     ds-catalog/
       scripts/generate_catalog.py                  # the enumerated half; no skill-specific input
     figma-to-brief/
       references/brief-template.md                 # the brief's fixed headings
-    prototype-to-spec/
+      references/catalog-contract.md               # the catalog's shape
+      references/resolution-rules.md               # how a property resolves
+      references/existence-source.md               # catalog or assembled list, by repo role
+      references/figma-read-discipline.md          # how one node is read
+    prototype-to-brief/
     design-component/
       references/blueprint-template.md             # the blueprint's fixed headings
     create-ui-component-lab/
-  agents/figma-region-extractor.md                 # figma-to-spec's, per region
-  agents/figma-variant-extractor.md                # figma-component-to-spec's, per variant frame
 ```
-
-`ds-catalog` and `figma-component-to-spec` reach the shape contract by a plain
-relative path, `../figma-to-spec/references/catalog-contract.md` — as
-`figma-component-to-spec` also reaches `resolution-rules.md`. All three skills
-ship in one plugin, so those paths resolve identically in this working tree and
-in an install cache copy — and so do `prototype-to-spec` and `figma-to-brief`,
-which reach the same contract the same way — and they need no symlink, because
-nothing about them decides whether a skill loads. `figma-component-to-spec` addresses **its own**
-agent at the plugin root instead — `../../agents/figma-variant-extractor.md` from
-`SKILL.md`, `../../../` from its `references/`, and `../../../../` from
-`references/regression/` — the same way `prd-workflow`'s `work-on-prd` addresses
-`prd-worker`. It has no docs written against an inner path, so it needs no nested
-link of its own. It deliberately never addresses `figma-region-extractor`:
-spawning the page agent on a variant frame would hand a page contract the wrong
-unit of work, so that agent is not even checked for on the component side.
 
 Nothing sits at the plugin root — same reason as `plugins/prd-workflow/`: a
 root `SKILL.md` alongside a `skills/` subdirectory registers twice.
@@ -182,44 +130,3 @@ reasoning and evidence — repeated here only where this plugin differs):
 - **`skills/_shared -> ../../../_shared`.** Same depth as `prd-workflow`'s
   placement (`plugins/<name>/skills/` is three levels below the repo root
   either way), so the identical relative target is correct verbatim.
-- **Compat shims — gone (#26).** The top-level `figma-to-spec` name survived the
-  migration as a symlink into `plugins/figma-tools/skills/figma-to-spec` so that
-  consumers' links kept resolving during the cutover. #24 repointed them at the
-  plugin and #26 deleted the shim. Nothing reaches this plugin by a pre-plugin
-  path, and ADR [0010](../../docs/adr/0010-one-distribution-one-dev-mode.md)
-  retired the route those links belonged to outright.
-
-### The nested agent link is not a shim, and stays
-
-`skills/figma-to-spec/agents/figma-region-extractor.md -> ../../../agents/figma-region-extractor.md`
-outlives the migration because it was never only a compat shim. The skill's own
-docs address the agent from **inside** the skill — `SKILL.md` as
-`agents/figma-region-extractor.md`, `references/phases.md` and
-`references/resolution-rules.md` as `../agents/figma-region-extractor.md` — and
-those paths have to resolve in an installed cache copy as well as here. The link
-is what makes them resolve while the real file lives at the plugin root, where
-the platform discovers agents.
-
-`prd-workflow`'s nested link had no such second reason — it existed purely because
-two consumer repos linked the inner path — so #26 deleted it and rewrote
-`work-on-prd/SKILL.md` to address `../../agents/prd-worker.md` instead. The
-asymmetry is deliberate.
-
-### Both agents register namespaced
-
-The types are **`figma-tools:figma-region-extractor`** and
-**`figma-tools:figma-variant-extractor`**, because a plugin namespaces every
-component it provides. A bare `figma-region-extractor` / `figma-variant-extractor`
-only exists where the file was hand-placed in an `agents/` directory. Each skill
-checks both names before falling back to `general-purpose` with the agent's own
-body pasted in — `figma-to-spec` at Phase 0 step 3c, `figma-component-to-spec` at
-Phase 1 (Setup) step 5c. The check is not optional politeness: an unresolvable
-`subagent_type` does not error, it silently degrades to `general-purpose`, so a
-run that never announced which name resolved is a run nobody can tell apart from
-a correct one.
-
-## Out of scope
-
-`figma-component/` and `tokens-init/` were the two top-level skills this one
-superseded. They sat deprecated and unlinked for a while pending #9 and #14;
-ADR [0010](../../docs/adr/0010-one-distribution-one-dev-mode.md) deleted them.

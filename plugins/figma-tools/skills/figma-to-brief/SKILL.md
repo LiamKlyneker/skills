@@ -17,7 +17,7 @@ metadata:
 
 # Figma → Brief
 
-A **design source in the brief slot**, beside `prototype-to-spec` and in the same place in the
+A **design source in the brief slot**, beside `prototype-to-brief` and in the same place in the
 flow. The input is a canvas: one Figma node, or several from one file, in the organisation the
 adapter's `### Figma source` rows name, read through the local `figma-dev-mode` MCP server against
 the file open in Figma Desktop.
@@ -38,9 +38,7 @@ Figma file at one version, it is written to an excluded directory, and it is reg
 than updated. The durable artifact is what the third step files: the `[SPEC]` work item on Azure
 DevOps, the issue on GitHub.
 
-That is the deliberate difference from `figma-tools:figma-to-spec`, which files a `[DESIGN-SPEC]`
-work item and has to freeze what it saw because the canvas moves under it. This skill files
-nothing, on any tracker. What keeps the brief checkable is the **pin line** — file key, every
+This skill files nothing, on any tracker. What keeps the brief checkable is the **pin line** — file key, every
 node id and version — not a filed copy.
 
 ## What this replaces, and why it exists
@@ -126,17 +124,16 @@ would fix it. There is no degraded mode and no partial brief.
   running app.
 - **The existence source**, per `references/existence-source.md` — what every element and token
   resolves against. In a consumer repo it is the catalog, per
-  `../figma-to-spec/references/catalog-contract.md`: validate the resolved file against that
-  contract and fail loudly rather than degrade, exactly as `figma-to-spec` Phase 0 does. In a
+  `references/catalog-contract.md`: validate the resolved file against that
+  contract and fail loudly rather than degrade. In a
   library repo it is a list assembled from the library's own source, with a registered catalog as
   an optional cross-check.
-- **The resolution rules**, `../figma-to-spec/references/resolution-rules.md` — property-kind
+- **The resolution rules**, `references/resolution-rules.md` — property-kind
   filtering, colour tiers and tolerance, typography and spacing, and the icon ladder's mechanics.
   **Cited, never restated**: this skill adds the fidelity classification on top of them and does
   not re-derive how a colour resolves.
-- **The extraction discipline**, `../../agents/figma-region-extractor.md`, its
-  *Figma call discipline* and *Two filters that apply before anything below* sections. Read them
-  and apply them on the main thread. Two of its rules are load-bearing here and are restated in
+- **The extraction discipline**, `references/figma-read-discipline.md`. Read it and apply it on
+  the main thread. Two of its rules are load-bearing here and are restated in
   Phase 4 because a reader who skips the file still has to obey them: **hidden state-bearing
   nodes are in-scope content**, and **vector interiors are drawing data, not design decisions**.
 - **`$FIGMA_PAT`** — a Figma personal access token with `files:read`, in the environment. It is
@@ -146,9 +143,9 @@ would fix it. There is no degraded mode and no partial brief.
 
 ## Phases
 
-All on the main thread. **No subagents.** `figma-to-spec` fans out over a whole page because a
-page has many regions; a brief covers one ticket's states, and a region agent's JSON would have
-to be re-flattened into ledger rows anyway — the flattening is where fidelity leaks.
+All on the main thread. **No subagents.** A brief covers one ticket's states, and a subagent's
+output would have to be re-flattened into ledger rows anyway — the flattening is where fidelity
+leaks.
 
 | Phase                    | Does                                                                                                                              |
 | ------------------------ | --------------------------------------------------------------------------------------------------------------------------------- |
@@ -200,7 +197,7 @@ Read the adapter. Establish, and stop on any of them:
    and never inferred from the tree. `references/existence-source.md` carries both origins in
    full.
    - **`consumer`** — resolve the catalog through the `Catalog:` pointer and validate it against
-     the shape contract, which is the same gate `figma-to-spec` runs and fails the same way.
+     the shape contract.
    - **`library`** — where the `Catalog:` pointer names a catalog, resolve and validate it exactly
      as a consumer does; it is then a cross-check. Assemble the existence list from the library's
      own source per `references/existence-source.md`: tokens, typography and dimensions from the
@@ -343,7 +340,7 @@ Three populations, one resolution pass:
    because a canvas has no components for them, and an implementer copying the drawing faithfully
    reproduces a component that already ships.
 
-Resolve each per `../figma-to-spec/references/resolution-rules.md` — **property-kind filtering
+Resolve each per `references/resolution-rules.md` — **property-kind filtering
 first**, then the colour tiers, the typography and spacing split, and the icon ladder. Two of
 that file's consequences decide rows here and are not negotiable: a numerically perfect match
 from the wrong property kind is a **wrong** row, not a lucky one; and **vector interiors inside
@@ -413,8 +410,9 @@ library's source is what a match is checked against. Everything above still appl
 things are specific to this side.
 
 - **Components resolve source-first, through the `Variant mechanism` ladder.** Walk it in its
-  stated order, stop at the first rung that resolves, and honour the trap the row names — the
-  same walk as `../figma-component-to-spec/references/phases.md`, *3.1 — The source read*.
+  stated order, stop at the first rung that resolves, and honour the trap the row names. Never walk further after a rung resolves, and never substitute a
+  mechanism inferred from the code: conditional `className` branches or a switch on a prop are
+  the implementation of a variant, not its declaration.
   **Name the file the ladder resolved at**: the `DS candidate` cell carries the component name
   and that declaration file, `<Component> — <declaration file>`. A registered catalog is a cross-check only, per
   `references/existence-source.md`, and where it disagrees with the source the source wins.
@@ -718,9 +716,9 @@ and node links.
    usual cause is a file that is not open in Figma Desktop, because the local server reads the
    running app — say so.
 6. **No existence source.** The origin follows `Repo role:`, and so does the gate. On both sides,
-   a registered catalog that fails the shape contract or names a path that does not exist stops
-   exactly as `figma-to-spec` does, naming the resolved paths, the rule and the fix.
-   - **(a) Consumer: no catalog** → stop exactly as `figma-to-spec` does, naming the resolved
+   a registered catalog that fails the shape contract or names a path that does not exist stops,
+   naming the resolved paths, the rule and the fix.
+   - **(a) Consumer: no catalog** → stop, naming the resolved
      paths, the rule and the fix.
    - **(b) Library: no token source behind the `Token pipeline` row, and no registered catalog**
      → stop, naming each thing looked for and where: the row's value, each file it names and

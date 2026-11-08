@@ -16,7 +16,7 @@ unambiguously and needs no edit.
 
 Any skill that resolves a design against a design system reads this file for both halves. The
 consumer half is short because the catalog already exists and its shape is
-`../../figma-to-spec/references/catalog-contract.md`. The library half is most of this file,
+`catalog-contract.md`. The library half is most of this file,
 because there the list is built at run time.
 
 ## The guarantee
@@ -34,9 +34,8 @@ why nobody catches it. A catalog is one way to supply the list; the guarantee ne
 
 Resolve it through the adapter's `Catalog:` pointer, read every path it names and treat the
 union as the catalog, then validate it against
-`../../figma-to-spec/references/catalog-contract.md`. No catalog, a catalog that fails the
-contract, or a named path that does not exist is a STOP, exactly as `figma-to-spec` Phase 0
-stops. Nothing else in this file applies on the consumer side.
+`catalog-contract.md`. No catalog, a catalog that fails the
+contract, or a named path that does not exist is a STOP. Nothing else in this file applies on the consumer side.
 
 ## Library: the assembled list
 

@@ -11,7 +11,7 @@ Single home for every project-specific fact the skills need. Workflow skills (`w
 ## Repo
 
 - Tracker: `<github|azure-devops>` — **an absent `Tracker:` line means `github`.** Every adapter written before this line existed is a GitHub project, so a filled adapter that never gained the line still reads unambiguously, and needs no edit.
-- Ticket source *(optional)*: `<ticket-source>` — one of `jira · site <jira-site>`, `github · repo <owner>/<repo>` or `azure-devops · org <ado-org> · project <ado-workitem-project>`. It names where the skills that take a ticket as input **read** it. `Tracker:` is where work is **filed**; this line is the other half of that pair, for a project that keeps its tickets on a different system from the one it files on — tickets in Jira, work filed on GitHub. **Absent → tickets are read from the `Tracker:` line**, so an adapter without the line needs no edit and nothing warns. The line carries its own locator because the adapter keeps only the filing tracker's sub-section below. Never write it naming the same system as `Tracker:`. Read by `figma-to-brief` and `prototype-to-spec`, through `_shared/ticket-source.md`; no skill files anything against it.
+- Ticket source *(optional)*: `<ticket-source>` — one of `jira · site <jira-site>`, `github · repo <owner>/<repo>` or `azure-devops · org <ado-org> · project <ado-workitem-project>`. It names where the skills that take a ticket as input **read** it. `Tracker:` is where work is **filed**; this line is the other half of that pair, for a project that keeps its tickets on a different system from the one it files on — tickets in Jira, work filed on GitHub. **Absent → tickets are read from the `Tracker:` line**, so an adapter without the line needs no edit and nothing warns. The line carries its own locator because the adapter keeps only the filing tracker's sub-section below. Never write it naming the same system as `Tracker:`. Read by `figma-to-brief` and `prototype-to-brief`, through `_shared/ticket-source.md`; no skill files anything against it.
 - Default branch: `<main>`
 - Related repos (cross-repo issues, API contracts): `<owner>/<other-repo>` — or "None"
 
@@ -23,7 +23,7 @@ Tracker `github`, and what an adapter carrying no `Tracker:` line falls back to.
 
 - Issue tracker / PRs: `<owner>/<repo>` (GitHub, via `gh`)
 - PRs must target the default branch — `Closes` keywords only fire against it.
-- Title prefixes: `[PRD]` · `[TASK]` · `[BUG]` · `[FINDINGS]` — literal, at the start of the title. A **human scanning convention, not a filter**: `[PRD]` is a parent, `[TASK]` a planned child, `[BUG]` a triaged finding, `[FINDINGS]` a disposable per-run issue `manual-qa` writes findings to. A PRD's children are its **native sub-issues**, so nothing keys on a title — `[FINDINGS]` issues are free-standing and never linked as one. There is no `[QA]` prefix on GitHub — `work-on-prd` only labels the PRD `needs-qa` and prints the `manual-qa` invocation; a human runs that on demand. A project that also runs `figma-tools` gains one more, `[DESIGN-SPEC]`, written by that bundle alone and filed against the *design-spec target* row below. Change them here if this repo uses different ones; never in a skill.
+- Title prefixes: `[PRD]` · `[TASK]` · `[BUG]` · `[FINDINGS]` — literal, at the start of the title. A **human scanning convention, not a filter**: `[PRD]` is a parent, `[TASK]` a planned child, `[BUG]` a triaged finding, `[FINDINGS]` a disposable per-run issue `manual-qa` writes findings to. A PRD's children are its **native sub-issues**, so nothing keys on a title — `[FINDINGS]` issues are free-standing and never linked as one. There is no `[QA]` prefix on GitHub — `work-on-prd` only labels the PRD `needs-qa` and prints the `manual-qa` invocation; a human runs that on demand. Change them here if this repo uses different ones; never in a skill.
 - Triage labels: `needs-triage` → `ready-to-start` → `state:in-progress` → `state:done-on-branch`. All four must exist in the repo. The vocabulary is normative in `work-on-prd`'s `## Label vocabulary`; it is restated here so a cold session holding only this adapter knows which tracker and which labels to use without asking. Rename them if this repo already uses different words — keep the four roles.
 
 Two rows that decide what a run's branch and pull request look like **to the team**. Both are **optional and independent**, and both are read by `prd-workflow` alone. An adapter that declares neither behaves exactly as it did before these rows existed — so leaving either out is a finished answer, not a gap, and nothing warns about an absent row:
@@ -31,10 +31,9 @@ Two rows that decide what a run's branch and pull request look like **to the tea
 - Branch pattern *(optional)*: `<gh-branch-pattern>` — the branch a run creates, written in this file's own placeholder notation. The only tokens anything substitutes are `<n>` (the PRD's issue number) and `<slug>` (its title, slugged, with the leading `[…]` group stripped), and **every placeholder is optional** — a pattern that uses neither, like `release`, is legal. E.g. `feat/<slug>`. **Absent → `prd/<n>-<slug>`.** Purely cosmetic: nothing resolves a run *by* this name, so changing it mid-flight costs nothing.
 - PR template *(optional)*: `<path-to-pr-template>` — this project's pull-request template, as a **repo-relative path to one file** (`.github/pull_request_template.md`, or a single file inside a `.github/PULL_REQUEST_TEMPLATE/` directory). **A path is strongly preferred**, because the loop then reads the team's live file and the PR body keeps tracking it as the team edits it. Only when the project has no template file anywhere does this row instead carry a **content snapshot**: write the literal word `snapshot` as the value and the template body fenced beneath the row. `doctor` reports a snapshot as possibly stale on every run, deliberately — nothing can tell it when the real template moved on. **Absent → the loop's own PR skeleton.** The loop takes the template's *structure* only; draft state, target branch and its own bookkeeping stay the orchestrator's.
 
-Two filing rows only `figma-tools` reads, and they are read by different skills in it. A project that never runs the bundle deletes both; a project that does fills both, because they answer different questions:
+One filing row only `figma-tools` reads. A project that never runs the bundle deletes it:
 
-- Design-spec target: `<owner>/<repo>` — where a `figma-to-spec` page spec files, as a `[DESIGN-SPEC]` issue. When Phase 0 was given a scope issue, the spec is linked as that issue's **native sub-issue** — the link is what makes it a child, so its body carries no `## Parent` section.
-- DS-gap backlog: `<owner>/<design-system-repo>` — where an **escalated** design-system gap files, one issue per gap. `figma-to-spec` files against it; `prototype-to-spec` only **names** it, proposing gaps in its brief and filing none. **Routinely a different repo from the row above**, because a gap belongs to the design system rather than to the code being specced. Where the two genuinely are the same repo, write the same value twice — never leave one implied.
+- DS-gap backlog: `<owner>/<design-system-repo>` — where an **escalated** design-system gap would file, one issue per gap. `figma-to-brief` and `prototype-to-brief` only **name** it, proposing gaps in a brief and filing none.
 
 ### Azure DevOps
 
@@ -62,8 +61,6 @@ Tracker `azure-devops`. Work items are reached through the Azure DevOps MCP serv
 
   Why one type rather than the obvious types: a Task parented to a Task drops the parent off the taskboard and disables reordering board-wide, and where the project sets `bugsBehavior: 1` (bugs managed *with* requirements) a Bug-type item is requirement-level and renders as its own sibling swimlane instead of a child. One Task-type child per kind, distinguished by prefix, is what survives both.
 
-  A project that also runs `figma-tools` gains one more, `[DESIGN-SPEC]`, written by that bundle alone and filed against the *design-spec target* row below.
-
   Change the words here if this org uses different ones; never in a skill.
 - Branch pattern: `<ado-branch-pattern>` — e.g. `spec/<id>-<slug>`, where `<id>` is the `[SPEC]` work-item id
 
@@ -74,10 +71,9 @@ absent row:
 
 - PR template *(optional)*: `<path-to-pr-template>` — this project's pull-request template, as a **repo-relative path to one file** (`.azuredevops/pull_request_template.md`, the `.vsts/` and `docs/` variants Azure Repos also honours, or a single file inside a `.azuredevops/pull_request_template/` directory). **A path is strongly preferred**, because the loop then reads the team's live file and the PR body keeps tracking it as the team edits it. A `../` path is legal and names the case where several sibling repos in one working folder share one template — the file is then outside the repo, so it exists only where that folder does, and an adapter carrying such a path is meaningful on the machines that have it and nowhere else. Only when the project has no template file anywhere does this row instead carry a **content snapshot**: write the literal word `snapshot` as the value and the template body fenced beneath the row. `doctor` reports a snapshot as possibly stale on every run, deliberately — nothing can tell it when the real template moved on. **Absent → the loop's own PR skeleton.** The loop takes the template's *structure* only; draft state, target branch and its own bookkeeping stay the orchestrator's.
 
-Two filing rows only `figma-tools` reads, and they are read by different skills in it. A project that never runs the bundle deletes both; a project that does fills both, because they answer different questions:
+One filing row only `figma-tools` reads. A project that never runs the bundle deletes it:
 
-- Design-spec target: `<ado-designspec-project>` — the ADO project a `figma-to-spec` page spec files into, as a `[DESIGN-SPEC]` work item. When Phase 0 was given a scope work item, the spec is filed as its **child**.
-- DS-gap backlog: `<ado-ds-backlog-project>` — the ADO project whose backlog an **escalated** design-system gap files into, one item per gap. `figma-to-spec` files against it; `prototype-to-spec` only **names** it, proposing gaps in its brief and filing none. **Routinely a different project from the row above**, because a gap belongs to the design system rather than to the code being specced. Where the two genuinely are the same project, write the same value twice — never leave one implied.
+- DS-gap backlog: `<ado-ds-backlog-project>` — the ADO project whose backlog an **escalated** design-system gap would file into, one item per gap. `figma-to-brief` and `prototype-to-brief` only **name** it, proposing gaps in a brief and filing none.
 
 ## Commands
 
@@ -106,7 +102,7 @@ tree at run time, which is why every line is here rather than left to a skill.
 
 - Repo role: `<consumer|library>` — **an absent `Repo role:` row means `consumer`.** Which side of the design system this repo sits on: a `consumer` renders the design system and files gaps against it; a `library` **is** the design system, so a spec written here changes the thing everyone else resolves against. Every adapter written before this row existed belongs to a consumer repo, so an adapter that never gained the row still reads unambiguously and needs no edit. The role is an **intent, not an inference** — a repo that happens to contain a `components/` directory is not thereby a library — so it is always asked and never guessed from the tree.
 - Design-system source: `<where the design system itself lives — repo path, workspace package, or published package + version>` — the thing a catalog is generated *from* and a gap is eventually built *in*. Or "None — `<how the design system is consumed instead>`". In a `library` repo this points at this repo itself.
-- Catalog: `<path>` · `<further path, optional>` — this project's design-system catalog: the existence source `figma-to-spec` resolves every component, token, type utility and icon against. **This row is the only place the catalog is ever named**, exactly as `## Project gates` is the only place a gate is named — skills follow the pointer and never a filename. **One path or several**, separated by ` · `; each is a file, or a directory meaning every markdown file directly inside it, and the catalog is the **union** of all of them. Each path is relative to this file, or anywhere in the repo — including inside an installed dependency, where the design-system package ships its own generated catalog; the usual shape is then that file followed by the project's own usage notes. Which source wins where two state the same entry, and the required shape of the whole, are the `figma-to-spec` skill's `references/catalog-contract.md`; a catalog that fails that contract stops the run loudly rather than degrading, and so does a path that does not exist — for a path inside a dependency, the fix is installing the project's dependencies. **In a `library` repo the row is optional** — the library's own source is the existence source there, and a registered catalog is a cross-check only.
+- Catalog: `<path>` · `<further path, optional>` — this project's design-system catalog: the existence source the brief skills resolve every component, token, type utility and icon against. **This row is the only place the catalog is ever named**, exactly as `## Project gates` is the only place a gate is named — skills follow the pointer and never a filename. **One path or several**, separated by ` · `; each is a file, or a directory meaning every markdown file directly inside it, and the catalog is the **union** of all of them. Each path is relative to this file, or anywhere in the repo — including inside an installed dependency, where the design-system package ships its own generated catalog; the usual shape is then that file followed by the project's own usage notes. Which source wins where two state the same entry, and the required shape of the whole, are the `figma-to-brief` skill's `references/catalog-contract.md`; a catalog that fails that contract stops the run loudly rather than degrading, and so does a path that does not exist — for a path inside a dependency, the fix is installing the project's dependencies. **In a `library` repo the row is optional** — the library's own source is the existence source there, and a registered catalog is a cross-check only.
 - Fingerprint command: `<the command that recomputes the catalog's stamp>` — the recipe behind the catalog's line-1 `fingerprint:` value. The catalog carries the *value*; this row carries the *recipe*, so the two never drift into two definitions. Hash **content only** — anything path-dependent differs between two checkouts of the same commit and turns every check into a false warning. Or "None — staleness unchecked", which is a real answer: the staleness check is soft and never fails a run.
 - Class prefixes — **three separate facts, and they are not interchangeable.** A design system routinely prefixes its build internally, its CSS custom properties differently, and emits something else again to consumers; collapsing them is how a spec recommends a class the app cannot write:
   - Tailwind class prefix: `<prefix, or "None">` — what the Tailwind theme prefixes emitted utilities with, if anything.
@@ -114,43 +110,23 @@ tree at run time, which is why every line is here rather than left to a skill.
   - Consumer-facing emission form: `<the form an app actually writes, spelled out with one example>` — the form the catalog is written in and the form a spec must recommend. Where it differs from the library-internal form, say which is which and say it here rather than in a skill.
 - Icon resolution ladder: `<source 1 → source 2 → … → what happens when none matches>` — the icon sources this project tries, **in order**. Multi-source by default: an in-house set plus a third-party library used by consuming apps is the common shape, and where a source may be used (app layer only, design system only, both) is part of the answer. The catalog says what each source *contains*; this row says which order they are tried in and what a no-match becomes.
 - Usage-rules sources *(optional)*: `<one or more best-practices docs or skills a spec cites rules from, by stable name>` — the HOW, kept separate from the catalog's WHAT. A spec **cites** them and never duplicates them, so a citation stands even where the source is not loaded. **Several pointers are normal**, because UI rules routinely sit in more than one place — a design-system skill and a local-components skill, say. Write them as a list, or as one index file that names the rest; either is a finished answer, and a consumer that has exactly one writes exactly one. A rule is cited by **name plus the source it came from**, so two sources that happen to name a rule the same thing stay distinguishable. **Absent is not an error**: leave the row out and a spec cites nothing. Nothing warns about it.
-- Downstream implementer *(optional)*: `<the skill or workflow that implements a filed spec>` — who picks a `[DESIGN-SPEC]` up. **Absent means a human.** Also not an error, also never warned about.
 - Fixed scorecard *(optional)*: `<path to the file that carries a per-ticket scorecard and polish checklist>` — the verify checklist a fidelity ticket is scored against, when this project keeps one written down. Read by `to-task`, `work-on-task` and `to-prd-tasks`, and only for the ticket the file names; any other ticket derives its rows from the design brief's fidelity ledger instead. **Absent means derive** — the default path, per `_shared/fidelity-ledger.md` §5. Not an error, never warned about.
 
-Four rows about **provisional decisions** — what happens when the *inputs* to a spec are
-incomplete rather than the run being invalid. A design file that has not defined a variable yet,
-a token that does not exist on this side, a Figma-vs-code disagreement: none of those makes a run
-unable to produce anything valid, and blocking on them is what stops anyone running the skill a
-second time. Instead an eligible gap **ships with a value chosen now**, carrying one stable id
-across four surfaces — the marker comment at the point of use, the tracker item, the spec's
-`## Provisional decisions` section, and the run record — so `grep` on the marker gives a live
-inventory of every place the implementation is ahead of the design, and a later run reads those
-markers rather than re-asking about them.
+One row about **provisional decisions**. Where a value is chosen before the design system has it,
+`design-component` labels it at the point of use with this marker, so `grep` gives a live inventory.
+The row defaults, so an adapter without it reads unambiguously and needs no edit:
 
-**All four default, so an adapter that never gains them still reads unambiguously and needs no
-edit** — the same doctrine as `Repo role:` above. Only `figma-component-to-spec` reads these four today,
-so `setup` asks for them only in a `library` repo; they are **not library-only in
-principle** — a consumer repo has exactly the same problem — which is why they sit here rather
-than in the library block below:
-
-- Gap policy *(optional)*: `<which kinds of gap may ship provisionally, and which must stop and ask>` — the default disposition, **per kind**. Absent means the skill's own stated default: a gap that lands in the **token layer** or in the **Figma library** may ship provisionally, because a colour or a dimension is cheap and reversible — pick wrong and one line changes later. A gap that changes the **component's API** — a new variant axis, a new value on an axis, a props signature — **always stops and asks a human**, because consumers write against it and it cannot be taken back without a breaking change. Widen or narrow that here; the point of the row is that the policy is per kind rather than one global switch.
 - Provisional marker *(optional)*: `<the literal comment syntax, per file type>` — what the marker at the point of use looks like, so it is **greppable and lintable** by this project's own tooling. Absent means `PROVISIONAL(<id>): <what should replace it>` inside whatever comment syntax the file already uses. Writing the lint that enforces it is this project's job, not the skill's; this row is what makes writing one possible.
-- Gap tracker *(optional)*: `<where a provisional decision files, and under what prefix>` — the tracker and prefix a provisional's ticket is opened under, which is frequently **not** where the spec itself files: the spec is work in this repo, the gap it defers is often the design system's or the designer's. Absent means this repo's own `## Repo` rows — the same target the spec uses.
-- Provisional expiry *(optional)*: `<how long before a provisional is surfaced as overdue>` — so something provisional since eight months ago gets raised rather than quietly becoming permanent. Absent means **no expiry is surfaced**, which is a real answer and nothing warns about it; the decision is still recorded and still findable, it simply never ages into a complaint.
 
 One row a skill writes and `setup` never asks for:
 
 - UI component lab *(optional)*: `<path>` · start: `<command>` · url: `<url>` · guide: `<path to the entry guide>` — the lab this repo renders proposed components in: its folder, the command that serves it, the address it answers on, and the guide that defines its entry format. **Exists only in a `library` repo that has a lab; absent means there is no lab**, and a consumer repo never has the row. Written by `/figma-tools:create-ui-component-lab` when it installs the lab — never by hand and never by `setup`, so a fresh copy of this template drops the row and an adapter without it is not a gap. Read by `/figma-tools:design-component`, which stops without it and names the skill that writes it. Named for its kind, because a repo may register other kinds of lab, each on its own row.
 
-Three rows only a **library** repo fills — the conventions of the design system itself, which
-decide how a spec written *against this repo* is allowed to phrase a change. A repo whose
-`Repo role:` is `consumer` (including one with no role row at all) **deletes these three**, the
-same way a project that never runs `figma-tools` deletes the two filing rows in `## Repo`. This
-applies to the three below and to nothing above it — the four provisional rows are not part of
-this block. `figma-component-to-spec` reads all three; `figma-to-brief` reads the variant
-mechanism and the token pipeline, which name the source it assembles a library repo's existence
-list from. None of the three is inferable from the tree at run time, and a wrong answer here
-does not error — it produces a spec or a brief whose edits land in the wrong file:
+Two rows only a **library** repo fills — the conventions of the design system itself. A repo whose
+`Repo role:` is `consumer` (including one with no role row at all) **deletes these two**.
+`figma-to-brief` and `prototype-to-brief` read both to assemble a library repo's existence list.
+Neither is inferable from the tree at run time, and a wrong answer here does not error — it
+produces a brief whose edits land in the wrong file:
 
 - Variant mechanism: `<source 1 → source 2 → … → what happens when none matches>` — how this
   library declares a component's variant axes and their values, **in the order a reader tries
@@ -162,12 +138,6 @@ does not error — it produces a spec or a brief whose edits land in the wrong f
   map living outside the `cva` object, so an axis can accept values the `cva` call never
   lists".
 - Token pipeline: `<the generator that consumes the token source, and the file it consumes — or "None — <how tokens are edited instead>">` — **this row decides how literal a spec's token delta may be.** A library with a generator that consumes a token source (JSON, YAML, a TS module) gets specs that state the **literal source edit**, because the emitted CSS and utilities are build output nobody hand-edits. A library with no generator gets a **coordinated file-edit list** instead — every file that must change together, named — because there is no single source whose edit propagates. Say which, and name the file either way.
-- Story convention: `<where stories live, and how their argTypes are declared>` — e.g.
-  "`*.stories.tsx` beside the component · `argTypes` generated from the `cva` variants, so a
-  new axis value appears in the story with no story edit" versus "`stories/` at the package
-  root · `argTypes` hand-written per story, so a new axis value needs the story updated too".
-  A spec that adds a variant value has to say whether a story edit is part of the change, and
-  this row is the only thing that can tell it.
 
 ### Figma source
 
@@ -197,16 +167,15 @@ other canvas tool leaves the whole sub-section out rather than filling it approx
 
 ### Prototype source
 
-Read by `prototype-to-spec` and by nothing else. **The whole sub-section is optional, and
+Read by `prototype-to-brief` and by nothing else. **The whole sub-section is optional, and
 absent is a finished answer**: it means this project's designers do not ship code prototypes,
-and `prototype-to-spec` stops on being invoked rather than degrading. Nothing warns about it,
+and `prototype-to-brief` stops on being invoked rather than degrading. Nothing warns about it,
 and no other skill notices it is gone.
 
 It describes a repo where designers ship running prototypes alongside a committed, structured
 spec — deployed as previews, one per pull request. That spec is the upstream source of truth and
 it **stays upstream**: the brief a run writes is disposable, and the PRD is the one persisted
-copy on this side. A prototype at a commit SHA is already frozen, which is why nothing here
-files a `[DESIGN-SPEC]` the way a Figma canvas does.
+copy on this side.
 
 | Row | Meaning |
 |---|---|

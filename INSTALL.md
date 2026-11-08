@@ -16,13 +16,13 @@ having before the plugin lands.
 |---|---|---|
 | `prd-workflow` | `to-prd`, `to-prd-tasks`, `to-task`, `work-on-prd`, `work-on-task`, `manual-qa`, `triage` + the `prd-worker` agent | **two** bundles: `prd-workflow` (the five loop skills) and `prd-qa` (`manual-qa` + `triage`) |
 | `ado-workflow` | `to-spec`, `to-spec-tasks`, `next-task-to-implement`, `work-on-spec`, `manual-qa`, `triage` + the `spec-worker` agent | **two** bundles: `ado-workflow` (the four loop skills) and `ado-qa` (`manual-qa` + `triage`) |
-| `figma-tools` | `figma-to-spec` + the `figma-region-extractor` agent | `figma-tools`. Adapter-free |
+| `figma-tools` | `figma-to-brief`, `prototype-to-brief`, `ds-catalog`, `design-component`, `create-ui-component-lab` | `figma-tools` |
 | `lk` | `grill`, `deep-grill`, `pinpoint`, `how-i-write`, `scoped-context` | `grill` (`grill` + `deep-grill`) — one bundle, and not the whole plugin; the other three ask for nothing |
 | `qa` | `build-knowledge`, `setup-states`, `prove-branch` | `qa` |
 
 All five come from marketplace **`liamklyneker`**. Skills from a plugin are invoked
 namespaced: `/prd-workflow:work-on-prd`, `/ado-workflow:work-on-spec`,
-`/figma-tools:figma-to-spec`, `/lk:grill`, `/qa:prove-branch` — the prefix is the plugin, the
+`/figma-tools:figma-to-brief`, `/lk:grill`, `/qa:prove-branch` — the prefix is the plugin, the
 suffix is the skill, and neither half is optional.
 
 **Every plugin that has a bundle also ships a `setup` skill** — `/prd-workflow:setup`,
@@ -149,8 +149,7 @@ as `✘ disabled` and cannot spawn the agent.
 **Plugin components are namespaced, agents included.** The type is
 **`prd-workflow:prd-worker`**, not the bare `prd-worker` — same prefix the skills get
 (`/prd-workflow:work-on-prd`). The unprefixed name only ever belonged to the pre-plugin
-route, a hand-placed file in an `agents/` directory. Same for
-`figma-tools:figma-region-extractor`.
+route, a hand-placed file in an `agents/` directory.
 
 **A missing agent degrades silently to `general-purpose` rather than erroring.** After
 wiring a repo, confirm `prd-workflow:prd-worker` resolves *by type* — list the available

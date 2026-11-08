@@ -114,7 +114,7 @@ is a global `claude` flag, so it precedes the `plugin` subcommand; it is what
 lets this plugin be inspected before it is installed anywhere.)
 
 A skill's *own* references still belong inside that skill, as
-`figma-tools:figma-to-spec` does it. `skills/references/` is for what the
+`figma-tools:figma-to-brief` does it. `skills/references/` is for what the
 plugin shares.
 
 `findings-item.md` sits there too, and it is the clearest case for the rule:
