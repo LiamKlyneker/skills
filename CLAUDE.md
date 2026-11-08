@@ -278,9 +278,8 @@ creates the release tag and fails if `plugin.json` and the catalog entry disagre
 - **Delivery symlinks** — a link into a `.claude/skills/` directory that makes a plugin
   load. **Gone, and the validator fails on them.** That includes this repo's own former
   self-host links.
-- **Packaging symlinks** — `plugins/*/skills/_shared -> ../../../_shared`,
-  `plugins/*/skills/install -> ../../../install`, and `figma-to-spec`'s agent
-  link. **These are build mechanics and they stay.** Install dereferences them into each
+- **Packaging symlinks** — `plugins/*/skills/_shared -> ../../../_shared` and
+  `plugins/*/skills/install -> ../../../install`. **These are build mechanics and they stay.** Install dereferences them into each
   cache copy, which is the whole reason a relative reference resolves identically from a
   working tree and from a cache directory.
 

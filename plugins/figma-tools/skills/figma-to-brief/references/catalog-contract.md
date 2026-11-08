@@ -1,0 +1,468 @@
+# Catalog shape contract
+
+The **interface** between this skill and a project's design-system catalog. The catalog is a
+per-project artifact named by the consuming repo's adapter — written in that repo, shipped
+inside the design-system package it installs, or both; this file is the plugin-side shape it is
+written against, and it is the only thing about a catalog the plugin knows.
+
+Three parties, one contract:
+
+- **Written against it** — whatever authors the catalog (an authoring skill, or a human with
+  a text editor). A catalog that satisfies this file is usable; one that doesn't is rejected.
+- **Read against it** — Phase 0, which resolves a catalog and **validates** it before any
+  Figma read happens, and the resolution rules, which match Figma properties against its
+  entries.
+
+The catalog answers exactly one question: **does this exist in the design system, and in what
+consumer-facing form?** It is an *existence* source, not a usage guide. HOW to use a component
+is a separate concern, cited by the brief from whatever usage-rules sources the adapter
+registers — one, several, or none, and absent means cited from nothing, which is fine.
+
+## Where the catalog lives — a pointer, never a filename
+
+The catalog is registered in the consuming repo's adapter
+(`<repo-root>/.claude/project/adapter.md`), in its `## Design system` section, exactly the way
+a project gate is registered in `## Project gates`: **the registry is the only place the
+catalog is named.** No skill and no reference doc in this plugin — including this one — may
+hardcode a catalog filename, path, or location. Follow the pointer or ask.
+
+Phase 0's resolution order is **passed arg → the adapter's catalog pointer → ask the user**,
+in that order and no further. There is no fallback beyond *ask*: never resolve a catalog from
+inside this plugin, and never reconstruct one by reading the design system's source at run
+time. A run without a valid catalog stops.
+
+**The pointer names one path or several, and each path is a file or a directory.** A catalog
+is one *document* and may be more than one *file* — see the next section. A file path
+contributes that file; a directory path contributes every markdown file directly inside it. The
+catalog is the **union** of everything the pointer names, and nothing outside the pointer
+decides which shape this project uses. A path may lead inside an installed dependency — a
+design-system package that ships its own generated catalog — and is then read exactly like a
+path in the repo; whether such a package catalog is used was decided when the row was written,
+never at run time.
+
+Two adapter rows this contract defers to rather than duplicating, both referenced by role and
+never by literal value:
+
+- **the fingerprint command** — the recipe that recomputes the stamp defined below. The
+  catalog carries the *value*; the adapter carries the *recipe*.
+- **the icon resolution ladder** — which icon source a project prefers, and what happens when
+  none matches. The catalog says what *exists*; the adapter says which order to try. One
+  source of truth each.
+
+## One document, several sources — generated and usage notes
+
+A catalog has two kinds of content, and they have different authors, different lifetimes and
+different failure modes. Keeping them in one file means every design-system bump either
+re-runs an interview or silently loses its answers.
+
+- **Generated content** — the enumeration. `## Components` with their props and the variant
+  axes a declaration file actually states, `## Tokens` by tier, `## Typography`, `## Icons`.
+  Produced mechanically from the design system's own bundled declarations and theme
+  stylesheet — by a project-side run, or by the design system's own build, which ships it in
+  the package. It is **regenerated, never hand-edited**, and its fingerprint is the installed
+  version of the design system.
+- **Usage notes** — the judgement. `## Conventions`, every `status:` line and its
+  `successor:`, and the **idiom mapping** below. None of it is readable from source: the five
+  shapes in `ds-catalog`'s `references/static-reading-failures.md` are exactly the places
+  where a parser reports a confident wrong answer. Hand-authored, seeded by an interview, and
+  it changes rarely — a design-system bump usually touches it not at all.
+
+**A source's kind is read from its line 1, never from its filename or location.** A file whose
+line 1 carries the fingerprint stamp is a **generated source**; a file whose title line carries
+no stamp is **usage notes**. Where a generated source also carries judgement — a package
+catalog that states conventions or statuses — that content is still read; the kind decides only
+precedence.
+
+**Validation reads the union.** A section satisfies a rule below if it is present in any
+source; a `successor:` in one source resolves against entries in any other. No source is
+required to pass the rules alone, and none is the *primary* one.
+
+**Precedence, where two sources state the same entry or the same section-level fact** (a tier's
+status, a section's prose on one point):
+
+1. **Usage notes win over a generated source**, because the usage notes are the part that knows
+   things the generator cannot see.
+2. **Between two sources of the same kind, the one named later in the pointer wins**, and
+   within a directory the files are taken in name order. The pointer reads as layers, each
+   refining the ones before it.
+
+Precedence works entry by entry. A source that carries a section never erases the entries
+another source lists in it — usage notes that annotate two components leave the rest of
+`## Components` standing.
+
+Splitting is **optional**. One file carrying everything is a valid catalog and always was;
+the split is what a project adopts when it got tired of re-interviewing on every bump.
+
+### `## Idiom mapping`
+
+The one section that is neither an existence fact nor a usage rule: a table whose left column
+is an idiom a **design source** expresses — an absolute-positioned popover with a click-away
+overlay, a row of removable value chips, a hand-rolled date-range editor — and whose right
+column is the design-system component and props that already do it.
+
+| Column | Contents |
+|---|---|
+| Idiom | what the design source draws or builds, in the design source's own terms |
+| Resolves to | the component a consumer should render instead, with the props that make it match |
+| Notes | what the idiom has that the component does not, where anything |
+
+It exists because both design sources produce the same failure: a canvas draws a popover out
+of a frame and a rectangle, a code prototype hand-rolls one out of a `div` and a listener, and
+an implementer reading either one faithfully reproduces the hand-rolled thing rather than
+rendering the component that ships. The table is what turns that into a lookup.
+
+It is **optional**, and a catalog without it resolves idioms by name similarity alone, which
+is the state every catalog was in before the section existed. Rows accumulate: each one is
+something a run got wrong once. It usually lives in the usage notes, and is read from whichever
+source carries it; where two sources carry a row for the same idiom, precedence above decides.
+
+## Scope: Tailwind-first, and that is a licence, not a hedge
+
+This version of the contract **assumes a Tailwind-based design system**, specifically:
+
+1. Design tokens are **CSS custom properties** reachable from the Tailwind theme.
+2. Tokens reach consumers as **utility classes** emitted from that theme, and the catalog can
+   state a class name per token.
+3. Spacing **bifurcates**: generic layout rhythm comes from the Tailwind spacing scale, while
+   component-internal dimensions (control heights, internal padding, radii, icon boxes) come
+   from the DS's own dimension tokens. Where the line falls is a project fact the catalog
+   states; that it falls *somewhere* is assumed here.
+
+A design system that is not Tailwind-based — CSS-in-JS themes, a Sass-variable API, a
+platform toolkit — is **out of scope for this version**, not a degraded mode. Such a project
+should get a clear "not this version" rather than a catalog that half-fits: the sections below
+would validate while the resolution rules matched against a class vocabulary the project never
+emits, and every spec would read as on-system while being unimplementable.
+
+## Required sections
+
+Section headings are **literal**, so validation is mechanical. Everything *inside* them is the
+project's vocabulary.
+
+| Section | Required | Carries | Why the skill needs it |
+|---|---|---|---|
+| Title line + fingerprint stamp | yes | the catalog's name, the fingerprint value, the generation date | staleness is checkable at all |
+| `## Conventions` | yes | the project's **current** standard at a glance | tells a reader which of several coexisting ways is the one to spec against |
+| `## Components` | yes | every component in the consumer API, with its variant axes and their valid values | component matching, and variant-value existence checks |
+| `## Tokens` | yes | N named tiers, each enumerated, each with its consumer-facing form | token resolution and tier preference |
+| `## Typography` | yes | the text utilities in consumer-facing form, with the properties each sets | matching a Figma text style |
+| `## Icons` | yes | every icon **source** (plural), each enumerated or bounded | the icon ladder has something to walk |
+
+**Sections beyond this list are legal and are never validated.** A generated source listing
+what it read but could not settle, an idiom mapping, a project's own notes — none of them is a
+violation, and nothing reads them as one.
+
+A section whose answer is genuinely "this project has none of these" is written as
+`None — <what is used instead>`. **An explicit `None` is a real answer; an absent section is
+not**, because absence and "nobody wrote it down" are indistinguishable to a reader, and
+"not in the catalog" is the skill's only evidence that something does not exist.
+
+## Title line and fingerprint stamp
+
+Line 1 carries the name, the fingerprint value, and the generation date:
+
+```
+# <name> catalog (fingerprint: <hash> · generated: <YYYY-MM-DD>)
+```
+
+Immediately below it, a short source note: which repo or package the catalog was read from,
+and **what the fingerprint covers** — the set of files whose contents produce the hash.
+
+**In a split catalog the stamp lives on the generated source**, and the usage notes carry their
+own title line with no stamp — which is also how a reader tells the two kinds apart. The stamp
+measures whether the *enumeration* is current, which is a fact about the design system's
+version; usage notes age against nothing mechanical, and giving them a second stamp would create
+two answers to one question. Where more than one source carries a stamp, the fingerprint command
+is checked against the first of them the pointer names.
+
+Two rules about the stamp:
+
+- The hash is **content-only**. Hashing anything path-dependent makes the stamp differ between
+  two checkouts of the same commit, which turns every staleness check into a false warning.
+- The recipe that produces it lives in the adapter, not here and not in the catalog. The
+  catalog records what the recipe returned.
+
+Staleness is **soft**: a stamp that no longer matches produces a warning and the run
+continues. A malformed or missing stamp is a *shape* failure and does stop the run — see
+Validation.
+
+## `## Conventions`
+
+The one section written for a reader rather than a matcher: what is the project's standard
+**today**, stated plainly enough that someone can spec a new value without reading the DS
+source. It is prose, tables, or both.
+
+What it must settle, wherever the answer isn't obvious from the entries themselves:
+
+- Which tier a new value should come from, when several tiers coexist.
+- How a token's name becomes its consumer-facing class — the mechanical rule, including any
+  step that surprises (a category word kept or dropped, a prefix applied on one side of a
+  package boundary and not the other).
+- Where the **spacing bifurcation** falls: which spacing is the Tailwind scale's business and
+  which resolves against DS dimension tokens.
+- Whether consumer-facing and library-internal class forms differ, and which form the catalog
+  is written in. **The catalog is always written in the consumer-facing form** — the form an
+  app actually writes — because that is the form a spec is implemented in.
+- Any migration in flight: which way is current, which way is on the way out, and how far
+  adoption has actually got. A catalog that lists two ways and states neither as current makes
+  every `status:` field below un-auditable.
+
+## `## Components`
+
+One row per component that exists in the **consumer** API. A table:
+
+| Column | Required | Contents |
+|---|---|---|
+| Component | yes | the name a consumer renders |
+| Reference | yes | how a consumer reaches it — import subpath, package path, or equivalent |
+| Variant axes / values | yes | every axis and its valid values, or `—` for a component with no axis |
+| Status | no | `current` when omitted — see Status below |
+| Source | no | where it is defined, for a human chasing a discrepancy |
+
+Rules:
+
+- **Variants are recorded as stated, never parsed at match time.** The catalog is the closed
+  set: a variant value not listed does not exist, and matching a Figma layer name against a
+  *guess* at the project's naming scheme is how a spec acquires props that fail to compile.
+- **`—` is not the same as blank.** A component with no variant axis says so; a blank cell
+  reads as "nobody checked".
+- Values are the **literal strings a consumer passes**, in the consumer's casing.
+- An individual variant *value* may carry its own status (e.g. a renamed value kept as a
+  runtime-mapped alias). Record it on the value, inline, not on the whole component.
+- Exports that are not components (build config, style bundles, utility helpers) may be listed
+  in a separate table, clearly marked. They never match a Figma layer, and they are not counted
+  as components.
+
+## `## Tokens`
+
+**N tiers. The number and the names are the project's, not the plugin's.** Two-tier,
+three-tier, and "three tiers plus a dimension family" are all valid; so is one flat tier. One
+`###` subsection per tier, named by the project's own name for it, in the order the project
+considers most-derived last (or states its own order in `## Conventions`).
+
+Each tier subsection declares:
+
+- **What the tier is for**, in one line, and whether it is meant to be consumed directly.
+- **The consumer-facing form of its entries** — the CSS custom property, and the utility class
+  each token produces. A tier that emits no class says **`CSS var only`** and why; that is a
+  real answer and the resolution rules need it, because recommending a class that does not
+  exist is worse than recommending an escape-hatch `var()`.
+- **The entries, enumerated — no truncation, no "…and 40 more".** The catalog's value is that
+  "absent from this list" means "does not exist"; a truncated list quietly converts every
+  existence check into a coin flip. Value alongside name where the value is what a match is
+  made on.
+- **Tier status**, when a whole tier is legacy or deprecated. A tier-level status applies to
+  every entry in it unless an entry overrides it.
+
+Any token family with mechanical naming quirks — a category word repeated, a word dropped
+on emission, a version suffix collapsed — is a `## Conventions` matter, stated once there
+rather than annotated per entry.
+
+## `## Typography`
+
+The text utilities in **consumer-facing form**, enumerated, with the properties each one sets:
+size, line-height, weight, letter-spacing, transform, and any built-in responsive steps.
+
+Both halves matter. The names let a Figma text style match by name; the properties let one
+match by value when the design's style name is the designer's rather than the DS's — the
+common case.
+
+Also state, where true:
+
+- Which utilities are composites that carry their own breakpoints, and therefore must **not**
+  be written with a responsive prefix.
+- Companion scales that ship alongside (weight, tracking) and whether they *extend* or
+  *override* the framework's defaults. A same-named class with a different value is a silent
+  correctness bug in a spec.
+- Anything present in a source map but not emitted as a class: **dead data is not an available
+  style**, and saying so stops it being specced.
+
+A project whose text styling is not utility-based writes `None — <how text is styled
+instead>`.
+
+## `## Icons`
+
+**Icon sources are plural by default.** Both design systems probed while writing this contract
+shipped two — an in-house inline set plus a third-party library used by consuming apps — and
+assuming one source is the single most likely way to produce a spec that names an icon nobody
+can render.
+
+One `###` subsection per source, each carrying:
+
+- **How an icon from this source is referenced in code** — the component call, the import, or
+  the class, in consumer-facing form.
+- **The set.** Enumerate it when it is closed and the project owns it. When the source is an
+  external library with an open set, say so, name the library and the pinned version, and say
+  how a candidate name is verified — an open set is a real answer, an unstated one is not.
+- **Where it may be used.** A source available to consuming apps but forbidden inside the
+  design system (or the reverse) is a fact that changes what a gap ticket should say.
+
+The **order** the sources are tried in is the adapter's icon-resolution-ladder row, not this
+section. The catalog says what exists; the adapter says what the project prefers.
+
+## Status: `current` · `legacy` · `deprecated` · `unused`
+
+**Every entry kind carries a status** — component, individual variant value, a whole prop or
+variant axis, token, whole tier, typography utility, and icon entry — with an optional
+successor pointer:
+
+```
+status: current | legacy | deprecated | unused        (default: current)
+successor: <the entry that replaces it>               (optional)
+```
+
+Rules, defined once here and nowhere else:
+
+- **Omitted means `current`.** An unannotated entry is not "unknown" — the vast majority of a
+  catalog carries no status field at all, and requiring one per row would make catalogs
+  unwritable.
+- **`legacy`** — still works, still resolvable, no longer the way to do it.
+  **`deprecated`** — on the way out: scheduled for removal, or warning at runtime.
+  **`unused`** — see below; it is a fact about *adoption*, not about direction of travel.
+- **None of them is the same as absent.** *Absent from the catalog* is the only thing that means
+  "does not exist in the design system".
+- **`successor:`** names its replacement in the same vocabulary the entry uses — a class name
+  for a class, a variant value for a variant value, a component name for a component. It is
+  optional because a legacy entry sometimes has no replacement yet, and inventing one is worse
+  than admitting the gap.
+- **Where it is written**: a `Status` column where the entry lives in a table; an inline
+  `status: legacy · successor: <x>` suffix where the entry lives in a list; a line under the
+  tier heading where a whole tier is legacy.
+- **A tier-level or component-level status cascades** to entries that don't override it.
+
+### `unused` — exists, nothing consumes it
+
+`unused` says the entry **is emitted and is resolvable, and no consumer uses it today**. It is
+not a weaker `legacy` and the two must not be collapsed: `legacy` means *this was the way and
+no longer is*, which implies something replaced it; `unused` means *this was built and nobody
+adopted it*, which implies nothing about replacement and often has no successor to name at all.
+A design drawn against an `unused` entry is the most on-system thing that can happen — the
+entry finally has a consumer — and grading it as a gap would send a human to build something
+that already ships.
+
+- An `unused` entry takes `successor:` only where one genuinely exists. The usual case is none.
+- `unused` and `legacy` may both appear in one catalog and never on one entry: an entry that was
+  superseded *and* has no consumers is `legacy`, because direction of travel is the more
+  actionable half.
+- Where the distinction cannot be established, the entry is `current` — the schema's default —
+  and the catalog run says so. Guessing `unused` invents adoption data nobody has.
+
+### A successor may point across tiers, and across sections
+
+`successor:` names an entry **anywhere in this catalog**, not an entry in the same tier or the
+same table. Cross-tier is the normal shape of a real migration: a primitive token superseded by
+a semantic one, a bare utility superseded by a composite, a variant value superseded by a
+different component entirely. Nothing here restricts the pointer's target to the pointing
+entry's own neighbourhood — the only requirement is that the target **exists in this catalog**,
+which is validation rule 8.
+
+**A pointer written below the entry level resolves in its sibling scope first.** A `successor:`
+on a **variant value** resolves first among the values of the **same axis of the same entry**;
+one on a **prop or variant axis** resolves first among the props and axes of the **same entry**,
+wherever the catalog lists them. A match there is the target, and the same literal on other
+entries or in other sections is not an ambiguity. Only where the sibling scope has no match does the pointer resolve catalog-wide,
+by the rules below — which is how a variant value superseded by a different component still
+names it. A `successor:` on a whole entry — component, token, utility, icon, tier — always
+resolves catalog-wide.
+
+Write a catalog-wide target unambiguously enough that a reader can find it: where the same
+literal string appears in two sections, qualify it (`successor: <tier or section> → <entry>`).
+A pointer that resolves to two entries is a dangling pointer with extra steps.
+
+### A tier may declare that it has no single successor
+
+A tier-level status applies to every entry under it, and a **whole tier** being retired is
+routinely *not* a one-to-one move: its entries redistribute across several tiers, or each entry
+maps individually, or the replacement is a rule rather than an entry. Saying so is a real
+answer, and it is written explicitly rather than by omitting the field:
+
+```
+status: legacy · successor: none — <where the tier's entries go instead>
+```
+
+The `none — …` form is the difference between **"we know there is no single successor, and here
+is what to do instead"** and **"nobody filled this in"**, and those must not look alike. It
+satisfies rule 8; a bare `successor:` with nothing after it does not. Individual entries under
+such a tier are still free to name their own successors, and where they do, the entry wins over
+the tier — the same override the cascade rule already gives.
+
+### A `current` component may contain a `deprecated` prop
+
+Status is scoped to **the thing it is written on**, and the scopes nest: a component, one of its
+props (a whole variant axis), and one value of that axis are three different entries as far as
+this field is concerned. A component whose own status is `current` — it ships, it is the way to
+do it, spec it freely — may perfectly well carry a prop that is on the way out, and the catalog
+records that on the prop:
+
+- **The prop's status does not cascade upward.** A deprecated axis inside a component never
+  makes the component deprecated. Writing it on the component instead is the failure this rule
+  exists to prevent: every spec that uses any part of that component then reads as flagged, and
+  the one prop that actually matters is buried.
+- **The component's status does cascade downward**, per the cascade rule, and a nested entry
+  overrides it. A `legacy` component may hold a `current` prop.
+- A prop-level status carries its own `successor:` in the prop's vocabulary — the prop that
+  replaces it, or a value on another axis — and may point across tiers and sections like any
+  other.
+- Where the entry lives in a table, a prop-level status is written inline in the
+  *Variant axes / values* cell against the axis it belongs to, not in the row's `Status`
+  column. The `Status` column is the component's.
+
+**What resolution does with a status is not defined here.** This contract's job is that the
+data exists and is unambiguous. One invariant does belong here, because it keeps the two
+concerns apart: **a status value never makes an entry invisible to a match** — at any of the
+four values and at any scope, component, prop, value, tier. The moment a
+`legacy` entry stops matching, a documentation field has quietly become an existence field,
+and designs drawn against the old component start reporting as gaps that need building — the
+exact false-gap this field exists to prevent. `unused` makes the point twice over: an entry
+nothing consumes is precisely the one a new design is most likely to be the first consumer of.
+
+## Validation — Phase 0, loud failure only
+
+Phase 0 validates the resolved catalog **before** any Figma read — **the union of every source
+the pointer resolved**, exactly as described above. Every rule below is a hard
+STOP. There is no partial acceptance, no degraded mode, and no inferring a missing section
+from the design system's source: a catalog that is wrong in one section is not evidence of
+anything in the others, and a run that proceeds on partial data produces a brief that *looks*
+resolved.
+
+| # | Rule | Fails when |
+|---|---|---|
+| 1 | Title line carries a fingerprint value and a generation date — on at least one source; usage notes carry none | no source's line 1 has a `fingerprint:` / `generated:` stamp |
+| 2 | `## Conventions` present and non-empty | heading missing, or heading with no body |
+| 3 | `## Components` present, with at least one entry, every entry stating its variant axes (`—` counts) | heading missing, table empty, or a blank variant cell |
+| 4 | `## Tokens` present, with at least one named tier, each tier declaring its consumer-facing form and enumerating its entries | heading missing, no `###` tier, a tier with no form declared, or a truncated list |
+| 5 | `## Typography` present — enumerated utilities, or an explicit `None — …` | heading missing, or present and empty |
+| 6 | `## Icons` present — at least one source with its code reference, or an explicit `None — …` | heading missing, a source with no reference form, or an unbounded set with no verification route |
+| 7 | Every `status:` value is one of the four — `current` · `legacy` · `deprecated` · `unused` — at whatever scope it is written on: component, prop/axis, single variant value, token, tier, utility, icon | any other value, including a plausible synonym (`obsolete`, `wip`, `internal`), and including `unused` used as a synonym for `legacy` where the catalog's own `## Conventions` says they differ |
+| 8 | Every `successor:` resolves — to exactly one entry **anywhere in this catalog**, in any section and any tier, or to the explicit `none — <what to do instead>` form. A value- or prop-level pointer resolves in its **sibling scope** first (*A successor may point across tiers, and across sections*) | a pointer naming nothing in the catalog; a pointer whose literal string matches entries in two sections with nothing qualifying which; a value- or prop-level pointer that matches nothing in its sibling scope and nothing, or more than one thing, catalog-wide; or a `successor:` present but empty, which is the "nobody filled this in" case the `none — …` form exists to distinguish from a real one |
+
+Three things rule 7 and rule 8 deliberately **do not** fail on, because each is a legitimate
+shape the Status section defines and a stricter reading would reject a correct catalog:
+
+- a `successor:` pointing **across tiers or across sections** — rule 8 asks only that the target
+  exists;
+- a **tier-level** status carrying `successor: none — …` — an explicit "no single successor" is a
+  filled-in answer, not a missing one;
+- a **prop-level or value-level** `deprecated` inside a component whose own `Status` column says
+  `current` — the scopes nest, and the nested one is not a contradiction of the outer one.
+
+Every one of the three was found in the wild before it was written down here. This amendment is
+**additive**: rule 7's value set widened, rule 8's failure conditions were made explicit rather
+than narrowed, and no catalog that passed these rules before passes any of them less now.
+
+The STOP message names three things — **the resolved catalog paths, the rule that failed, and
+what to change** — and offers the two ways forward: fix the catalog, or point the run at a
+different one. Never name a fallback: there isn't one.
+
+## What this contract deliberately does not specify
+
+- **The catalog's filenames and locations, or how many sources it has.** The adapter's pointer,
+  always.
+- **The fingerprint recipe.** The adapter's row; the catalog carries only its output.
+- **Tier names, tier count, component inventory, icon sources, class vocabulary.** All project
+  facts. A contract that named any of them would be one project's catalog wearing a schema's
+  clothes.
+- **The icon ladder's order.** The adapter's row.
+- **How a catalog gets written.** The authoring concern, not the interface.
+- **What resolution does with `status`, near-misses, or tier preference.** The resolution
+  rules' concern — this file defines the data those rules read.

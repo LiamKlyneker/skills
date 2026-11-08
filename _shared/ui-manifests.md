@@ -1,6 +1,6 @@
 # UI Manifest Gates (Token + Primitive)
 
-Shared reference for the skill that **builds** these tables (`figma-to-spec`) and the workflow skills that **consume their rows** downstream (`to-prd`, `to-prd-tasks`). Two manifests that catch the two halves of design-drift: improvised **components** and improvised **tokens**. Both are **HARD GATES** — the invoking skill is not done while any ⚠️/❌ row is unresolved.
+Shared reference for the workflow skills that **consume these tables' rows** (`to-prd`, `to-prd-tasks`). Two manifests that catch the two halves of design-drift: improvised **components** and improvised **tokens**. Both are **HARD GATES** — the invoking skill is not done while any ⚠️/❌ row is unresolved.
 
 The building skill resolves rows **autonomously**; unresolvable rows batch into its single checkpoint. Run both right after the variant table, before any code.
 

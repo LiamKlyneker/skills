@@ -70,7 +70,7 @@ couldn't finish.
 | `ado-workflow` | The same loop against an Azure DevOps board — `[SPEC]` → `[TASK]`s → implementation, exactly the four skills the `ado-workflow` plugin ships |
 | `prd-qa` | The QA loop run against a PRD branch before merge — `triage`, the sixth skill the `prd-workflow` plugin ships |
 | `grill` | The interviews that run *before* either loop — `grill` inline on one thread, `deep-grill` with recon subagents and hard gates. Two more `lk` skills; only `deep-grill` reads the adapter, so `## Sources of truth` is the whole of this bundle's interview |
-| `figma-tools` | Figma → spec — the `figma-tools` plugin. Adapter-free |
+| `figma-tools` | Design → brief — the `figma-tools` plugin |
 
 Definitions live in [`install/bundles.md`](install/bundles.md); a bundle names the adapter
 sections a set of skills needs filled, not the skills themselves. Bundle and plugin are
@@ -93,7 +93,6 @@ so it arrives and departs with the plugin — no separate agent link to place or
 
 | Agent (type name) | Skill | Reach | Notes |
 |---|---|---|---|
-| `figma-tools:figma-region-extractor` | `figma-to-spec` (Phase B) | wherever `figma-tools` is enabled — user scope, personal config | Pinned to Sonnet; write tools denied. Detachable — if not installed, Phase B reads the same file and pastes its body into a `general-purpose` agent. |
 | `prd-workflow:prd-worker` | `work-on-prd` (Loop step 5) | **only where `prd-workflow` is enabled** | No `model`/`effort` — the orchestrator routes per issue and passes the tier at spawn time. `Agent` denied (flat hierarchy — costs it `Explore`, so it greps for itself). Contained on purpose: it commits, so a stray auto-spawn must not be possible from an unrelated repo. Detachable the same way. |
 
 **The type name carries the plugin prefix.** A plugin namespaces its agents exactly as it
@@ -113,7 +112,7 @@ Things worth knowing before adding another one:
 - **A newly installed agent takes a few minutes to register**, and a newly *created* agents
   directory does not register at all mid-session. Dropping a file into an agents directory
   that already existed at session start resolves after a few minutes, no restart needed —
-  that is how `figma-region-extractor` behaved. Creating `.claude/agents/` for the first time
+  that is how a dropped-in agent behaved. Creating `.claude/agents/` for the first time
   and symlinking into it left `prd-worker` unresolvable for the rest of the session (three
   attempts, ~15 min). So the fallback is not a nicety: any skill that spawns by type must
   check availability and paste the body into `general-purpose` instead. Shipping an agent
@@ -139,7 +138,7 @@ Things worth knowing before adding another one:
   correct, restate it and assert on it; treat the probe as a list of what you *may* omit, not
   what you can rely on.
 - **Only pin `model` / `effort` in frontmatter when the tier is a property of the *agent*.**
-  `figma-region-extractor` always does grep-and-extract work, so Sonnet is pinned. A
+  An agent that always does grep-and-extract work can pin Sonnet. A
   `prd-worker` handles anything from a copy tweak to a migration, and the orchestrator makes
   that call per issue at spawn time (`_shared/model-effort-heuristics.md`: the call is made at
   point-of-use, never frozen) — a frontmatter tier there is dead config that reads as

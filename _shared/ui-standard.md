@@ -1,6 +1,6 @@
 # UI Standard (the canon)
 
-Shared reference for the component-tier design-to-code skills: `figma-to-spec` resolves against it, and the future `ui-foundation` skill will audit/migrate existing repos toward it. When a host repo has its own established conventions, its ui-profile documents them and **repo idiom wins** — this doc is the default for greenfield and the yardstick for hygiene findings.
+Shared reference for component-tier design-to-code work: the future `ui-foundation` skill will audit/migrate existing repos toward it. When a host repo has its own established conventions, its ui-profile documents them and **repo idiom wins** — this doc is the default for greenfield and the yardstick for hygiene findings.
 
 ## Stack
 

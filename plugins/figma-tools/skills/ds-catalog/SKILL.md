@@ -1,8 +1,8 @@
 ---
 name: ds-catalog
 description: >
-  Author a project's design-system catalog — the existence source `figma-to-spec`
-  resolves every component, token, type utility and icon against. Explores the
+  Author a project's design-system catalog — the existence source the brief skills
+  resolve every component, token, type utility and icon against. Explores the
   design system read-only, enumerates what a declaration file states, interviews the
   human where static reading runs out, writes a generated half plus hand-owned
   usage notes conforming to the shape contract — or only the usage notes, where the
@@ -13,7 +13,7 @@ disable-model-invocation: true
 
 # DS Catalog
 
-Produce the one artifact `figma-to-spec` cannot run without: this project's **design-system
+Produce the one artifact a brief in a consumer repo cannot run without: this project's **design-system
 catalog**. The catalog answers a single question — *does this exist in the design system, and
 in what consumer-facing form?* — and a run without a valid one stops. This skill is how a
 project gets one.
@@ -30,7 +30,7 @@ Three outputs, and all three are required for the run to have finished:
    recomputes the generated half's stamp, without which staleness is permanently unchecked.
 
 What this run writes goes where the adapter's catalog pointer says, and the union of every
-source the pointer names satisfies `../figma-to-spec/references/catalog-contract.md`; its
+source the pointer names satisfies `../figma-to-brief/references/catalog-contract.md`; its
 *One document, several sources* section is normative for the split and is never restated here.
 
 ## Two halves, and the interview owns the one that matters
@@ -90,13 +90,13 @@ thing that replaced it.
   section: the *Design-system source* row says what to explore, the *Catalog* row says where
   the output goes — and whether the generated half is the package's own — and the class-prefix and icon-ladder rows carry what a previous
   install-time interview already established — including the *Repo role* row and, where that
-  role is `library`, the variant-mechanism, token-pipeline and story-convention rows.
+  role is `library`, the variant-mechanism and token-pipeline rows.
   `/figma-tools:setup` writes that section; this skill owns the fingerprint recipe outright, and
   fills any of the role-gated rows the install never asked for (Phase 6 says which rows it may
   write, which it may only propose, and which it never touches).
 - **The design system itself**, read-only: a repo path, a workspace package, or an installed
   copy of a published package.
-- **The shape contract**, `../figma-to-spec/references/catalog-contract.md` — the required
+- **The shape contract**, `../figma-to-brief/references/catalog-contract.md` — the required
   sections, the two-file split, the `status:` schema, and the eight validation rules the output
   must pass. Read it before writing anything. **Never restate it here**; it is one document with
   one owner, and a paraphrase that drifts is worse than a pointer.
@@ -284,7 +284,7 @@ Rules that keep it finite and keep it honest:
   says. Where this run's evidence contradicts a row, that is a finding for Phase 6, not a
   silent correction.
 
-**The role question, and the three it gates.** Ask these where the adapter's `## Design system`
+**The role question, and the two it gates.** Ask these where the adapter's `## Design system`
 has no answer yet — and only there; a row that is already filled is confirmed, not re-asked.
 
 1. **What role does this repo play — `consumer` or `library`?** A consumer renders the design
@@ -300,19 +300,17 @@ has no answer yet — and only there; a row that is already filled is confirmed,
      `references/static-reading-failures.md` is exactly this ladder's last rung, and a runtime
      alias map outside the declaration is the classic one.
    - **The token pipeline** — is there a generator, and what source does it consume? "None, the
-     emitted CSS is hand-edited" is a real answer. This decides how literal a downstream spec's
+     emitted CSS is hand-edited" is a real answer. This decides how literal a downstream ticket's
      token delta may be, so it is worth one round of pressing.
-   - **The story convention** — where stories live, and whether `argTypes` are generated from the
-     variants or hand-written.
 
-   In a `consumer` repo these three are not asked and not written; Phase 6 deletes them if a
+   In a `consumer` repo these two are not asked and not written; Phase 6 deletes them if a
    copied template left them behind.
 
 ### Phase 5 — Write the usage notes
 
 Write them where the *Catalog* row points — beside the generated half, or at the project-local
 path the row names after a package catalog — against
-`../figma-to-spec/references/catalog-contract.md`. It carries `## Conventions`, every `status:`
+`../figma-to-brief/references/catalog-contract.md`. It carries `## Conventions`, every `status:`
 and `successor:`, `## Idiom mapping`, and **any section the generator could not produce** — a
 typography scale that exists only as a plugin call is enumerated here, by hand, from the
 interview.
@@ -410,7 +408,7 @@ decision written down twice on purpose, one where each reader looks.
   order is not guaranteed stable across shells and locales, and an unstable order is a stamp
   that differs from itself.
 - **Runnable from the consuming project.** The row lives in this project's adapter and Phase 0
-  of `figma-to-spec` runs it from here. If the design system is a machine-local checkout, the
+  of the brief skills runs it from here. If the design system is a machine-local checkout, the
   command only works on machines that have it — say so in the row rather than shipping a
   recipe that silently fails for the next person.
 
@@ -425,16 +423,16 @@ Then write to the adapter's `## Design system` section:
 | *Fingerprint command* | **Owns it.** Write the recipe. Nothing else in the system can — it is derived from the file set this run read. `None — staleness unchecked` is a real answer where no stable set exists, and the staleness check is soft, so it never fails a run. |
 | *Catalog* | **Writes it when nothing names one yet** — a catalog no pointer reaches is not a deliverable. Point it at **every** source: the **directory** where a split catalog's two files live, or — where the package ships the generated half — the package catalog's path followed by the usage notes' path. A pointer that names only the generated half makes the usage notes invisible, and every status in them silently stops applying. Where a row already exists and the catalog was written there, leave it byte-intact; the one edit this skill makes to an existing row is appending a usage-notes path it just created. |
 | *Repo role* | **Writes it when no row exists**, from the Phase 4 answer and from nothing else — never from the tree. Where the row already says `consumer` or `library`, leave it alone; a role changes because a human decides it has, not because a run explored differently. |
-| *Variant mechanism* · *Token pipeline* · *Story convention* | **Writes all three when the role is `library`** and the rows are absent, from the Phase 4 answers. Where the role is `consumer`, write none of them, and **delete only an unfilled one a copied template left behind** — a row still carrying its `<placeholder>` is noise `doctor` will report forever, while a row somebody actually filled is theirs and stays. Where a row already exists and this run's evidence contradicts it, propose rather than overwrite, exactly like the class-prefix rows below. |
+| *Variant mechanism* · *Token pipeline* | **Writes both when the role is `library`** and the rows are absent, from the Phase 4 answers. Where the role is `consumer`, write none of them, and **delete only an unfilled one a copied template left behind** — a row still carrying its `<placeholder>` is noise `doctor` will report forever, while a row somebody actually filled is theirs and stays. Where a row already exists and this run's evidence contradicts it, propose rather than overwrite, exactly like the class-prefix rows below. |
 | *Tailwind class prefix* · *CSS variable prefix* · *Consumer-facing emission form* · *Icon resolution ladder* | **Proposes, never silently changes.** Where this run's evidence contradicts what the row says, show the row, show the evidence, and let the human decide. These are three separate facts and one ordered list — collapsing any of them is how a spec recommends a class the app cannot write. |
-| *Gap policy* · *Provisional marker* · *Gap tracker* · *Provisional expiry* | **Never touches, and never deletes.** All four default, so an absent row is a complete state and not a placeholder to tidy — the deletion rule for unfilled `library` rows above does **not** extend here. They are also not inferable: what a project is willing to ship provisionally is a policy, and a catalog run has no evidence about it. `/figma-tools:setup` asks; a human edits. |
-| *Design-system source* · *Usage-rules sources* · *Downstream implementer* · *`### Prototype source`* · everything outside `## Design system` | **Never touches.** The two optional rows degrade silently by design: absent means the spec cites nothing, and absent means a human implements. Neither is an error and neither gets a warning. |
+| *Provisional marker* | **Never touches, and never deletes.** The row defaults, so an absent row is a complete state and not a placeholder to tidy — the deletion rule for unfilled `library` rows above does **not** extend here. |
+| *Design-system source* · *Usage-rules sources* · *`### Prototype source`* · everything outside `## Design system` | **Never touches.** The usage-rules row degrades silently by design: absent means the brief cites nothing. That is not an error and gets no warning. |
 
 ### Phase 7 — Validate and report
 
 Run the contract's eight validation rules against **the union of every source the *Catalog*
 row names**, the package's included — the skill that writes runs the reader's gate, so a
-catalog never reaches `figma-to-spec` failing a rule this run could have caught. Validating one
+catalog never reaches a brief skill failing a rule this run could have caught. Validating one
 source alone fails rules another satisfies: a generated half may have no `## Conventions` and
 the usage notes have no `## Components`. A failure inside a package catalog is reported with
 the fix on the design system's side; this run does not patch around it. Then report: what was
@@ -480,7 +478,7 @@ re-toned for tidiness.
    stop and say what is needed. A section written on a guess reads as authoritative forever.
 4. **The written catalog fails a contract validation rule** (Phase 7) that this run cannot fix
    → report it as a failure rather than handing over a catalog that will stop the next
-   `figma-to-spec` run at its Phase 0.
+   brief run at its Phase 0.
 5. **A package catalog the *Catalog* row names is absent** (Phase 0) → stop, naming the path,
    and say to install the project's dependencies. Never generate a substitute for it.
 
@@ -493,5 +491,4 @@ version the generated half is stamped with.
 
 It cannot verify that the human's answers are right, that a design system did not change
 between exploration and writing, or that an entry nobody could classify is genuinely `current`.
-Those it names in the report instead of hiding — which is the same bargain
-`figma-to-spec` makes at its own triage checkpoint, and for the same reason.
+Those it names in the report instead of hiding.

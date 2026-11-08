@@ -6,8 +6,7 @@ shapes below are what defeated them, written as **probes**: what the shape looks
 reader that only parses source misses it, what to read, and the question to ask when reading
 does not settle it.
 
-**This file is the extraction contract.** Phase 1 hands it to every explorer it fans out, the
-way `figma-to-spec` hands `agents/figma-region-extractor.md` to a region agent. One source of
+**This file is the extraction contract.** Phase 1 hands it to every explorer it fans out. One source of
 truth, whether the exploring is done by a subagent or by the main thread.
 
 Two rules govern every probe:

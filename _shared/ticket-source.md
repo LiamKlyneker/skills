@@ -91,7 +91,7 @@ character outside `A–Z a–z 0–9 . _ -` with `-`. A key that is a number sta
 ## 4. What this file does not cover
 
 - **Filing.** No skill reads `Ticket source:` to decide where work goes. A brief's proposed DS
-  gaps, a `[DESIGN-SPEC]`, a PRD and a `[SPEC]` all file against the `Tracker:` line's rows.
+  gaps, a PRD and a `[SPEC]` all file against the `Tracker:` line's rows.
 - **Workflow items a loop reads back.** A PRD's children, a `[SPEC]`'s `[TASK]`s and a run's
   `[FINDINGS]` item are work the loop filed itself, so they live on the filing tracker and are
   read from there. This file is for the ticket a human hands a skill as input.

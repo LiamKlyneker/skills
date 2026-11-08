@@ -111,7 +111,7 @@ references.
 `_shared/fidelity-ledger.md` is the shared fidelity contract both links reach.
 `to-task`, `work-on-task`, `to-prd` and `to-prd-tasks` cite its
 numbered sections rather than restating them, and `prd-worker.md` follows §6.
-`figma-tools`' `prototype-to-spec` writes the ledger those sections consume.
+`figma-tools`' `prototype-to-brief` writes the ledger those sections consume.
 
 ### Compat shims — gone (#26)
 

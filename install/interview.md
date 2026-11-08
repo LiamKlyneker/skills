@@ -41,7 +41,7 @@ way.
 | `## Repo` | **GitHub**: `gh repo view --json nameWithOwner,defaultBranchRef`; plus, for the two optional rows below, the PR template on disk (`.github/pull_request_template.md` and its casings, the root and `docs/` variants, then a `.github/PULL_REQUEST_TEMPLATE/` directory) and the branch convention the repo already uses (`git branch -r`, or the head branches of the last handful of merged PRs). **Azure DevOps**: the default branch from git, and the PR template on disk (`.azuredevops/pull_request_template.md`, the `.vsts/` and `docs/` variants, then a `.azuredevops/pull_request_template/` directory) — the tree states none of the rest | related repos / contract boundaries on either tracker — nothing states these reliably. **Title prefixes on either tracker**: offer the defaults (`[PRD]`·`[TASK]`·`[BUG]` on GitHub, `[SPEC]`·`[TASK]`·`[FINDINGS]`·`[BUG]` on ADO — neither tracker has a `[QA]` prefix) and only ask whether this repo already uses different words — one confirmation, not four questions. On ADO the answer is load-bearing rather than cosmetic, since every kind of child is the same work-item type and the prefix is all that separates them, so read it back. On Azure DevOps, the whole `### Azure DevOps` block as well: org, the **two** projects (work items and repo — ask for both even when they are the same, since querying the wrong one returns empty rather than an error), team, repository, work-item type, the three board states, and the branch pattern. **On GitHub**, the two optional rows `Branch pattern:` and `PR template:`; **on Azure DevOps**, `PR template:` alone, since that block's `Branch pattern:` is not optional — one confirmation each of what the read above turned up, never a cold question, and "we have neither" is a finished answer. The `prd-workflow` question set below carries the discovery ladder |
 | `## Commands` | `package.json` scripts · `Makefile` targets · `Package.swift` + schemes · `Cargo.toml` · `pyproject.toml`. Package manager from the lockfile (`pnpm-lock.yaml` → pnpm, `bun.lockb` → bun, …) | the screenshot command — it is usually unscripted, and "none, use the browser tools interactively" is a real answer |
 | `## App facts` | language + version, framework + version, path aliases, generated-vs-source files, strict flags — all from the manifests and config files | **the fragile part.** The subsystem that breaks silently and that no linter catches. This is the highest-value line in the adapter and it is never in a file |
-| `## Design system` | the design-system dependency and its version from the manifests · a Tailwind config's `prefix` · a catalog the **installed** design-system package ships, by the detection rule in step 6 · an existing catalog file if the repo already has one. **Never the repo role** — a `components/` directory is not evidence of a library, and the tree cannot tell you which side of the design system a repo is on | the **repo role** first (`consumer` or `library`; absent means `consumer`), because a `consumer` answer deletes three rows instead of asking about them. Then, **only when the answer is `library`**, the three convention rows: the **variant mechanism** as a ladder in the icon ladder's shape (primary declaration → fallback → the shapes that are the implementation rather than the declaration, plus the trap this repo has), the **token pipeline** (is there a generator, and what source does it consume? — "None, the CSS is hand-edited" is a real answer and it changes what a spec may say), and the **story convention** (where stories live, and are `argTypes` generated from the variants or hand-written?). Still only when `library`, the **gap policy** as **one** question — should a missing design input ship as a marked provisional value or stop the run? — with the other three provisional rows (marker syntax, gap tracker, expiry) named as available overrides and written **only if volunteered**, since all four default. Then, for either role: the **catalog pointer** if no file announces itself — never guess a filename, since this row is the only place it is ever named; in a `library` repo it is asked as an optional cross-check, defaulting to `None` where the token pipeline names a generator (step 6); a package-shipped catalog is proposed and confirmed, then the project's own usage notes are asked about as a second path (step 6). The **fingerprint command** ("None — staleness unchecked" is a real answer). The **three class-prefix facts** as three questions, not one: the Tailwind class prefix, the CSS variable prefix, and the form an app actually writes — a design system that prefixes internally and emits unprefixed is the normal case, and reading one answer as all three makes every spec recommend a class that does not exist. The **icon ladder**, in order, including where each source may be used — ask for sources plural, since one is the exception. Then the two optional rows, once each: **which project skills carry the UI usage rules** a spec should cite — plural, and inferable: read `.claude/skills/*/SKILL.md` descriptions for ones mentioning the design-system package and offer back what you found — and does a skill implement filed specs? Last, **the two design-source sub-sections**, one cold question each and neither inferable: `### Figma source` — do the designers hand over a design canvas, and on which account and seat? Nothing in the tree can answer that (a seat is an account fact), and a "yes" is five rows taken as one block. Then `### Prototype source`: do the designers ship code prototypes, and where — another repo reached at a pinned commit, or a directory in this tree, which is the `Path:` row and replaces the repo pair? Nothing in the tree announces either answer, so ask it cold, once, and take "no" as finished. **"No" to any of the four is a complete answer** — leave the row or sub-section out and never warn |
+| `## Design system` | the design-system dependency and its version from the manifests · a Tailwind config's `prefix` · a catalog the **installed** design-system package ships, by the detection rule in step 6 · an existing catalog file if the repo already has one. **Never the repo role** — a `components/` directory is not evidence of a library, and the tree cannot tell you which side of the design system a repo is on | the **repo role** first (`consumer` or `library`; absent means `consumer`), because a `consumer` answer deletes two rows instead of asking about them. Then, **only when the answer is `library`**, the two convention rows: the **variant mechanism** as a ladder in the icon ladder's shape (primary declaration → fallback → the shapes that are the implementation rather than the declaration, plus the trap this repo has) and the **token pipeline** (is there a generator, and what source does it consume? — "None, the CSS is hand-edited" is a real answer and it changes what a spec may say). Still only when `library`, the optional **provisional marker**, written only if the project volunteers one. |
 | `## Verify ladder` | candidate L2 from the test/build scripts | confirmation that L2 is the real floor, and what L3 evidence looks like. A repo with no test suite is a legitimate answer — record *why*, so no worker treats it as a gap to fill on the side |
 | `## Sources of truth` | agents available in `.claude/agents/` and `~/.claude/agents/` | the access-policy source — where per-operation policies actually live (migrations, IaC, a console, an MCP). "None — no data layer" is a real answer and closes the question |
 | `## Project gates` | — | one question: *is there a class of breakage here that ships silently and no test catches?* Default is **None**. A gate invented at install time to look thorough will never be run |
@@ -135,10 +135,8 @@ it makes sense to someone who has never read a skill:
 
 1. **Which tracker does this project run?** One question, asked before anything else, because
    it decides which pair of filing rows the rest of `## Repo` even has.
-2. **`## Repo`'s two filing rows**, in that tracker's own words: where a page spec files
-   (*design-spec target*) and where an escalated design-system gap files (*DS-gap backlog*).
-   Ask both even when the answer is the same value twice — the common case is that they
-   differ, since a gap belongs to the design system rather than to the app being specced.
+2. **`## Repo`'s filing row**, in that tracker's own words: where an escalated design-system gap
+   would file (*DS-gap backlog*). A brief only names it and files nothing.
    Then **one optional question: where do tickets live, if not on that tracker?** The brief
    skills read the ticket a human hands them, and some projects keep tickets on one system and
    file work on another — Jira beside GitHub is the common case. **"On the tracker" is a
@@ -147,14 +145,14 @@ it makes sense to someone who has never read a skill:
    tracker. A ticket URL the human pastes is the quickest way to read the locator back.
 3. **Which role does this repo play?** `consumer` (it renders the design system) or `library`
    (it *is* the design system). One question, asked before the rest of `## Design system`,
-   because it **gates** the three convention questions in step 4 — a `consumer` answer means
-   those three rows are never asked about and never written. On a fresh copy of the template
+   because it **gates** the two convention questions in step 4 — a `consumer` answer means
+   those two rows are never asked about and never written. On a fresh copy of the template
    they are simply left out, which is ordinary filling; against an adapter that already exists
    nothing is removed, per step 3's deletion rule. Never infer it: a repo with a
    `components/` directory is not thereby a library, and the tree has no way to say which side
    of the design system it sits on. `consumer` is the default and what an absent row means, so
    an answer of "I don't know what that means" resolves to `consumer` safely.
-4. **Only when the answer was `library`** — the three convention rows, one question each. Each
+4. **Only when the answer was `library`** — the two convention rows, one question each. Each
    is about the design system's own source, and none of them is readable:
    - **How does a component declare its variant axes?** Ask for a **ladder**, in the icon
      ladder's shape: what is tried first, what the fallback is when that is absent, and which
@@ -165,22 +163,12 @@ it makes sense to someone who has never read a skill:
      literal a spec's token delta may be, so it is worth pressing on: a generator plus a source
      file → a spec states the literal source edit; **"None — the emitted CSS is hand-edited"**
      is an equally real answer → a spec states a coordinated file-edit list instead.
-   - **Where do stories live, and are `argTypes` generated or hand-written?** Generated from the
-     variants means adding a variant value needs no story edit; hand-written means it does, and
-     a spec has to say so.
-5. **Also only when the answer was `library`** — the **provisional-decision** rows, and **one
-   question, not four**. Ask the *Gap policy* one, because it is the only one whose default a
-   project might genuinely disagree with: **"when a design input is missing — Figma has not
-   defined a variable, a token does not exist yet — should the spec ship a chosen value marked as
-   provisional, or stop and ask?"** The default answer, and what an absent row means, is *ship it
-   for a token-layer or Figma-side gap, always stop for a change to the component's API*. Mention
-   the other three — *Provisional marker*, *Gap tracker*, *Provisional expiry* — in one breath as
-   available overrides, and **write none of them unless the project volunteers one**: all four
-   default, so a row left out is not a hole. Do not press. Asked as one question with three
-   named-and-dropped overrides, this costs a `library` install one question rather than four.
+5. **Also only when the answer was `library`** — mention the *Provisional marker* row as an
+   available override, and **write it only if the project volunteers one**. It defaults, so a row
+   left out is not a hole. Do not press.
 6. **The rest of `## Design system`**, per the inference row above: the catalog pointer first
    (nothing else in the section matters without it), then the fingerprint command, the three
-   class-prefix facts, the icon ladder, and last the two optional rows. Never the
+   class-prefix facts, the icon ladder, and last the usage-rules row. Never the
    `UI component lab:` row: `/figma-tools:create-ui-component-lab` writes it when it installs
    the lab.
 
@@ -206,7 +194,7 @@ it makes sense to someone who has never read a skill:
      inside a nested `node_modules`.
    - **A candidate is a catalog only when its line 1 is the shape contract's stamped title
      line** — `# <name> catalog (fingerprint: <value> · generated: <YYYY-MM-DD>)`, per the
-     `figma-to-spec` skill's `references/catalog-contract.md`. A filename, a directory name or a
+     `figma-to-brief` skill's `references/catalog-contract.md`. A filename, a directory name or a
      README that mentions a catalog is not evidence; the stamp is.
    - **Exactly one match** → propose its path, as it sits in this checkout, as the catalog
      pointer, and propose the installed-version read — the `version` field of that package's own

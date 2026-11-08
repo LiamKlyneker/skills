@@ -2,7 +2,7 @@
 
 Shared by `to-task`, `work-on-task`, `to-prd` and `to-prd-tasks` (prd-workflow),
 `to-spec`, `to-spec-tasks`, `work-on-spec` and `spec-worker.md` (ado-workflow), `figma-to-brief`
-and `prototype-to-spec` (figma-tools), and `deep-grill` (lk). Every fidelity rule lives here once,
+and `prototype-to-brief` (figma-tools), and `deep-grill` (lk). Every fidelity rule lives here once,
 so those consumers cannot drift from each other.
 
 Each section is numbered. A skill that needs one cites it as "per `../_shared/fidelity-ledger.md`

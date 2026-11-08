@@ -1,6 +1,6 @@
 # Leaks the hand capture reproduced
 
-One hand run of `prototype-to-spec` → `deep-grill` → `to-task` against the Vitrine fixture,
+One hand run of `prototype-to-brief` → `deep-grill` → `to-task` against the Vitrine fixture,
 scored against the leaks the same chain produced on real work. Each line is one case the hop
 cases are built from: what the leak is, in fixture vocabulary, and what the run actually
 produced instead.
@@ -8,7 +8,7 @@ produced instead.
 The three frozen artifacts of that run are `brief.md` and `issue.md` beside this file, and the
 grill transcript at `evals/grill-history.jsonl` in the fixture repository.
 
-## Brief hop — `prototype-to-spec`
+## Brief hop — `prototype-to-brief`
 
 - did not reproduce: brief reads only the spec files and skips the per-element handoff and the component source — the brief cites `design_handoff_shelf_picker/README.md` and 12 `.tsx:L` source slices
 - did not reproduce: a composite classified `exact` by name match while its default chrome differs from the still — `ComboboxCommandInput` and `ComboboxContent` are classed `DS with overrides` / `DS change`, only primitives are `exact`

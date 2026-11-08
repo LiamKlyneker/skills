@@ -323,8 +323,7 @@ def check_symlinks() -> None:
 
     - **Packaging** — `plugins/*/skills/_shared`, `plugins/prd-workflow/_shared` (the
       same target one level up, so `prd-worker.md` under `agents/` resolves its own
-      `../_shared/` links), every plugin's `skills/install`, and `figma-to-spec`'s
-      agent link. Install dereferences these into each cache copy; they are build
+      `../_shared/` links), and every plugin's `skills/install`. Install dereferences these into each cache copy; they are build
       mechanics and they are required.
     - **Delivery** — a link that makes a plugin or skill load. Two shapes of it have
       existed here and both are now illegal: a *top-level* shim into `plugins/` (one
