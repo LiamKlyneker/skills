@@ -90,11 +90,9 @@ a { color: inherit; text-underline-offset: 2px; }
 .cells { display: flex; gap: 6px; }
 
 .cell { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; border-radius: 5px; padding: 2px 7px; white-space: nowrap; font-variant-numeric: tabular-nums; }
-.cell .t { font-size: 11px; opacity: 0.75; }
 .cell.pass { background: var(--pass-bg); color: var(--pass); }
 .cell.fail { background: var(--fail-bg); color: var(--fail); }
 .cell.notrun { background: var(--none-bg); color: var(--none); }
-.cell.absent { color: var(--faint); border: 1px dashed var(--line-strong); }
 .cell.nocases { color: var(--muted); border: 1px dashed var(--line-strong); }
 .ico { font-weight: 700; width: 1em; text-align: center; }
 
@@ -102,12 +100,6 @@ a { color: inherit; text-underline-offset: 2px; }
 .skillhead { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 14px; }
 .skillhead h2 { margin: 0; font-family: var(--mono); font-size: 22px; font-weight: 500; letter-spacing: -0.01em; }
 .skillhead .plug { color: var(--muted); }
-.tierhead { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; margin-top: 16px; }
-.tierhead h3 { margin: 0; font-size: 12px; }
-.tierhead .hint { color: var(--muted); font-size: 12px; }
-.tierbadge { font-size: 16px; font-weight: 500; }
-
-
 
 .case { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 20px 24px; display: grid; gap: 12px; }
 .case.failing { border-left: 4px solid var(--fail); }
@@ -138,16 +130,6 @@ th, td { text-align: left; padding: 6px 12px; white-space: nowrap; }
 tbody tr:nth-child(odd) { background: var(--zebra); }
 th { font-weight: 500; color: var(--muted); font-size: 11px; }
 
-.jev { border: 1px dashed var(--line-strong); border-radius: 8px; padding: 16px; display: grid; gap: 10px; }
-.jev .h { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 12px; }
-.jev .h b { font-weight: 600; }
-.jev .sub { color: var(--meta); font-size: 13px; }
-.bar { display: flex; height: 10px; border-radius: 5px; overflow: hidden; background: var(--line); }
-.bar span { display: block; height: 100%; }
-.legend { display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: 12.5px; font-variant-numeric: tabular-nums; }
-.legend i { display: inline-block; width: 9px; height: 9px; border-radius: 2px; margin-right: 5px; }
-.jev ul { margin: 0; padding-left: 18px; font-size: 12.5px; }
-
 .empty { border: 1px dashed var(--line-strong); border-radius: 10px; padding: 20px 24px; color: var(--muted); }
 .empty b { color: var(--ink); }
 .legendbar { display: flex; flex-wrap: wrap; gap: 6px 14px; color: var(--muted); font-size: 12px; align-items: center; }
@@ -168,7 +150,6 @@ th { font-weight: 500; color: var(--muted); font-size: 11px; }
     <span class="cell pass"><span class="ico">✓</span>pass</span>
     <span class="cell fail"><span class="ico">✗</span>fail</span>
     <span class="cell notrun"><span class="ico">○</span>no verdict</span>
-    <span class="cell absent">— no cases in tier</span>
     <span class="gp llm">◆ llm · model judgement</span>
   </div>
   <div class="filters" role="group" aria-label="Filter skills">
@@ -209,7 +190,6 @@ function sum(xs) { return xs.some(x => x != null) ? xs.reduce((a, x) => a + (x |
 function runEntry(run, rc) {
   const attempts = (rc.attempts || []).filter(a => a.arm !== "without");
   const graders = attempts.flatMap(a => a.graders || []);
-  const jev = attempts.filter(a => a.sidecar).map(a => a.sidecar);
   return {
     at: run.startedAt,
     passed: rc.passed,
@@ -225,9 +205,7 @@ function runEntry(run, rc) {
     version: run.pluginVersion,
     partial: run.partial,
     report: run.reportPath,
-    failed: [...new Set(graders.filter(g => g.passed === false).map(g => g.name))],
-    jev: jev.length ? { model: run.sidecar && run.sidecar.model, attempts: jev } : null,
-    sidecarError: run.sidecar_error
+    failed: [...new Set(graders.filter(g => g.passed === false).map(g => g.name))]
   };
 }
 
@@ -248,13 +226,11 @@ function index(catalog) {
   });
 }
 
-function tierCell(sk, tier) {
-  const cs = sk.cases.filter(c => c.tier === tier);
-  if (!cs.length) return { cls: "absent", passed: 0, total: 0 };
-  const states = cs.map(c => state(c.runs[0]));
+function skillCell(sk) {
+  const states = sk.cases.map(c => state(c.runs[0]));
   const passed = states.filter(x => x === "pass").length;
   const cls = states.includes("fail") ? "fail" : states.includes("notrun") ? "notrun" : "pass";
-  return { cls, passed, total: cs.length };
+  return { cls, passed, total: sk.cases.length };
 }
 function isFailing(sk) { return sk.cases.some(c => state(c.runs[0]) === "fail"); }
 
@@ -265,19 +241,16 @@ try { current = localStorage.getItem("evals-skill"); } catch (e) {}
 function renderTotals() {
   const tested = skills.filter(s => s.cases.length).length;
   const cases = skills.reduce((n, s) => n + s.cases.length, 0);
-  const micro = skills.reduce((n, s) => n + s.cases.filter(c => c.tier === "micro").length, 0);
-  const full = skills.reduce((n, s) => n + s.cases.filter(c => c.tier === "full").length, 0);
   const failing = skills.reduce((n, s) => n + s.cases.filter(c => state(c.runs[0]) === "fail").length, 0);
   document.getElementById("totals").replaceChildren(
     el("span", {}, [el("b", { text: tested + "/" + skills.length }), " skills tested"]),
-    el("span", {}, [el("b", { text: String(cases) }), " cases (" + micro + " micro · " + full + " full)"]),
+    el("span", {}, [el("b", { text: String(cases) }), " cases"]),
     el("span", {}, [el("b", { text: String(failing) }), " failing on last run"])
   );
 }
 
-function cellNode(c, label) {
-  if (c.cls === "absent") return el("span", { cls: "cell absent", title: "No " + label + " cases" }, [el("span", { cls: "t", text: label }), "—"]);
-  return el("span", { cls: "cell " + c.cls }, [el("span", { cls: "t", text: label }), el("span", { cls: "ico", text: ICON[c.cls] }), c.passed + "/" + c.total]);
+function cellNode(c) {
+  return el("span", { cls: "cell " + c.cls }, [el("span", { cls: "ico", text: ICON[c.cls] }), c.passed + "/" + c.total]);
 }
 
 function renderList() {
@@ -291,7 +264,7 @@ function renderList() {
     rows.forEach(s => {
       const cells = el("span", { cls: "cells" });
       if (!s.cases.length) cells.appendChild(el("span", { cls: "cell nocases", text: "no cases yet" }));
-      else { cells.appendChild(cellNode(tierCell(s, "micro"), "micro")); cells.appendChild(cellNode(tierCell(s, "full"), "full")); }
+      else cells.appendChild(cellNode(skillCell(s)));
       const key = s.plugin + "/" + s.name;
       const b = el("button", { cls: "row" + (s.cases.length ? "" : " untested"), id: "row-" + key.replace(/[^\w-]/g, "_") }, [el("span", { cls: "name", text: s.name }), cells]);
       if (key === current) b.setAttribute("aria-current", "true");
@@ -300,28 +273,6 @@ function renderList() {
     });
     nav.appendChild(g);
   });
-}
-
-function jevBox(jev) {
-  const parts = [["present", "var(--pass)"], ["added", "var(--ink)"], ["contradicted", "var(--fail)"], ["uncertain", "var(--none)"]];
-  const box = el("div", { cls: "jev" }, [
-    el("div", { cls: "h" }, [el("span", {}, [el("b", { text: "Jev" }), " · measurement, not a verdict"]), el("span", { cls: "mono sub", text: jev.model || "" })]),
-    el("div", { cls: "sub", text: "Claims in the ## Changes section, checked against the ledger. This never changes pass or fail." })
-  ]);
-  jev.attempts.forEach((a, i) => {
-    if (a.error) { box.appendChild(el("div", { cls: "flag", text: "Attempt " + (i + 1) + ": " + a.error })); return; }
-    const b = a.buckets || {};
-    const total = a.claims || 0;
-    if (jev.attempts.length > 1) box.appendChild(el("div", { cls: "sub", text: "Attempt " + (i + 1) + " of " + jev.attempts.length }));
-    const bar = el("div", { cls: "bar", role: "img", "aria-label": parts.map(p => p[0] + " " + (b[p[0]] || 0)).join(", ") });
-    parts.forEach(p => { const v = b[p[0]] || 0; if (v && total) bar.appendChild(el("span", { style: "width:" + (100 * v / total) + "%;background:" + p[1] })); });
-    box.appendChild(bar);
-    box.appendChild(el("div", { cls: "legend" }, [el("span", {}, ["claims ", el("b", { text: String(total) })])].concat(
-      parts.map(p => el("span", {}, [el("i", { style: "background:" + p[1] }), p[0] + " ", el("b", { text: String(b[p[0]] || 0) })])))));
-    if (a.added && a.added.length) box.appendChild(el("ul", {}, a.added.map(x => el("li", { text: "added: " + (x.claim || x) }))));
-    if (a.contradicted && a.contradicted.length) box.appendChild(el("ul", {}, a.contradicted.map(x => el("li", { text: "contradicted: " + (x.claim || x) }))));
-  });
-  return box;
 }
 
 function caseCard(c) {
@@ -357,10 +308,6 @@ function caseCard(c) {
   const hist = el("div", { cls: "history" }, [el("span", { text: "history, newest first " })]);
   c.runs.slice(0, 12).forEach(r => hist.appendChild(el("span", { cls: "dot " + state(r), title: fmtDate(r.at) + " · " + stateWord(state(r)) })));
   card.appendChild(hist);
-  const withJev = c.runs.find(r => r.jev);
-  if (withJev) card.appendChild(jevBox(withJev.jev));
-  const sidecarErr = c.runs.find(r => r.sidecarError);
-  if (sidecarErr) card.appendChild(el("div", { cls: "flag", text: "sidecar.json did not parse: " + sidecarErr.sidecarError }));
   const tbl = el("table", {}, [el("thead", {}, [el("tr", {}, ["run", "result", "graders", "score", "cost", "time", "version", ""].map(h => el("th", { text: h })))])]);
   const tb = el("tbody");
   c.runs.forEach(r => {
@@ -387,20 +334,10 @@ function renderDetail() {
   if (!s) { d.replaceChildren(el("div", { cls: "empty", text: "No skills found." })); return; }
   d.replaceChildren(el("div", { cls: "skillhead" }, [el("h2", { text: s.name }), el("span", { cls: "plug", text: s.plugin + " plugin" })]));
   if (!s.cases.length) {
-    d.appendChild(el("div", { cls: "empty" }, [el("b", { text: "No cases yet." }), " This skill has no eval case in either tier, so no automated check guards a change to it."]));
+    d.appendChild(el("div", { cls: "empty" }, [el("b", { text: "No cases yet." }), " This skill has no eval case, so no automated check guards a change to it."]));
     return;
   }
-  [["micro", "one contract sentence on a small stub · runs before every version bump"], ["full", "the realistic fixture workspace · runs on demand"]].forEach(([tier, hint]) => {
-    const cs = s.cases.filter(c => c.tier === tier);
-    d.appendChild(el("div", { cls: "tierhead" }, [el("span", { cls: "tierbadge " + tier, text: tier }), el("span", { cls: "hint", text: hint })]));
-    if (!cs.length) d.appendChild(el("div", { cls: "empty", text: "No " + tier + " cases for this skill." }));
-    cs.forEach(c => d.appendChild(caseCard(c)));
-  });
-  const untiered = s.cases.filter(c => c.tier !== "micro" && c.tier !== "full");
-  if (untiered.length) {
-    d.appendChild(el("div", { cls: "tierhead" }, [el("span", { cls: "tierbadge", text: "no tier tag" }), el("span", { cls: "hint", text: "carries neither micro nor full in its tags" })]));
-    untiered.forEach(c => d.appendChild(caseCard(c)));
-  }
+  s.cases.forEach(c => d.appendChild(caseCard(c)));
   if (badRuns.length) d.appendChild(el("div", { cls: "flag", text: badRuns.length + " result file(s) did not parse: " + badRuns.map(r => r.plugin + "/" + r.stamp).join(", ") }));
 }
 

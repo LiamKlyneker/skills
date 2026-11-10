@@ -1,6 +1,6 @@
 # ADR 0016 — A scorer sits beside the gate, never inside it
 
-- **Status**: Accepted
+- **Status**: Superseded by ADR 0027
 - **Date**: 2026-09-21
 - **Context**: PRD #188, implemented by #199 onward
 

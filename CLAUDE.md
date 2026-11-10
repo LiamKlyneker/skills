@@ -78,12 +78,14 @@ predict the morning before. Prose is
 still the default and the rest of the repo is prose; a script is the exception that has to earn
 itself, and a script whose output is a judgement never does.
 
-**A third script is in the tree and ships with no skill**:
-`plugins/prd-workflow/evals/sidecar.py`, which scores a finished eval run's claims against the
-state the run was given. Its numbers are probabilistic, which is exactly what the rule above
-refuses — so it sits beside the release gate and never inside it, pins its model id, and never
-edits the runner's output. ADR
-[0016](docs/adr/0016-a-scorer-beside-the-gate.md) carves that exception and states its limits.
+**The default answer to "does this fix need an eval case" is no.** A case is admitted only when
+all four hold: the failure came back after a fix, the maintainer would not see it when it happens
+again, a deterministic grader decides it in one run, and no free check (a validator rule, a script,
+a template, a redesign) can prevent it. A failure the maintainer could never notice, such as private
+data in a public issue or a broken contract in an unattended run, waives the first condition. An
+issue that carries a `Recurrence of #N` line obliges an answer of "redesign or eval" before the work
+closes, recorded in the pull request description. ADR
+[0027](docs/adr/0027-eval-cases-are-earned-by-a-failure.md) has the argument.
 
 **One skill installs an app it does not carry.** `figma-tools:create-ui-component-lab` puts a
 UI component lab — a Vite + React app — into a library repo, and the app's code lives in its own

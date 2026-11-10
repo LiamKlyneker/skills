@@ -1,6 +1,6 @@
 # ADR 0015 — Eval suites against a synthetic fixture are the release gate
 
-- **Status**: Accepted
+- **Status**: Superseded by ADR 0027
 - **Date**: 2026-09-19
 - **Context**: PRD #173, implemented by #174–#183
 

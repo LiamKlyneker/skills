@@ -81,7 +81,7 @@ Read the PRD's `## Readiness` section if present. Route each item to the place t
 
 Do not paste the section into any child.
 
-While drafting each slice, also gather its `## Worker context` and `## QA notes` (see `../references/task-body.md`): explore the codebase for the real file paths, scoped `CONTEXT.md`s, and prior-art examples the slice needs; take verify commands from the **project adapter** at `<repo-root>/.claude/project/adapter.md` (never hardcode them) — when the adapter registers both a per-skill and a full eval gate row, the per-skill row goes into each slice that touches a skill, and the full row only into the slice that bumps the version; mark **User-visible: y/n** (y = app boot + screenshot verification applies). These two sections are what let an isolated orchestrated worker (`/work-on-prd`) implement the slice without plan mode — vague pointers here mean a blind worker there.
+While drafting each slice, also gather its `## Worker context` and `## QA notes` (see `../references/task-body.md`): explore the codebase for the real file paths, scoped `CONTEXT.md`s, and prior-art examples the slice needs; take verify commands from the **project adapter** at `<repo-root>/.claude/project/adapter.md` (never hardcode them) — a gate row's own trigger text, as the adapter's *Commands* table states it, decides which slice carries that row, and the slicer copies the row into a slice only when the trigger matches that slice; mark **User-visible: y/n** (y = app boot + screenshot verification applies). These two sections are what let an isolated orchestrated worker (`/work-on-prd`) implement the slice without plan mode — vague pointers here mean a blind worker there.
 
 ### 4. Quiz the user
 

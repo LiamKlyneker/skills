@@ -9,7 +9,7 @@ description: >
   `<scratch>/report/1/` before it would post them. Graders check that the title carries the kind
   the skill picked and the skill's name, and that the body carries none of the project's tokens
   the sanitizing rule bans. No scaffold: the run needs nothing but an empty working directory.
-tags: [micro, report]
+tags: [report]
 runs: 1
 execution:
   prompt: |
