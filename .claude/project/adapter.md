@@ -34,8 +34,7 @@ directory.
 | Manifest check — **also L2 floor** | `rc=0; for p in plugins/prd-workflow plugins/figma-tools plugins/ado-workflow plugins/lk plugins/qa .; do python3 -c 'import json,sys; r=json.loads(sys.stdin.read() or "{}"); bad=[(s["file"],i) for s in [r.get("manifest") or {}]+r.get("contents",[]) for k in ("errors","warnings") for i in s.get(k,[]) if "not read — components are read without following symlinks" not in i.get("message","")]; [print(f,i) for f,i in bad]; ok=r.get("success") and not bad; print(("ok  " if ok else "VALIDATE FAILED  ")+sys.argv[1]); sys.exit(not ok)' "$p" <<<"$(claude plugin validate --json "$p" 2>/dev/null)" && continue; rc=1; done; exit $rc` |
 | Catalog + version gate — **also L2 floor** | `python3 .github/scripts/validate_skills.py --base origin/main` |
 | Night script check — **on every child that touches it** | `bash -n plugins/lk/skills/sprint-plan/scripts/night.sh && bash plugins/lk/skills/sprint-plan/scripts/night.sh --dry-run --plan plugins/lk/evals/sprint-plan-plan-file/dry-run/.sprint/plan.md` |
-| Per-skill eval gate — **on every child that touches a skill** | `command claude plugin eval plugins/<plugin> --ablation none --scaffold --no-publish --runs 1 --threshold 1.0 --max-cost-usd 5 --model claude-sonnet-5 --judge-model claude-sonnet-5 --allow-tools Write Bash Edit --tag <skill>` |
-| Full micro eval gate — **once, on the child that bumps the plugin version** | `command claude plugin eval plugins/<plugin> --ablation none --scaffold --no-publish --runs 1 --threshold 1.0 --max-cost-usd 12 --model claude-sonnet-5 --judge-model claude-sonnet-5 --allow-tools Write Bash Edit --tag micro` |
+| Eval gate — **once per branch: before the PR opens, or in a `work-on-prd` run on the child that bumps the plugin version** | `ANTHROPIC_API_KEY="$(cat "${SKILLS_EVAL_KEY_FILE:?}")" command claude plugin eval plugins/<plugin> --ablation none --scaffold --no-publish --runs 1 --threshold 1.0 --max-cost-usd 5 --model claude-sonnet-5 --judge-model claude-sonnet-5 --allow-tools Write Bash Edit --tag <skill> [--tag <skill> …]` |
 | Boot the app (visual loop) | `claude plugin list` — the loaded-plugin inventory *is* this repo's running state |
 | App screenshot | None — terminal output is the evidence; paste it verbatim |
 | Install deps | None |
@@ -47,15 +46,28 @@ It fails on a validation error or warning, never on the `directory` or `advice` 
 submitted there. The one warning it tolerates is the symlink-not-followed one, which the
 packaging symlinks under `skills/` raise by design.
 
-**Two eval gate rows, and each child runs one of them.** A micro case carries `micro` plus
-the tag of every skill its prompt invokes (`tags: [micro, prove-branch]`). A child that touches
-a skill runs the per-skill row with that skill's tag. `--tag` is an OR filter, so the row passes
-the skill tag alone, and that selects micro cases only because every micro case carries its skill
-tags and no `full` case carries one (`tags: [full]`).
-The child that bumps the plugin's version runs the full micro row once, on that plugin only: it
-selects every `micro`-tagged case — one contract sentence each, against a stub the case owns —
-and every one of them passes before the bump. Its cap fits one full run of `plugins/qa`, the
-largest suite, at about 8 USD. The `full`-tagged cases run on demand instead, when a change
+**One eval gate, run once per branch.** When the work happens in a session, it runs before the
+pull request opens. In a `work-on-prd` run, where the pull request already exists, it runs on the
+child that bumps the plugin version and on no other child; a child that does not bump the version
+runs no eval. Its scope is the skills the branch touched, nothing wider: one command per plugin
+that has a touched skill, with one `--tag <skill>` per touched skill in that plugin. A skill
+counts as touched when a file under `plugins/<plugin>/skills/<skill>/` changed on the branch
+relative to `origin/main`, or when an agent that skill spawns changed. A change under `_shared/`
+or `install/` adds no skill by itself.
+A micro case — one contract sentence, against a stub the case owns — carries `micro` plus the
+tag of every skill its prompt invokes (`tags: [micro, prove-branch]`). `--tag` is an OR filter,
+so the skill tags select micro cases only, because every micro case carries its skill tags and no
+`full` case carries one (`tags: [full]`). A touched skill with no case tagged for it runs
+nothing: an empty selection is not a pass, so the command carries only tags that at least one
+`case.yaml` under that plugin's `evals/` carries, and whoever runs the gate says in one line which
+touched skills had no case. The cap is USD 5 per plugin command.
+The `ANTHROPIC_API_KEY` prefix sends the cost of the run to the API credit of the maintainer's
+Console organization; without it, the run draws on the subscription's usage limits. The key is
+read from the file `SKILLS_EVAL_KEY_FILE` names, a variable the machine's shell profile exports;
+the `:?` stops the command when it is unset, where an empty key would fall through to the
+subscription. `ANTHROPIC_API_KEY` itself is set for that one command only and is never exported
+in a shell profile, because an exported key moves every interactive session onto API billing.
+The `full`-tagged cases run on demand instead, when a change
 touches how a skill reads the prototype tree, the adapter or the fixture app. A grader that
 reads how the run phrased its message sits in a `full` case, never a micro one: one run at
 threshold 1.0 cannot absorb a grader that passes on some wordings and fails on others.
