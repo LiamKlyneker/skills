@@ -78,3 +78,17 @@ Also note his non-native rhythm ("so there is working and i was expecting some e
 > team, pushed the fix for the date picker, its on the `fix/date-picker` branch... would appreciate a quick look when you've got a sec. I'll merge it tomorrow if nobody's against it, thats the plan at least
 
 **Why:** Every contraction spelled correctly and every clause with its subject is tidier than anyone types in Slack. The after drops the subject on the short clauses (`pushed the fix`, `would appreciate`) and the apostrophe on two contractions (`its`, `thats`) while `you've` and `nobody's` keep theirs. The mix is the signal: dropping every apostrophe is as uniform as keeping them all. `I'll` keeps its apostrophe because `ill` is a different word.
+
+## 5. Named praise opening the summary of a routine PR (2026-11)
+
+**Register:** PR review summary comment, on a small PR: one new tab that reuses an existing view, plus one small fix in a shared section. Reconstructed to show the shape of the miss, not the sent text.
+
+**Before (as drafted):**
+
+> nice work over here, small and clean change... the new tab reuses the existing view nicely and the tests cover the empty and loading states really well. one thing before merge tho, the shared section fix also changes the header spacing on the other tabs, can you double check those?
+
+**After (what Liam sent):**
+
+> LGTM! one thing before merge tho, the shared section fix also changes the header spacing on the other tabs, can you double check those?
+
+**Why:** Hard rule 8 says to keep acknowledgment proportional, and this is what proportional means for the summary: a routine PR gets a bare `LGTM!` or `nice work` and no named details. Naming what an ordinary PR does well ("small and clean", "covers the empty and loading states") is something a human reviewer never bothers to write, so it reads as an unsupervised AI review. Some praise is always sincere, so sincerity is not the filter; the size and weight of the PR is. Named praise is for a large PR or unusual work — a hard bug, a clever design, a large cleanup.
