@@ -46,11 +46,15 @@ Record the plugin's `version` from the loaded copy's `.claude-plugin/plugin.json
 ## 3. Check for an existing issue
 
 ```bash
-gh issue list --repo LiamKlyneker/skills --state open --search "<skill name> <two or three key words>" \
-  --json number,title,url --limit 10
+gh issue list --repo LiamKlyneker/skills --state all --search "<skill name> <two or three key words>" \
+  --json number,title,url,state --limit 10
 ```
 
+The search covers open and closed issues. When the session's conclusion already says the failure was seen before, the search only has to find the issue number.
+
 **When an open issue already covers the item, do not file a new one.** Show it, and offer to add the new detail as a comment on it instead. Filing and commenting follow the same sanitizing rule.
+
+**When a closed issue describes the same skill and the same symptom, the failure is a recurrence.** File the report as usual, and put one line in its body: `Recurrence of #N`, where `N` is the closed issue. A closed issue on a different skill or a different symptom is not a recurrence and adds no line.
 
 ## 4. Security findings never go public
 
@@ -76,7 +80,11 @@ Body sections, in this order:
 
 ## Proposed change
 <what should change, as concretely as the session settled it>
+
+Recurrence of #<N>
 ```
+
+The `Recurrence of #<N>` line is the last line of the body, after `## Proposed change`, and appears only on a recurrence report. A report that is not a recurrence has no such line.
 
 ## 6. The sanitizing rule — mechanical, not judgement
 
@@ -86,6 +94,7 @@ Body sections, in this order:
 
 - text from any file in `LiamKlyneker/skills` — a `SKILL.md`, `_shared/*.md`, an eval case, a fixture;
 - the names of plugins, skills, agents, eval cases, and the `version`;
+- a reference to an issue in `LiamKlyneker/skills` itself, such as `Recurrence of #N`: it names this repo's own issue and nothing of the project, so it is the one issue number the "no PR name or number" exclusion below does not cover;
 - generic descriptions written in your own words: *a component*, *a list screen*, *a two-step form*, *the project's tracker*, *a design token*.
 
 **Everything else is excluded, with no judgement call:** no company, product, client or project name; no repo, org, branch or PR name or number; no ticket id; no person's name or handle; no file path from the project; no component, route, table, endpoint or token name from the project; no URL other than `github.com/LiamKlyneker/skills`; no email; no credential or anything shaped like one; no screenshot; and **no quoted text from any artifact of the project** — no code, no diff hunk, no issue line, no brief row, no log line, no error message copied verbatim.
