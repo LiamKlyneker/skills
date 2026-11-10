@@ -64,46 +64,40 @@ Then, for a skill change:
   tree, run `claude --plugin-dir plugins/<name>`. The packaging links inside
   `plugins/*/skills/` are a different thing and are required.
 - Name fixtures only, never a consumer repo, ticket or path — in an issue, an eval case,
-  a doc or a commit. See `docs/adr/0015-eval-suites-against-a-synthetic-fixture.md`.
+  a doc or a commit. See ADR 0027 (`docs/adr/0027-eval-cases-are-earned-by-a-failure.md`).
 
 ## Running an eval suite
 
 A plugin whose manifest carries `experimental.evals` ships eval cases under
 `plugins/<plugin>/evals/`. They run against the working tree, never an installed copy.
 
-A case that replays a recorded conversation declares `context.history_file`, and the
-runner resolves that path inside the case directory before any scaffold script runs — so
-the transcript has to be there already. It is gitignored, and this places it:
-
-```bash
-plugins/prd-workflow/evals/prepare-history.sh
-```
-
-Then the suite:
+The suite:
 
 ```bash
 command claude plugin eval plugins/<plugin> \
   --ablation none --scaffold --no-publish \
   --runs 1 --threshold 1.0 --max-cost-usd 5 \
   --model claude-sonnet-5 --judge-model claude-sonnet-5 \
-  --allow-tools Write Bash
+  --allow-tools Write Bash Edit --tag <skill>
 ```
 
-Every flag is deliberate, and the two the runner defaults differently are the ones to
-keep typing: `--ablation` defaults to with-without and `--judge-model` to Haiku.
+The adapter's eval gate row (`.claude/project/adapter.md`) is the command a branch runs, with the
+`ANTHROPIC_API_KEY` prefix and one `--tag <skill>` per touched skill. Every flag is deliberate, and
+the two the runner defaults differently are the ones to keep typing: `--ablation` defaults to with-without and `--judge-model` to Haiku.
 
 - `--ablation none` — these suites score the skill's behaviour, not the delta against a
   no-plugin arm, and the baseline arm doubles the cost.
-- `--scaffold` — the cases place the fixture workspace with
-  `plugins/prd-workflow/evals/scaffold-fixture.sh`, and without this flag each case runs
-  against an empty workspace and fails for the wrong reason.
+- `--scaffold` — a case's own `scaffold.sh` places its workspace, and without this flag each
+  case runs against an empty workspace and fails for the wrong reason.
+- `--tag <skill>` — an OR filter that scopes the run to the cases carrying the tag of a
+  touched skill.
 - `--no-publish` — a local run is not a report.
 - `--model claude-sonnet-5` is the gate: a suite passes there or it does not pass.
   Re-running on `claude-haiku-4-5` is advisory — a cheaper model failing a case is a
   signal about the prose, not a regression.
 - `--judge-model claude-sonnet-5` — the graders read skill prose against a repo's
   wiring, which the default judge is too small for.
-- `--allow-tools Write Bash` — only the read-only tools are granted by default, and a
+- `--allow-tools Write Bash Edit` — only the read-only tools are granted by default, and a
   case whose skill writes a file or shells out scores zero without this. A case's own
   `allowed_tools` narrows what the child may use; it cannot widen past this grant.
 
@@ -111,15 +105,29 @@ keep typing: `--ablation` defaults to with-without and `--judge-model` to Haiku.
 reaches the binary. The runner writes scores to `plugins/<plugin>/evals/results/` and
 records MCP stand-ins into `plugins/<plugin>/evals/mocks/`; both are gitignored.
 
-The scaffold script copies the fixture from a `skills-fixture` checkout beside this
-repo and clones it from GitHub when there is none. It prints which source it used —
-pass `--dry-run` to see that without placing anything. `prepare-history.sh` resolves
-its source the same way and takes the same flag.
-
 A new case needs three things the dashboard (`dashboard/`) reads: a name of the form
-`<skill>-<behaviour>`, which is how a case is filed under its skill; a `micro` or `full`
-tag for its tier; and a one-line `summary:` saying what it checks, shown as the case's
-title. The runner ignores `summary:`.
+`<skill>-<behaviour>`, which is how a case is filed under its skill; a `tags:` entry with the tag
+of every skill the case's prompt invokes (`tags: [report]`); and a one-line `summary:` saying what
+it checks, shown as the case's title. The runner ignores `summary:`.
+
+## Adding an eval case
+
+The default is no case. A case is added only when all four hold:
+
+1. The failure came back after a fix. A first failure is fixed in prose.
+2. The maintainer would not see the failure when it happens again: the path is unattended, a
+   second skill or a script parses the output, or the output is public or irreversible.
+3. A deterministic grader decides it in one run. No LLM grader, and no grader on wording.
+4. No free check can prevent it instead: a validator rule, a script, a template or a redesign.
+
+One exception: a failure the maintainer could never notice (private data in a public issue, a
+broken contract in an unattended run) qualifies on its first plausible occurrence. Conditions 2 to
+4 still hold.
+
+When a failure returns after a fix, answer "redesign or eval" first: a free mechanical check that
+makes it impossible comes before a case. An issue carrying a `Recurrence of #N` line needs that
+answer in its pull request description. ADR
+[0027](docs/adr/0027-eval-cases-are-earned-by-a-failure.md) has the argument.
 
 ## Pull requests
 

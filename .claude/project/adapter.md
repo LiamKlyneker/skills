@@ -54,10 +54,8 @@ that has a touched skill, with one `--tag <skill>` per touched skill in that plu
 counts as touched when a file under `plugins/<plugin>/skills/<skill>/` changed on the branch
 relative to `origin/main`, or when an agent that skill spawns changed. A change under `_shared/`
 or `install/` adds no skill by itself.
-A micro case — one contract sentence, against a stub the case owns — carries `micro` plus the
-tag of every skill its prompt invokes (`tags: [micro, prove-branch]`). `--tag` is an OR filter,
-so the skill tags select micro cases only, because every micro case carries its skill tags and no
-`full` case carries one (`tags: [full]`). A touched skill with no case tagged for it runs
+A case carries the tag of every skill its prompt invokes (`tags: [report]`), and `--tag` is an
+OR filter over those tags. A touched skill with no case tagged for it runs
 nothing: an empty selection is not a pass, so the command carries only tags that at least one
 `case.yaml` under that plugin's `evals/` carries, and whoever runs the gate says in one line which
 touched skills had no case. The cap is USD 5 per plugin command.
@@ -67,17 +65,12 @@ read from the file `SKILLS_EVAL_KEY_FILE` names, a variable the machine's shell 
 the `:?` stops the command when it is unset, where an empty key would fall through to the
 subscription. `ANTHROPIC_API_KEY` itself is set for that one command only and is never exported
 in a shell profile, because an exported key moves every interactive session onto API billing.
-The `full`-tagged cases run on demand instead, when a change
-touches how a skill reads the prototype tree, the adapter or the fixture app. A grader that
-reads how the run phrased its message sits in a `full` case, never a micro one: one run at
-threshold 1.0 cannot absorb a grader that passes on some wordings and fails on others.
 Two flags are the difference between a real run and a meaningless one:
 `--allow-tools Write Bash Edit`, without which only read-only tools are granted and a skill
 that writes its own output scores 0.00, and `--scaffold`, without which each case runs
 against an empty working directory. `command claude` is what reaches the binary, since
-`claude` is a `$PWD`-switching shell function on this machine. The tier boundary and what a
-micro case does and does not prove are ADR
-[0017](../../docs/adr/0017-two-fixture-tiers-and-which-one-a-leak-lands-in.md).
+`claude` is a `$PWD`-switching shell function on this machine. The admission rule for a
+case is ADR [0027](../../docs/adr/0027-eval-cases-are-earned-by-a-failure.md).
 
 **Zero warnings is the bar — except the packaging-symlink one.** That row was plain
 `validate` on purpose until #57: manifests carried no `version`, the CLI warned about the
