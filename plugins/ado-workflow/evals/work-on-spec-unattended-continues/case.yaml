@@ -14,7 +14,7 @@ description: >
   would kill the eval harness, so the prompt has the run record the exit status in a file in
   place of the `kill`; that substitution is the only place this case does not exercise the real
   mechanism.
-tags: [micro, work-on-spec]
+tags: [work-on-spec]
 runs: 1
 context:
   scaffold_script: ./scaffold.sh
