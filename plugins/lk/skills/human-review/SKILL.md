@@ -319,7 +319,9 @@ version of the file; a comment on a removed line uses `"side": "LEFT"` and the b
 1. **One thread per inline comment** through `mcp__ado__repo_pull_request_thread_write`, each
    carrying the file path and the line.
 2. **One summary thread** through `mcp__ado__repo_pull_request_thread_write`, with the summary
-   comment.
+   comment, **posted last**: only after every inline thread has landed. Azure DevOps lists the
+   newest thread first, so the summary stays on top only when it lands last. The inline threads
+   may post in parallel.
 3. **The vote**, through the reviewer-vote action of `mcp__ado__repo_pull_request_write`:
 
    | Verdict | Vote |
@@ -327,6 +329,10 @@ version of the file; a comment on a removed line uses `"side": "LEFT"` and the b
    | Comment | no vote |
    | Approve | Approved |
    | Request changes | Waiting for author |
+
+**Never set a thread status.** Every thread, the summary included, takes the Azure DevOps default
+(`Active`), and the author resolves it. A summary created as `Closed` hides an item the reviewer
+wants done before merge.
 
 Before posting on `azure-devops`, write the drafts to `<scratchpad>/review-<id>.md` as well, so
 they survive a failure.
