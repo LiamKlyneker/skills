@@ -265,7 +265,12 @@ and the ids exist only inside the session.
 
 - names the items the reviewer wants done before merge, when there are any, and says why — this is
   the only place a blocking signal lives, once, in words. Most reviews name none.
-- carries the praise, one or two items, only when sincere.
+- carries praise in proportion to the PR's size and how unusual the work is, and the scale is
+  steep. A routine PR gets no named praise: at most a bare *"LGTM!"* or *"nice work"*. Praise that
+  names a detail is for a large PR or unusual work — a hard bug, a clever design, a large cleanup —
+  and stays at one or two items. A human reviewer does not list what an ordinary PR does well, so
+  named praise on one reads as an unsupervised AI review. The walkthrough's Praise list informs the
+  reviewer and does not have to reach the summary.
 - when a research finding's outcome was post, carries the alternative and one link.
 
 **The verdict**:
