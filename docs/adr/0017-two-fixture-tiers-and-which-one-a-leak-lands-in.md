@@ -1,6 +1,6 @@
 # ADR 0017 — Two fixture tiers, and which one a leak lands in
 
-- **Status**: Accepted
+- **Status**: Superseded by ADR 0027
 - **Date**: 2026-09-22
 - **Context**: PRD #203, implemented by #206–#209
 - **Supersedes**: ADR [0015](0015-eval-suites-against-a-synthetic-fixture.md), **on its
