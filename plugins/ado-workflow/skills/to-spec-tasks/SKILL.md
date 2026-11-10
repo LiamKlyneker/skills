@@ -149,8 +149,8 @@ Do not paste the section into any `[TASK]`.
 ### 4. Decide where to cut
 
 Apply [`_shared/spec-splitting-seams.md`](../_shared/spec-splitting-seams.md) — the normative
-list of seams, including the ~5-acceptance-criteria size seam, and the cap of 4 work items with
-a push-back to Product past that.
+list of seams, including the ~5-acceptance-criteria size seam. The seams alone set the number of
+work items; there is no cap.
 
 That document decides *where*, not *whether*. Resolve it to a concrete slice list:
 

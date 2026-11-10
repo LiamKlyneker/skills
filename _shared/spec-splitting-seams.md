@@ -11,5 +11,3 @@ Cut on a seam whenever one of these applies:
 3. **Size** — more than roughly five acceptance criteria (~5 AC). Size alone is sufficient to cut on; no additional natural-seam condition is required. This is the same proxy `to-prd-tasks` uses for "too big for one worker", and it gives every work item the same implicit guarantee its GitHub counterpart carries: it fits one fresh worker session.
 4. **Expand/contract migration risk** flagged in the spec. Two-part (expand → cutover), or three-part (expand → cutover → contract) when legacy removal is in scope.
 5. **Prefactoring** — a refactor that would make the feature work trivial becomes its own **leading** slice ("make the change easy, then make the easy change"), listed as `Blocked by` for the slices it unblocks.
-
-Cap at **4** work items. If the spec would need more, push back: the underlying User Story is too big and should be re-scoped by Product.
