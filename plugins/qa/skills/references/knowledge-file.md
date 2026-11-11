@@ -6,10 +6,12 @@ yet. It is a tester's
 file, written in user words only.
 
 Three skills share it: **`qa:build-knowledge` is its only writer** — it derives the file, regenerates
-it, fills one answer on demand, and writes the chain rows of named states on demand — and **`qa:setup-states` and `qa:prove-branch` read it**. The
-one write `qa:prove-branch` makes is `build-knowledge`'s own update mode, applied when a developer
-answers an open question during a run; it never derives or regenerates a row. This
-file is the only definition of the format. No skill restates a column list; each points here
+it, fills one answer on demand, and writes the chain rows of named states on demand.
+**`qa:setup-states` and `qa:prove-branch` read it, and each writes it only through one of
+`build-knowledge`'s modes**: `qa:prove-branch` applies the update mode when a developer answers an
+open question during a run, and `qa:setup-states` applies the chain mode when a developer accepts
+the search offer. Neither derives or regenerates a row. This file is the only definition of the format. No skill
+restates a column list; each points here
 (`../references/knowledge-file.md`). No project edits the format.
 
 ## Where it lives

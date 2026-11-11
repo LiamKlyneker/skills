@@ -1,6 +1,6 @@
 ---
 name: setup-states
-description: Find the page states a branch needs in the staging org and record them in the project's `accounts.md` — observe the org first and write a row for every state it already holds, then guide the developer through creating each missing state in the app the way a tester would, verify it, and write its row; a rerun re-verifies the rows already listed and marks a vanished one stale. Interactive; drives the browser in this session through the Playwright MCP tools, dispatches no agent, never creates data itself, never runs a seeder, and writes nothing but `accounts.md`. Invoke /qa:setup-states [<page folder>] [S<n>...] — state ids, a page folder for every state of that page, or nothing to re-verify every listed row.
+description: Find the page states a branch needs in the staging org and record them in the project's `accounts.md` — observe the org first and write a row for every state it already holds, then guide the developer through creating each missing state in the app the way a tester would, verify it, and write its row; for a missing state the page's `KNOWLEDGE.md` knows nothing about, offer once to search the code for how it is made, through `qa:build-knowledge`'s chain mode and its read-only `qa:qa-chain-searcher` agent, and print the chain it finds as numbered steps; a rerun re-verifies the rows already listed and marks a vanished one stale, and never searches. Interactive; drives the browser in this session through the Playwright MCP tools, never creates data itself, never runs a seeder, never dispatches a `qa:qa-driver`, and writes `accounts.md` plus `KNOWLEDGE.md` and the adapter's *Sibling apps* row only through the chain mode. Invoke /qa:setup-states [<page folder>] [S<n>...] — state ids, a page folder for every state of that page, or nothing to re-verify every listed row.
 disable-model-invocation: true
 ---
 
@@ -16,15 +16,21 @@ seem to disagree, those files win.
 
 **It observes, and it guides; it never creates.** It looks for each state in the org through the
 app, as a tester signed in with a saved session would. A state the org lacks, the developer creates
-in the app by following this skill's steps; this skill then looks again. It never presses a control
-that changes data, never runs a seeder or any end-to-end command, never touches a database, an admin
-console or an API that writes, and never dispatches a `qa:qa-driver` or a `qa:qa-grader` — it drives
-the browser itself, in this session, because it grades nothing and talks to the developer
-throughout.
+in the app by following this skill's steps; this skill then looks again. For a missing state the
+page's `KNOWLEDGE.md` has no chain for, it offers one search for how the state is made, and prints
+the chain the search finds as steps. It never presses a control that changes data, never runs a
+seeder or any end-to-end command, never touches a database, an admin console or an API that writes,
+and never dispatches a `qa:qa-driver` or a `qa:qa-grader` — it drives the browser itself, in this
+session, because it grades nothing and talks to the developer throughout.
 
-**It writes one file**: `accounts.md`. It never writes `KNOWLEDGE.md` — `qa:build-knowledge` is that
-file's only writer — never commits, and writes nothing else into the project tree. The scenario
-directory the session machinery creates is excluded from git, as `## Signing in` says.
+**It dispatches one agent, and only through the chain mode**: the read-only `qa:qa-chain-searcher`,
+started by applying `qa:build-knowledge`'s chain mode (`## Guide second` → *The search offer*).
+
+**It writes `accounts.md`.** It writes `KNOWLEDGE.md` and the adapter's *Sibling apps* row **only
+through the chain mode**, which is `qa:build-knowledge`'s write and follows that skill's rules, the
+way `qa:prove-branch` writes a knowledge file only through the update mode. It never commits, and
+writes nothing else into the project tree. The scenario directory the session machinery creates is
+excluded from git, as `## Signing in` says.
 
 ## Arguments
 
@@ -151,18 +157,34 @@ searched for (`## Rerun`). A state whose only rows are stale is searched for as 
 
 ## Guide second
 
-For each state in scope still not found, decide whether a tester can make it in this app, now.
+For each state in scope still not found, decide whether a tester can make it in this app, now. Read
+the page's `## How a state is made` table first (a file with no such table holds no chain for any
+state), and classify each state in this order.
 
-**It cannot** when its `State, in user terms` cell says it is set in another application, needs
-time to pass ("more than 90 days ago", "more than 14 days overdue"), or needs a payment to fail —
-or when an unanswered open question of the second kind, one asking which org or team on staging
-holds it, blocks it. For each such state, say which of the three it is, give its `Seeder (for a
-human)` hint from `KNOWLEDGE.md` as the fast path for a human — the name as written, or `none known`
-— and say that it **stays `none known`**. Give no steps for it and write no row.
+**1. It cannot, and no search is offered** when its `State, in user terms` cell says it needs time
+to pass ("more than 90 days ago", "more than 14 days overdue") or needs a payment to fail — or when
+an unanswered open question of the second kind, one asking which org or team on staging holds it,
+blocks it. For each such state, say which of the two it is (or that an open question blocks it),
+give its `Seeder (for a human)` hint from `KNOWLEDGE.md` as the fast path for a human — the name as
+written, or `none known` — and say that it **stays `none known`**. Give no steps for it, offer no
+search and write no row.
 
-**It can** otherwise. For each such state, print **numbered steps a tester follows in the app**,
-built from the page's `## What the user can do` rows and the `Result the user sees` each one gives.
-Every step names three things:
+**2. It can, by the page's own steps** when the page's `## What the user can do` rows make it. Print
+**numbered steps a tester follows in the app**, built from those rows and the `Result the user
+sees` each one gives.
+
+**3. Otherwise the chain table decides:**
+
+| The chain table holds | The state |
+|---|---|
+| numbered steps for the state | can be made: print the chain (*Printing a chain*) |
+| a step `none` row for the state | cannot be made: print the row's reason, no steps, no row |
+| nothing for the state | is unknown: a search is offered (*The search offer*) |
+
+The state cell is read for time and payment only; the table is the only record of where else a state
+is made.
+
+Every printed step names three things:
 
 - **the screen** — the page by the name its `KNOWLEDGE.md` heading or the app gives it, with its
   route (`the Shelves page, /shelves`);
@@ -177,9 +199,44 @@ not create in these steps: to get an archived shelf, the steps create a `qa-setu
 that one. Steps run as the org's role. A step whose control the role may not use, by its `Allowed
 when` cell, names the role that may.
 
-Print every such state's steps and every cannot-make state in one message, then **end the turn and
-wait** for the developer to say the steps are done. Never press a control on the developer's
-behalf, and never write a row for a state that has not been seen.
+### Printing a chain
+
+A state with chain steps prints them in order, as the page's own steps print. Each printed step
+names, from its row: the app, the role, the screen with its route, the action with its quoted inputs,
+and the result the user sees that confirms the step. Every name the developer types starts with
+`qa-setup`. The steps are the developer's to follow in each app; nothing here signs in to a sibling
+app or presses a control in one.
+
+A state with a step `none` row prints that no tester can make it and the row's reason, as written. It
+gets no steps and no row. A reason ending `(likely)` is printed with that word: it is a search that
+found no answer, not a proof.
+
+### The search offer
+
+After observation, for the states classed unknown by rule 3, **ask once**, in the same message as
+the print: how many states, which ones by id and in user terms, and the expected cost — one read-only
+code search by an agent over this repo's other pages for those states, and a second question before
+any sibling app is read. Say that nothing on staging is touched. **End the turn and wait.**
+
+- A state observation found is never in the offer: it has its row.
+- A rerun with no arguments never makes the offer and never starts a search (`## Rerun`).
+- This is the only question the offer asks. The chain mode asks its own, separate question about
+  sibling apps while it searches; this skill neither asks it first nor repeats it.
+
+**On a yes**, apply `qa:build-knowledge`'s chain mode exactly as `/qa:build-knowledge <page folder>
+--chain S<n>...` would: read [`../build-knowledge/SKILL.md`](../build-knowledge/SKILL.md) → `## Chain
+mode` and apply it to the page folder for those state ids, touching nothing that mode does not
+touch. Name that command in the print. Then classify the same states again from the rewritten table
+and print each result by *Printing a chain*.
+
+**On a no**, the states stay unknown. Print `/qa:build-knowledge <page folder> --chain S<n>...` for
+them, and write nothing.
+
+### Waiting for the developer
+
+Print every state's steps, every cannot-make state and the search offer, when there is one, in one
+message, then **end the turn and wait**. Never press a control on the developer's behalf, and never
+write a row for a state that has not been seen.
 
 **When the developer says a state is done, observe again** by `## Observe first`. Write the row only
 when the state is visible, with origin `setup-states <today's date>`. When it is still not visible,
@@ -201,6 +258,9 @@ items get a new row of their own. In rerun mode, a stale row is reported with th
 the state up again — `/qa:setup-states <page folder> S<n>` — and no steps are given unless the
 developer runs it.
 
+A rerun with no arguments only verifies: it makes no search offer, starts no search and applies
+no chain mode.
+
 With nothing to re-verify — no `## States` row for the org — say so and print the two other forms
 of the command.
 
@@ -212,10 +272,14 @@ End every turn with:
 - each row written or refreshed in `accounts.md`, one line each: the state id, the state in user
   terms, the ids and the `Last verified` value;
 - each row marked stale, with the command that sets the state up again;
-- each state guided, with its numbered steps, then the line asking the developer to say when they
-  are done;
-- each state this app cannot make, with which of the three it is, the seeder hint, and `stays none
-  known`.
+- each state guided, with its numbered steps — the page's own or a chain's — then the line asking the
+  developer to say when they are done;
+- each state with a step `none` row: that no tester can make it, the row's reason, and no steps;
+- each state this app cannot make because it needs time or a failed payment, which of the two it
+  is, the seeder hint, and `stays none known`;
+- the search offer, when there are unknown states and the run is not a rerun; after a yes, the
+  `/qa:build-knowledge <page folder> --chain S<n>...` command the chain mode was applied as, and
+  what it wrote; after a no, that command for the developer to run.
 
 When nothing is missing, the print asks nothing.
 
@@ -223,9 +287,14 @@ When nothing is missing, the print asks nothing.
 
 - Never create, change or delete data, and never press a control that does.
 - Never run a seeder, an end-to-end command, a database query, or an admin console.
-- Never dispatch an agent of any type.
-- Never write any file but `accounts.md`, never delete one of its rows, never write `KNOWLEDGE.md`,
-  and never commit.
+- Never dispatch an agent but the chain mode's `qa:qa-chain-searcher`, and only through the chain
+  mode. Never dispatch a `qa:qa-driver` or a `qa:qa-grader`.
+- Never write any file but `accounts.md`, except `KNOWLEDGE.md` and the adapter's *Sibling apps* row
+  through the chain mode. Never delete a row of `accounts.md`, never write `KNOWLEDGE.md` any other
+  way, and never commit.
+- Never offer or start a search on a rerun with no arguments, for a state observation found, or for
+  a state that needs time or a failed payment.
 - Never write a `## States` row for a state not seen on the target in this run.
-- Never ask for an id the org's data can show. The questions this skill asks are the first org and,
-  when no session was ever captured, the staging URL; nothing else.
+- Never ask for an id the org's data can show. The questions this skill asks are the first org, the
+  staging URL when no session was ever captured, and the one search offer. The chain mode's own
+  question about sibling apps belongs to that mode, asked during a search the developer agreed to.

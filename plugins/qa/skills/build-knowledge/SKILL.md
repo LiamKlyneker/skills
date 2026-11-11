@@ -13,8 +13,9 @@ Read that file first, every run: it is the only definition of the header, the fi
 columns, the origins, the no-code-words rule and the regenerate rule. This skill restates none of
 it, and where this skill and that file seem to disagree, that file wins.
 
-**This skill is the file's only writer.** `qa:setup-states` and `qa:prove-branch` read it; neither
-writes it.
+**This skill is the file's only writer.** `qa:setup-states` and `qa:prove-branch` read it, and each
+writes it only by applying one of this skill's modes as the command would: `qa:prove-branch` the
+update mode, `qa:setup-states` the chain mode.
 
 **It reads code and nothing else.** It never runs the app, never signs in, never opens a browser,
 never reads staging, and **never reads or writes `accounts.md`** — that file is the observed layer
