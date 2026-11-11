@@ -60,11 +60,14 @@ existing adapter and never deletes from it. The installer ships an executable
 paraphrased differently on each run isn't one. ADR
 [0021](docs/adr/0021-every-plugin-ships-its-own-setup.md) has the argument.
 
-**One adapter row is written by a skill, never by `setup`.** `## Design system` → `UI component
+**Two adapter rows are written by a skill, never by `setup`.** `## Design system` → `UI component
 lab:` exists only in a library repo that has a lab: `/figma-tools:create-ui-component-lab` writes
 it when it installs one, and `/figma-tools:design-component` reads it and follows its `guide:`
-to turn a design brief into a proposed component the user steers in the lab. `setup` never asks
-for the row and never treats its absence as a gap; absent means there is no lab.
+to turn a design brief into a proposed component the user steers in the lab; absent means there is
+no lab. `## QA` → `Sibling apps` lists the other front-end apps of a product: `qa:build-knowledge`'s
+chain mode writes an app into it when a developer confirms one during a search, and
+`qa:setup-states` adds a role to an app through that mode's definition; absent means no sibling app
+is known. `setup` never asks for either row and never treats its absence as a gap.
 
 **A skill ships a script for that reason and no other: the job is mechanical and must produce
 the same answer twice.** Three do, today. The second is

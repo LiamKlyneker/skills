@@ -1,6 +1,6 @@
 ---
 name: setup-states
-description: Find the page states a branch needs in the staging org and record them in the project's `accounts.md` — observe the org first and write a row for every state it already holds, then guide the developer through creating each missing state in the app the way a tester would, verify it, and write its row; for a missing state the page's `KNOWLEDGE.md` knows nothing about, offer once to search the code for how it is made, through `qa:build-knowledge`'s chain mode and its read-only `qa:qa-chain-searcher` agent, and print the chain it finds as numbered steps; a state that shows only to another role is looked for by one read-only `qa:qa-driver` signed in with that role's saved session; a rerun re-verifies the rows already listed and marks a vanished one stale, and never searches. Interactive; drives the browser in this session through the Playwright MCP tools as the org's role, never creates data itself, never runs a seeder, never presses a control that changes data or lets a driver press one, and writes `accounts.md` plus `KNOWLEDGE.md` and the adapter's *Sibling apps* row only through the chain mode. Invoke /qa:setup-states [<page folder>] [S<n>...] — state ids, a page folder for every state of that page, or nothing to re-verify every listed row.
+description: Find the page states a branch needs in the staging org and record them in the project's `accounts.md` — observe the org first and write a row for every state it already holds; for each missing state, give the steps that make it, from the page's own actions or from the chain in the page's `KNOWLEDGE.md`, and for a missing state that file knows nothing about, offer once to search the code for how it is made, through `qa:build-knowledge`'s chain mode and its read-only `qa:qa-chain-searcher` agent; with the adapter's *Staging writes* row `yes`, ask once per run, listing every item it will create, and on a yes perform each state's steps through one `qa:qa-driver` at a time under five write rules — it creates items only, every name it types starts with `qa-setup`, it never changes or removes an item it did not create in this run, never enters payment details, and signs in only through saved sessions — and otherwise print them as numbered steps; observe the state afterwards and write its row only when it sees it; a state that shows only to another role is looked for by one read-only `qa:qa-driver` signed in with that role's saved session; a rerun with no arguments only re-verifies the rows already listed and marks a vanished one stale, and never writes to staging or searches. Interactive; observes in this session through the Playwright MCP tools as the org's role, never runs a seeder or an end-to-end command, never creates a user, never cleans up `qa-setup` items, and writes `accounts.md` plus `KNOWLEDGE.md` and the adapter's *Sibling apps* row only through the chain mode. Invoke /qa:setup-states [<page folder>] [S<n>...] — state ids, a page folder for every state of that page, or nothing to re-verify every listed row.
 disable-model-invocation: true
 ---
 
@@ -14,30 +14,33 @@ both files first, every run: they are the only definition of the columns, the or
 mark and the only-grows rule. This skill restates none of it, and where this skill and those files
 seem to disagree, those files win.
 
-**It observes, and it guides; it never creates.** It looks for each state in the org through the
-app, as a tester signed in with a saved session would. A state the org lacks, the developer creates
-in the app by following this skill's steps; this skill then looks again. For a missing state the
-page's `KNOWLEDGE.md` has no chain for, it offers one search for how the state is made, and prints
-the chain the search finds as steps. It never presses a control that changes data, never runs a
-seeder or any end-to-end command, and never touches a database, an admin console or an API that
-writes. As the org's role it drives the browser itself, in this session, because it grades nothing
+**It observes and it guides; it creates only in drive mode, and only under the write rules.** It
+looks for each state in the org through the app, as a tester signed in with a saved session would.
+For a state the org lacks, it gives the steps that make it: the page's own, or a chain from the
+page's `KNOWLEDGE.md`. For a missing state that file has no chain for, it offers one search for how
+the state is made. With the adapter's *Staging writes* row `yes` and the developer's yes to the
+run's one question, it performs those steps itself, through a driver, under the five write rules
+(`## Drive mode`); otherwise it prints them and the developer follows them. Either way it then looks
+again, and writes a row only for a state it sees. It never runs a seeder or any end-to-end command,
+never touches a database, an admin console or an API that writes, never creates a user, and never
+cleans up `qa-setup` items. As the org's role it observes in this session, because it grades nothing
 and talks to the developer throughout. A state that shows only to another role it looks for through
-a driver signed in as that role (`## Looking as another role`), and that look is read-only too.
+a driver signed in as that role (`## Looking as another role`), and that look is read-only.
 
 **It dispatches two agents, and never a `qa:qa-grader`:**
 
 - the read-only `qa:qa-chain-searcher`, only by applying `qa:build-knowledge`'s chain mode
   (`## Guide second` → *The search offer*);
-- one `qa:qa-driver` per read-only look as a role other than the org's (`## Looking as another
-  role`).
+- `qa:qa-driver`: one per read-only look as a role other than the org's (`## Looking as another
+  role`), and one per state drive mode makes, one at a time (`## Drive mode`).
 
 **It writes `accounts.md`.** It writes `KNOWLEDGE.md` and the adapter's *Sibling apps* row **only
 through the chain mode**, which is `qa:build-knowledge`'s write and follows that skill's rules, the
 way `qa:prove-branch` writes a knowledge file only through the update mode — a search's rows and
 apps by a `--chain` run, a sibling app's role by that mode's *Recording a sibling app's role*. It
-never commits, and writes nothing else into the project tree. The scenario directory the session
-machinery creates, and the run folders a look saves its evidence into, are excluded from git, as
-`## Signing in` says.
+never commits, and writes nothing else into the project tree. Its only writes to staging are drive
+mode's. The scenario directory the session machinery creates, and the run folders a look or a drive
+saves its evidence into, are excluded from git, as `## Signing in` says.
 
 ## Arguments
 
@@ -81,7 +84,7 @@ The project adapter at `<repo-root>/.claude/project/adapter.md` → `## QA`, by 
 | *Session method* | the `Session method` cell of a new `## Orgs` row, and how a session is captured (`## Signing in`) |
 | *Credential environment variables* | the roles a session may sign in as — names only, never a value. The project supplies every test user here; this skill creates none |
 | *Sibling apps* | optional: the other apps of the product, each with its staging URL and the roles that belong to it (`## Signing in` → *Which app a role belongs to*) |
-| *Staging writes* | optional: `yes` or `no`; absent or any other value reads as `no`. With `no`, every chain prints as numbered steps and the print names this row (`## Guide second` → *Printing a chain*) |
+| *Staging writes* | optional: `yes` or `no`; absent or any other value reads as `no`. With `yes`, a run may perform a state's steps on staging after its one question (`## Drive mode`). With `no`, every step — a chain's or the page's own — prints as numbered steps, and the print names this row (`## Guide second` → *Printing a chain*) |
 | *Browser automation consent* | read as [`browser-readiness.md`](../references/browser-readiness.md) → *Consent* says |
 | *Preview basic auth* | optional: read as [`browser-readiness.md`](../references/browser-readiness.md) → *Preview Basic Auth* says |
 | *Known accounts* | where the file is; `<repo-root>/.claude/project/accounts.md` when no row names a path |
@@ -118,8 +121,10 @@ apply it: the *Consent* row, *Preview Basic Auth* on the first request against t
 reads. Its rule for one browser context per driver applies to every `qa:qa-driver` this skill
 dispatches (`## Looking as another role`): the driver's context is loaded with its role's session,
 never the org's role's, and when the server can give the session only one browser, the look waits
-until this skill's own observation is done, and looks run one at a time. The *Consent* row is the
-only permission a look needs. When readiness stops, the remedy it names ends with running
+until this skill's own observation is done, and looks run one at a time. The same holds for a
+drive's driver (`## Drive mode`). The *Consent* row is the only permission a look needs; a drive
+needs it, the *Staging writes* row `yes` and the developer's yes to the run's one question. When
+readiness stops, the remedy it names ends with running
 `/qa:setup-states` again with the same arguments.
 
 ## Signing in
@@ -300,15 +305,20 @@ Every printed step names three things:
 row's proof, or someone's test data, so no step archives, edits or removes an item the developer did
 not create in these steps: to get an archived shelf, the steps create a `qa-setup` shelf and archive
 that one. Steps run as the org's role. A step whose control the role may not use, by its `Allowed
-when` cell, names the role that may.
+when` cell, names the role that may. Drive mode holds the same rule as write rule 2 (`## Drive
+mode` → *The write rules*).
+
+**Print or drive.** With the *Staging writes* row `yes`, in a scoped or thorough run, the steps of
+every state that can be made — by rule 2, or by rule 3's numbered steps — go to `## Drive mode`,
+which asks the run's one question and performs them on a yes. Otherwise, and on a no, they print by
+this section and the developer follows them.
 
 ### Printing a chain
 
 A state with chain steps prints them in order, as the page's own steps print. Each printed step
 names, from its row: the app, the role, the screen with its route, the action with its quoted inputs,
 and the result the user sees that confirms the step. Every name the developer types starts with
-`qa-setup`. The steps are the developer's to follow in each app; nothing here signs in to a sibling
-app or presses a control in one.
+`qa-setup`. Printed steps are the developer's to follow in each app.
 
 With the *Staging writes* row absent or not `yes`, after the steps say that the adapter's `## QA` →
 *Staging writes* row, set to `yes`, is what would let this skill perform the steps itself, and that
@@ -328,13 +338,15 @@ any sibling app is read. Say that nothing on staging is touched. **End the turn 
 - A state observation found is never in the offer: it has its row.
 - A rerun with no arguments never makes the offer and never starts a search (`## Rerun`).
 - This is the only question the offer asks. The chain mode asks its own, separate question about
-  sibling apps while it searches; this skill neither asks it first nor repeats it.
+  sibling apps while it searches; this skill neither asks it first nor repeats it. Drive mode's
+  question is separate too, and is never in the offer's message (`## Drive mode` → *The question*).
 
 **On a yes**, apply `qa:build-knowledge`'s chain mode exactly as `/qa:build-knowledge <page folder>
 --chain S<n>...` would: read [`../build-knowledge/SKILL.md`](../build-knowledge/SKILL.md) → `## Chain
 mode` and apply it to the page folder for those state ids, touching nothing that mode does not
 touch. Name that command in the print. Then classify the same states again from the rewritten table
-and print each result by *Printing a chain*.
+and print each result by *Printing a chain*, or, with the *Staging writes* row `yes`, take the
+states that now have steps to `## Drive mode`.
 
 **On a no**, the states stay unknown. Print `/qa:build-knowledge <page folder> --chain S<n>...` for
 them, and write nothing.
@@ -342,12 +354,160 @@ them, and write nothing.
 ### Waiting for the developer
 
 Print every state's steps, every cannot-make state and the search offer, when there is one, in one
-message, then **end the turn and wait**. Never press a control on the developer's behalf, and never
-write a row for a state that has not been seen.
+message, then **end the turn and wait**. Outside a drive, never press a control on the developer's
+behalf, and never write a row for a state that has not been seen.
 
 **When the developer says a state is done, observe again** by `## Observe first`. Write the row only
 when the state is visible, with origin `setup-states <today's date>`. When it is still not visible,
 say what the page shows instead, give the steps again, and wait again.
+
+## Drive mode
+
+Drive mode performs on staging the steps `## Guide second` gives — a chain's, and the page's own —
+instead of printing them. It applies only when all three hold:
+
+- the adapter's *Staging writes* row reads `yes`;
+- the run is scoped or thorough: a rerun with no arguments never drives (`## Rerun`);
+- the developer answers yes to the run's one question (*The question*).
+
+Otherwise every step prints, by `## Guide second`, and nothing on staging is written.
+
+### The write rules
+
+Every step a drive performs holds to these five rules, which ADR 0028 records:
+
+1. It creates items only, and every name it types starts with `qa-setup`.
+2. It never changes or removes an item it did not create in this run. A step that changes an
+   existing item, or an org-wide setting, is printed for the developer and not performed.
+3. It never enters payment details. A chain with an online payment stops at that step and prints
+   the remaining steps.
+4. It signs in only through the saved sessions of roles the adapter lists.
+5. It asks once per run, and the question lists every item it will create.
+
+This skill holds all five when it composes a drive and asks. The driver holds rules 1 to 4 again,
+on its own, for every sub-step of a flow marked `setup` (`qa-driver` → mandate 11). A step that
+either one would refuse is not performed.
+
+### Composing a drive
+
+Each state with steps gets one drive: its steps in order, each step classed by its action and the
+result the user sees:
+
+| The step | In the drive |
+|---|---|
+| navigates, reads, opens an item | performed |
+| creates an item | performed. The name it types is `qa-setup <state id> <the item in user words>` (`qa-setup S4 archived shelf`), and a later step that names the item uses the same name. A step whose item an earlier run recorded is used again instead, by *Earlier items* |
+| changes or removes an item an earlier step of this drive created | performed: to get an archived shelf, the drive creates a `qa-setup` shelf and archives that one |
+| changes or removes any other item, or changes an org-wide setting | **not performed** (write rule 2): the drive stops before it |
+| makes an online payment or asks for payment details | **not performed** (write rule 3): the drive stops before it |
+
+**A drive that stops before a step performs every step before it, then hands the rest to the
+developer**: that step and every later one print, by *Printing a chain*, with the reason the drive
+stopped there, and the run waits by *Waiting for the developer*. It never skips a step to perform a
+later one. A drive whose first step is not performed creates nothing and dispatches no driver: its
+steps print whole.
+
+Each step's role is matched to a label of the *Credential environment variables* row by `## Signing
+in` → *Which role*. A role that matches no label is a stop for that state, as there.
+
+### Earlier items
+
+Before the question, read every `## States` row of `accounts.md` for this org, stale rows too. A
+`qa-setup` item a row's `Ids` cell names is **used again** by a step that would create an item of
+the same kind, when both hold:
+
+- it **still exists**: observed by its id, read-only, in this session as the org's role, by `## Observe
+  first`;
+- it **still fits the step**: it shows what the step's `Result the user sees` gives, and no later
+  step of the drive would change or remove it.
+
+Otherwise the step creates a new item. An item in a sibling app, or one only another role can see,
+is not checked and not used again: the step creates a new one. **A drive never changes or removes
+an earlier run's item.**
+
+### The question
+
+**Ask once per run, before the first write, in one message of its own**, when at least one drive
+has a step to perform. For each state, in order:
+
+- the state id and the state in user terms;
+- each step the drive will perform, with its app and its role;
+- **every item it will create**, by its `qa-setup` name, with the app it is created in;
+- every earlier item it will use again, with its id;
+- every step it will print and not perform, with the reason: it changes an existing item, it
+  changes an org-wide setting, or it makes a payment.
+
+Say that the run removes nothing, changes nothing it did not create, and enters no payment details.
+Ask nothing else in the message. **End the turn and wait.**
+
+- When the search offer is made in the same run, this question waits for the offer's answer and,
+  on a yes, for the chain mode, so that its one list covers the chains the search finds. It is never
+  in the offer's message, and the chain mode's sibling-app question is that mode's own.
+- **On a no**, print every state's steps by `## Guide second` and wait by *Waiting for the
+  developer*. Nothing on staging is written.
+- **It is asked once per run.** A chain the chain mode writes later in the same run — a new search
+  after a failed drive — prints, and a later run drives it.
+
+### Performing a drive
+
+**On a yes, drive one state at a time**: the next drive is dispatched only after the previous
+state has been observed and its row written, or its failure reported.
+
+1. **Sign in** each role the drive's steps name, by `## Signing in` — reuse or capture its saved
+   session, and `manual` only for a sibling app's role — before its driver is dispatched (write
+   rule 4). A role left with no saved session is a stop for that state; the other states carry on.
+2. **Prepare the run folder** as `## Looking as another role` does: the run's one
+   `.qa-scenarios/runs/setup-states-<UTC timestamp>/` folder, `run.md` naming per drive its state
+   id and its roles, and one `flow-<n>/step-<k>/` folder per sub-step.
+3. **Compose the drive as a flow** in the driver's input contract:
+   - its name, `make S<n>`, and the word `setup` on its own line under the name, which puts the
+     driver under its mandate 11;
+   - `start from:` the first performed step's screen and route, in its app, `— as <role>`;
+   - one sub-step per performed step, in order: its app and role, the screen by its name and route,
+     the action with the control by its quoted label and every input quoted, with each name marked
+     as a name, and the step's `Result the user sees` as the observable result. A step that uses an
+     earlier item names it by its id and its `qa-setup` name. The steps the drive stops before are
+     not in the flow.
+4. **Dispatch one `qa:qa-driver`**, as `## Looking as another role` dispatches one, with the prompt
+   `qa:prove-branch` → *Dispatching the drivers* lists: the flow, one session path per role, the org
+   id as the starting state's id, and the flow's folder — plus one target URL per app: this app's
+   target, and each sibling app's staging URL from its *Sibling apps* entry. Never a credential
+   value, never a session file's contents.
+5. **Read the report and the evidence.** Save the report as `flow-<n>/driver.md`. Read each
+   performed sub-step's `snapshot.md`, and its `reload/` snapshot, against the step's `Result the
+   user sees`.
+
+**Every sub-step performed, and each result shows**: observe the state by `## Observe first` — in
+this session as the org's role, or through a look as another role. **Write the row only when the
+state shows.** Its `Ids` cell holds the proving ids first, as for any row, then every item the
+drive created that is not among them, each in user words with the id the driver's report gives and
+its `qa-setup` name (`shelf s-31 "qa-setup S4 shelf" · loan l-7 "qa-setup S4 loan"`). Origin
+`setup-states <today's date>`. When the state does not show, write no row: say what the page shows,
+name every item the drive created, and leave the state missing.
+
+**The drive stopped before a step it may not perform**: print that step and the rest, and wait.
+When the developer says they are done, observe by *Waiting for the developer*; the row it writes
+records the drive's created items as above.
+
+### A drive that fails
+
+A drive fails at its **failing step**: the first sub-step the driver reports `not performed`, or
+the first performed sub-step whose result does not show in its evidence, whichever comes first.
+
+- **Stop the state there.** Report the step — its number, app, role and action — what the screen
+  shows, from its snapshot in user words, and **every item created so far**, by its `qa-setup` name
+  and id, from the driver's `created:` list.
+- **Write no row, remove nothing, and never dispatch the drive again** with a changed input or a
+  different route. The one dispatch again is a driver that reported `missing input`: once, with the
+  same flow and the input supplied. A driver that reports `session not accepted` or `preview auth
+  not accepted` is handled as a look's is.
+- **When the screen does not match the step** — the screen or the control the step names is not
+  there, or its result does not show — and the step is a chain's, **offer a new search for that
+  state**, by *The search offer*: a stale chain is found by use. For the page's own step, print
+  `/qa:build-knowledge <page folder>`, the regenerate.
+- A sub-step the driver did not perform because the screen asked for payment details, or for a
+  change its mandate 11 refuses, is not a mismatch: print that step and the rest, as for a step the
+  drive stops before.
 
 ## Rerun
 
@@ -366,8 +526,9 @@ items get a new row of their own. In rerun mode, a stale row is reported with th
 the state up again — `/qa:setup-states <page folder> S<n>` — and no steps are given unless the
 developer runs it.
 
-A rerun with no arguments only verifies: it makes no search offer, starts no search and applies
-no chain mode.
+A rerun with no arguments **only verifies**: it never writes to staging, never asks drive mode's
+question, never starts a drive or a search, makes no search offer and applies no chain mode. Its
+only drivers are read-only looks.
 
 With nothing to re-verify — no `## States` row for the org — say so and print the two other forms
 of the command.
@@ -388,6 +549,11 @@ End every turn with:
 - each state guided, with its numbered steps — the page's own or a chain's — and, while the *Staging
   writes* row is absent or not `yes`, the line naming that row, then the line asking the developer to
   say when they are done;
+- drive mode's one question, when it is asked; after a yes, each drive: the state, the run folder,
+  each item created with its `qa-setup` name and id, each earlier item used again, each step printed
+  and not performed with its reason, and whether the state showed;
+- each failed drive: the failing step, what the screen shows, every item created so far, that no
+  row was written and nothing removed, and the new search offer or the regenerate command;
 - each state with a step `none` row: that no tester can make it, the row's reason, and no steps;
 - each state this app cannot make because it needs time or a failed payment, which of the two it
   is, the seeder hint, and `stays none known`;
@@ -399,21 +565,29 @@ When nothing is missing, the print asks nothing.
 
 ## Never
 
-- Never create, change or delete data, never press a control that does, and never compose a look
-  whose sub-step would.
-- Never run a seeder, an end-to-end command, a database query, or an admin console.
+- Never create data but in drive mode, with the *Staging writes* row `yes`, after the run's one yes,
+  and under the five write rules. Never change or remove an item this run did not create, never
+  change an org-wide setting, never enter payment details, and never compose a look whose sub-step
+  would press a control that changes data.
+- Never run a seeder, an end-to-end command, a database query, an admin console or an API that
+  writes.
+- Never clean up `qa-setup` items, this run's or an earlier run's.
 - Never dispatch an agent but the chain mode's `qa:qa-chain-searcher`, only through the chain mode,
-  and a `qa:qa-driver` for a read-only look as another role. Never dispatch a `qa:qa-grader`, and
-  never dispatch a driver as the org's role: that look stays in this session.
-- Never create a test user, never sign in to a sibling app but by `manual`, and never give a driver a
-  credential or a session file's contents.
+  and a `qa:qa-driver` for a read-only look as another role or for one drive at a time. Never
+  dispatch a `qa:qa-grader`, and never dispatch a look as the org's role: that look stays in this
+  session.
+- Never create a test user, never sign in to a sibling app but by `manual`, never sign in but through
+  the saved session of a role the adapter lists, and never give a driver a credential or a session
+  file's contents.
 - Never write any file but `accounts.md`, except `KNOWLEDGE.md` and the adapter's *Sibling apps* row
-  through the chain mode, and a look's `run.md` and `driver.md` in its run folder. Never delete a row of `accounts.md`, never write `KNOWLEDGE.md` any other
-  way, and never commit.
+  through the chain mode, and a look's or a drive's `run.md` and `driver.md` in its run folder.
+  Never delete a row of `accounts.md`, never write `KNOWLEDGE.md` any other way, and never commit.
+- Never drive on a rerun with no arguments, never ask drive mode's question twice in a run, and
+  never dispatch a failed drive again with a changed input.
 - Never offer or start a search on a rerun with no arguments, for a state observation found, or for
   a state that needs time or a failed payment.
 - Never write a `## States` row for a state not seen on the target in this run.
 - Never ask for an id the org's data can show. The questions this skill asks are the first org, the
-  staging URL when no session was ever captured, the yes to a `manual` login, and the one search
-  offer. The chain mode's own
-  question about sibling apps belongs to that mode, asked during a search the developer agreed to.
+  staging URL when no session was ever captured, the yes to a `manual` login, the one search offer,
+  and drive mode's one question. The chain mode's own question about sibling apps belongs to that
+  mode, asked during a search the developer agreed to.

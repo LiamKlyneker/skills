@@ -276,7 +276,8 @@ cross-boundary root cause gets filed locally and flagged as unmodelled.
 The automated QA pass and the two files it starts from. `build-knowledge` derives a page's
 `KNOWLEDGE.md` from its code, and on demand searches this app's and its sibling apps' code for how a
 state is made; `setup-states` observes the staging org and records the page states
-it holds in the project's `accounts.md`; `prove-branch` resolves the run from the checked-out
+it holds in the project's `accounts.md`, and, when the project permits writes to staging, makes a
+missing state there itself under write rules; `prove-branch` resolves the run from the checked-out
 branch, composes flows from the diff, the ticket's acceptance criteria and those two files, drives
 them in a real browser against the pull request's preview deployment, and posts one receipt to
 the ticket.

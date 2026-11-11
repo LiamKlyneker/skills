@@ -18,7 +18,7 @@ having before the plugin lands.
 | `ado-workflow` | `to-spec`, `to-spec-tasks`, `next-task-to-implement`, `work-on-spec`, `manual-qa`, `triage` + the `spec-worker` agent | **two** bundles: `ado-workflow` (the four loop skills) and `ado-qa` (`manual-qa` + `triage`) |
 | `figma-tools` | `figma-to-brief`, `prototype-to-brief`, `ds-catalog`, `design-component`, `create-ui-component-lab` | `figma-tools` |
 | `lk` | `grill`, `deep-grill`, `pinpoint`, `how-i-write`, `scoped-context` | `grill` (`grill` + `deep-grill`) — one bundle, and not the whole plugin; the other three ask for nothing |
-| `qa` | `build-knowledge`, `setup-states`, `prove-branch` | `qa` |
+| `qa` | `build-knowledge`, `setup-states`, `prove-branch` + the `qa-driver`, `qa-grader` and `qa-chain-searcher` agents | `qa` |
 
 All five come from marketplace **`liamklyneker`**. Skills from a plugin are invoked
 namespaced: `/prd-workflow:work-on-prd`, `/ado-workflow:work-on-spec`,
