@@ -1,7 +1,7 @@
 {
   "name": "figma-tools",
   "description": "Design-to-brief tools for Claude Code, from two design sources: Figma nodes and a designer-authored code prototype. Turns either into a per-ticket design brief whose fidelity ledger the grill resolves, against a per-project design-system catalog its ds-catalog skill generates and annotates, or in a library repo against the library's own source. In a library repo it also turns a design brief into a proposed component the user steers in a UI component lab, which its create-ui-component-lab skill installs",
-  "version": "6.0.2",
+  "version": "6.0.3",
   "author": {
     "name": "Liam Klyneker",
     "url": "https://github.com/LiamKlyneker"

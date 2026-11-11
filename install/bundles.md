@@ -274,7 +274,8 @@ cross-boundary root cause gets filed locally and flagged as unmodelled.
 ## `qa`
 
 The automated QA pass and the two files it starts from. `build-knowledge` derives a page's
-`KNOWLEDGE.md` from its code; `setup-states` observes the staging org and records the page states
+`KNOWLEDGE.md` from its code, and on demand searches this app's and its sibling apps' code for how a
+state is made; `setup-states` observes the staging org and records the page states
 it holds in the project's `accounts.md`; `prove-branch` resolves the run from the checked-out
 branch, composes flows from the diff, the ticket's acceptance criteria and those two files, drives
 them in a real browser against the pull request's preview deployment, and posts one receipt to
@@ -291,7 +292,7 @@ Which skill drives which section:
 | `## Repo` | `prove-branch` — the `Tracker:` line, which decides where the run's ticket and pull request are read from and where the receipt is posted, plus that tracker's sub-section for the repo and default branch |
 | `## Commands` | `prove-branch` — the commands that build and boot what a flow exercises, when a flow needs more than the preview deployment; `build-knowledge` — where the end-to-end suite lives and how its data-creation tasks are registered |
 | `## Verify ladder` | `prove-branch` — the **L5** rung, which says what exercising this app means and so what a flow's steps are written against |
-| `## QA` | `setup-states` and `prove-branch`; `build-knowledge` reads none of it — the session method and the credential variable **names** per role, which both sign in with; the *Known accounts* row, pointing at the project's `accounts.md`, which `setup` writes empty, `setup-states` fills and `prove-branch` reads; the browser automation consent, which both read; the preview URL pattern and the feature-flag override, which `prove-branch` reads; and the optional *Preview basic auth* row, the two variable **names** for HTTP Basic Auth in front of the preview, which both read. Every value is non-secret: the interview never asks for a credential value or a state, and never writes a credential |
+| `## QA` | `setup-states` and `prove-branch`, and `build-knowledge` in its chain mode only — the optional *Sibling apps* row, the other front-end apps of the product by label, repo folder name and staging URL, which the chain mode reads and **writes** when a developer confirms an app during a search, and which the interview therefore never asks and never treats as a gap; the session method and the credential variable **names** per role, which both sign in with; the *Known accounts* row, pointing at the project's `accounts.md`, which `setup` writes empty, `setup-states` fills and `prove-branch` reads; the browser automation consent, which both read; the preview URL pattern and the feature-flag override, which `prove-branch` reads; and the optional *Preview basic auth* row, the two variable **names** for HTTP Basic Auth in front of the preview, which both read. Every value is non-secret: the interview never asks for a credential value or a state, and never writes a credential |
 | `## Sources of truth` | `prove-branch` and `build-knowledge` — the project explorer agent, for reading the code behind a flow it composes from the diff, or a component a page imports from far away |
 
 **Pairs with either loop, and with `prd-qa` or `ado-qa` for `triage`.** `prove-branch` runs

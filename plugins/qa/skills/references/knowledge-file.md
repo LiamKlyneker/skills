@@ -6,7 +6,7 @@ yet. It is a tester's
 file, written in user words only.
 
 Three skills share it: **`qa:build-knowledge` is its only writer** — it derives the file, regenerates
-it, and fills one answer on demand — and **`qa:setup-states` and `qa:prove-branch` read it**. The
+it, fills one answer on demand, and writes the chain rows of named states on demand — and **`qa:setup-states` and `qa:prove-branch` read it**. The
 one write `qa:prove-branch` makes is `build-knowledge`'s own update mode, applied when a developer
 answers an open question during a run; it never derives or regenerates a row. This
 file is the only definition of the format. No skill restates a column list; each points here

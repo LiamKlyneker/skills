@@ -205,7 +205,10 @@ as the default unless the human names another; the preview URL pattern, in the t
 **name** for its username and one for its password — "no" is a complete answer, deletes the row and
 records no warning; the feature-flag override, or `none`; and the browser automation consent, which is
 `yes` or the section is not written. **Never ask for a state, an org or an account id** — the
-known accounts are observed later by `qa:setup-states`, never entered here. When no file exists
+known accounts are observed later by `qa:setup-states`, never entered here. The `Sibling apps` row is
+not one of the seven and is not asked at all: `qa:build-knowledge`'s chain mode writes it when a
+developer confirms an app during a search, so a fresh copy drops it, gap-fill never adds it, and an
+adapter without it is not a gap. When no file exists
 at the known accounts path, write it from the empty skeleton in the `qa` plugin's
 `skills/references/accounts-file.md`, verbatim; when one exists, leave it as it is, since setup
 never deletes from it or from the pointer row. **Never ask for a username, a password or a token,

@@ -1,12 +1,13 @@
 ---
 name: build-knowledge
-description: Derive a page folder's `KNOWLEDGE.md` from the page's code — what the user sees and when, what the user can do and when, the data states behind both, and the open questions — in product words only; regenerate it without touching rows a human or a backend repo supplied; read locally cloned backend repos (`--repo <path>`) for the rules behind the page's yes-or-no permission reads; and fill one answer on demand (`--fact "<question id>: <answer>"`). It never runs the app, never signs in, never reads staging or `accounts.md`, and commits nothing. Invoke /qa:build-knowledge <page folder> [--repo <path>]... [--fact "Q<n>: <answer>"].
+description: Derive a page folder's `KNOWLEDGE.md` from the page's code — what the user sees and when, what the user can do and when, the data states behind both, and the open questions — in product words only; regenerate it without touching rows a human or a backend repo supplied; read locally cloned backend repos (`--repo <path>`) for the rules behind the page's yes-or-no permission reads; fill one answer on demand (`--fact "<question id>: <answer>"`); and, for named states only, search this app's code and its sibling apps' code for how each state is made, through the read-only `qa:qa-chain-searcher` agent, and write the chain into the file (`--chain S<n>...`), recording a sibling app the developer confirms in the adapter's *Sibling apps* row. It never runs the app, never signs in, never reads staging or `accounts.md`, and commits nothing. Invoke /qa:build-knowledge <page folder> [--repo <path>]... [--fact "Q<n>: <answer>" | --chain S<n>...].
 disable-model-invocation: true
 ---
 
 # build-knowledge
 
-**Derive what a page does, in a tester's words, from the page itself.** The output is one file, the
+**Derive what a page does, in a tester's words, from the page itself** — and, on demand for named
+states, how each of those states is made, from the code of the apps that make it. The output is the
 page folder's `KNOWLEDGE.md`, whose format is [`knowledge-file.md`](../references/knowledge-file.md).
 Read that file first, every run: it is the only definition of the header, the five tables, their
 columns, the origins, the no-code-words rule and the regenerate rule. This skill restates none of
@@ -18,7 +19,11 @@ writes it.
 **It reads code and nothing else.** It never runs the app, never signs in, never opens a browser,
 never reads staging, and **never reads or writes `accounts.md`** — that file is the observed layer
 and this skill observes nothing ([`accounts-file.md`](../references/accounts-file.md) → *Writers*).
-It writes exactly one file, the page folder's `KNOWLEDGE.md`, and **commits nothing**: no `git add`,
+Every mode but one reads this repo and the backend repos passed, asks nothing, and dispatches no agent
+but the project explorer. **The chain mode is the exception, and only it**: it dispatches the read-only
+`qa:qa-chain-searcher` agent, which reads this repo and front-end app repos beside it, asks the
+developer one question before a sibling app is read, and writes the adapter's *Sibling apps* row
+besides `KNOWLEDGE.md`. No mode writes any other file, and none **commits anything**: no `git add`,
 no `git commit`, no change to an exclude file. Whether the file is tracked is the project's call.
 
 ## Arguments
@@ -26,8 +31,9 @@ no `git commit`, no change to an exclude file. Whether the file is tracked is th
 | Argument | Meaning |
 |---|---|
 | `<page folder>` | required; the route folder whose `KNOWLEDGE.md` this run writes |
-| `--repo <path>` | optional, repeatable; a locally cloned backend repo to read for the rules behind first-kind questions (`## The backend read`). Its name, wherever the file cites it, is the repo folder's name |
+| `--repo <path>` | optional, repeatable; a locally cloned backend repo to read for the rules behind first-kind questions (`## The backend read`). **In the chain mode** it is a front-end app repo instead, read in place of the folder beside this repo (`## Chain mode`). Its name, wherever the file or the adapter cites it, is the repo folder's name |
 | `--fact "<question id>: <answer>"` | optional; the update mode (`## Update mode`). It runs alone |
+| `--chain S<n>...` | optional; one or more state ids from `## States`, the chain mode (`## Chain mode`). It runs alone |
 
 Pick the mode from the arguments and the folder:
 
@@ -36,8 +42,14 @@ Pick the mode from the arguments and the folder:
 | `--fact` | present | **update** — `## Update mode`, nothing else |
 | `--fact` | absent | stop: there is no question to answer; print the derive command for the folder |
 | `--fact` with `--repo` | — | stop: the update mode runs alone; say so and print the two commands separately |
-| no `--fact` | absent | **derive** — `## Deriving`, then `## The backend read` for each `--repo` |
-| no `--fact` | present | **regenerate** — `## Regenerate`, then `## The backend read` for each `--repo` |
+| `--chain` | present | **chain** — `## Chain mode`, nothing else |
+| `--chain` | absent | stop: there are no states to search; print the derive command for the folder |
+| `--chain` with `--fact` | — | stop: each mode runs alone; say so and print the two commands separately |
+| neither | absent | **derive** — `## Deriving`, then `## The backend read` for each `--repo` |
+| neither | present | **regenerate** — `## Regenerate`, then `## The backend read` for each `--repo` |
+
+A derive, a regenerate and the update mode never search for a chain. The chain mode runs only when
+`--chain` names the states.
 
 **Stop** on a folder that does not exist, a `--repo` path that does not exist, or a folder that is
 not a page — one with no route entry file that the framework renders as a page. A knowledge file
@@ -48,14 +60,18 @@ a page.
 ## Project facts
 
 The project adapter at `<repo-root>/.claude/project/adapter.md` is optional for this skill. When it
-exists, read two things from it and nothing else:
+exists, read these from it and nothing else:
 
 - `## Commands`, for where the project's end-to-end suite lives and how its data-creation commands
   or tasks are registered. With no such row, search the repository for the suite.
 - `## Sources of truth` → the **project explorer agent**, for help locating a component or a data
   client the page imports from far away. `Explore` where it says None.
+- `## QA` → the **Sibling apps** row, **in the chain mode only**: the front-end apps already known,
+  each with its label, repo folder name and staging URL. The chain mode is also this row's only
+  writer (`## Chain mode` → *Recording a sibling app*).
 
-No adapter row changes the format, and no adapter row is a source for a cell.
+No adapter row changes the format. The *Sibling apps* row is a source for one thing only, the label
+in the `App` cell of a chain row.
 
 ## What the run reads
 
@@ -68,6 +84,15 @@ No adapter row changes the format, and no adapter row is a source for a cell.
 | the folder's `CONTEXT.md` | the page's purpose, in the words the team uses |
 | the project's end-to-end suite | the **names** of its data-creation commands or tasks, for `Seeder (for a human)`. Nothing else in it is a source: a test asserting a behaviour is never a substitute for the condition in the page. Its specs are a permitted source for the order and the preconditions of a chain in `## How a state is made`, and for nothing else |
 | the current commit and today's date | `git rev-parse --short HEAD` and `date +%F`, for `Derived at:` |
+
+The chain mode reads none of the above except today's date. It reads:
+
+| Source | Read for |
+|---|---|
+| the page's `KNOWLEDGE.md` | the route, each named state's description, the rows that show it, the backend answers that name another system, and the chain rows already written |
+| the `qa:qa-chain-searcher` agent's report | the steps or the reason per state, each with a confidence, and the files it relied on. The agent, not this skill, reads the app repos: this repo first, then each sibling app the adapter lists or the developer confirms |
+| the adapter's *Sibling apps* row | the apps already known |
+| the names of the folders beside this repo, and each one's package manifest | whether a front-end app sits beside this one |
 
 It reads nothing else. Not the wider codebase, not documentation, not tickets, not a running app.
 
@@ -267,6 +292,103 @@ print it under the run's summary as a row for a human to check, and do not chang
 An answered question can be answered again; the new answer replaces the old one in the same cells
 and the origin's date moves.
 
+## Chain mode
+
+`--chain S<n>...` finds out how each named state is made and writes the answer into the file's
+`## How a state is made` table. It touches nothing else: no derivation, no regenerate, no backend
+read, no other row, not `Derived at:`, no id.
+
+### Before the search
+
+1. **Stop** when an id is not in `## States`, and print the ids that exist.
+2. **Read the file** for the route and, per named state, its description, the rows of `## What the
+   user sees` and `## What the user can do` that cite it, and every backend answer that names
+   another system.
+3. **List the repos to read, this repo first.** This repo is `this app`. Then each app the adapter's
+   *Sibling apps* row lists, at its folder beside this repo — the folder with the row's folder name
+   in this repo's parent folder — or at a `--repo` path whose folder name matches. A listed app
+   whose folder is in neither place is not read; the print names it. A `--repo` path that matches no
+   listed app is read too: the developer named it, and that is the agreement to read it. It is
+   labelled by its folder name, and the question below, when the run asks one, also offers to
+   record it, with `--repo` as its evidence.
+
+### The search
+
+**Dispatch one `qa:qa-chain-searcher` agent** with the named states, each with its id, its
+description, the rows that cite it and the route, and the repos listed above, each with its absolute
+path and label. The agent writes nothing and runs nothing; this skill turns its report into rows.
+
+The type is **`subagent_type: qa:qa-chain-searcher`**, always with the `qa:` prefix. A
+`subagent_type` that does not resolve raises no error: the call runs as `general-purpose`, which
+carries neither the agent's model pin nor its tool denials. Pass no `model`; the agent pins its own.
+
+### Sibling apps
+
+A state whose report reads `not found`, or whose chain stops at a step the agent placed `elsewhere`,
+may be made in an app not read yet. **Look for evidence of one in three places:**
+
+- a backend answer in the file that names another system;
+- an origin this app links to, from the agent's `elsewhere` lines;
+- a front-end repo in the folder beside this one: a folder whose package manifest names a web
+  framework, not yet listed in the *Sibling apps* row.
+
+Then **ask the developer one question**, once per run, covering every open state:
+
+- **for each app with evidence**: the evidence, quoted; the label proposed for it; its repo folder
+  name; and the staging URL proposed from the origin this app links to, or a request for one when no
+  link names it. The developer answers yes, no, or a correction to any of the three values.
+- **for each state with no evidence**: which repo makes it, as a path, or "none".
+
+Never read an app the developer did not agree to. On a yes or a path, dispatch the agent once more,
+for the states still open, with this repo first and each agreed app after it. On "none", or a no,
+the state ends with result 3 below.
+
+### Recording a sibling app
+
+On a yes, write the app into the adapter's `## QA` section, on the *Sibling apps* row, as the
+template gives it: the label, the repo folder name and the confirmed staging URL. Add the row when
+it is absent, and add an entry to it when it is present; never change or remove an entry. **The row
+holds no path on disk**: a path the developer gave is read in this run only, and a later run finds the
+folder beside this repo or takes it from `--repo`. An app given as a path is recorded only when the
+developer gave its staging URL in the same answer; its label is the folder name. The role a tester
+uses in the app is not written here. With no adapter, or one with no `## QA` section, write no row,
+and print the entry the developer confirmed.
+
+### Writing the rows
+
+Each named state ends in **one of three results, and all three are written**:
+
+1. **A chain** — the agent reported `chain`: one row per step, `Step` 1, 2, …
+2. **A step `none` row** — the agent reported `no path`: the code proves no tester path exists.
+   `Action` holds the reason in user words.
+3. **A step `none` row ending `(likely)`** — every search ended `not found`, or the developer
+   answered "none": `Action` reads that no tester path was found in the repos read, names them, and
+   ends with ` (likely)`.
+
+Turn each reported step into product words, by the format and `## Deriving` → *Words*:
+
+- `App` is `this app` or the app's label from the *Sibling apps* row; `Role` is the role in user
+  words; `Screen` is the screen's name as the user sees it and its route; `Action` names the
+  control by its quoted label and quotes each input; `Result the user sees` is what confirms the
+  step. A reported code word is paraphrased, never copied.
+- A cell the agent marked `likely`, and a cell only an end-to-end spec supports (`spec only`), ends
+  with ` (likely)`.
+- **Every row's `Origin` is `app-repo (<repo name>)`**, the folder name of the repo the step was
+  read in, this repo's own included. A result-3 row carries one `app-repo` origin per repo read,
+  comma-separated.
+- The cells of a step `none` row that do not apply read `—`.
+
+Then write the file:
+
+- **Replace each named state's rows** — remove every row whose `State` is a named id, then add the
+  new ones. A second run for a state never duplicates its rows. Rows of states not named stay byte
+  for byte.
+- **Add `## How a state is made`** after `## States` the first time a row is written to a four-table
+  file. Rows sort by state id, then step.
+- **The header gains or extends `Apps read: <repo name>, … · <YYYY-MM-DD>`**: every repo this run
+  read, added to the names already there, with today's date. It sits after `Backend read:` when
+  that line exists, after `Environment:` otherwise.
+
 ## The print
 
 End every run with:
@@ -283,12 +405,26 @@ End every run with:
   - a second-kind question → the staging org: print `/qa:setup-states` with the state ids it
     blocks, literally, so the developer can run it.
 
+The chain mode prints, in place of the counts and the questions:
+
+- **each named state's result** — a chain of how many steps, through which apps; no tester path,
+  with the reason; or no path found, with the repos read;
+- the `Apps read:` line as written;
+- the *Sibling apps* entry written to the adapter, or the entry the developer confirmed when no row
+  could be written, or nothing;
+- each listed sibling app that was not read because its folder is neither beside this repo nor
+  passed as `--repo`, with the `--chain` command that passes it.
+
 ## Never
 
 - Never run the app, sign in, drive a browser, call an API, or read staging.
 - Never read or write `accounts.md`.
 - Never run a seeder or any end-to-end command.
-- Never write any file but the page folder's `KNOWLEDGE.md`, and never commit.
+- Never write any file but the page folder's `KNOWLEDGE.md`, and the adapter's *Sibling apps* row in
+  the chain mode, and never commit. Never write into a sibling repo.
+- Never search for a chain outside the chain mode, and never for a state `--chain` did not name.
+- Never read a sibling app the developer did not agree to, never dispatch any agent but
+  `qa:qa-chain-searcher` in the chain mode, and never change or remove an entry of the *Sibling apps* row.
 - Never write a row not traced to a condition, and never a code word outside the two allowed columns.
-- Never rewrite a row whose origin is not exactly `code`, except a renumbered id in it, or the
-  cells `--fact` and the backend read propagate into.
+- Never rewrite a row whose origin is not exactly `code`, except a renumbered id in it, the
+  cells `--fact` and the backend read propagate into, or the rows of a state `--chain` names.
