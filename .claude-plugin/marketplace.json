@@ -40,7 +40,7 @@
     {
       "name": "ado-workflow",
       "description": "The PRD-to-merge workflow brought to Azure DevOps for Claude Code: publish a spec, slice it into tasks, pick the next one, and run the whole thing end-to-end with a per-task worker subagent. Start with /ado-workflow:setup, which writes the project adapter every skill here reads",
-      "version": "1.12.5",
+      "version": "1.12.6",
       "keywords": [
         "azure-devops",
         "ado",
@@ -68,7 +68,7 @@
     {
       "name": "qa",
       "description": "The automated QA pass for Claude Code and the two files it starts from: build-knowledge derives a page's KNOWLEDGE.md from its code, setup-states observes the staging org and records the page states it holds in the project's accounts.md, and prove-branch resolves the run from the checked-out branch, composes flows from the diff, the acceptance criteria of the highest product source the branch reaches and those two files, drives them in a real browser against the pull request's preview deployment, grades the evidence in a cold-context session, and posts one receipt to the ticket, or to the pull request when the branch names none",
-      "version": "0.5.7",
+      "version": "0.5.8",
       "keywords": [
         "qa",
         "browser",
