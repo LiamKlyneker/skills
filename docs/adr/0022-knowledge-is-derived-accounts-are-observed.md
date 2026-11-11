@@ -3,6 +3,8 @@
 - **Status**: Accepted
 - **Date**: 2026-10-27
 - **Context**: PRD #237, implemented from #238 on
+- **Amended**: 2026-11-11 — by ADR [0028](0028-setup-states-may-create-data-under-write-rules.md), on
+  the clause "The pass never creates data" only: `setup-states` may create data under write rules.
 
 ## Context
 

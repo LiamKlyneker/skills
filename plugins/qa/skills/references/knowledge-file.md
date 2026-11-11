@@ -1,7 +1,8 @@
 # The `KNOWLEDGE.md` file
 
 The format of a page's knowledge file: what a user sees on one page and when, what the user can do
-and when, the data states behind both, and the questions nobody has answered yet. It is a tester's
+and when, the data states behind both, how a state is made, and the questions nobody has answered
+yet. It is a tester's
 file, written in user words only.
 
 Three skills share it: **`qa:build-knowledge` is its only writer** — it derives the file, regenerates
@@ -25,7 +26,7 @@ character class: `app/\[orgId\]/plans/KNOWLEDGE.md`, never `app/[orgId]/plans/KN
 
 ## Shape
 
-A header and exactly four tables, in this order. Nothing else: no prose outside the header, no notes
+A header and exactly five tables, in this order. Nothing else: no prose outside the header, no notes
 section, no other heading.
 
 ```markdown
@@ -36,6 +37,7 @@ Purpose: <one sentence, in user words>
 Derived at: <short sha> · <YYYY-MM-DD>
 Environment: <a behaviour that differs between staging and prod, stated as a fact, or `none`>
 Backend read: <repo name>, <repo name> · <YYYY-MM-DD>
+Apps read: <repo name>, <repo name> · <YYYY-MM-DD>
 
 ## What the user sees
 
@@ -52,11 +54,19 @@ Backend read: <repo name>, <repo name> · <YYYY-MM-DD>
 | Id | State, in user terms | Env | Known account | Seeder (for a human) | Origin |
 |---|---|---|---|---|---|
 
+## How a state is made
+
+| State | Step | App | Role | Screen | Action | Result the user sees | Origin |
+|---|---|---|---|---|---|---|---|
+
 ## Open questions
 
 | Id | Question | Blocks | Answer | Origin |
 |---|---|---|---|---|
 ```
+
+A file with four tables, no `## How a state is made`, is valid and reads as "no chain known for any
+state". The table is added the first time a chain search writes a row.
 
 ### Header lines
 
@@ -67,6 +77,7 @@ Backend read: <repo name>, <repo name> · <YYYY-MM-DD>
 | `Derived at:` | the short commit sha the derivation read and the date, as `<short sha> · <YYYY-MM-DD>` |
 | `Environment:` | any behaviour that differs between staging and prod, stated as a fact ("payments on staging go to a test processor and never charge a card"). A cell saying "staging only" tells a new person nothing on its own, so the difference lives here, in full. `none` when nothing differs |
 | `Backend read:` | the backend repos read and the date, as `<repo name>, <repo name> · <YYYY-MM-DD>`. **Present only when a backend read was done**; absent otherwise |
+| `Apps read:` | the front-end app repos a chain search read, this app's own repo included, and the date, as `<repo name>, <repo name> · <YYYY-MM-DD>`. **Present only when a chain search ran**; absent otherwise |
 
 ### `## What the user sees`
 
@@ -97,6 +108,29 @@ words. `Result the user sees` is what changes on screen, in user words.
   its own — one set in another application, one that needs time to pass, one that needs a payment
   failure — and never a default.
 
+### `## How a state is made`
+
+`State | Step | App | Role | Screen | Action | Result the user sees | Origin`
+
+The ordered steps a tester follows to make a state that staging does not hold. One row per step.
+
+- `State` is a state id from `## States`. `Step` runs 1, 2, … per state.
+- `App` reads `this app`, or the label of an app in the adapter's *Sibling apps* row.
+- `Role` is the role in user words, matched to a role label of the project when a step is performed.
+- `Screen` holds the screen's name and its route. `Action` names the control by its label and
+  quotes each input. `Result the user sees` is what confirms the step worked.
+- The table has no closing "look at the page" step: recognising the state is `setup-states`' own
+  observation.
+- **A row with step `none`** records that a tester cannot make the state. Its `Action` cell holds
+  the reason in user words, ending `(likely)` when a search found no answer and not a proof; the
+  cells that do not apply read `—`.
+- **End-to-end specs are a permitted source for the order and the preconditions of a chain, and for
+  nothing else in the file.** A test is still never a substitute for a condition in the page, in any
+  of the other four tables. The screen, the control and its label come from the UI code of the app
+  that owns the step.
+- A state with rows in this table is one a tester can make. A state with no row is unknown, and a
+  chain search is where it gets one.
+
 ### `## Open questions`
 
 `Id | Question | Blocks | Answer | Origin`
@@ -121,6 +155,9 @@ A file with no open questions on a page that reads permissions from an API is a 
 or status-constant names. User and product words only: "the plan is cancelled", "the paying
 contact's account was deleted", "the plan still has a balance".
 
+The rule covers `## How a state is made` with no new exception: the screen is its name and route as
+the user knows them, the control is its label, an input is quoted.
+
 **Two exceptions, and only two:**
 
 - the `Seeder (for a human)` column may name a command or task;
@@ -141,6 +178,7 @@ Every row of every table carries one origin:
 | `code` | the page's own code: its render conditions, permission reads and data reads |
 | `backend-repo (<repo name>)` | a locally cloned backend repo, named |
 | `observed in run <short sha>` | what a `prove-branch` run at that SHA saw on the target |
+| `app-repo (<repo name>)` | a front-end app repo a chain search read, named, including this app's own repo. Carried by every row of `## How a state is made` |
 | `developer, <YYYY-MM-DD>` | a developer's answer, on that date |
 
 A row whose fact came from more than one source carries a **comma-separated combination**, in the
@@ -155,8 +193,10 @@ origin gains the repo:
 | Cancel a fee | Organiser | the registrant is not on the waitlist [Q3] | the fee leaves the list | code, backend-repo (billing-api) |
 
 **`(likely)`.** A backend answer read with confidence `likely`, rather than `confirmed`, ends with
-`(likely)` — in the question's `Answer` cell and in every cell it is written into. A rule that lives
-in a repo not read (a registration system, a payment processor) is answered as far as the repos go
+`(likely)` — in the question's `Answer` cell and in every cell it is written into. A cell of
+`## How a state is made` that only an end-to-end spec supports ends with `(likely)` too.
+
+A rule that lives in a repo not read (a registration system, a payment processor) is answered as far as the repos go
 and says where the rest lives.
 
 ## Regenerate
@@ -165,8 +205,8 @@ A run of `build-knowledge` on a page that already has a `KNOWLEDGE.md` regenerat
 
 - **It rewrites rows whose origin is exactly `code`**, and adds and removes `code` rows to match the
   page as it now is.
-- **Every other row stays byte-intact** — any row whose origin names a backend repo, an observed run
-  or a developer, alone or in a combination. A human-supplied fact is never rewritten by a
+- **Every other row stays byte-intact** — any row whose origin names a backend repo, an app repo, an
+  observed run or a developer, alone or in a combination. A human-supplied fact is never rewritten by a
   regenerate.
 - **It re-derives the `Derived at:` line** from the commit it read.
 - **It reconciles state and question ids** so every reference stays valid: a state or question that
@@ -174,4 +214,7 @@ A run of `build-knowledge` on a page that already has a `KNOWLEDGE.md` regenerat
   ids are renumbered and **every cell in the file that cites one is rewritten to match** — the
   `State` column, `Blocks`, and the bracketed question ids in a condition. A renumbered state id is
   printed, since `accounts.md` rows cite state ids and `build-knowledge` never writes that file.
+- **Every row of `## How a state is made` stays.** A chain row never has the origin `code`, so the
+  rule above keeps it byte-intact. A renumbered state id is rewritten in the `State` cell of chain
+  rows, as in every other cell that cites it. A derive or a regenerate never searches for a chain.
 - **Open questions never block a regenerate.**

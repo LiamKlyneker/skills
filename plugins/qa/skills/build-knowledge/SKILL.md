@@ -8,7 +8,7 @@ disable-model-invocation: true
 
 **Derive what a page does, in a tester's words, from the page itself.** The output is one file, the
 page folder's `KNOWLEDGE.md`, whose format is [`knowledge-file.md`](../references/knowledge-file.md).
-Read that file first, every run: it is the only definition of the header, the four tables, their
+Read that file first, every run: it is the only definition of the header, the five tables, their
 columns, the origins, the no-code-words rule and the regenerate rule. This skill restates none of
 it, and where this skill and that file seem to disagree, that file wins.
 
@@ -66,7 +66,7 @@ No adapter row changes the format, and no adapter row is a source for a cell.
 | the hooks and data clients those components read | which request each fact comes from, and which values the page reads from the server as a yes or no |
 | the feature-flag configuration | every flag a render condition reads, and its value per environment |
 | the folder's `CONTEXT.md` | the page's purpose, in the words the team uses |
-| the project's end-to-end suite | the **names** of its data-creation commands or tasks, for `Seeder (for a human)`. Nothing else in it is a source: a test asserting a behaviour is never a substitute for the condition in the page |
+| the project's end-to-end suite | the **names** of its data-creation commands or tasks, for `Seeder (for a human)`. Nothing else in it is a source: a test asserting a behaviour is never a substitute for the condition in the page. Its specs are a permitted source for the order and the preconditions of a chain in `## How a state is made`, and for nothing else |
 | the current commit and today's date | `git rev-parse --short HEAD` and `date +%F`, for `Derived at:` |
 
 It reads nothing else. Not the wider codebase, not documentation, not tickets, not a running app.
@@ -134,7 +134,7 @@ plans". A visible label is a product word — quote the text the user sees.
 
 **Name a thing with the word the page shows for it, every time.** When the page's own text calls
 something a loan, every cell calls it a loan — in a rule the backend read writes too — never a
-synonym the page does not use. One thing, one word, across the four tables.
+synonym the page does not use. One thing, one word, across the five tables.
 
 **Before writing the file, check every cell** outside `Seeder (for a human)` and `Origin` for an
 identifier's shape — camelCase, snake_case, a joined capitalised name, a constant in capitals, a
@@ -242,6 +242,11 @@ section says how, never what.
    that cites the old id. A kept row's citation is rewritten for a renumber and nothing else.
 6. **Re-derive `Derived at:`**. Every other header line stays as it was unless this run's derivation
    or backend read changed it.
+
+**Chain rows are kept rows.** Every row of `## How a state is made` carries an origin other than
+exactly `code`, so step 1 sorts all of them as kept and step 3 writes them back byte for byte. Step 5
+rewrites a renumbered state id in their `State` cell and changes nothing else in them. A derive or a
+regenerate never searches for a chain and never adds, removes or reorders a chain row.
 
 **Open questions never block a regenerate.** A kept row the new code contradicts stays as it is;
 print it under the run's summary as a row for a human to check, and do not change it.
