@@ -105,10 +105,15 @@ Abstract form means the body says *a skill picked a design token by name match w
 
 ```bash
 r=<scratch>/report; n=<n>
+git remote 2>/dev/null | xargs -n1 git remote get-url 2>/dev/null | sort -u \
+  | sed -E 's#\.git$##; s#^[a-z+]+://##; s#^[^@/]*@##' | tr '/:' '\n\n' \
+  | grep -v '^$' > "$r/remote-terms.txt"
+if [ -n "$(git remote 2>/dev/null)" ] && [ ! -s "$r/remote-terms.txt" ]; then
+  echo "deny-list: the repo has a remote but no remote terms were built" >&2; exit 1
+fi
 {
   basename "$(git rev-parse --show-toplevel 2>/dev/null)"
-  git remote -v 2>/dev/null | awk '{print $2}' | sort -u \
-    | sed -E 's#\.git$##; s#^[a-z+]+://##; s#^[^@/]*@##' | tr '/:' '\n\n'
+  cat "$r/remote-terms.txt"
   git config user.email 2>/dev/null
   cat ~/.config/lk/report-denylist 2>/dev/null
 } | grep -vixE '_git|v3|github\.com|gitlab\.com|bitbucket\.org|dev\.azure\.com|ssh\.dev\.azure\.com|skills|LiamKlyneker' \
@@ -117,6 +122,8 @@ cat "$r/$n/title.txt" "$r/$n/body.md" | grep -inFf "$r/denylist.txt"
 cat "$r/$n/title.txt" "$r/$n/body.md" | grep -inE \
   '[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[a-z]{2,}|https?://|/Users/|/home/|[A-Z]:\\|gh[pousr]_[A-Za-z0-9]{20,}|sk-[A-Za-z0-9_-]{20,}|xox[abpr]-|AKIA[0-9A-Z]{16}|[A-Fa-f0-9]{32,}|\b[A-Z][A-Z0-9]+-[0-9]+\b'
 ```
+
+If the script stops with `deny-list:`, the scan did not run. Fix the build and run it again; never treat that output as a clean scan. The harness replaces a dollar sign followed by a digit in this file with a skill argument, so the script never refers to a field by number.
 
 `~/.config/lk/report-denylist` is optional, one term per line, and lives on the machine only — company and client names the project's git metadata does not carry. Never commit it anywhere.
 

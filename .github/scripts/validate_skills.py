@@ -32,6 +32,7 @@ TOP_KEY = re.compile(r"^([A-Za-z0-9_-]+):[ \t]*(.*)$")
 NESTED_KEY = re.compile(r"^\s+([A-Za-z0-9_-]+):[ \t]*(.*)$")
 SEMVER = re.compile(r"^(\d+)\.(\d+)\.(\d+)$")
 SHARED_REF = re.compile(r"_shared/([A-Za-z0-9._-]+\.md)")
+POSITIONAL_PLACEHOLDER = re.compile(r"\$\d")
 BLOCK_SCALARS = {">", "|", ">-", "|-", ">+", "|+"}
 # `../_shared/x.md` is this repo's shorthand for "some shared doc" (see CLAUDE.md),
 # not a real filename. Prose uses it; don't try to resolve it.
@@ -369,6 +370,21 @@ def check_shared_references() -> None:
             fail(path, f"references _shared/{missing}, which does not exist")
 
 
+def check_positional_placeholders() -> None:
+    """A SKILL.md body may not contain a dollar sign followed by a digit.
+
+    The harness reads that as a skill-argument placeholder and substitutes it when the
+    skill is invoked with args, so `awk '{print $2}'` reaches the session as
+    `awk '{print in}'`. Nothing errors at load time; the snippet just runs wrong (#284).
+    """
+    for path in walk_files(ROOT, "SKILL.md"):
+        for number, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
+            if POSITIONAL_PLACEHOLDER.search(line):
+                fail(f"{relpath(path)}:{number}",
+                     "positional placeholder (dollar sign + digit) — the harness replaces "
+                     "it with a skill argument; rewrite the snippet without it")
+
+
 def plugin_pathspecs(directory: Path) -> list[str]:
     """Every path whose contents land inside this plugin's *installed* copy.
 
@@ -493,6 +509,7 @@ def main(argv: list[str]) -> int:
     check_agents()
     check_symlinks()
     check_shared_references()
+    check_positional_placeholders()
     check_version_bumps(plugin_dirs, args.base)
 
     if errors:
@@ -500,8 +517,8 @@ def main(argv: list[str]) -> int:
         for error in errors:
             print(f"  {error}", file=sys.stderr)
         return 1
-    print("✓ catalog, plugins, skills, skill versions, agents, symlinks and _shared refs "
-          "all valid")
+    print("✓ catalog, plugins, skills, skill versions, agents, symlinks, _shared refs "
+          "and positional placeholders all valid")
     return 0
 
 
