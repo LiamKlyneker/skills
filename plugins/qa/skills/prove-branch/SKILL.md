@@ -130,11 +130,25 @@ commits carrying `(#12)` and `(#13)` are two.
 
 4. **The ticket-source key** — every tracker. The ticket key that `../_shared/ticket-source.md` §3
    names for the system the adapter's `Ticket source:` line selects, or the `Tracker:` line where
-   there is no `Ticket source:` line, found in the commit subjects and in the open pull request's
-   body: for `jira`, an issue key in the form §2 accepts (`ABC-123`); for `azure-devops`, an
-   `AB#<id>` work-item mention. For `github` the key is the issue number, which is key 3's shape —
-   a bare number found in free text is not a ticket key, so this key adds nothing there and reports
-   itself as such.
+   there is no `Ticket source:` line: for `jira`, an issue key in the form §2 accepts (`ABC-123`);
+   for `azure-devops`, an `AB#<id>` work-item mention. For `github` the key is the issue number,
+   which is key 3's shape — a bare number found in free text is not a ticket key, so this key adds
+   nothing there and reports itself as such.
+
+   Read the key only from the places that **declare** which ticket the branch implements:
+
+   - the open pull request's title;
+   - the branch's commit subjects;
+   - a **label line** in the open pull request's body — a whole line that is a label, a colon and
+     the key, and nothing else, such as `Jira: ABC-123` or `Ticket: AB#4512`;
+   - for `jira` only, the branch name, where the key is a whole token: `ABC-123-fix-foo` and
+     `feature/ABC-123` carry `ABC-123`, and `ABC-1234-x` does not carry `ABC-123`.
+
+   The hits are the distinct keys across all four places together, never one place at a time. A
+   title and a commit that name the same key are one hit, and a title and a commit that name two
+   keys are two, which is a stop. **A key in any other line of the body is not a hit**: prose that
+   mentions a related ticket for background or for follow-up work does not say which ticket the
+   branch implements. This holds for `AB#<id>` too, although Azure Boards links every mention.
 
 A key that does not apply to this tracker reports `not applicable` and counts as yielding nothing.
 
@@ -163,8 +177,11 @@ prove-branch cannot resolve the run for branch `<branch>`.
   key 2 ([SPEC] ArtifactLink): <none | not applicable | …>
   key 3 ((#N) commit suffix): <none | #227, #228>
   key 4 (ticket-source key): <none | not applicable | ABC-12, ABC-14>
+  key 4, body prose only, not counted: <none | ABC-9>
 Which ticket and pull request should this pass prove?
 ```
+
+Omit the prose line where key 4 does not apply.
 
 The developer's answer resolves the run; record that it came from the developer, not a key.
 
