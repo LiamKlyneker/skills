@@ -196,7 +196,7 @@ an adapter carrying none of them is finished, not half-filled. `## Design system
 so a fresh copy drops it and gap-fill never adds it.
 
 **`## QA` is asked only when the bundle declares it, and it takes credential names, never
-credential values.** Ask each of its seven rows once, in the template's order: the session method
+credential values.** Ask each of its eight rows once, in the template's order: the session method
 (`api` with its sign-in endpoint, or `manual`); the credential environment variables, as a
 variable **name** for the username and one for the password per role the flows need; the known
 accounts path, which defaults to `.claude/project/accounts.md` beside the adapter and is taken
@@ -204,8 +204,11 @@ as the default unless the human names another; the preview URL pattern, in the t
 `pr-comment`; whether HTTP Basic Auth sits in front of the preview and, when it does, a variable
 **name** for its username and one for its password — "no" is a complete answer, deletes the row and
 records no warning; the feature-flag override, or `none`; and the browser automation consent, which is
-`yes` or the section is not written. **Never ask for a state, an org or an account id** — the
-known accounts are observed later by `qa:setup-states`, never entered here. When no file exists
+`yes` or the section is not written; and whether the QA skills may write to staging, as one yes or no — `yes` lets `qa:setup-states` perform a state's steps on staging itself, creating only items named `qa-setup` and only after it asks in the run, and `no` has it print the steps instead. The permission is a project decision and is never granted in the middle of a run. **Never ask for a state, an org or an account id** — the
+known accounts are observed later by `qa:setup-states`, never entered here. The `Sibling apps` row is
+not one of the eight and is not asked at all: `qa:build-knowledge`'s chain mode writes it when a
+developer confirms an app during a search, so a fresh copy drops it, gap-fill never adds it, and an
+adapter without it is not a gap. When no file exists
 at the known accounts path, write it from the empty skeleton in the `qa` plugin's
 `skills/references/accounts-file.md`, verbatim; when one exists, leave it as it is, since setup
 never deletes from it or from the pointer row. **Never ask for a username, a password or a token,
@@ -274,6 +277,7 @@ its checks by hand or "spot-check" a subset.
 | `QA-ENV` | the adapter's `## QA` names a credential environment variable that is not set in the shell doctor runs in |
 | `QA-SESSION` | the adapter's `## QA` has no *Session method* row, or one whose value is not `api` or `manual` |
 | `QA-BASIC-AUTH` | the adapter's `## QA` has a *Preview basic auth* row that does not name exactly two variables, names one that is not a valid variable name, or names one that is not set in the shell doctor runs in |
+| `QA-STAGING-WRITES` | the adapter's `## QA` has a *Staging writes* row whose value is not `yes` or `no`; an absent row is not reported, since `qa:setup-states` reads it as `no` |
 | `QA-ACCOUNTS` | the adapter's `## QA` has a *Known accounts* row whose path is not a file, or a file with no `## Orgs` or no `## States` section |
 
 `WARN` lines (a loose file in the skills directory, a manifest doctor could not read, a PR

@@ -532,6 +532,17 @@ if [ -f "$adapter" ] && grep -qE '^## QA[[:space:]]*$' "$adapter"; then
     fi
   fi
 
+  # Optional: `qa:setup-states` reads an absent row as `no`, so absence is silent.
+  writes_line="$(printf '%s\n' "$qa_section" | grep -E '^[[:space:]]*[-*][[:space:]]+(\*\*)?Staging writes' | head -1)"
+  if [ -n "$writes_line" ]; then
+    writes="$(row_value "$writes_line")"
+    case "$writes" in
+      yes|no) ;;
+      *) is_unfilled_token "$writes" ||
+           err "QA-STAGING-WRITES" "$(rel "$adapter") gives Staging writes as \`$writes\` — it must be \`yes\` or \`no\`" ;;
+    esac
+  fi
+
   # A relative path resolves against the repo root, the way the `qa` skills read it.
   accounts_note=""
   accounts_line="$(printf '%s\n' "$qa_section" | grep -E '^[[:space:]]*[-*][[:space:]]+(\*\*)?Known accounts' | head -1)"

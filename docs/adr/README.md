@@ -77,9 +77,10 @@ or the adapter, and stops there.
 | [0019](0019-one-task-shape-one-executor.md) | One task shape, one executor | Accepted |
 | [0020](0020-the-automated-qa-pass-gets-its-own-plugin.md) | The automated QA pass gets its own plugin | Accepted |
 | [0021](0021-every-plugin-ships-its-own-setup.md) | Every plugin ships its own setup | Accepted |
-| [0022](0022-knowledge-is-derived-accounts-are-observed.md) | Knowledge is derived, accounts are observed | Accepted |
+| [0022](0022-knowledge-is-derived-accounts-are-observed.md) | Knowledge is derived, accounts are observed | Accepted, amended by ADR 0028 |
 | [0023](0023-the-merge-closes-the-prd.md) | The merge closes the PRD | Accepted |
 | [0024](0024-nights-run-the-loops-unattended.md) | Nights run the loops unattended | Accepted |
 | [0025](0025-a-skill-may-install-an-app-it-does-not-carry.md) | A skill may install an app it does not carry | Accepted |
 | [0026](0026-design-work-enters-through-a-brief.md) | Design work enters through a brief | Accepted |
 | [0027](0027-eval-cases-are-earned-by-a-failure.md) | Eval cases are earned by a failure | Accepted |
+| [0028](0028-setup-states-may-create-data-under-write-rules.md) | `setup-states` may create data, under write rules | Accepted |

@@ -22,7 +22,7 @@ it.
 | Skill | Writes |
 |---|---|
 | `qa:setup` | the empty skeleton below, when no `accounts.md` exists, and the adapter's pointer row. It never deletes from either |
-| `qa:setup-states` | every observed row: the first `## Orgs` row, asked for once when the table holds no org for the environment, and each `## States` row it verifies on the target, with its re-verifications and stale marks |
+| `qa:setup-states` | every observed row: the first `## Orgs` row, asked for once when the table holds no org for the environment, and each `## States` row it verifies on the target, with its re-verifications and stale marks — including a row for a state its drive mode made on staging, written only once it sees the state |
 | `qa:prove-branch` | a `## States` row **only** when the developer answers a gap during a run — an instance the developer names after a stop. It never writes a row from what it observes on its own |
 
 **`qa:build-knowledge` never touches it.** That skill reads code and never looks at staging, so it
@@ -74,7 +74,7 @@ One row per known instance of a page state.
 | `Org` | the org id, matching an `## Orgs` row for the same `Env` |
 | `Page` | the page's route, as its `KNOWLEDGE.md` `Route:` line writes it |
 | `State` | the state id from that page's `KNOWLEDGE.md` (`S21`) |
-| `Ids` | the ids that prove the state is there — an order number, a plan id — each named in user words: `order 4412 · plan 98` |
+| `Ids` | the ids that prove the state is there — an order number, a plan id — each named in user words: `order 4412 · plan 98`. A row a `setup-states` drive produced — a chain's or the page's own steps — also records **every item the drive created**, after the proving ids, each with its `qa-setup` name: `shelf s-31 "qa-setup S4 shelf" · loan l-7 "qa-setup S4 loan"`. A later drive uses a recorded `qa-setup` item again when it still exists and still fits the step, and never changes it |
 | `Last verified` | the date the state was last seen on the target, `YYYY-MM-DD`, or the stale mark below |
 | `Origin` | where the row came from, from the vocabulary below |
 

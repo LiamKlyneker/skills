@@ -554,18 +554,32 @@ reason `target is not confirmed as staging`.
 
 For each flow's state id, find the `## States` rows whose `Env` applies, whose `Page` is the page's
 `Route:` line and whose `State` is the id. A row whose `Last verified` reads `stale …` counts as no
-row. When several rows qualify, take the most recently verified and say which. Each state comes out
-as one of these:
+row. When several rows qualify, take the most recently verified and say which.
+
+When there is no row, read the state in the knowledge file's `## How a state is made` table
+([`knowledge-file.md`](../references/knowledge-file.md)). A file with no such table holds no chain
+for any state. The table gives each state one of three readings:
+
+| The chain table holds | The state |
+|---|---|
+| numbered steps for the state | can be made |
+| a step `none` row for the state | cannot be made; the row gives the reason |
+| nothing for the state | is unknown |
+
+Each state comes out as one of these:
 
 | Found | Outcome |
 |---|---|
 | a row | the flow is **ready**. The row's `Org` and `Ids` are its starting state's ids, shown on an `account:` line under `start from:` |
-| no row, and the state cannot be made in this app | the flow is **Unable to verify**: `state S<n> "<the state, in user words>" <is set in another application · needs time to pass · needs a payment to fail>, and accounts.md has no row for it`. Its remedy names the state's `Seeder (for a human)` hint from `KNOWLEDGE.md`, as written, as the fast path for a human to make the state — or `none known` — and then `/qa:setup-states <page folder> S<n>` to record it |
-| no row, otherwise | a **missing account** — `### The missing-account stop` |
+| no row, and the chain table holds a step `none` row for the state | the flow is **Unable to verify**: `state S<n> "<the state, in user words>" cannot be made by a tester — <that row's reason, as written>, and accounts.md has no row for it`. Its remedy names the state's `Seeder (for a human)` hint from `KNOWLEDGE.md`, as written, as the fast path for a human to make the state — or `none known` — and then `/qa:setup-states <page folder> S<n>` to record it |
+| no row, and the state cell says the state needs time to pass or a payment to fail | the flow is **Unable to verify**: `state S<n> "<the state, in user words>" <needs time to pass · needs a payment to fail>, and accounts.md has no row for it`. Its remedy is the same as in the row above |
+| no row, and the chain table holds numbered steps for the state | a **missing account** — `### The missing-account stop`, which names `/qa:setup-states` |
+| no row, and the chain table holds nothing for the state | a **missing account** — `### The missing-account stop`. The `/qa:setup-states` command in the stop is where a chain search is offered |
 
-A state **cannot be made in this app** when its `State, in user terms` cell says it is set in
-another application, needs time to pass ("more than 90 days ago", "more than 14 days overdue"), or
-needs a payment to fail. Never run its seeder: the hint is for a human.
+The "needs time to pass" clause ("more than 90 days ago", "more than 14 days overdue") and the
+"needs a payment to fail" clause are read from the state's `State, in user terms` cell. The cell is
+not read for "set in another application": that fact is a chain row. Never run a state's seeder:
+the hint is for a human. This skill never performs a chain and never starts a chain search.
 
 A flow that starts from an Unable-to-verify flow is Unable to verify too, naming that flow.
 
@@ -947,7 +961,8 @@ Then four sections, **in this order**, each present and reading `none` when empt
    uncovered and each ambiguous criterion with its coverage-map reason. Every item carries a
    **suggested remedy**: the one change that would make it checkable — the
    `/qa:setup-states <page folder> S<n>` or `/qa:build-knowledge <page folder>` command to run, the
-   state's `Seeder (for a human)` hint for a state this app cannot make, the variable to set, the
+   state's `Seeder (for a human)` hint for a state no tester can make, with the reason its step
+   `none` row gives, the variable to set, the
    target to confirm as staging, the reading of the criterion to settle, or the check a human makes
    by hand.
 2. **Fails** — each Fail sub-step with its flow's name, the grader's reason, its **artifact path**,
