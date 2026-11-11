@@ -78,11 +78,16 @@ found from the branch. The criteria come from the product source the ticket reac
 
 ### First, read the branch
 
-Three reads, all read-only, before any key is tried:
+First fetch the default branch, `git fetch origin <default-branch>`, with `<default-branch>` from
+`## Repo`. A fetch moves only the remote-tracking ref, never the working tree, so it needs no yes. A
+fetch that fails is a stop: say so. **Every range in this skill compares against
+`origin/<default-branch>`, never the local ref.** A local default branch behind the remote puts
+commits that already merged into the range, and their `(#N)` suffixes read as tickets.
+
+Then three reads, all read-only, before any key is tried:
 
 - the branch: `git branch --show-current`. An empty result is a detached `HEAD` — stop, say so.
-- the commit subjects on the branch: `git log <default-branch>..HEAD --format='%s'`, with
-  `<default-branch>` from `## Repo`.
+- the commit subjects on the branch: `git log origin/<default-branch>..HEAD --format='%s'`.
 - the **open pull requests whose head is this branch**:
   - `github`: `gh pr list --repo <owner>/<repo> --state open --head <branch> --json number,headRefName,headRefOid,title,body,url`
   - `azure-devops`: `mcp__ado__repo_pull_request` listing active pull requests whose source branch
@@ -183,6 +188,8 @@ Before reading the target, confirm and say what you found:
 - the pull request's head branch is the one checked out (`git branch --show-current`);
 - the pull request is open — `github`: `gh pr view <n> --repo <owner>/<repo> --json state,isDraft,headRefOid`; `azure-devops`: the pull request's status from `mcp__ado__repo_pull_request`;
 - the tree is clean (`git status --short`);
+- the ref every range compares against: `origin/<default-branch>`, fetched in *First, read the
+  branch*;
 - the pull request's head commit is `HEAD` (`git rev-parse HEAD`) — a local commit that is not
   pushed is a commit the preview cannot have built.
 
@@ -330,7 +337,7 @@ section of the description or body headed `Out of Scope`, in any heading level o
 with neither sets no limit. The items are handed to `## Composing the flows`, which they limit.
 
 **The diff is the authority.** Read it — `github`: `gh pr diff <n> --repo <owner>/<repo>`;
-`azure-devops`: `git diff <default-branch>...HEAD`, since the MCP exposes no diff tool. Any planned
+`azure-devops`: `git diff origin/<default-branch>...HEAD`, since the MCP exposes no diff tool. Any planned
 `## QA notes` in a child issue was written before the code existed; read it for intent and let the
 diff overrule it.
 
@@ -360,7 +367,7 @@ file seem to disagree, that file wins.
 
 ### The touched page folders
 
-List the changed paths with `git diff --name-only <default-branch>...HEAD`. A **page folder** is a
+List the changed paths with `git diff --name-only origin/<default-branch>...HEAD`. A **page folder** is a
 folder holding a route entry file that the framework renders as a page. Each changed path belongs to
 its nearest page folder at or above it: a change under `app/shelves/components/` touches the page
 folder `app/shelves`. A changed path with no page folder above it touches no page.

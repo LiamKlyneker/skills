@@ -126,8 +126,8 @@ checkout, not the MCP** — the server exposes no diff tool, and the branch is c
 
 | Read | How | What it is |
 |---|---|---|
-| the diff | `git diff <default-branch>...<spec-branch>` | **the as-built record** — the only authority on what there is to test |
-| the commits | `git log <default-branch>..<spec-branch> --format='%H %s%n%b'` | attribution: the `AB#<id>` reference in each commit **body** says which `[TASK]` owns that code |
+| the diff | `git diff origin/<default-branch>...<spec-branch>` | **the as-built record** — the only authority on what there is to test |
+| the commits | `git log origin/<default-branch>..<spec-branch> --format='%H %s%n%b'` | attribution: the `AB#<id>` reference in each commit **body** says which `[TASK]` owns that code |
 | the landed `[TASK]`s | the `[SPEC]`'s siblings per [`../_shared/ado-eligibility.md`](../_shared/ado-eligibility.md) §2–3, kept where a commit on the branch references them | which slices are in this run at all |
 | each `[TASK]`'s description | already in hand from that walk | acceptance criteria and planned `## QA notes` |
 
@@ -201,9 +201,14 @@ Before presenting flow 1, confirm and say what you found:
 - the PR's source branch is the one checked out (`git branch --show-current`) — the adapter's
   **branch pattern** plus the `[SPEC]` id says what it should be;
 - the pull request is open and still a draft;
-- the tree is clean (`git status --short`).
+- the tree is clean (`git status --short`);
+- the default branch is fetched (`git fetch origin <default-branch>`), and the diff and the
+  commits compare against `origin/<default-branch>`, never the local ref. A local default branch
+  behind the remote puts commits that already merged into the range. A fetch moves only the
+  remote-tracking ref, never the working tree, so it needs no yes.
 
-Anything unexpected — dirty tree, detached HEAD, a completed pull request, the wrong branch — **say
+Anything unexpected — dirty tree, detached HEAD, a completed pull request, the wrong branch, a
+failed fetch — **say
 so and stop for the human**. The driver runs read-only and verify commands from the adapter's
 `## Commands` freely; anything that changes the working tree or starts a long-lived process it
 **proposes and waits for a yes**. The tester owns their machine.

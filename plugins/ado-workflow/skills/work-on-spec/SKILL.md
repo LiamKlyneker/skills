@@ -289,10 +289,12 @@ discarded by design.
 4. **Reconstruct**: a `[TASK]` is done ⇔ a commit referencing it exists on the branch. **Board
    state is cache; commits are truth.** The reference lives in the commit *body* (normative form
    in [`../../agents/spec-worker.md`](../../agents/spec-worker.md) mandate 6), so grep the full
-   message, not the subject:
+   message, not the subject, against the fetched default branch rather than the local one, which
+   can be behind the remote on a resume:
 
    ```bash
-   git log <default-branch>..<spec-branch> -E --grep="AB#<id>([^0-9]|$)" --oneline
+   git fetch origin <default-branch>
+   git log origin/<default-branch>..<spec-branch> -E --grep="AB#<id>([^0-9]|$)" --oneline
    ```
 
    The `([^0-9]|$)` guard is load-bearing: a bare `AB#12` pattern also matches `AB#1234`, which
