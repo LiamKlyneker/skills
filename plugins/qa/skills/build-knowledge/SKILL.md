@@ -351,9 +351,27 @@ template gives it: the label, the repo folder name and the confirmed staging URL
 it is absent, and add an entry to it when it is present; never change or remove an entry. **The row
 holds no path on disk**: a path the developer gave is read in this run only, and a later run finds the
 folder beside this repo or takes it from `--repo`. An app given as a path is recorded only when the
-developer gave its staging URL in the same answer; its label is the folder name. The role a tester
-uses in the app is not written here. With no adapter, or one with no `## QA` section, write no row,
-and print the entry the developer confirmed.
+developer gave its staging URL in the same answer; its label is the folder name. A search writes no
+role: the roles a tester uses in the app are added by *Recording a sibling app's role*. With no
+adapter, or one with no `## QA` section, write no row, and print the entry the developer confirmed.
+
+### Recording a sibling app's role
+
+The role a tester signs in as in a sibling app is added to that app's entry **when a run first needs
+to sign in to that app** as that role. A search never signs in, so this write is never part of a
+`--chain` run: `qa:setup-states` applies this subsection when it signs in to a sibling app
+(`## Signing in` → *Signing in to a sibling app*), and nothing else writes it.
+
+- The role is a label of the *Credential environment variables* row, written unquoted as that row
+  writes it. A label the row does not list is never written.
+- The entry gains `, roles: <label>` after its staging URL the first time, and each later role is
+  added to that list as `, <label>`, in the order the runs needed them, as the template gives it.
+- A label belongs to one app: a label another entry already lists is never written, and the run
+  that needed it stops and names both apps.
+- **Add only.** Never change or remove an entry's label, folder name, staging URL or a role it
+  already lists, and never touch another entry or another row. An entry that already lists the role
+  is left as it is.
+- With no *Sibling apps* entry for the app, write nothing: the app is recorded by a search first.
 
 ### Writing the rows
 
@@ -412,7 +430,7 @@ The chain mode prints, in place of the counts and the questions:
   with the reason; or no path found, with the repos read;
 - the `Apps read:` line as written;
 - the *Sibling apps* entry written to the adapter, or the entry the developer confirmed when no row
-  could be written, or nothing;
+  could be written, or nothing. A search writes no role into an entry;
 - each listed sibling app that was not read because its folder is neither beside this repo nor
   passed as `--repo`, with the `--chain` command that passes it.
 
@@ -425,7 +443,8 @@ The chain mode prints, in place of the counts and the questions:
   the chain mode, and never commit. Never write into a sibling repo.
 - Never search for a chain outside the chain mode, and never for a state `--chain` did not name.
 - Never read a sibling app the developer did not agree to, never dispatch any agent but
-  `qa:qa-chain-searcher` in the chain mode, and never change or remove an entry of the *Sibling apps* row.
+  `qa:qa-chain-searcher` in the chain mode, and never change or remove an entry of the *Sibling apps*
+  row or a role it lists: an entry only gains roles, by *Recording a sibling app's role*.
 - Never write a row not traced to a condition, and never a code word outside the two allowed columns.
 - Never rewrite a row whose origin is not exactly `code`, except a renumbered id in it, the
   cells `--fact` and the backend read propagate into, or the rows of a state `--chain` names.

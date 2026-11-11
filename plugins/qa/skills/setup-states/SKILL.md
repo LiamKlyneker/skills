@@ -1,6 +1,6 @@
 ---
 name: setup-states
-description: Find the page states a branch needs in the staging org and record them in the project's `accounts.md` — observe the org first and write a row for every state it already holds, then guide the developer through creating each missing state in the app the way a tester would, verify it, and write its row; for a missing state the page's `KNOWLEDGE.md` knows nothing about, offer once to search the code for how it is made, through `qa:build-knowledge`'s chain mode and its read-only `qa:qa-chain-searcher` agent, and print the chain it finds as numbered steps; a rerun re-verifies the rows already listed and marks a vanished one stale, and never searches. Interactive; drives the browser in this session through the Playwright MCP tools, never creates data itself, never runs a seeder, never dispatches a `qa:qa-driver`, and writes `accounts.md` plus `KNOWLEDGE.md` and the adapter's *Sibling apps* row only through the chain mode. Invoke /qa:setup-states [<page folder>] [S<n>...] — state ids, a page folder for every state of that page, or nothing to re-verify every listed row.
+description: Find the page states a branch needs in the staging org and record them in the project's `accounts.md` — observe the org first and write a row for every state it already holds, then guide the developer through creating each missing state in the app the way a tester would, verify it, and write its row; for a missing state the page's `KNOWLEDGE.md` knows nothing about, offer once to search the code for how it is made, through `qa:build-knowledge`'s chain mode and its read-only `qa:qa-chain-searcher` agent, and print the chain it finds as numbered steps; a state that shows only to another role is looked for by one read-only `qa:qa-driver` signed in with that role's saved session; a rerun re-verifies the rows already listed and marks a vanished one stale, and never searches. Interactive; drives the browser in this session through the Playwright MCP tools as the org's role, never creates data itself, never runs a seeder, never presses a control that changes data or lets a driver press one, and writes `accounts.md` plus `KNOWLEDGE.md` and the adapter's *Sibling apps* row only through the chain mode. Invoke /qa:setup-states [<page folder>] [S<n>...] — state ids, a page folder for every state of that page, or nothing to re-verify every listed row.
 disable-model-invocation: true
 ---
 
@@ -19,18 +19,25 @@ app, as a tester signed in with a saved session would. A state the org lacks, th
 in the app by following this skill's steps; this skill then looks again. For a missing state the
 page's `KNOWLEDGE.md` has no chain for, it offers one search for how the state is made, and prints
 the chain the search finds as steps. It never presses a control that changes data, never runs a
-seeder or any end-to-end command, never touches a database, an admin console or an API that writes,
-and never dispatches a `qa:qa-driver` or a `qa:qa-grader` — it drives the browser itself, in this
-session, because it grades nothing and talks to the developer throughout.
+seeder or any end-to-end command, and never touches a database, an admin console or an API that
+writes. As the org's role it drives the browser itself, in this session, because it grades nothing
+and talks to the developer throughout. A state that shows only to another role it looks for through
+a driver signed in as that role (`## Looking as another role`), and that look is read-only too.
 
-**It dispatches one agent, and only through the chain mode**: the read-only `qa:qa-chain-searcher`,
-started by applying `qa:build-knowledge`'s chain mode (`## Guide second` → *The search offer*).
+**It dispatches two agents, and never a `qa:qa-grader`:**
+
+- the read-only `qa:qa-chain-searcher`, only by applying `qa:build-knowledge`'s chain mode
+  (`## Guide second` → *The search offer*);
+- one `qa:qa-driver` per read-only look as a role other than the org's (`## Looking as another
+  role`).
 
 **It writes `accounts.md`.** It writes `KNOWLEDGE.md` and the adapter's *Sibling apps* row **only
 through the chain mode**, which is `qa:build-knowledge`'s write and follows that skill's rules, the
-way `qa:prove-branch` writes a knowledge file only through the update mode. It never commits, and
-writes nothing else into the project tree. The scenario directory the session machinery creates is
-excluded from git, as `## Signing in` says.
+way `qa:prove-branch` writes a knowledge file only through the update mode — a search's rows and
+apps by a `--chain` run, a sibling app's role by that mode's *Recording a sibling app's role*. It
+never commits, and writes nothing else into the project tree. The scenario directory the session
+machinery creates, and the run folders a look saves its evidence into, are excluded from git, as
+`## Signing in` says.
 
 ## Arguments
 
@@ -72,7 +79,8 @@ The project adapter at `<repo-root>/.claude/project/adapter.md` → `## QA`, by 
 | Row | What for |
 |---|---|
 | *Session method* | the `Session method` cell of a new `## Orgs` row, and how a session is captured (`## Signing in`) |
-| *Credential environment variables* | the roles a session may sign in as — names only, never a value |
+| *Credential environment variables* | the roles a session may sign in as — names only, never a value. The project supplies every test user here; this skill creates none |
+| *Sibling apps* | optional: the other apps of the product, each with its staging URL and the roles that belong to it (`## Signing in` → *Which app a role belongs to*) |
 | *Browser automation consent* | read as [`browser-readiness.md`](../references/browser-readiness.md) → *Consent* says |
 | *Preview basic auth* | optional: read as [`browser-readiness.md`](../references/browser-readiness.md) → *Preview Basic Auth* says |
 | *Known accounts* | where the file is; `<repo-root>/.claude/project/accounts.md` when no row names a path |
@@ -106,8 +114,11 @@ id — finding those is this skill's job.
 Before any browser is driven, read [`browser-readiness.md`](../references/browser-readiness.md) and
 apply it: the *Consent* row, *Preview Basic Auth* on the first request against the target, then
 *Playwright MCP readiness*. It is the same text `qa:prove-branch`
-reads. Its rule for one browser context per driver does not apply here: this skill drives one browser
-itself and dispatches no driver. When readiness stops, the remedy it names ends with running
+reads. Its rule for one browser context per driver applies to every `qa:qa-driver` this skill
+dispatches (`## Looking as another role`): the driver's context is loaded with its role's session,
+never the org's role's, and when the server can give the session only one browser, the look waits
+until this skill's own observation is done, and looks run one at a time. The *Consent* row is the
+only permission a look needs. When readiness stops, the remedy it names ends with running
 `/qa:setup-states` again with the same arguments.
 
 ## Signing in
@@ -129,6 +140,50 @@ Then open the page's route in the browser. A page that shows the sign-in screen,
 answers `401` or `403`, means the browser did not load the role's session: stop, and name the
 role's `session.json` path and the readiness remedy for loading it.
 
+### Which role
+
+The `## Orgs` row's role is the default. For each state in scope, read the `Role` cells of the
+`## What the user sees` rows that cite it. When they name the org's role, or no role in particular, the
+state is looked for as the org's role. When every such row names another role, **match it to a role
+label of the *Credential environment variables* row by reading**, as `qa:prove-branch` matches a
+flow's role (`## Composing the flows` → *What a flow is*): the label that names the same kind of
+user. Say each match, in the role's user words and the label.
+
+**A role that matches no label is a stop** for that state: name the *Credential environment
+variables* row and the role in user words, and say the project adds a test user for it there. No
+skill creates a user. The other states carry on.
+
+### Which app a role belongs to
+
+A role label belongs to one app, and is unique in the project:
+
+1. the app whose *Sibling apps* entry lists the label under `roles:`;
+2. otherwise the app a chain row of the page's `## How a state is made` table names in its `App`
+   cell, on a row whose `Role` matched the label, when that cell names a sibling app's label;
+3. otherwise this app.
+
+Two different apps for one label, by those three, is a stop that names the label and both apps.
+
+### Signing in to this app as another role
+
+A role of this app signs in as the org's role does, by the same subsections of `qa:prove-branch` →
+`## Scenarios` and the *Session method* row, into its own `.qa-scenarios/<role>/` folder, against
+the same target.
+
+### Signing in to a sibling app
+
+A role of a sibling app signs in **by `manual` only** — *`manual` — one login in a visible window*,
+as written — whatever the *Session method* row says: there is no `api` sign-in for a sibling app.
+The target of that login is the app's staging URL from its *Sibling apps* entry. A sibling app with
+no entry in the row is a stop that prints the `/qa:build-knowledge <page folder> --chain S<n>`
+command that records it.
+
+**The first time a run signs in to a sibling app as a role its entry does not list**, add the role to
+that entry, by `qa:build-knowledge`'s *Recording a sibling app's role*: read
+[`../build-knowledge/SKILL.md`](../build-knowledge/SKILL.md) → `## Chain mode` → *Recording a
+sibling app's role* and apply it, touching nothing that subsection does not touch. Say the write in
+the print.
+
 ## Observe first
 
 For every state in scope, before any question and before any guidance:
@@ -147,6 +202,10 @@ For every state in scope, before any question and before any guidance:
    s-11 · shelf s-12`). When the state belongs to the org itself and no item carries an id, write
    what on screen proves it, in user words (`overdue banner, 2 loans`).
 
+These rules hold for every look, whoever holds the browser. A state looked for as the org's role is
+observed in this session. A state looked for as another role (`## Signing in` → *Which role*) is
+observed through a driver, by `## Looking as another role`, under the same rules.
+
 **For each state found, write its `## States` row** with no question: `staging`, the org id, the
 page's `Route:` line, the state id, the proving ids, today's date in `Last verified`, and origin
 `setup-states <today's date>`. Write the row as soon as the state is seen; a later stop loses
@@ -154,6 +213,49 @@ nothing already found.
 
 **A state that already has a non-stale row** for this org and page is re-verified instead of
 searched for (`## Rerun`). A state whose only rows are stale is searched for as if it had none.
+
+## Looking as another role
+
+A look as a role other than the org's is **one `qa:qa-driver`**, dispatched as `subagent_type:
+qa:qa-driver` with the `qa:` prefix and no `model`, by `qa:prove-branch` → `## Driving` → *The agent
+types*. It needs the *Browser automation consent* row and nothing else.
+
+**Compose the look as a flow** in the driver's input contract, from the `## What the user sees` rows
+that cite the state:
+
+- its name, `look for S<n> as <role>`, and the word `look` on its own line under the name, which
+  makes every sub-step read-only for the driver;
+- `start from:` the page's route, with the org id in place of the org parameter when the route has
+  one, `— as <role>`;
+- sub-steps that only navigate, read, follow a link the page offers, or switch a tab or a filter,
+  each with the section a `## What the user sees` row names as its observable result. No sub-step
+  presses a control whose `Result the user sees` saves, changes or removes anything, and none submits
+  a form.
+
+**Prepare the run folder before dispatch**, as `qa:prove-branch` → `## Driving` → *The run folder*
+creates its folders, under `umask 077`, inside the excluded scenario directory:
+`.qa-scenarios/runs/setup-states-<UTC timestamp, YYYYMMDDTHHMMSSZ>/`, with `run.md` — the page, the
+org, the target, and per look its state id and role, with no credential and no session contents —
+and one `flow-<n>/step-<k>/` folder per sub-step. One run folder serves every look of a run. Confirm
+`git status --short` shows nothing but this run's `accounts.md` writes, and stop if it shows anything
+else.
+
+**The driver prompt carries exactly** what `qa:prove-branch` → *Dispatching the drivers* lists: the
+flow, the role and the absolute path of its `session.json`, the org id as the starting state's id,
+the target URL, and the absolute path of the flow's folder. Never a credential value, never the
+session file's contents, nothing about the code.
+
+**Read the report and the evidence.** Save the report as `flow-<n>/driver.md`. Then read each
+sub-step's `snapshot.md`, and its `screenshot.png` where the snapshot does not settle it, and
+recognise the state by `## Observe first` step 1. When the state shows, name its proving ids by step
+4 and write its `## States` row, with origin `setup-states <today's date>`. When it does not, the
+state is still missing and goes to `## Guide second`. A look that saw the item list but needs one
+item opened to see the state is followed by one more look, after the first driver has returned, with
+a sub-step that follows the link to that item by the label its snapshot gives it.
+
+A driver that reports `missing input` is dispatched once more with the input supplied. A driver that
+reports `session not accepted` or `preview auth not accepted` writes no row: say which role and which
+remedy, `## Signing in` or `## Readiness`, and carry on with the other states.
 
 ## Guide second
 
@@ -245,7 +347,8 @@ say what the page shows instead, give the steps again, and wait again.
 ## Rerun
 
 Every row in scope is **re-verified**: open the page, find the row's ids the way `## Observe first`
-reads them, and check the state is still what the page shows for them.
+reads them, and check the state is still what the page shows for them. A state looked for as another
+role (`## Signing in` → *Which role*) is re-verified through a look, by `## Looking as another role`.
 
 - **Still visible** — `Last verified` takes today's date. Nothing else in the row changes; its
   `Origin` stays as written.
@@ -268,7 +371,12 @@ of the command.
 
 End every turn with:
 
-- the org and the role signed in as, and whether the scenario was reused or captured;
+- the org and each role signed in as, the app each role belongs to, and whether each scenario was
+  reused or captured;
+- each role matched from a state's `## What the user sees` rows, in user words and as the label, and
+  each role that matched no label, with the *Credential environment variables* row named;
+- each look as another role: the state, the role, the run folder, and whether the state showed;
+- each role added to a *Sibling apps* entry;
 - each row written or refreshed in `accounts.md`, one line each: the state id, the state in user
   terms, the ids and the `Last verified` value;
 - each row marked stale, with the command that sets the state up again;
@@ -285,16 +393,21 @@ When nothing is missing, the print asks nothing.
 
 ## Never
 
-- Never create, change or delete data, and never press a control that does.
+- Never create, change or delete data, never press a control that does, and never compose a look
+  whose sub-step would.
 - Never run a seeder, an end-to-end command, a database query, or an admin console.
-- Never dispatch an agent but the chain mode's `qa:qa-chain-searcher`, and only through the chain
-  mode. Never dispatch a `qa:qa-driver` or a `qa:qa-grader`.
+- Never dispatch an agent but the chain mode's `qa:qa-chain-searcher`, only through the chain mode,
+  and a `qa:qa-driver` for a read-only look as another role. Never dispatch a `qa:qa-grader`, and
+  never dispatch a driver as the org's role: that look stays in this session.
+- Never create a test user, never sign in to a sibling app but by `manual`, and never give a driver a
+  credential or a session file's contents.
 - Never write any file but `accounts.md`, except `KNOWLEDGE.md` and the adapter's *Sibling apps* row
-  through the chain mode. Never delete a row of `accounts.md`, never write `KNOWLEDGE.md` any other
+  through the chain mode, and a look's `run.md` and `driver.md` in its run folder. Never delete a row of `accounts.md`, never write `KNOWLEDGE.md` any other
   way, and never commit.
 - Never offer or start a search on a rerun with no arguments, for a state observation found, or for
   a state that needs time or a failed payment.
 - Never write a `## States` row for a state not seen on the target in this run.
 - Never ask for an id the org's data can show. The questions this skill asks are the first org, the
-  staging URL when no session was ever captured, and the one search offer. The chain mode's own
+  staging URL when no session was ever captured, the yes to a `manual` login, and the one search
+  offer. The chain mode's own
   question about sibling apps belongs to that mode, asked during a search the developer agreed to.
