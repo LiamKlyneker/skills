@@ -81,6 +81,7 @@ The project adapter at `<repo-root>/.claude/project/adapter.md` → `## QA`, by 
 | *Session method* | the `Session method` cell of a new `## Orgs` row, and how a session is captured (`## Signing in`) |
 | *Credential environment variables* | the roles a session may sign in as — names only, never a value. The project supplies every test user here; this skill creates none |
 | *Sibling apps* | optional: the other apps of the product, each with its staging URL and the roles that belong to it (`## Signing in` → *Which app a role belongs to*) |
+| *Staging writes* | optional: `yes` or `no`; absent or any other value reads as `no`. With `no`, every chain prints as numbered steps and the print names this row (`## Guide second` → *Printing a chain*) |
 | *Browser automation consent* | read as [`browser-readiness.md`](../references/browser-readiness.md) → *Consent* says |
 | *Preview basic auth* | optional: read as [`browser-readiness.md`](../references/browser-readiness.md) → *Preview Basic Auth* says |
 | *Known accounts* | where the file is; `<repo-root>/.claude/project/accounts.md` when no row names a path |
@@ -309,6 +310,10 @@ and the result the user sees that confirms the step. Every name the developer ty
 `qa-setup`. The steps are the developer's to follow in each app; nothing here signs in to a sibling
 app or presses a control in one.
 
+With the *Staging writes* row absent or not `yes`, after the steps say that the adapter's `## QA` →
+*Staging writes* row, set to `yes`, is what would let this skill perform the steps itself, and that
+`/qa:setup` asks it.
+
 A state with a step `none` row prints that no tester can make it and the row's reason, as written. It
 gets no steps and no row. A reason ending `(likely)` is printed with that word: it is a search that
 found no answer, not a proof.
@@ -380,8 +385,9 @@ End every turn with:
 - each row written or refreshed in `accounts.md`, one line each: the state id, the state in user
   terms, the ids and the `Last verified` value;
 - each row marked stale, with the command that sets the state up again;
-- each state guided, with its numbered steps — the page's own or a chain's — then the line asking the
-  developer to say when they are done;
+- each state guided, with its numbered steps — the page's own or a chain's — and, while the *Staging
+  writes* row is absent or not `yes`, the line naming that row, then the line asking the developer to
+  say when they are done;
 - each state with a step `none` row: that no tester can make it, the row's reason, and no steps;
 - each state this app cannot make because it needs time or a failed payment, which of the two it
   is, the seeder hint, and `stays none known`;
