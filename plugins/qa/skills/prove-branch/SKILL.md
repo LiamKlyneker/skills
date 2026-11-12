@@ -241,12 +241,19 @@ posted.
    - **`pr-comment`**: read the pull request's comments — `github`: `gh pr view <n> --repo <owner>/<repo> --json comments`; `azure-devops`: the pull request's threads through the MCP — and take
      the preview URL from the most recent comment that posts one.
 2. **Read the commit the preview was built from** — the commit the deployment record, the status
-   check or the posting comment names for that preview. Compare it with `HEAD`.
+   check or the posting comment names for that preview. Compare it with `HEAD`. For a **pattern**,
+   when a comment on the pull request posts a preview URL, compare that URL's host with the
+   pattern URL's host: the built-from commit a comment names belongs to the comment's URL, not to
+   the pattern's.
 3. **Stop and ask the developer for a URL** when the section is there but the *Preview URL
    pattern* row is absent, when no URL resolves, when the
-   URL does not answer, when the preview was built from a commit other than `HEAD`, or when the
-   built-from commit cannot be read at all. Say which of these it is, and give the URL and commit
-   you found.
+   URL does not answer, when the preview was built from a commit other than `HEAD`, when the
+   built-from commit cannot be read at all, or when a pattern URL's host differs from the host a
+   comment posts. Say which of these it is, and give the URL and commit you found.
+   For a pattern URL that does not answer or whose host differs, also give the comment's URL and
+   its built-from commit beside the pattern URL, say that the adapter's *Preview URL pattern* row
+   looks stale, and name `pr-comment` as a value that follows the comment. Never switch to the
+   comment's URL without the developer's answer.
 
 **A `401` that challenges for HTTP Basic Auth is an answer, not a URL that does not answer** — from
 a resolved URL or one the developer gave. Apply
