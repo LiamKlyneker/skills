@@ -254,7 +254,7 @@ at. When the reviewer says they are done, go to the drafts.
 and the proposed verdict. **One yes approves the batch.** The reviewer may instead edit some drafts
 and then approve; apply the edits, show the changed drafts, and take the yes.
 
-**Every posted text is drafted through `lk:how-i-write`**: the inline comments and the summary
+**Every posted text is drafted through `lk:scribe`**: the inline comments and the summary
 comment, in the reviewer's voice.
 
 **Inline comments are plain prose.** No Conventional Comments label (`issue:`, `nit:`,

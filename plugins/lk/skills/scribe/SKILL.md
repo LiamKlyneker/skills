@@ -1,5 +1,5 @@
 ---
-name: how-i-write
+name: scribe
 description: Draft text in Liam's personal writing voice. Use when Liam asks to draft, write, compose, or rephrase a Slack message, PR announcement, blog post, article, status update, README blurb, job-form answer, vacation message, PR review comment, or any conversational text he'll send under his name. Not for PR titles and descriptions, issue bodies, issue comments that record implementation, or template-shaped text: those stay plain technical English. Matches his voice tics — ellipses-as-breath, self-deprecating parentheticals, storytelling frame for technical content, `Till further notice ✋` signoff reserved strictly for published articles and vacation/away messages.
 ---
 
@@ -143,7 +143,7 @@ Every rule below is one Liam gave explicitly. They are user policy — follow th
 **Register 4 — personal-reflective (diary-style):**
 > "So… today I'm going to the kino with that person, idk where this will lead me, or lead us, but… idk, I'm feeling something on my stomach, butterflies? Or maybe it's just the excitement of watching that movie in a cinema for the very first time…"
 
-## When the user invokes this skill directly (`/how-i-write`)
+## When the user invokes this skill directly (`/lk:scribe`)
 
 If invoked with no arguments, ask: *"What are you drafting? (Slack message, article, casual reply, personal note, something else?) And what's it about?"*
 
