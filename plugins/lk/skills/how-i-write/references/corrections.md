@@ -92,3 +92,38 @@ Also note his non-native rhythm ("so there is working and i was expecting some e
 > LGTM! one thing before merge tho, the shared section fix also changes the header spacing on the other tabs, can you double check those?
 
 **Why:** Hard rule 8 says to keep acknowledgment proportional, and this is what proportional means for the summary: a routine PR gets a bare `LGTM!` or `nice work` and no named details. Naming what an ordinary PR does well ("small and clean", "covers the empty and loading states") is something a human reviewer never bothers to write, so it reads as an unsupervised AI review. Some praise is always sincere, so sincerity is not the filter; the size and weight of the PR is. Named praise is for a large PR or unusual work — a hard bug, a clever design, a large cleanup.
+
+## 6. One of two questions left unanswered in a spec-page reply (2026-11 — became hard rule 17)
+
+**Register:** reply to a reviewer comment on a spec page. The comment asked two things: what it would take to close a gap, and whether Liam had already talked to the third-party vendor about it. Illustrative, not a sent message: it shows the shape of the miss rather than a real edit.
+
+**Before (as drafted):**
+
+> I looked at this one... to close the gap we would need a second call after the save, plus a small migration for the records that already exist. it is not a big change tho, roughly a day of work. wdyt?
+
+**After (what it should have been):**
+
+> I looked at this one... to close the gap we would need a second call after the save, plus a small migration for the records that already exist. it is not a big change tho, roughly a day of work. About the vendor, not yet, I wanted to know if we go this way first. wdyt?
+
+**Why:** The draft answered the first question in detail and never touched the second. A plain *"not yet"* is a complete answer, and leaving it out reads as dodging the question. Before drafting any reply, list each direct question in the parent comment and check that the draft answers every one.
+
+## 7. Full Register 2 tics on a reply to stakeholders on a spec page (2026-11 — became hard rule 18)
+
+**Register:** reply to a product owner on a technical spec page in the team wiki, with a senior engineer from another team also on the thread. Illustrative, not a sent message: it shows the shape of the miss rather than a real edit.
+
+**Before (as drafted):**
+
+> so I went down the rabbit hole on this one and pinged the platform team on Slack... thats only possible if the service sends the event before the save, and right now it doesn't. I think we need to add the event on their side and listen for it here. (the spike only covered the read path btw, that's why this didn't show up there.) does that make sense tho?
+
+**After (what it should have been):**
+
+> I checked this with the platform team... that's only possible if the service sends the event before the save, and right now it doesn't. if we want that behaviour, we would need to add the event on their side and listen for it here. does that make sense tho?
+
+**Why:** Four moves, all from hard rule 18:
+
+1. **Plain first-person opener.** The lowercase `so` and the idiom for researching (*"went down the rabbit hole"*) go. *"I checked this with..."* says the same thing to a reader who is not a teammate.
+2. **No chat-tool reference, and every apostrophe in place.** *"pinged the platform team on Slack"* becomes *"checked this with the platform team"*, and `thats` becomes `that's`.
+3. **The next step is conditional on the reader's decision.** *"I think we need to"* is Liam's verdict. *"if we want that behaviour, we would need to"* leaves the call with the product owner, who owns it.
+4. **No unprompted defence of earlier work.** Nobody asked about the spike's scope, so the parenthetical goes.
+
+The ellipsis join, the `tho` and the open question at the end stay. The voice still applies, set lighter.
