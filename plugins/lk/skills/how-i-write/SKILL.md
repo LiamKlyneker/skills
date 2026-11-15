@@ -1,6 +1,6 @@
 ---
 name: how-i-write
-description: Draft text in Liam's personal writing voice. Use when Liam asks to draft, write, compose, or rephrase a Slack message, PR announcement, blog post, article, status update, README blurb, job-form answer, vacation message, or any text he'll send under his name. Matches his voice tics — ellipses-as-breath, self-deprecating parentheticals, storytelling frame for technical content, `Till further notice ✋` signoff reserved strictly for published articles and vacation/away messages.
+description: Draft text in Liam's personal writing voice. Use when Liam asks to draft, write, compose, or rephrase a Slack message, PR announcement, blog post, article, status update, README blurb, job-form answer, vacation message, PR review comment, or any conversational text he'll send under his name. Not for PR titles and descriptions, issue bodies, issue comments that record implementation, or template-shaped text: those stay plain technical English. Matches his voice tics — ellipses-as-breath, self-deprecating parentheticals, storytelling frame for technical content, `Till further notice ✋` signoff reserved strictly for published articles and vacation/away messages.
 ---
 
 # How Liam writes
@@ -9,6 +9,18 @@ Liam is a senior frontend engineer, bilingual (Spanish/English), from Cerro de P
 
 When he asks you to draft text he'll send under his name, match this voice. The canonical archive of his actual writing lives in `references/` — go read those samples when uncertain.
 
+## Scope
+
+This skill decides what takes the voice. Other instructions only route text published under Liam's name here.
+
+**In scope:** Slack and Teams messages, PR announcements, PR review comments and review replies, ticket comments addressed to a teammate, articles, job-form answers, away messages, and personal or casual text.
+
+**Out of scope, written as plain technical English:** PR titles and descriptions, issue bodies, and issue or ticket comments that record implementation (a decision, a retirement, the status of a change). Write short sections and factual sentences, with no voice tics, ellipses, or jokes.
+
+**Out of scope, kept in its own form:** anything that follows a template or a parse contract from another skill, such as an issue body, a `[FINDING]` comment, or a QA receipt. The template decides the form.
+
+When text falls out of scope, stop and write it without this skill.
+
 ## The four registers
 
 Pick the register before drafting. If unclear, ask.
@@ -16,7 +28,7 @@ Pick the register before drafting. If unclear, ask.
 | Register | When to use | Signature moves |
 |---|---|---|
 | **1. Narrative-technical** | Blog posts, articles, long-form published content. | Tells tech as memoir: the "whys", trial and error, sleepless nights. Chapter framing. Ends with a signoff like `Till further notice ✋` or `¡Y bueno!`. |
-| **2. Slack-work** | Team Slack messages — PR announcements, status updates, process suggestions, deploys, heads-ups. Also ticket comments, code review replies, anything that reads as an "instant" team-facing reply. **Plus vacation / away messages** — the one Slack case that *does* take the signoff. | Flows as paragraphs (no section titles, even when multi-topic), occasional parentheticals, tagged teammates, `:wave:` openers. **No signoff** — these are instant-reply messages, they just end. Vacation/away messages are the exception: they end with `Till further notice :hand:`. |
+| **2. Slack-work** | Team Slack messages — PR announcements, status updates, process suggestions, deploys, heads-ups. Also ticket comments addressed to a teammate, code review replies, anything that reads as an "instant" team-facing reply. **Plus vacation / away messages** — the one Slack case that *does* take the signoff. | Flows as paragraphs (no section titles, even when multi-topic), occasional parentheticals, tagged teammates, `:wave:` openers. **No signoff** — these are instant-reply messages, they just end. Vacation/away messages are the exception: they end with `Till further notice :hand:`. |
 | **3. Casual-conversational** | Replies to friends, chats, photo comments, off-the-cuff takes. | Lowercase starts (`hahahahah yes`), ellipses as breath, end-of-thought emoji (`:joy:`). No signoff. |
 | **4. Personal-reflective** | Journal-style notes, diary entries, travel musings. | Starts with `So…` or `Well…`. Lots of ellipses. Self-questioning (`butterflies?`). Introspective pacing. |
 
