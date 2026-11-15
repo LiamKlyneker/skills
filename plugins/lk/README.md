@@ -3,7 +3,7 @@
 The eight skills that travel everywhere Liam does, packaged as a Claude Code
 plugin: `grill` and `deep-grill` for interviewing a plan, `readiness` for
 what a cold worker would lack, `sprint-plan` for the day/night split,
-`pinpoint`, `scoped-context`, `how-i-write`, and `report`.
+`pinpoint`, `scoped-context`, `scribe`, and `report`.
 
 None of them is bound to the **project's** tracker, which is exactly why they
 do not belong to a tracker-bound workflow plugin. Before this plugin they
@@ -30,7 +30,7 @@ plugins/lk/
     grill/  deep-grill/                # the interviews
     pinpoint/                          # throwaway-subagent search
     scoped-context/                    # the CONTEXT.md convention
-    how-i-write/                       # Liam's voice, with references/
+    scribe/                            # Liam's voice, with references/
     report/                            # a session's conclusion, filed upstream
     readiness/                         # what a cold worker would lack, before filing
     sprint-plan/                       # sprint groups, the plan file, the night script
@@ -55,7 +55,7 @@ twice. A bare `/grill` resolves nowhere; that is the accepted cost of
 packaging, and the two-character prefix is what makes it acceptable.
 
 Every skill here is namespaced the same way: `lk:deep-grill`, `lk:pinpoint`,
-`lk:how-i-write`, `lk:scoped-context`.
+`lk:scribe`, `lk:scoped-context`.
 
 ### The name is two characters on purpose
 
@@ -79,7 +79,7 @@ A directory under `skills/` with no `SKILL.md` is not registered as a skill, so
 
 ### A skill's own references stay inside the skill
 
-`how-i-write/references/` (the writing samples) and
+`scribe/references/` (the writing samples) and
 `scoped-context/convention-guide.md` moved with their skills and are addressed
 relatively, so they resolve unchanged from an install cache. Only what several
 skills share is promoted to `skills/_shared`.
