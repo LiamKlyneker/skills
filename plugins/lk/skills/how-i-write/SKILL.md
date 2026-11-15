@@ -13,7 +13,7 @@ When he asks you to draft text he'll send under his name, match this voice. The 
 
 This skill decides what takes the voice. Other instructions only route text published under Liam's name here.
 
-**In scope:** Slack and Teams messages, PR announcements, PR review comments and review replies, ticket comments addressed to a teammate, articles, job-form answers, away messages, and personal or casual text.
+**In scope:** Slack and Teams messages, PR announcements, PR review comments and review replies, ticket comments addressed to a teammate, replies to reviewers on a spec or design document page, articles, job-form answers, away messages, and personal or casual text.
 
 **Out of scope, written as plain technical English:** PR titles and descriptions, issue bodies, and issue or ticket comments that record implementation (a decision, a retirement, the status of a change). Write short sections and factual sentences, with no voice tics, ellipses, or jokes.
 
@@ -28,7 +28,7 @@ Pick the register before drafting. If unclear, ask.
 | Register | When to use | Signature moves |
 |---|---|---|
 | **1. Narrative-technical** | Blog posts, articles, long-form published content. | Tells tech as memoir: the "whys", trial and error, sleepless nights. Chapter framing. Ends with a signoff like `Till further notice ✋` or `¡Y bueno!`. |
-| **2. Slack-work** | Team Slack messages — PR announcements, status updates, process suggestions, deploys, heads-ups. Also ticket comments addressed to a teammate, code review replies, anything that reads as an "instant" team-facing reply. **Plus vacation / away messages** — the one Slack case that *does* take the signoff. | Flows as paragraphs (no section titles, even when multi-topic), occasional parentheticals, tagged teammates, `:wave:` openers. **No signoff** — these are instant-reply messages, they just end. Vacation/away messages are the exception: they end with `Till further notice :hand:`. |
+| **2. Slack-work** | Team Slack messages — PR announcements, status updates, process suggestions, deploys, heads-ups. Also ticket comments addressed to a teammate, code review replies, anything that reads as an "instant" team-facing reply. Replies to stakeholders on a spec or design document page take its lighter setting (hard rule 18). **Plus vacation / away messages** — the one Slack case that *does* take the signoff. | Flows as paragraphs (no section titles, even when multi-topic), occasional parentheticals, tagged teammates, `:wave:` openers. **No signoff** — these are instant-reply messages, they just end. Vacation/away messages are the exception: they end with `Till further notice :hand:`. |
 | **3. Casual-conversational** | Replies to friends, chats, photo comments, off-the-cuff takes. | Lowercase starts (`hahahahah yes`), ellipses as breath, end-of-thought emoji (`:joy:`). No signoff. |
 | **4. Personal-reflective** | Journal-style notes, diary entries, travel musings. | Starts with `So…` or `Well…`. Lots of ellipses. Self-questioning (`butterflies?`). Introspective pacing. |
 
@@ -56,14 +56,14 @@ These are features, not bugs. Every one of them is attested in `references/liam-
 
 - **Bilingual flavor.** Occasional Spanish interjections where they land naturally: `¡Y bueno!`, `Voila!`. Not forced, just present.
 
-- **Tics are the default, not seasoning.** In day-to-day text (Slack/Teams, PR comments, casual replies) the voice tics above are the norm, not an occasional garnish — lean especially on `tho`, `tbh`, `I mean`, and ellipses. The plain, tic-free register exists but it is reserved for content Liam explicitly flags as official (a Confluence entry, formal documentation). If he didn't say a day-to-day message is official, write it ticced.
+- **Tics are the default, not seasoning.** In day-to-day text (Slack/Teams, PR comments, casual replies) the voice tics above are the norm, not an occasional garnish — lean especially on `tho`, `tbh`, `I mean`, and ellipses. The plain, tic-free register exists but it is reserved for content Liam explicitly flags as official (a Confluence entry, formal documentation). One lighter setting sits between the two: replies to stakeholders on a spec or design document page, which hard rule 18 defines. If he didn't say a day-to-day message is official, and it is not one of those replies, write it ticced.
 
 - **Loose orthography in Registers 2 and 3. Inconsistency is the signal; a uniform habit is the tell.** Slack, Teams, PR comments, review replies and casual replies are typed fast, and a draft that is even all the way through reads as a bot. Three things go loose, each one unevenly inside a single message, never applied to every case:
   - *A few contractions lose the apostrophe.* In his samples these are `its`, `lets`, `thats` and `wont` (*"lets only return the object"*, *"its not a good practice anymore"*, *"and thats it"*), while `don't`, `can't`, `I'd` and `isn't` keep theirs. The same word goes both ways in one message: one Slack post has *"and thats it"* and later *"And that's it from me"*. Drop one or two per message and keep the rest.
   - *Short replies drop the subject.* *"left a comment that we need to replace this"*, *"now looks really nice!!"*, *"approved ✅"*, *"once is ready"*, not "I left a comment" or "it looks really nice". Longer explanations keep their `I`.
   - *Lowercase `i` turns up now and then* (*"so there is working and i was expecting some equivalent"*), beside a capital `I` elsewhere in the same message. It is rare in his writing: at most once in a message, and most messages have none.
 
-  Hard rules 14 to 16 bound this: how sentences join, the drops that are never written, and the registers it never reaches.
+  Hard rules 14 to 16 and 18 bound this: how sentences join, the drops that are never written, the registers it never reaches, and the lighter setting that keeps every apostrophe.
 
 - **PR-review moves.** Recurring shapes in his real review comments (see `references/liam-pr-review-comments.md`): a `nitpick:` prefix for small stuff (*"nitpick: isn't `an` here?"*); deferral softeners for out-of-scope points (*"this is for later..."*, *"if this is out of the scope of this PR please add a TODO comment"*); thinking aloud and revising mid-comment (*"...that also can be a very good option now that I think of it"*); and very short value-dense observations (*"this return is lacking an `isLoading` property"*, *"is this change on purpose right?"*).
 
@@ -104,6 +104,17 @@ Every rule below is one Liam gave explicitly. They are user policy — follow th
 15. **Never drop an apostrophe into a different word.** Write `I'll`, `we'll`, `we're`, `she'll`, `he'll`, `she'd` and `we'd` in full every time, in every register. `ill`, `well`, `were`, `shell`, `hell`, `shed` and `wed` are real words, so the dropped form changes the meaning. In PR comments write `I'd` in full too, because `id` reads as an identifier there.
 
 16. **Articles, Register 4 and official text keep full orthography.** In Register 1 (blog posts, articles, case studies), in Register 4, and in anything Liam flags as official, every contraction keeps its apostrophe, every sentence keeps its subject, and `I` is always a capital. This holds even when the article's tone is casual: `af`, `tho` and `s##t` stay, `dont` and `thats` do not. Liam asks for an article by name; without that, a Slack, Teams, PR or casual draft takes the loose orthography of Registers 2 and 3.
+
+17. **A reply answers every direct question in the comment it replies to.** Before drafting a PR review reply, a ticket comment or a spec-page reply, list each direct question in the parent comment. The draft answers every one, even when the answer is short: *"not yet"*, *"idk tbh"*, *"haven't checked that one"*. A reply that answers one question in detail and skips the other reads as dodging it. Rule 10 governs the questions Liam asks; this rule governs the ones he is asked. The seed example lives in `references/corrections.md`.
+
+18. **Replies to stakeholders on a spec or design document page take a lighter setting of Register 2.** The readers are a product owner or an engineer from another team commenting on a spec, not peers on a PR, and the page stays on record. The voice still applies, set lighter:
+    - *Keep* ellipsis joins, `tho`, an occasional lowercase `i`, and the open-question close.
+    - *Drop* idioms and slang (`af`, `tf`, a casual phrase for "I looked into it"), the lowercase `so` opener, and references to messaging someone on Slack or Teams. Open plainly in the first person: *"I checked this with..."*, *"I looked at..."*.
+    - *Keep every apostrophe.* `its`, `lets`, `thats` and `wont` take theirs here.
+    - *Frame the next step as conditional on the reader's decision*, not as Liam's verdict: *"if we want that behaviour, we would need to..."*, not *"I think we need to..."*. The stakeholder owns the decision.
+    - *Do not defend earlier work nobody asked about.* A sentence that justifies the scope of an earlier spike or PR, unprompted, gets cut. Answer what the comment asked (rule 17) and stop.
+
+    A spec page that Liam flags as official takes the plain register instead, per the tics-default bullet. The seed example lives in `references/corrections.md`.
 
 ## Reference samples (read these when uncertain)
 
