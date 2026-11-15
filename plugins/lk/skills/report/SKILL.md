@@ -52,7 +52,7 @@ gh issue list --repo LiamKlyneker/skills --state all --search "<skill name> <two
 
 The search covers open and closed issues. When the session's conclusion already says the failure was seen before, the search only has to find the issue number.
 
-**When an open issue already covers the item, do not file a new one.** Show it, and offer to add the new detail as a comment on it instead. Filing and commenting follow the same sanitizing rule.
+**When an open issue already covers the item, do not file a new one.** Add the new detail to it as a comment instead, written to the same files and posted by §7. Filing and commenting follow the same sanitizing rule.
 
 **When a closed issue describes the same skill and the same symptom, the failure is a recurrence.** File the report as usual, and put one line in its body: `Recurrence of #N`, where `N` is the closed issue. A closed issue on a different skill or a different symptom is not a recurrence and adds no line.
 
@@ -62,7 +62,7 @@ The search covers open and closed issues. When the session's conclusion already 
 
 ## 5. Write the body
 
-**Write each issue to `<scratch>/report/<n>/title.txt` and `<scratch>/report/<n>/body.md`**, where `<scratch>` is the session scratchpad directory the harness names, or a fresh temp directory when it names none, and `<n>` counts from 1. The file is written before anything is shown, so the body you approve is byte-identical to the body that is posted.
+**Write each issue to `<scratch>/report/<n>/title.txt` and `<scratch>/report/<n>/body.md`**, where `<scratch>` is the session scratchpad directory the harness names, or a fresh temp directory when it names none, and `<n>` counts from 1. The file is written before the scan, so the body the scan checked is byte-identical to the body that is posted.
 
 Title: `[BUG] <skill> — <one-line shape>` or `[IDEA] <skill> — <one-line shape>`.
 
@@ -101,7 +101,7 @@ The `Recurrence of #<N>` line is the last line of the body, after `## Proposed c
 
 Abstract form means the body says *a skill picked a design token by name match while the design used a different one*, never what the token was called.
 
-**Then scan the body mechanically** before showing it. Build the deny-list from the project, then grep:
+**Then scan the body mechanically** before posting it. Build the deny-list from the project, then grep:
 
 ```bash
 r=<scratch>/report; n=<n>
@@ -127,11 +127,13 @@ If the script stops with `deny-list:`, the scan did not run. Fix the build and r
 
 `~/.config/lk/report-denylist` is optional, one term per line, and lives on the machine only — company and client names the project's git metadata does not carry. Never commit it anywhere.
 
-**Any hit is rewritten in abstract form and the scan runs again.** Some hits are false positives: a `github.com/LiamKlyneker/skills` link, a hash quoted from this repo, a shape like `UTF-8`. Name each one when the body is shown, so the check is against the rule rather than against taste. Do not show a body until the scan is clean or every remaining hit is explained.
+**Any hit is rewritten in abstract form and the scan runs again.** Some hits are false positives: a `github.com/LiamKlyneker/skills` link, a hash quoted from this repo, a shape like `UTF-8`. Name each one in the last message, so the check is against the rule rather than against taste.
 
-## 7. Show, then post
+**A hit that can be neither rewritten nor explained stops that item.** Post nothing for it. Show its title, body and hit, and ask how to proceed.
 
-Show each issue in full: the title, the body, and the scan result. Ask once for approval of all of them, unless the conversation already says to post. Then post each from its files:
+## 7. Post
+
+**Post without asking for approval.** The session already holds the conclusion, and the scan is the check. Post each item whose scan is clean, or whose every remaining hit is explained, from its files:
 
 ```bash
 gh issue create --repo LiamKlyneker/skills \
@@ -140,7 +142,13 @@ gh issue create --repo LiamKlyneker/skills \
   --body-file <scratch>/report/<n>/body.md
 ```
 
-Print each issue URL in the last message.
+For a comment on an open issue `<N>` from §3:
+
+```bash
+gh issue comment <N> --repo LiamKlyneker/skills --body-file <scratch>/report/<n>/body.md
+```
+
+In the last message, print the title and URL of each issue or comment posted, and name each explained false positive.
 
 ## 8. `gh`, on any tracker
 

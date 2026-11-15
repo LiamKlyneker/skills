@@ -30,7 +30,7 @@ execution:
 
     This session names no scratchpad directory, so take `report-scratch/` under the working
     directory as `<scratch>`. Write the title and body where the skill says to. Stop once the
-    files are written and the body is shown — do not run `gh issue create`, `gh issue list` or
+    files are written and scanned — do not run `gh issue create`, `gh issue list` or
     any other `gh` command, and do not wait for an answer.
   max_turns: 20
   timeout_seconds: 600
