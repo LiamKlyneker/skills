@@ -127,3 +127,17 @@ Also note his non-native rhythm ("so there is working and i was expecting some e
 4. **No unprompted defence of earlier work.** Nobody asked about the spike's scope, so the parenthetical goes.
 
 The ellipsis join, the `tho` and the open question at the end stay. The voice still applies, set lighter.
+
+## 8. A commit hash copied from the drafting prompt into a ticket comment (2026-11 — extended hard rule 12)
+
+**Register:** ticket comment addressed to a teammate, asking them to recheck a fix. The calling agent put the commit hash in the drafting prompt. Illustrative, not a sent message: it shows the shape of the miss rather than a real edit.
+
+**Before (as drafted):**
+
+> @Mark Pushed in `a3f9c21`, could you recheck the date picker when you have a sec? the edge case with the empty value should be gone now
+
+**After (what it should have been):**
+
+> @Mark just pushed the fix, could you recheck the date picker when you have a sec? the edge case with the empty value should be gone now
+
+**Why:** No human types a commit hash into a regular comment. The teammate opens the branch and sees the latest push; the hash adds nothing for them. That one token makes the whole comment read as machine-written. The hash came from the drafting prompt, not from Liam, and that does not change the rule: facts in the prompt are input to rephrase, not text to copy. Hard rule 12 covers opaque identifiers on every conversational surface, ticket comments included. A hash stays only when it is the point, such as naming the commit where a regression starts.
