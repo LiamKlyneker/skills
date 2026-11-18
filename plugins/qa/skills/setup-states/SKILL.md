@@ -103,11 +103,13 @@ Read `## Orgs` for a `staging` row.
 - **One row**: that is the org, and its `Role` is the role this run signs in as.
 - **Several rows**: use the one the developer names in this session; otherwise the first, and say
   which.
-- **No row** — the first run. **Ask for one org id, once, and nothing else**: the message is that one
+- **No row** — the first run. **Ask one question, once, and nothing else**: does the app have an
+  org, workspace or team to choose, and if so, what is its id on staging? The message is that one
   question, with one line saying why, and it is the only question this message asks. End the turn
   and wait. Nothing is signed in, opened or written before the answer.
 
-When the developer answers, write the `## Orgs` row: `staging`, the org id as given, the role — the
+When the developer answers, write the `## Orgs` row: `staging`; the org id as given, or `self`
+(`accounts-file.md` → `## Orgs`) when the app has none; the role — the
 one role the *Credential environment variables* row lists, or the first of several, and say which —
 the *Session method* value (`api` or `manual`), and today's date (`date +%F`). Then carry on. Never
 ask for the org again on a later run; never ask for a URL, a plan id, an order number or any other
@@ -198,7 +200,7 @@ For every state in scope, before any question and before any guidance:
    the state are what makes it visible: the state is there when those sections show as their `Shows
    when` cell says. `## What the user can do` rows that cite it confirm it, never establish it.
 2. **Walk the org's data through the app.** Open the page's route — with the org id in place of the
-   org parameter when the route has one — and follow the links the page shows into the items it
+   org parameter when the route has one; `self` fills none — and follow the links the page shows into the items it
    lists, as far as a tester would to see the state. Read each screen with `browser_snapshot`.
 3. **Observation is read-only.** Navigate, read, follow links, switch a tab or a filter. Never press
    a control whose `Result the user sees` in `KNOWLEDGE.md` saves, changes or removes anything, and
@@ -212,7 +214,7 @@ These rules hold for every look, whoever holds the browser. A state looked for a
 observed in this session. A state looked for as another role (`## Signing in` → *Which role*) is
 observed through a driver, by `## Looking as another role`, under the same rules.
 
-**For each state found, write its `## States` row** with no question: `staging`, the org id, the
+**For each state found, write its `## States` row** with no question: `staging`, the org's `Org` value, the
 page's `Route:` line, the state id, the proving ids, today's date in `Last verified`, and origin
 `setup-states <today's date>`. Write the row as soon as the state is seen; a later stop loses
 nothing already found.
@@ -232,7 +234,7 @@ that cite the state:
 - its name, `look for S<n> as <role>`, and the word `look` on its own line under the name, which
   makes every sub-step read-only for the driver;
 - `start from:` the page's route, with the org id in place of the org parameter when the route has
-  one, `— as <role>`;
+  one and the org is not `self`, `— as <role>`;
 - sub-steps that only navigate, read, follow a link the page offers, or switch a tab or a filter,
   each with the section a `## What the user sees` row names as its observable result. No sub-step
   presses a control whose `Result the user sees` saves, changes or removes anything, and none submits
@@ -247,7 +249,7 @@ and one `flow-<n>/step-<k>/` folder per sub-step. One run folder serves every lo
 else.
 
 **The driver prompt carries exactly** what `qa:prove-branch` → *Dispatching the drivers* lists: the
-flow, the role and the absolute path of its `session.json`, the org id as the starting state's id,
+flow, the role and the absolute path of its `session.json`, the org's `Org` value — an org id or `self` — as the starting state's id,
 the target URL, and the absolute path of the flow's folder. Never a credential value, never the
 session file's contents, nothing about the code.
 

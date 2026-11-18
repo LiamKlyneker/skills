@@ -57,10 +57,15 @@ One row per org the pass uses on an environment.
 | Column | Holds |
 |---|---|
 | `Env` | `staging` or `prod` |
-| `Org` | the org's id on that environment |
+| `Org` | the org's id on that environment, or `self` (below) |
 | `Role` | the role the pass signs in as, by the label the adapter's *Credential environment variables* row uses |
 | `Session method` | the adapter's *Session method* value, `api` or `manual` |
 | `Added` | the date the row was written, `YYYY-MM-DD` |
+
+**`self`** is the reserved `Org` value for an app with no org, workspace or team to choose: the
+signed-in role's own account decides which data a page shows. A route then has no org parameter to
+fill, and a reader that passes an org id on passes `self`. In user words, `self` is "<role>'s own
+account".
 
 ### `## States`
 
@@ -71,7 +76,7 @@ One row per known instance of a page state.
 | Column | Holds |
 |---|---|
 | `Env` | `staging` or `prod` |
-| `Org` | the org id, matching an `## Orgs` row for the same `Env` |
+| `Org` | the `Org` value of an `## Orgs` row for the same `Env`: an org id, or `self` |
 | `Page` | the page's route, as its `KNOWLEDGE.md` `Route:` line writes it |
 | `State` | the state id from that page's `KNOWLEDGE.md` (`S21`) |
 | `Ids` | the ids that prove the state is there — an order number, a plan id — each named in user words: `order 4412 · plan 98`. A row a `setup-states` drive produced — a chain's or the page's own steps — also records **every item the drive created**, after the proving ids, each with its `qa-setup` name: `shelf s-31 "qa-setup S4 shelf" · loan l-7 "qa-setup S4 loan"`. A later drive uses a recorded `qa-setup` item again when it still exists and still fits the step, and never changes it |
