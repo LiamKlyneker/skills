@@ -577,7 +577,7 @@ Each state comes out as one of these:
 
 | Found | Outcome |
 |---|---|
-| a row | the flow is **ready**. The row's `Org` and `Ids` are its starting state's ids, shown on an `account:` line under `start from:` |
+| a row | the flow is **ready**. The row's `Org` and `Ids` are its starting state's ids, shown on an `account:` line under `start from:`. An `Org` of `self` shows as `<role>'s own account` |
 | no row, and the chain table holds a step `none` row for the state | the flow is **Unable to verify**: `state S<n> "<the state, in user words>" cannot be made by a tester — <that row's reason, as written>, and accounts.md has no row for it`. Its remedy names the state's `Seeder (for a human)` hint from `KNOWLEDGE.md`, as written, as the fast path for a human to make the state — or `none known` — and then `/qa:setup-states <page folder> S<n>` to record it |
 | no row, and the state cell says the state needs time to pass or a payment to fail | the flow is **Unable to verify**: `state S<n> "<the state, in user words>" <needs time to pass · needs a payment to fail>, and accounts.md has no row for it`. Its remedy is the same as in the row above |
 | no row, and the chain table holds numbered steps for the state | a **missing account** — `### The missing-account stop`, which names `/qa:setup-states` |

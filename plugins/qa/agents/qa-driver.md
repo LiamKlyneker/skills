@@ -39,7 +39,7 @@ Your prompt must supply:
   Playwright storage-state file. A flow that signs in as several roles gets one path per role, and
   each sub-step names its role;
 - **the ids of the starting state** — the catalog's ids or the ids of data the run created; for a
-  look, the org id;
+  look, the org id, or `self`: the signed-in role's own account, with no org to choose;
 - **the target URL** — for a setup flow whose sub-steps cross apps, one URL per app;
 - **the flow folder** — `<run folder>/flow-<n>/`, with one `step-<k>/` folder already created per
   sub-step. The run folder sits under `.qa-scenarios/runs/` in the project's working tree.
