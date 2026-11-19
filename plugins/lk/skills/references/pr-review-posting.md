@@ -1,7 +1,8 @@
 # PR review: resolution, project facts, discussion, drafts and post
 
 The steps `lk:human-review` and `lk:proposal-review` share. Each skill points here at the step that
-uses a section. This file holds only what is identical in both skills.
+uses a section. This file holds only what is identical in both skills. `lk:pr-feedback` also uses
+§Invocation and input, and nothing else here.
 
 ## Invocation and input
 
@@ -22,7 +23,7 @@ uses a section. This file holds only what is identical in both skills.
 
 **When the branch has no PR, or the argument resolves to nothing, stop with one question:**
 
-> *"I could not find a pull request for `<branch or argument>`. Which PR do you want to review? A number or a URL works."*
+> *"I could not find a pull request for `<branch or argument>`. Which PR do you mean? A number or a URL works."*
 
 Take the answer as the argument and resolve again. Never guess a PR.
 
