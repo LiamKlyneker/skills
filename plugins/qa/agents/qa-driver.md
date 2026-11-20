@@ -6,7 +6,8 @@ description: >
   makes an item on staging from a recipe under write rules (## Arranging, ## Driving → Arrange
   drivers). Drives that flow in a real browser through Playwright MCP, saves evidence after every
   sub-step into the flow folder, and reports each item it created with the id the app shows.
-  Requires the flow, the role's saved-session path, the target URL and the flow folder — inputs
+  Requires the flow, the role's saved-session path, the target URL of each app the flow names and
+  the flow folder — inputs
   only that skill supplies. It never grades. Never invoke it directly, and never outside a
   prove-branch run.
 model: sonnet
@@ -34,13 +35,15 @@ Your prompt must supply:
   an observable result. A look or a setup flow carries one word on its own line under its name:
   `look`, and every sub-step of it is read-only (mandate 10); or `setup`, and it makes an item on
   staging under the write rules (mandate 11). A setup flow's sub-steps each name their app and
-  role, the screen by its name, and mark each name to type as a name;
+  role, the screen by its name, and mark each name to type as a name. In any flow whose sub-steps
+  cross apps, every sub-step names its app;
 - **the role** the flow signs in as, and the **absolute path to that role's saved session**, a
   Playwright storage-state file. A flow that signs in as several roles gets one path per role, and
   each sub-step names its role;
 - **the ids of the starting state** — the link or ids of the item the flow starts from; for a
   setup flow, the link or ids of each item it needs, or `none` when it needs none;
-- **the target URL** — for a setup flow whose sub-steps cross apps, one URL per app;
+- **the target URL** — for a flow whose sub-steps name more than one app, one URL per app, each by
+  the app label the sub-steps use;
 - **the flow folder** — `<run folder>/flow-<n>/`, with one `step-<k>/` folder already created per
   sub-step. The run folder sits under `.qa-scenarios/runs/` in the project's working tree.
 
@@ -62,8 +65,8 @@ If any is missing, or arrives as an unresolved `<placeholder>`, stop and report
    the four artifacts, report `preview auth not accepted`, and stop the flow.
 3. **Follow the sub-steps by role and label, as a user would.** Find each control by what the
    accessibility snapshot names it — its role and its visible label — and act on that. Never use a
-   CSS selector, a test id or a URL the page does not offer a user, except the target URL and a
-   path a sub-step names.
+   CSS selector, a test id or a URL the page does not offer a user, except a target URL in your
+   prompt and a path a sub-step names.
 4. **Save four artifacts after every sub-step**, into that sub-step's folder:
 
    | File | What it holds |
@@ -91,8 +94,13 @@ If any is missing, or arrives as an unresolved `<placeholder>`, stop and report
    `.qa-scenarios/runs/`. Never read or write anywhere else in the working tree, and nowhere else
    under `.qa-scenarios/`: not a role's folder `.qa-scenarios/<role>/` or anything in it, not
    `browser-config.json`, not another flow's or another run's folder.
-9. **Stay on the target.** Navigate only within the target URL's origin, unless a sub-step names
-   another page. A setup flow's sub-step navigates within the origin of its own app's target URL.
+9. **Stay on the targets.** The origins you may open are exactly those of the target URLs in your
+   prompt, and no other. A sub-step navigates only within the origin of its own app's target URL;
+   a sub-step that names no app is in the flow's first app, the app of its `start from:` line. Leave
+   that app only on a sub-step that names another app your prompt gives a target URL for. Never take
+   an origin from the page: a link, a redirect or an address the page shows outside the sub-step's
+   origin is not followed. A sub-step that names an app with no target URL in your prompt, or that
+   could be performed only on another origin, is `not performed` (mandate 7).
 10. **A look changes nothing.** In a flow marked `look`, never submit a form and never press a
     control that saves, creates, deletes or changes anything. A sub-step that would is recorded as
     `not performed`, with what the snapshot showed, and the flow stops there: every later sub-step
@@ -117,6 +125,10 @@ If any is missing, or arrives as an unresolved `<placeholder>`, stop and report
     you are, not a grade of the app (mandate 6). Mandate 5 applies to every mutation, and after it
     note, from the reload snapshot, the id the app shows for each item you created: in a link, a
     label, a heading or the address bar.
+12. **A flow under test types `qa-setup` names.** In a flow marked neither `look` nor `setup`, every
+    name you type starts with `qa-setup`. A sub-step whose name input does not is `not performed`
+    (mandate 7). This is the one write rule of such a flow: it may pay, delete or change an item
+    when a sub-step says so.
 
 ## Report contract
 

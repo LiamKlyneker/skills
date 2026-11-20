@@ -1,6 +1,6 @@
 ---
 name: prove-branch
-description: Run the automated QA pass on the checked-out branch of a web project — resolve the ticket, the pull request and the preview deployment from the branch alone, read the acceptance criteria from the highest product source the branch reaches and the touched pages' KNOWLEDGE.md, deriving a page's file itself where it has none, is in an old shape or the page changed since it was derived; resolve the data each flow starts from, in user words, to an item an earlier run made or one a recipe in the project's QA folder makes now, learning a missing recipe or option from the code, then the screens, then the developer, while writing nothing to staging; and after one approval gate, which shows the steps of each learned recipe, also asks for a link to any item no recipe makes and lists the open backend-rule questions that block a flow, make those items on staging through one arrange driver at a time, in `Needs` order, under five write rules and with no cleanup, saving a learned recipe only once a drive made its item; drive and grade flows against the preview, record every item made in the QA folder's made-items file, and post one receipt that lists them to the ticket, or to the pull request when the branch names no ticket; it stops with a question wherever the branch is ambiguous, and on a failure asks fix now or file. Runs on user invocation only; neither loop ever invokes it. Invoke /qa:prove-branch with no argument, in a fresh session on the implemented branch.
+description: Run the automated QA pass on the checked-out branch of a web project — resolve the ticket, the pull request and the preview deployment from the branch alone, read the acceptance criteria from the highest product source the branch reaches and the touched pages' KNOWLEDGE.md, deriving a page's file itself where it has none, is in an old shape or the page changed since it was derived; resolve the data each flow starts from, in user words, to an item an earlier run made or one a recipe in the project's QA folder makes now, learning a missing recipe or option from the code, then the screens, then the developer, while writing nothing to staging; and after one approval gate, which shows the steps of each learned recipe, also asks for a link to any item no recipe makes and lists the open backend-rule questions that block a flow, make those items on staging through one arrange driver at a time, in `Needs` order, under five write rules and with no cleanup, saving a learned recipe only once a drive made its item; drive and grade flows against one target per app — the preview for this app, the staging URL for each sibling app a flow crosses into — composing a flow that makes an item on the preview when the branch changes how it is made; record every item made in the QA folder's made-items file, and post one receipt that lists them to the ticket, or to the pull request when the branch names no ticket; it stops with a question wherever the branch is ambiguous, and on a failure asks fix now or file. Runs on user invocation only; neither loop ever invokes it. Invoke /qa:prove-branch with no argument, in a fresh session on the implemented branch.
 disable-model-invocation: true
 ---
 
@@ -272,6 +272,26 @@ challenge* before anything else, and carry the credentials on every later reques
 commit when it matches `HEAD`. A URL the developer supplies is recorded with the commit the
 developer states it serves, marked `developer-stated`. The receipt names both.
 
+### One target per app
+
+**A run has one target per app.** The app under test is `this app`, and its target is the target URL
+above. Each other app is an entry of the adapter's *Sibling apps* row, and its target is the staging
+URL that entry gives. The arrange phase drives staging only (`## Arranging`), so an arrange drive,
+a check and a screen read open this app at the adapter's *Staging URL* row and a sibling app at its
+entry's staging URL.
+
+| App | Target of a flow under test | URL of an arrange drive, a check and a screen read |
+|---|---|---|
+| `this app` | the target URL — the preview | the *Staging URL* row |
+| a *Sibling apps* entry, by its label | the entry's staging URL | the entry's staging URL |
+
+**These URLs are the only origins a driver of this run may open.** The skill gives each driver the
+URL of each app its flow names, by app label, and the driver never takes an origin from a page
+(`qa-driver` → mandate 9). An app the adapter does not list has no target, and no sub-step is
+composed in it. A *Staging URL* row that is absent leaves this app with no arrange URL: a recipe
+made in this app then makes its flows Unable to verify, with the reason `the adapter has no Staging
+URL row`, and the remedy `/qa:setup`.
+
 ## Criteria
 
 **The criteria come from the highest product source the run reaches.** The ticket anchors the run,
@@ -385,7 +405,8 @@ Once the run, the target and the criteria are resolved, print them before compos
   fell to;
 - the **Out of Scope** items, each with its source, or `none`;
 - the hygiene results;
-- the target URL and the SHA tested, with `developer-stated` where it applies;
+- the target URL and the SHA tested, with `developer-stated` where it applies, and the targets
+  of the run, one per app (`### One target per app`);
 - the criteria, numbered, each with its source — the product source, a follower, a child, the
   pull request, or `inferred` — and, when the product source gave none, that the children's
   criteria stand alone.
@@ -485,7 +506,9 @@ begin from. Each flow has:
   its options (`### The data a flow starts from`), or a prior flow by number, and the role the flow
   signs in as;
 - **sub-steps**, numbered `<flow>.<k>`, each naming one **action** and one **observable result** —
-  something the page shows or the app answers, which a driver can see is there or is not;
+  something the page shows or the app answers, which a driver can see is there or is not. In a flow
+  that crosses apps, **every sub-step names its app** — `this app`, or a *Sibling apps* label — and
+  its role where that differs from the `start from:` line's;
 - **attribution** — the tickets whose code the flow exercises: the `(#N)` suffixes or ticket-source
   keys on the commits that touched the files involved, or the resolved ticket itself when the branch
   carries one ticket.
@@ -498,12 +521,31 @@ attribution: #228, #229
   2.2  <action> → <observable result>
 ```
 
+```
+Flow 4 — <name>
+start from: flow 1 completed, as owner
+attribution: #230
+  4.1  in this app: <action> → <observable result>
+  4.2  in admin, as admin: <action> → <observable result>
+```
+
 A sub-step whose result is not observable — "the data is saved correctly", "the error is handled" —
 is not a sub-step. Rewrite it as what the page shows, or leave its criterion uncovered.
 
+**Every name a sub-step types starts with `qa-setup`**, as every name an arrange drive types does,
+so a person who shares staging recognises what the pass made. It is the one write rule of a flow
+under test: a flow stays free to pay, delete or change an item, because a criterion can ask for it.
+A criterion about a name that cannot start with `qa-setup` leaves its sub-step uncovered, with that
+reason.
+
+**A sub-step is in an app the adapter lists**, with a target (`### One target per app`). A result
+that only an app with no *Sibling apps* entry shows leaves its criterion uncovered, with the reason
+`<app> is not in the adapter's Sibling apps row`; `## Learning a recipe` → *The app question* is
+where an app is added.
+
 **The first flow is always "get running"**: open the target URL from `## The target` with each
 role's scenario loaded (`## Scenarios`), and see the app signed in as that role — one sub-step per
-role the pass uses. Its line is `start from: the target URL`, the one flow that starts from neither
+role the pass uses, a role of a sibling app opening that app's target and naming the app. Its line is `start from: the target URL`, the one flow that starts from neither
 an item nor a prior flow. A later flow that needs no particular data starts from it:
 `start from: flow 1 completed, as <role>`.
 
@@ -524,6 +566,38 @@ flows; three children that changed one screen share one.
 
 3–7 sub-steps is a smell test, not a rule. A one-sub-step flow is fine. A flow past a dozen
 sub-steps is usually two flows whose shared starting point has not been named yet.
+
+**A flow crosses apps only when its criterion does**: a result that one app shows of what a
+sub-step did in another. Then the sub-steps stay in one flow, so the item the first app made is the
+item the second app shows; split, the second flow would start from an item the run arranged instead.
+A flow whose criterion lives in one app stays in that app.
+
+### A branch that changes how an item is made
+
+When the diff touches a page folder that is one of a recipe's `Made in` screens, the branch changes
+how that item is made. A touched page folder is one of those screens when the recipe's `Made in`
+line names `this app` and the page's `KNOWLEDGE.md` `Route:` matches the path of the recipe's start
+URL, or its page name is a screen the `Made in` line names.
+
+**Compose a flow that makes the item on the target and opens it where `Seen in` says**:
+
+- its name, `make <item> — <options, or none>`, with no `setup` word: it is a flow under test;
+- `start from:` the recipe's `Needs` items, made by `## Arranging` as any flow's item is, or flow 1
+  when the `Needs` line reads `none` — `— as <the recipe's Role>`;
+- one sub-step per step of the recipe — its shared steps, then the steps of each option a criterion
+  names — in `this app`, each step's result as the observable result;
+- a last sub-step in the `Seen in` app, as a role of that app (`### Which role and which app`): open
+  the item the way the `Seen in` line says → the item shows under its `qa-setup` name.
+
+This is the one exception to "arrange always drives staging" (`## Arranging`): **making that item
+is the flow under test**, so it runs on the preview and the grader sees it. When the `Seen in` line
+names another app, the item reaches that app only through staging's data, so the flow needs a
+target confirmed as staging (`### Staging or not`) and is otherwise Unable to verify, with the
+reason `target is not confirmed as staging`.
+
+The item this flow makes is the branch's work, not the recipe's: it writes no `made-items.md` row,
+no `Last proved` date and no `Failed` line. A step that does not show its result is a Fail like any
+other, graded from the evidence.
 
 ### The coverage map
 
@@ -798,7 +872,9 @@ run's order is:
    *Arrange drivers*). The flow drivers start after the last of them returns.
 
 **Arrange always drives staging. Only the flows under test drive the preview.** A bug in the branch
-under test therefore cannot break the making of its own start data.
+under test therefore cannot break the making of its own start data. The one exception is an item
+whose making the branch changes: making it is a flow under test, on the preview (`## Composing the
+flows` → *A branch that changes how an item is made*), and only its `Needs` items are arranged.
 
 ### Staging or not
 
@@ -928,9 +1004,11 @@ The check runs after `## Scenarios` has settled the row's role's session for the
   confirmed — makes every flow that needs it Unable to verify, with the
   reason `recipe "<name>" is made in <app>, which the adapter's Sibling apps row does not list`.
 - **The drive starts at the URL on the recipe's `Made in` line.** Its origin is the drive's target
-  URL: this app's *Staging URL*, or a sibling app's staging URL from its entry. A start URL on any
-  other origin makes the recipe's flows Unable to verify, with the reason `recipe "<name>" starts
-  outside staging`.
+  URL, by `## The target` → *One target per app*: this app's *Staging URL*, or a sibling app's
+  staging URL from its entry. A start URL on any other origin makes the recipe's flows Unable to
+  verify, with the reason `recipe "<name>" starts outside staging`.
+- **A sub-step of a flow under test in a sibling app signs in as a role of that app**, by the same
+  three rules, and that app's target is its staging URL.
 
 ### Open questions
 
@@ -995,7 +1073,7 @@ role:
 | Path | What it holds |
 |---|---|
 | `.qa-scenarios/<role>/session.json` | the saved session, as a **Playwright storage-state file** (`cookies` and `origins`), the form the driver loads |
-| `.qa-scenarios/<role>/session-<host>.json` | a second saved session for one more host, only when `session.json` does not cover it (*A session for each host*) |
+| `.qa-scenarios/<role>/session-<host>.json` | a saved session for one more host of the run, only when `session.json` fails the cover test for it (*Reuse or capture*) |
 | `.qa-scenarios/<role>/scenario.md` | the description: the role, the session method, the origin each session file was captured against, and the date captured |
 
 `<role>` is the role's label in lower case, with every character outside `a-z`, `0-9` and `-`
@@ -1020,16 +1098,24 @@ Neither reaches the repository, and a later run reuses both.
 
 ### Reuse or capture
 
-For each role the flows and the arrange drives use, before anything else uses it:
+A saved session is keyed by role. **The cover test runs once per role and host**: for each role the
+flows and the arrange drives use, and for each host a driver of this run opens with that role,
+before anything else uses it. The hosts are those of the run's targets (`## The target` → *One
+target per app*): the target's host for a sub-step of a flow under test in this app, a sibling
+app's staging host for a sub-step in that app, and the staging host of the item's app for a check,
+a screen read or an arrange driver (`### Which role and which app`).
 
-1. **Reuse** the saved session when `session.json` exists, its cookies cover the target's host, at
-   least one of them is unexpired, and the target accepts it: a request made with the session
-   loaded, to a page or endpoint a signed-out visitor cannot use, comes back signed in — not a
-   redirect to sign-in, not a `401` or a `403`.
-2. **Otherwise capture it again**, by the adapter's *Session method* row. A missing row, or a value
-   that is neither `api` nor `manual`, is a stop that names the row.
+1. **Reuse** a session file of the role — `session.json`, then any `session-<host>.json` — when
+   its cookies cover the host, at least one of them is unexpired, and the host accepts it: a
+   request made with the session loaded, to a page or endpoint of that host a signed-out visitor
+   cannot use, comes back signed in — not a redirect to sign-in, not a `401` or a `403`.
+2. **Otherwise capture it**, by the method *A session for each host* names, against the host's
+   base URL: into `session.json` when the role has no session file that serves another host, and
+   into `session-<host>.json` when `session.json` serves another host of this run.
 
-Say for each role whether its scenario was reused or captured.
+**A session file that passes the test for several hosts serves all of them, and no second file is
+captured.** Give a driver the file that covers the host it opens. Say for each role and host whether
+its session was reused or captured, and which file serves it.
 
 **A session is a secret too.** Never print `session.json` or read it into this conversation. Inspect
 it only through a command that prints cookie names, domains and expiry, never a value.
@@ -1043,7 +1129,7 @@ run again. Never ask for a value. If the developer types a credential into the s
 not use it and do not repeat it; say to set the variable instead.
 
 Make the sign-in call against the endpoint written after `api` in the *Session method* row,
-resolved against the target URL when it is a path. **Reference each credential by its variable name
+resolved against the base URL of the host being captured when it is a path. **Reference each credential by its variable name
 in the command**, so the shell expands it and the command text never holds a value:
 
 ```bash
@@ -1052,7 +1138,7 @@ curl -sS -o /dev/null -w '%{http_code}\n' -c .qa-scenarios/<role>/jar.txt \
   [-u "$<BASIC_USER_VAR>:$<BASIC_PASS_VAR>"] \
   --data-urlencode "<username-field>=$<USERNAME_VAR>" \
   --data-urlencode "<password-field>=$<PASSWORD_VAR>" \
-  '<target-url><sign-in-endpoint>'
+  '<base-url><sign-in-endpoint>'
 ```
 
 - The `-u` line is there only when the adapter has a *Preview basic auth* row, with that row's two
@@ -1064,14 +1150,15 @@ curl -sS -o /dev/null -w '%{http_code}\n' -c .qa-scenarios/<role>/jar.txt \
   other option that echoes the request.
 - A failed sign-in is a stop that names the role, the endpoint and the status. **Do not retry with
   changed input**: a lockout on a shared staging account stops everyone who uses it.
-- Convert the cookie jar into `session.json` with one command that prints only the cookie count.
+- Convert the cookie jar into the session file *Reuse or capture* named, with one command that
+  prints only the cookie count.
   Each jar line becomes a cookie with its `name`, `value`, `domain`, `path`, `expires` (`-1` where
   the jar gives `0`), `secure`, `httpOnly` (from a `#HttpOnly_` prefix on the line) and
   `sameSite: "Lax"`; `origins` is an empty list. Then delete the jar.
 - A sign-in that sets no cookie — a token returned in the body for the app to keep — cannot be
   saved as a session the driver loads. Stop, say so, and suggest `manual` for this project.
 
-Then confirm the target accepts the new session, as in step 1 of *Reuse or capture*.
+Then confirm the host accepts the new session, as in step 1 of *Reuse or capture*.
 
 ### `manual` — one login in a visible window
 
@@ -1079,23 +1166,21 @@ Propose the command and wait for a yes; it opens a browser window and runs until
 closes it:
 
 ```bash
-npx playwright open --save-storage=.qa-scenarios/<role>/session.json '<target-url>'
+npx playwright open --save-storage=.qa-scenarios/<role>/<session file> '<base-url>'
 ```
+
+`<session file>` is the file *Reuse or capture* named, and `<base-url>` the base URL of the host
+being captured.
 
 Tell the developer which role to sign in as, to sign in in that window, and to close the window once
 the app shows them signed in. Playwright writes the session when the window closes; the skill never
 sees what was typed. When Playwright or its browser is not available, say which and stop — never
-install anything into the project. Then confirm the target accepts the new session, as in step 1 of
+install anything into the project. Then confirm the host accepts the new session, as in step 1 of
 *Reuse or capture*.
 
 ### A session for each host
 
-A role's session is checked against **each host a driver of this run opens with it**: the target's
-host for a flow driver, and the staging host of the item's app for a check, a screen read or an
-arrange driver (`### Which role and which app`). *Reuse or capture* applies to each host, with that host's base URL
-in place of the target URL. `session.json` serves the first host; when it does not cover another
-one, capture `session-<host>.json` for that host by the same method, and give a driver the file
-that covers the host it opens.
+A capture that *Reuse or capture* calls for uses the method of the app whose host it is:
 
 - **A role of this app** signs in by the *Session method* row, against this app's target or its
   *Staging URL*.
@@ -1107,7 +1192,8 @@ that covers the host it opens.
   subsection does not touch. Say the write in the print.
 
 A role left with no session that covers the host a recipe needs makes every flow that needs the
-recipe Unable to verify, with the reason `no saved session for <role> on <host>`.
+recipe Unable to verify, with the reason `no saved session for <role> on <host>`; so does a role
+left with no session for the host a sub-step of a flow under test opens, for that flow.
 
 ### No credential value leaves the shell
 
@@ -1124,9 +1210,14 @@ credential.
 Show the composed pass **once**, whole:
 
 - the target URL and the SHA tested;
+- **the targets**, one per app the run uses, as `## The target` → *One target per app* gives them:
+  each app's label, the target its flows under test drive, and the staging URL its arrange drives,
+  checks and screen reads open;
 - the flows, numbered, each with its name, `start from:` line, the `item:` line its item resolved
   to — `use again`, with the row's link or ids, or `make`, with the recipe and its options —
-  attribution and sub-steps;
+  attribution and sub-steps, each sub-step with its app in a flow that crosses apps. A flow that
+  makes an item whose making the branch changes (`### A branch that changes how an item is made`)
+  says so under its name, and says that it runs on the preview;
 - **the items to use again**: each `made-items.md` row, with its link or ids, its role, its `Made`
   date and origin, and the flows that start from it;
 - **the items to make**: each with its whole `Needs` chain in the order of making, and per item the
@@ -1219,7 +1310,8 @@ Every run gets a new folder inside the excluded scenario directory, created unde
 ```
 
 - **`run.md`** carries the ticket and the key that resolved it, the product source, the pull
-  request, the target URL, the SHA tested (marked `developer-stated` where it applies), the time
+  request, the target URL and the target of each other app the flows name, the SHA tested
+  (marked `developer-stated` where it applies), the time
   the run started, and per driven flow its role and the link or ids of the item it starts from. It
   carries no credential and no session contents.
 - The skill writes `run.md` and creates every `flow-<n>/step-<k>/` folder before any driver
@@ -1269,6 +1361,9 @@ This skill holds all five when it composes a drive. The driver holds them again,
 every sub-step of a flow marked `setup` (`qa-driver` → mandate 11). A step that either one would
 refuse is not performed, and the drive fails there (*A recipe that fails*).
 
+**A flow under test holds one of them, rule 2**: every name it types starts with `qa-setup`
+(`## Composing the flows` → *What a flow is*). The driver holds it again (`qa-driver` → mandate 12).
+
 ### Arrange drivers
 
 **After "go", before any flow driver, one `qa:qa-driver` per item to make, one at a time, in
@@ -1286,8 +1381,9 @@ recorded, or its failure reported.
      item returned.
 2. **Dispatch it** with the prompt *Dispatching the drivers* lists: the flow; the role and the path
    of the session file that covers the drive's host (*A session for each host*); the link or ids of
-   each item it needs as the ids of its starting state, or `none`; the drive's target URL, one per
-   app when its steps cross apps; and the flow's folder in the arrange folder. Never a credential
+   each item it needs as the ids of its starting state, or `none`; the staging URL of each app its
+   steps name, by app label (`## The target` → *One target per app*); and the flow's folder in the
+   arrange folder. Never a credential
    value, never a session file's contents.
 3. **Read the report and the evidence.** Save the report as `flow-<n>/driver.md` in the arrange
    folder. Read each sub-step's `snapshot.md`, and its `reload/` snapshot, against the step's
@@ -1363,7 +1459,10 @@ an Unable-to-verify flow is never driven, and neither is a flow whose recipe fai
 - the role, and the **absolute path** to that role's session file for the host the driver opens —
   one path per role for a flow that signs in as several;
 - the ids of the starting state: the link or ids of the item the flow starts from;
-- the target URL;
+- **the target of each app the flow names**, by app label, from `## The target` → *One target per
+  app*: `this app` with the target URL, and each sibling app a sub-step names with its staging URL.
+  A flow in this app alone gets the target URL alone. These are the only origins the driver may
+  open;
 - the absolute path of the flow's folder, `<run folder>/flow-<n>/`.
 
 **A driver prompt carries a session path, never a credential value** — not a password, not a
