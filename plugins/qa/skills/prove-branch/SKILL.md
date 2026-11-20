@@ -1,6 +1,6 @@
 ---
 name: prove-branch
-description: Run the automated QA pass on the checked-out branch of a web project — resolve the ticket, the pull request and the preview deployment from the branch alone, read the acceptance criteria from the highest product source the branch reaches and the touched pages' KNOWLEDGE.md, stopping with `/qa:build-knowledge` where a touched page has none; resolve the data each flow starts from, in user words, to an item an earlier run made or one a recipe in the project's QA folder makes now, learning a missing recipe or option from the code, then the screens, then the developer, while writing nothing to staging; and after one approval gate, which shows the steps of each learned recipe, also asks for a link to any item no recipe makes and lists the open backend-rule questions that block a flow, make those items on staging through one arrange driver at a time, in `Needs` order, under five write rules and with no cleanup, saving a learned recipe only once a drive made its item; drive and grade flows against the preview, record every item made in the QA folder's made-items file, and post one receipt that lists them to the ticket, or to the pull request when the branch names no ticket; it stops with a question wherever the branch is ambiguous, and on a failure asks fix now or file. Runs on user invocation only; neither loop ever invokes it. Invoke /qa:prove-branch with no argument, in a fresh session on the implemented branch.
+description: Run the automated QA pass on the checked-out branch of a web project — resolve the ticket, the pull request and the preview deployment from the branch alone, read the acceptance criteria from the highest product source the branch reaches and the touched pages' KNOWLEDGE.md, deriving a page's file itself where it has none, is in an old shape or the page changed since it was derived; resolve the data each flow starts from, in user words, to an item an earlier run made or one a recipe in the project's QA folder makes now, learning a missing recipe or option from the code, then the screens, then the developer, while writing nothing to staging; and after one approval gate, which shows the steps of each learned recipe, also asks for a link to any item no recipe makes and lists the open backend-rule questions that block a flow, make those items on staging through one arrange driver at a time, in `Needs` order, under five write rules and with no cleanup, saving a learned recipe only once a drive made its item; drive and grade flows against the preview, record every item made in the QA folder's made-items file, and post one receipt that lists them to the ticket, or to the pull request when the branch names no ticket; it stops with a question wherever the branch is ambiguous, and on a failure asks fix now or file. Runs on user invocation only; neither loop ever invokes it. Invoke /qa:prove-branch with no argument, in a fresh session on the implemented branch.
 disable-model-invocation: true
 ---
 
@@ -14,7 +14,8 @@ does not say exactly one thing, the skill **stops and asks**; it never guesses.
 
 **It is an external tester.** It writes nothing into the project under test: no test ids, no spec
 files, no fixtures, no configuration, no feature-flag overrides committed anywhere, no app code. The
-project's tracked tree is the same after a run as before it. What a run produces lives on the
+project's tracked tree is the same after a run as before it, except for a touched page's
+`KNOWLEDGE.md`, which the run derives or regenerates when it must (`## Knowledge`) and never commits. What a run produces lives on the
 tracker and in folders git excludes. The one change a pass can lead to is a fix-now commit the
 developer asks for after grading, which a worker makes (`## On a Fail`).
 
@@ -24,9 +25,9 @@ project's QA folder — and starts every flow from an item an earlier run made, 
 makes now on staging (`## Arranging`) — learning a recipe it does not have first (`## Learning a
 recipe`) — or, where the project forbids staging writes or no recipe makes the item, from a link the
 developer gives at the gate. An arrange driver makes each item under the write rules of
-`## Driving` → *The write rules*, and the receipt lists every item the run made. Its only writes to a
-knowledge file are a developer's own answers, written back (`### Write-backs`), so no run asks the
-same thing twice.
+`## Driving` → *The write rules*, and the receipt lists every item the run made. Its writes to a
+knowledge file are the derive of a touched page's file (`## Knowledge`) and a developer's own answers,
+written back (`### Write-backs`), so no run asks the same thing twice.
 
 **It runs on user invocation only.** Neither `work-on-prd` nor `work-on-spec` invokes it, and
 nothing else may: ADR 0012 keeps every QA pass on demand, and ADR 0020 applies that to this
@@ -404,19 +405,25 @@ folder holding a route entry file that the framework renders as a page. Each cha
 its nearest page folder at or above it: a change under `app/shelves/components/` touches the page
 folder `app/shelves`. A changed path with no page folder above it touches no page.
 
-Read the `KNOWLEDGE.md` in every touched page folder. **A touched page folder with no
-`KNOWLEDGE.md` is a stop**, before any flow is composed. Name every such folder, and print the
-command for each, alone on its line:
+Read the `KNOWLEDGE.md` in every touched page folder. **A page folder whose file is missing, is not
+in the four-table shape, or was derived before the page changed is derived again by this run, and the
+run continues.** Nothing is a stop and no command is printed for the developer to type. Per page
+folder:
 
-```
-prove-branch cannot compose flows for `<page folder>`: it has no KNOWLEDGE.md.
-/qa:build-knowledge <page folder>
-```
+| The folder's file | The run |
+|---|---|
+| missing | **derives** it |
+| not in the shape [`knowledge-file.md`](../references/knowledge-file.md) fixes — it has a `## How a state is made` table, a `Known account` or `Seeder (for a human)` column, an `Apps read:` line, or a question asking which item on staging holds a state | **regenerates** it |
+| in the shape, and the page changed since its `Derived at:` commit: `git diff --name-only <sha>..HEAD -- <page folder>` lists a path, or the sha is not in the repository | **regenerates** it |
+| in the shape, and that command lists nothing | reads it, and derives nothing |
 
-Then say to run `/qa:prove-branch` again once the file exists. **Never run `build-knowledge`
-yourself**: deriving a page writes a file into the tree, and that is the developer's command to
-run. This skill writes to a knowledge file only through `### Write-backs`. No driver starts, and no
-receipt is posted, since nothing was tested.
+To derive or regenerate, read [`../build-knowledge/SKILL.md`](../build-knowledge/SKILL.md) →
+`## Deriving` for a derive and `## Regenerate` for a regenerate, and apply it to the page folder
+exactly as `/qa:build-knowledge <page folder>` would, with no `--repo`, touching nothing those
+sections do not touch. **Never restate those sections here.** The backend read does not run, so a
+question about a backend rule stays open and `### Open questions` raises it. The run then reads the
+file it wrote. Say each derive or regenerate in the next print: the page folder, the mode, and what
+a regenerate dropped from an old-shape file. A derive is never committed.
 
 ### The QA folder
 
@@ -944,7 +951,7 @@ again.
 ### Write-backs
 
 A developer's answer during a run is written to the file it belongs to, so no later run asks again.
-This is the **only write** this skill makes to a knowledge file:
+Besides the derive in `## Knowledge`, this is the **only write** this skill makes to a knowledge file:
 
 - **An answer to an open question** of the page's `KNOWLEDGE.md` (`Q<n>`). Write it through
   `qa:build-knowledge`'s update mode: read
@@ -1487,7 +1494,7 @@ Then four sections, **in this order**, each present and reading `none` when empt
 1. **Unable to verify** — each Unable-to-verify flow and sub-step with its reason, then each
    uncovered and each ambiguous criterion with its coverage-map reason. Every item carries a
    **suggested remedy**: the one change that would make it checkable — the
-   `/qa:build-knowledge <page folder>` command to run, the recipe to add or fix in the QA folder,
+   `/qa:build-knowledge <page folder> --repo <path>` command that reads a backend rule, the recipe to add or fix in the QA folder,
    the *Staging writes* row to set, the variable to set, the target to confirm as staging, the
    reading of the criterion to settle, or the check a human makes by hand.
 2. **Fails** — each Fail sub-step with its flow's name, the grader's reason, its **artifact path**,
