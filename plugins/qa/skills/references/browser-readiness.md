@@ -2,8 +2,8 @@
 
 What a `qa` skill confirms before it drives a real browser: the consent the adapter records, the
 HTTP Basic Auth in front of the preview, and that the Playwright MCP tools are in the session.
-`qa:prove-branch` and `qa:setup-states` both read this file (`../references/browser-readiness.md`);
-neither restates it.
+`qa:prove-branch` reads this file (`../references/browser-readiness.md`) and does not restate
+it.
 
 ## Consent
 
@@ -123,7 +123,8 @@ memory, starts signed in from the scenario's `session.json`, and writes nothing 
 server runs headed unless the developer asks for headless, so the developer can watch.
 
 **When the skill dispatches drivers, one driver per flow means one isolated browser context per
-flow, loaded with that flow's role's session.** Confirm the connected server gives each driver its
+flow, loaded with the session file of each role and host the flow uses** — more than one when its
+sub-steps cross apps, each app on its own origin. Confirm the connected server gives each driver its
 own context. When it can give the session only one browser, two drivers would act in the same page,
 so dispatch the drivers one at a time, in flow order, and say why. A role whose session the server
 cannot load is a stop that names the role.

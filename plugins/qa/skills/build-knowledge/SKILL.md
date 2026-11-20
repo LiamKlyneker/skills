@@ -1,40 +1,36 @@
 ---
 name: build-knowledge
-description: Derive a page folder's `KNOWLEDGE.md` from the page's code — what the user sees and when, what the user can do and when, the data states behind both, and the open questions — in product words only; regenerate it without touching rows a human or a backend repo supplied; read locally cloned backend repos (`--repo <path>`) for the rules behind the page's yes-or-no permission reads; fill one answer on demand (`--fact "<question id>: <answer>"`); and, for named states only, search this app's code and its sibling apps' code for how each state is made, through the read-only `qa:qa-chain-searcher` agent, and write the chain into the file (`--chain S<n>...`), recording a sibling app the developer confirms in the adapter's *Sibling apps* row. It never runs the app, never signs in, never reads staging or `accounts.md`, and commits nothing. Invoke /qa:build-knowledge <page folder> [--repo <path>]... [--fact "Q<n>: <answer>" | --chain S<n>...].
+description: Derive a page folder's `KNOWLEDGE.md` from the page's code — what the user sees and when, what the user can do and when, the data states behind both, and the open questions — in product words only; regenerate it without touching rows a human or a backend repo supplied; read locally cloned backend repos (`--repo <path>`) for the rules behind the page's yes-or-no permission reads; and fill one answer on demand (`--fact "<question id>: <answer>"`). It never runs the app, never signs in, never reads staging or the project's QA folder, writes no file but the page's `KNOWLEDGE.md`, and commits nothing. Invoke /qa:build-knowledge <page folder> [--repo <path>]... [--fact "Q<n>: <answer>"].
 disable-model-invocation: true
 ---
 
 # build-knowledge
 
-**Derive what a page does, in a tester's words, from the page itself** — and, on demand for named
-states, how each of those states is made, from the code of the apps that make it. The output is the
+**Derive what a page does, in a tester's words, from the page itself.** The output is the
 page folder's `KNOWLEDGE.md`, whose format is [`knowledge-file.md`](../references/knowledge-file.md).
-Read that file first, every run: it is the only definition of the header, the five tables, their
+Read that file first, every run: it is the only definition of the header, the four tables, their
 columns, the origins, the no-code-words rule and the regenerate rule. This skill restates none of
 it, and where this skill and that file seem to disagree, that file wins.
 
-**This skill is the file's only writer.** `qa:setup-states` and `qa:prove-branch` read it, and each
-writes it only by applying one of this skill's modes as the command would: `qa:prove-branch` the
-update mode, `qa:setup-states` the chain mode.
+**This skill is the file's only writer.** `qa:prove-branch` reads it, and writes it only by
+applying this skill's update mode as the command would.
 
 **It reads code and nothing else.** It never runs the app, never signs in, never opens a browser,
-never reads staging, and **never reads or writes `accounts.md`** — that file is the observed layer
-and this skill observes nothing ([`accounts-file.md`](../references/accounts-file.md) → *Writers*).
-Every mode but one reads this repo and the backend repos passed, asks nothing, and dispatches no agent
-but the project explorer. **The chain mode is the exception, and only it**: it dispatches the read-only
-`qa:qa-chain-searcher` agent, which reads this repo and front-end app repos beside it, asks the
-developer one question before a sibling app is read, and writes the adapter's *Sibling apps* row
-besides `KNOWLEDGE.md`. No mode writes any other file, and none **commits anything**: no `git add`,
-no `git commit`, no change to an exclude file. Whether the file is tracked is the project's call.
+never reads staging, and **never reads or writes the project's QA folder** — its recipes and its
+made-items file describe staging, and this skill observes nothing
+([`made-items-file.md`](../references/made-items-file.md)).
+Every mode reads this repo and the backend repos passed, asks nothing, and dispatches no agent but
+the project explorer. No mode writes any file but `KNOWLEDGE.md`, and none **commits anything**: no
+`git add`, no `git commit`, no change to an exclude file. Whether the file is tracked is the
+project's call.
 
 ## Arguments
 
 | Argument | Meaning |
 |---|---|
 | `<page folder>` | required; the route folder whose `KNOWLEDGE.md` this run writes |
-| `--repo <path>` | optional, repeatable; a locally cloned backend repo to read for the rules behind first-kind questions (`## The backend read`). **In the chain mode** it is a front-end app repo instead, read in place of the folder beside this repo (`## Chain mode`). Its name, wherever the file or the adapter cites it, is the repo folder's name |
+| `--repo <path>` | optional, repeatable; a locally cloned backend repo to read for the rules behind open questions (`## The backend read`). Its name, wherever the file cites it, is the repo folder's name |
 | `--fact "<question id>: <answer>"` | optional; the update mode (`## Update mode`). It runs alone |
-| `--chain S<n>...` | optional; one or more state ids from `## States`, the chain mode (`## Chain mode`). It runs alone |
 
 Pick the mode from the arguments and the folder:
 
@@ -43,14 +39,8 @@ Pick the mode from the arguments and the folder:
 | `--fact` | present | **update** — `## Update mode`, nothing else |
 | `--fact` | absent | stop: there is no question to answer; print the derive command for the folder |
 | `--fact` with `--repo` | — | stop: the update mode runs alone; say so and print the two commands separately |
-| `--chain` | present | **chain** — `## Chain mode`, nothing else |
-| `--chain` | absent | stop: there are no states to search; print the derive command for the folder |
-| `--chain` with `--fact` | — | stop: each mode runs alone; say so and print the two commands separately |
-| neither | absent | **derive** — `## Deriving`, then `## The backend read` for each `--repo` |
-| neither | present | **regenerate** — `## Regenerate`, then `## The backend read` for each `--repo` |
-
-A derive, a regenerate and the update mode never search for a chain. The chain mode runs only when
-`--chain` names the states.
+| no `--fact` | absent | **derive** — `## Deriving`, then `## The backend read` for each `--repo` |
+| no `--fact` | present | **regenerate** — `## Regenerate`, then `## The backend read` for each `--repo` |
 
 **Stop** on a folder that does not exist, a `--repo` path that does not exist, or a folder that is
 not a page — one with no route entry file that the framework renders as a page. A knowledge file
@@ -61,18 +51,10 @@ a page.
 ## Project facts
 
 The project adapter at `<repo-root>/.claude/project/adapter.md` is optional for this skill. When it
-exists, read these from it and nothing else:
+exists, read `## Sources of truth` → the **project explorer agent** from it and nothing else, for help
+locating a component or a data client the page imports from far away. `Explore` where it says None.
 
-- `## Commands`, for where the project's end-to-end suite lives and how its data-creation commands
-  or tasks are registered. With no such row, search the repository for the suite.
-- `## Sources of truth` → the **project explorer agent**, for help locating a component or a data
-  client the page imports from far away. `Explore` where it says None.
-- `## QA` → the **Sibling apps** row, **in the chain mode only**: the front-end apps already known,
-  each with its label, repo folder name and staging URL. The chain mode is also this row's only
-  writer (`## Chain mode` → *Recording a sibling app*).
-
-No adapter row changes the format. The *Sibling apps* row is a source for one thing only, the label
-in the `App` cell of a chain row.
+No adapter row changes the format.
 
 ## What the run reads
 
@@ -83,17 +65,7 @@ in the `App` cell of a chain row.
 | the hooks and data clients those components read | which request each fact comes from, and which values the page reads from the server as a yes or no |
 | the feature-flag configuration | every flag a render condition reads, and its value per environment |
 | the folder's `CONTEXT.md` | the page's purpose, in the words the team uses |
-| the project's end-to-end suite | the **names** of its data-creation commands or tasks, for `Seeder (for a human)`. Nothing else in it is a source: a test asserting a behaviour is never a substitute for the condition in the page. Its specs are a permitted source for the order and the preconditions of a chain in `## How a state is made`, and for nothing else |
 | the current commit and today's date | `git rev-parse --short HEAD` and `date +%F`, for `Derived at:` |
-
-The chain mode reads none of the above except today's date. It reads:
-
-| Source | Read for |
-|---|---|
-| the page's `KNOWLEDGE.md` | the route, each named state's description, the rows that show it, the backend answers that name another system, and the chain rows already written |
-| the `qa:qa-chain-searcher` agent's report | the steps or the reason per state, each with a confidence, and the files it relied on. The agent, not this skill, reads the app repos: this repo first, then each sibling app the adapter lists or the developer confirms |
-| the adapter's *Sibling apps* row | the apps already known |
-| the names of the folders beside this repo, and each one's package manifest | whether a front-end app sits beside this one |
 
 It reads nothing else. Not the wider codebase, not documentation, not tickets, not a running app.
 
@@ -122,18 +94,12 @@ because the pass will trust it.
      The page answers it in full; write the rule itself into the cell, in product words.
    - **a yes or no the server answers** — the page reads a permission or eligibility value from a
      response and shows or hides on it. The page cannot say what the rule is. Write the cell as
-     "the app says the member may …", cite a first-kind question in brackets, and open that
+     "the app says the member may …", cite a question in brackets, and open that
      question.
 5. **Name the data states.** Every data condition the rows depend on is a state in `## States`,
    phrased as what is true of the data in user terms ("the team has a shelf archived more than 90
    days ago"). Cite the states in each row's `State` column, or `any` when the row shows whatever
    the data is.
-6. **Find a seeder hint per state** in the end-to-end suite: a command or task whose name says it
-   creates that data. Write its name in `Seeder (for a human)`, or `none known`. A hint is never a
-   default, and no skill runs it.
-7. **Ask of every state whether a tester can make it in this app, now.** A state that needs time
-   to pass (anything "more than N days ago"), is set in another application, or needs a payment
-   failure cannot be made that way. Each such state opens a second-kind question.
 
 **One row per section and one row per action**, the format's one-fact-per-row rule applied: a
 section that shows under two conditions with two different outcomes is two rows; a section whose one
@@ -150,8 +116,8 @@ the format would keep whole; a file far under it on a busy page has merged or sk
 
 ### Words
 
-Every cell is in product words, and the format's two exceptions are the only ones: `Seeder (for a
-human)` may name a command or task, and `Origin` may name a repo.
+Every cell is in product words, and the format's one exception is the only one: `Origin` may name a
+repo.
 
 Translate as you write, never after. The condition `plan.permissions.can_cancel` is "the app says
 the member may cancel this plan"; `invoice.days_late > 30` is "an invoice is more than 30 days
@@ -160,43 +126,33 @@ plans". A visible label is a product word — quote the text the user sees.
 
 **Name a thing with the word the page shows for it, every time.** When the page's own text calls
 something a loan, every cell calls it a loan — in a rule the backend read writes too — never a
-synonym the page does not use. One thing, one word, across the five tables.
+synonym the page does not use. One thing, one word, across the four tables.
 
-**Before writing the file, check every cell** outside `Seeder (for a human)` and `Origin` for an
+**Before writing the file, check every cell** outside `Origin` for an
 identifier's shape — camelCase, snake_case, a joined capitalised name, a constant in capitals, a
 file name or extension, a path in the codebase, a backticked term — and paraphrase each one you
-find. A seeder cell names the command or task and never the file it is registered in.
+find.
 
 ### Open questions
 
-**Exactly two kinds, and nothing else is a question:**
-
-1. **A backend rule the page reads as a yes or no** — opened for every condition step 4 classified
-   as server-answered. One question per distinct permission or eligibility value, cited in brackets
-   in every cell that depends on it.
-2. **A staging fact no repo holds** — opened for every state that cannot be made quickly in the app
-   itself: one that needs time to pass, one set in another application, one that needs a payment
-   failure. The question asks which team, org or account on staging holds it.
+**Exactly one kind, and nothing else is a question: a backend rule the page reads as a yes or no.**
+It is opened for every condition step 4 classified as server-answered. One question per distinct
+permission or eligibility value, cited in brackets in every cell that depends on it. Which item, team,
+org or account on staging holds a state is never a question: the project's recipes make the data a
+state needs.
 
 **Phrase each question as the fact being asked for, never as a question about the page.**
 
-- A first-kind question names the rule: "What rule decides whether a member may archive a shelf?
-  The page only asks the app yes or no." It uses the verb on the control's own label — purge, not
-  "permanently delete" — and never reads "whether the app lets …", which asks what the page does.
-- A second-kind question names the holder: "Which team on staging has a shelf archived more than
-  90 days ago?"
+A question names the rule: "What rule decides whether a member may archive a shelf? The page only
+asks the app yes or no." It uses the verb on the control's own label — purge, not "permanently
+delete" — and never reads "whether the app lets …", which asks what the page does.
 
 A question about what the page shows is not open: the page answers it, so derive it. A question
 about why a rule exists is not open: the file records what, never why.
 
-`Blocks` names state ids and nothing else — never `any`, never `—`. A second-kind question blocks
-the state it asks for. A first-kind question blocks the states in the `State` cells of the rows
-that cite it; where every such row reads `any`, the control shows whatever the data is, so it blocks
-every state in `## States`. `Answer` and `Origin` read `—`.
-
-**Both kinds are checked on every page.** Step 4 opens the first kind and step 7 the second; a file
-whose states include one that needs time, another application or a payment failure, with no
-second-kind question for it, is incomplete.
+`Blocks` names state ids and nothing else — never `any`, never `—`. A question blocks the states in
+the `State` cells of the rows that cite it; where every such row reads `any`, the control shows
+whatever the data is, so it blocks every state in `## States`. `Answer` and `Origin` read `—`.
 
 **A page that reads a permission from the server and ends with no open questions has guessed.**
 Recheck step 4 before writing such a file.
@@ -210,14 +166,9 @@ from the page and its `CONTEXT.md` in one user-words sentence, `Derived at:` fro
 date read above, `Environment:` from any render condition that reads the environment, stated as a
 fact, or `none`. No `Backend read:` line unless `## The backend read` ran.
 
-**`Known account` is `none known` on every state this skill creates.** This skill never reads
-`accounts.md`, so it cannot know otherwise. The format says `accounts.md` wins wherever the two
-disagree, so the cell is a pointer the readers resolve, never a fact this skill establishes.
-
 ## The backend read
 
-Runs after a derive or a regenerate, once per `--repo`, for every **first-kind** question whose
-`Answer` is `—`. Second-kind questions are never answered from a repo: no repo holds staging data.
+Runs after a derive or a regenerate, once per `--repo`, for every question whose `Answer` is `—`.
 
 For each such question:
 
@@ -259,8 +210,7 @@ section says how, never what.
 4. **Replace every derived row** with the newly derived rows that matched no kept row. A newly
    derived row that states the same fact as an old derived row is written in the old row's words,
    so a regenerate changes the text only where the code changed. A derived row the code no longer
-   supports is removed. A derived state row keeps its old `Known account` cell when it matches an
-   old state, since this skill has no source for that cell.
+   supports is removed.
 5. **Reconcile ids** as the format says: a state or question that still exists keeps its id — an
    unanswered question re-derived in step 2 is the same question when it asks about the same
    permission or the same staging fact, and takes the old id, never a fresh one by order — a new
@@ -269,10 +219,11 @@ section says how, never what.
 6. **Re-derive `Derived at:`**. Every other header line stays as it was unless this run's derivation
    or backend read changed it.
 
-**Chain rows are kept rows.** Every row of `## How a state is made` carries an origin other than
-exactly `code`, so step 1 sorts all of them as kept and step 3 writes them back byte for byte. Step 5
-rewrites a renumbered state id in their `State` cell and changes nothing else in them. A derive or a
-regenerate never searches for a chain and never adds, removes or reorders a chain row.
+**A file without the four-table shape** (`../references/knowledge-file.md` → `## Regenerate`) is
+sorted in step 1 after the shape's removals: its `## How a state is made` table, its `Known account`
+and `Seeder (for a human)` cells, its `Apps read:` line and its questions about which item on staging
+holds a state are dropped, and the remaining kept rows are written into the four tables unchanged.
+The print names what was dropped.
 
 **Open questions never block a regenerate.** A kept row the new code contradicts stays as it is;
 print it under the run's summary as a row for a human to check, and do not change it.
@@ -293,158 +244,26 @@ print it under the run's summary as a row for a human to check, and do not chang
 An answered question can be answered again; the new answer replaces the old one in the same cells
 and the origin's date moves.
 
-## Chain mode
-
-`--chain S<n>...` finds out how each named state is made and writes the answer into the file's
-`## How a state is made` table. It touches nothing else: no derivation, no regenerate, no backend
-read, no other row, not `Derived at:`, no id.
-
-### Before the search
-
-1. **Stop** when an id is not in `## States`, and print the ids that exist.
-2. **Read the file** for the route and, per named state, its description, the rows of `## What the
-   user sees` and `## What the user can do` that cite it, and every backend answer that names
-   another system.
-3. **List the repos to read, this repo first.** This repo is `this app`. Then each app the adapter's
-   *Sibling apps* row lists, at its folder beside this repo — the folder with the row's folder name
-   in this repo's parent folder — or at a `--repo` path whose folder name matches. A listed app
-   whose folder is in neither place is not read; the print names it. A `--repo` path that matches no
-   listed app is read too: the developer named it, and that is the agreement to read it. It is
-   labelled by its folder name, and the question below, when the run asks one, also offers to
-   record it, with `--repo` as its evidence.
-
-### The search
-
-**Dispatch one `qa:qa-chain-searcher` agent** with the named states, each with its id, its
-description, the rows that cite it and the route, and the repos listed above, each with its absolute
-path and label. The agent writes nothing and runs nothing; this skill turns its report into rows.
-
-The type is **`subagent_type: qa:qa-chain-searcher`**, always with the `qa:` prefix. A
-`subagent_type` that does not resolve raises no error: the call runs as `general-purpose`, which
-carries neither the agent's model pin nor its tool denials. Pass no `model`; the agent pins its own.
-
-### Sibling apps
-
-A state whose report reads `not found`, or whose chain stops at a step the agent placed `elsewhere`,
-may be made in an app not read yet. **Look for evidence of one in three places:**
-
-- a backend answer in the file that names another system;
-- an origin this app links to, from the agent's `elsewhere` lines;
-- a front-end repo in the folder beside this one: a folder whose package manifest names a web
-  framework, not yet listed in the *Sibling apps* row.
-
-Then **ask the developer one question**, once per run, covering every open state:
-
-- **for each app with evidence**: the evidence, quoted; the label proposed for it; its repo folder
-  name; and the staging URL proposed from the origin this app links to, or a request for one when no
-  link names it. The developer answers yes, no, or a correction to any of the three values.
-- **for each state with no evidence**: which repo makes it, as a path, or "none".
-
-Never read an app the developer did not agree to. On a yes or a path, dispatch the agent once more,
-for the states still open, with this repo first and each agreed app after it. On "none", or a no,
-the state ends with result 3 below.
-
-### Recording a sibling app
-
-On a yes, write the app into the adapter's `## QA` section, on the *Sibling apps* row, as the
-template gives it: the label, the repo folder name and the confirmed staging URL. Add the row when
-it is absent, and add an entry to it when it is present; never change or remove an entry. **The row
-holds no path on disk**: a path the developer gave is read in this run only, and a later run finds the
-folder beside this repo or takes it from `--repo`. An app given as a path is recorded only when the
-developer gave its staging URL in the same answer; its label is the folder name. A search writes no
-role: the roles a tester uses in the app are added by *Recording a sibling app's role*. With no
-adapter, or one with no `## QA` section, write no row, and print the entry the developer confirmed.
-
-### Recording a sibling app's role
-
-The role a tester signs in as in a sibling app is added to that app's entry **when a run first needs
-to sign in to that app** as that role. A search never signs in, so this write is never part of a
-`--chain` run: `qa:setup-states` applies this subsection when it signs in to a sibling app
-(`## Signing in` → *Signing in to a sibling app*), and nothing else writes it.
-
-- The role is a label of the *Credential environment variables* row, written unquoted as that row
-  writes it. A label the row does not list is never written.
-- The entry gains `, roles: <label>` after its staging URL the first time, and each later role is
-  added to that list as `, <label>`, in the order the runs needed them, as the template gives it.
-- A label belongs to one app: a label another entry already lists is never written, and the run
-  that needed it stops and names both apps.
-- **Add only.** Never change or remove an entry's label, folder name, staging URL or a role it
-  already lists, and never touch another entry or another row. An entry that already lists the role
-  is left as it is.
-- With no *Sibling apps* entry for the app, write nothing: the app is recorded by a search first.
-
-### Writing the rows
-
-Each named state ends in **one of three results, and all three are written**:
-
-1. **A chain** — the agent reported `chain`: one row per step, `Step` 1, 2, …
-2. **A step `none` row** — the agent reported `no path`: the code proves no tester path exists.
-   `Action` holds the reason in user words.
-3. **A step `none` row ending `(likely)`** — every search ended `not found`, or the developer
-   answered "none": `Action` reads that no tester path was found in the repos read, names them, and
-   ends with ` (likely)`.
-
-Turn each reported step into product words, by the format and `## Deriving` → *Words*:
-
-- `App` is `this app` or the app's label from the *Sibling apps* row; `Role` is the role in user
-  words; `Screen` is the screen's name as the user sees it and its route; `Action` names the
-  control by its quoted label and quotes each input; `Result the user sees` is what confirms the
-  step. A reported code word is paraphrased, never copied.
-- A cell the agent marked `likely`, and a cell only an end-to-end spec supports (`spec only`), ends
-  with ` (likely)`.
-- **Every row's `Origin` is `app-repo (<repo name>)`**, the folder name of the repo the step was
-  read in, this repo's own included. A result-3 row carries one `app-repo` origin per repo read,
-  comma-separated.
-- The cells of a step `none` row that do not apply read `—`.
-
-Then write the file:
-
-- **Replace each named state's rows** — remove every row whose `State` is a named id, then add the
-  new ones. A second run for a state never duplicates its rows. Rows of states not named stay byte
-  for byte.
-- **Add `## How a state is made`** after `## States` the first time a row is written to a four-table
-  file. Rows sort by state id, then step.
-- **The header gains or extends `Apps read: <repo name>, … · <YYYY-MM-DD>`**: every repo this run
-  read, added to the names already there, with today's date. It sits after `Backend read:` when
-  that line exists, after `Environment:` otherwise.
-
 ## The print
 
 End every run with:
 
 - the path written and the mode run;
 - the count of rows per table, and of rows kept byte-intact on a regenerate;
-- **every renumbered state id**, old → new, since `accounts.md` rows cite state ids and this skill
-  never writes that file;
+- **every renumbered state id**, old → new;
 - **every open question that remains**, one line each, with its id, the question, and **who or what
   can answer it**. A question the backend read answered only as far as the passed repos go remains,
   even with its `Answer` cell filled:
-  - a first-kind question whose rule lives in a repo not passed → that repo by name, as `--repo`;
-  - a first-kind question no passed repo could place → the developer, as the `--fact` command;
-  - a second-kind question → the staging org: print `/qa:setup-states` with the state ids it
-    blocks, literally, so the developer can run it.
-
-The chain mode prints, in place of the counts and the questions:
-
-- **each named state's result** — a chain of how many steps, through which apps; no tester path,
-  with the reason; or no path found, with the repos read;
-- the `Apps read:` line as written;
-- the *Sibling apps* entry written to the adapter, or the entry the developer confirmed when no row
-  could be written, or nothing. A search writes no role into an entry;
-- each listed sibling app that was not read because its folder is neither beside this repo nor
-  passed as `--repo`, with the `--chain` command that passes it.
+  - a question whose rule lives in a repo not passed → that repo by name, as `--repo`;
+  - a question no passed repo could place → the developer, as the `--fact` command.
 
 ## Never
 
 - Never run the app, sign in, drive a browser, call an API, or read staging.
-- Never read or write `accounts.md`.
-- Never run a seeder or any end-to-end command.
-- Never write any file but the page folder's `KNOWLEDGE.md`, and the adapter's *Sibling apps* row in
-  the chain mode, and never commit. Never write into a sibling repo.
-- Never search for a chain outside the chain mode, and never for a state `--chain` did not name.
-- Never read a sibling app the developer did not agree to, never dispatch any agent but
-  `qa:qa-chain-searcher` in the chain mode, and never change or remove an entry of the *Sibling apps*
-  row or a role it lists: an entry only gains roles, by *Recording a sibling app's role*.
-- Never write a row not traced to a condition, and never a code word outside the two allowed columns.
+- Never read or write the project's QA folder.
+- Never write any file but the page folder's `KNOWLEDGE.md`, never write the adapter, and never
+  commit.
+- Never dispatch any agent but the project explorer.
+- Never write a row not traced to a condition, and never a code word outside the `Origin` column.
 - Never rewrite a row whose origin is not exactly `code`, except a renumbered id in it, the
-  cells `--fact` and the backend read propagate into, or the rows of a state `--chain` names.
+  cells `--fact` and the backend read propagate into, and what an old-shape file drops.

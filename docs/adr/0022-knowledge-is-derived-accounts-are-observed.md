@@ -1,10 +1,12 @@
 # ADR 0022 — Knowledge is derived, accounts are observed
 
-- **Status**: Accepted
+- **Status**: Accepted, amended by ADR [0028](0028-setup-states-may-create-data-under-write-rules.md) and ADR [0029](0029-test-data-is-made-on-demand-from-recipes.md)
 - **Date**: 2026-10-27
 - **Context**: PRD #237, implemented from #238 on
 - **Amended**: 2026-11-11 — by ADR [0028](0028-setup-states-may-create-data-under-write-rules.md), on
   the clause "The pass never creates data" only: `setup-states` may create data under write rules.
+- **Amended**: 2026-11-20 — by ADR [0029](0029-test-data-is-made-on-demand-from-recipes.md), on the same
+  clause: `prove-branch` makes its start data on demand from recipes.
 
 ## Context
 

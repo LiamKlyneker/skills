@@ -71,6 +71,7 @@ couldn't finish.
 | `prd-qa` | The QA loop run against a PRD branch before merge — `triage`, the sixth skill the `prd-workflow` plugin ships |
 | `grill` | The interviews that run *before* either loop — `grill` inline on one thread, `deep-grill` with recon subagents and hard gates. Two more `lk` skills; only `deep-grill` reads the adapter, so `## Sources of truth` is the whole of this bundle's interview |
 | `figma-tools` | Design → brief — the `figma-tools` plugin |
+| `qa` | The automated QA pass — `build-knowledge`, `setup-env` and `prove-branch`, the three skills the `qa` plugin ships beside `setup`. Run `/qa:setup` once, `/qa:setup-env` once, then `/qa:prove-branch` on each branch |
 
 Definitions live in [`install/bundles.md`](install/bundles.md); a bundle names the adapter
 sections a set of skills needs filled, not the skills themselves. Bundle and plugin are

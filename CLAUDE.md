@@ -64,10 +64,11 @@ paraphrased differently on each run isn't one. ADR
 lab:` exists only in a library repo that has a lab: `/figma-tools:create-ui-component-lab` writes
 it when it installs one, and `/figma-tools:design-component` reads it and follows its `guide:`
 to turn a design brief into a proposed component the user steers in the lab; absent means there is
-no lab. `## QA` → `Sibling apps` lists the other front-end apps of a product: `qa:build-knowledge`'s
-chain mode writes an app into it when a developer confirms one during a search, and
-`qa:setup-states` adds a role to an app through that mode's definition; absent means no sibling app
-is known. `setup` never asks for either row and never treats its absence as a gap.
+no lab. `## QA` → `Sibling apps` lists the other front-end apps of a product: `qa:prove-branch`'s
+recipe learner writes an app into it the first time a recipe needs that app, after the developer
+confirms it, and `qa:prove-branch` adds a role to an app the first time a run signs in to it;
+`qa:setup-env` applies those same sections of `prove-branch` and writes the row by them alone; absent
+means no sibling app is known. `setup` never asks for either row and never treats its absence as a gap.
 
 **A skill ships a script for that reason and no other: the job is mechanical and must produce
 the same answer twice.** Three do, today. The second is

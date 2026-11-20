@@ -55,10 +55,12 @@ It resolves the repo and its remote, copies the adapter template if there isn't 
 already, interviews you for the facts no file in your repo states, offers any gate the
 bundle declares, and finishes by running `doctor`. Two adapter rows are written by a skill and never
 asked: `## Design system` → `UI component lab`, which `figma-tools:create-ui-component-lab` writes,
-and `## QA` → `Sibling apps`, which `qa:build-knowledge`'s chain mode writes when a developer
-confirms an app during a search. `## QA` → `Staging writes` is the opposite: `/qa:setup` asks it once,
-as a yes or no, because whether `qa:setup-states` may make a state on staging is a project decision,
-never one granted in the middle of a run. Bundles are defined in
+and `## QA` → `Sibling apps`, which `qa:prove-branch`'s recipe learner writes when a recipe first
+needs an app and the developer confirms it. `## QA` → `Staging writes` is the opposite: `/qa:setup` asks it once,
+as a yes or no, because whether `qa:prove-branch` may make an item on staging is a project decision,
+never one granted in the middle of a run. The same section's `Staging URL` and `QA folder` rows are
+asked once each: the app's staging base URL, and the folder that holds the project's recipes and
+made-items file, which defaults to `.claude/project/qa/` and receives no file from `setup`. Bundles are defined in
 [`bundles.md`](bundles.md) — `prd-workflow`, `ado-workflow`, `prd-qa`, `ado-qa`, `qa`,
 `grill`, `figma-tools` — and a bundle names adapter sections, not skills.
 
