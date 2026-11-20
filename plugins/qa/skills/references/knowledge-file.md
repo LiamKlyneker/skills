@@ -7,10 +7,8 @@ file, written in user words only.
 
 Three skills share it: **`qa:build-knowledge` is its only writer** — it derives the file, regenerates
 it, fills one answer on demand, and writes the chain rows of named states on demand.
-**`qa:setup-states` and `qa:prove-branch` read it, and each writes it only through one of
-`build-knowledge`'s modes**: `qa:prove-branch` applies the update mode when a developer answers an
-open question during a run, and `qa:setup-states` applies the chain mode when a developer accepts
-the search offer. Neither derives or regenerates a row. This file is the only definition of the format. No skill
+**`qa:prove-branch` reads it, and writes it only through `build-knowledge`'s update mode**, when a
+developer answers an open question during a run. It never derives or regenerates a row. This file is the only definition of the format. No skill
 restates a column list; each points here
 (`../references/knowledge-file.md`). No project edits the format.
 
@@ -102,9 +100,9 @@ words. `Result the user sees` is what changes on screen, in user words.
 
 - `Id` runs `S1`, `S2`, … with no gaps.
 - `Env` is `staging`, `prod` or `both`.
-- `Known account` reads `accounts.md` when that file holds a row for this page and state, or
-  `none known`. It is a pointer and never a copy: the proving ids live only in `accounts.md`, whose
-  format is [`accounts-file.md`](accounts-file.md). When the two disagree, `accounts.md` wins.
+- `Known account` reads `none known`. No skill resolves it: the data a flow starts from is
+  resolved through the project's recipes and made-items file
+  ([`made-items-file.md`](made-items-file.md)), never by a state id.
 - `Seeder (for a human)` names the project's own data-creation command or task as a hint for a
   human, or `none known`. No skill runs it. It is the fast path for a state this app cannot make on
   its own — one set in another application, one that needs time to pass, one that needs a payment
@@ -121,8 +119,7 @@ The ordered steps a tester follows to make a state that staging does not hold. O
 - `Role` is the role in user words, matched to a role label of the project when a step is performed.
 - `Screen` holds the screen's name and its route. `Action` names the control by its label and
   quotes each input. `Result the user sees` is what confirms the step worked.
-- The table has no closing "look at the page" step: recognising the state is `setup-states`' own
-  observation.
+- The table has no closing "look at the page" step.
 - **A row with step `none`** records that a tester cannot make the state. Its `Action` cell holds
   the reason in user words, ending `(likely)` when a search found no answer and not a proof; the
   cells that do not apply read `—`.
@@ -215,7 +212,7 @@ A run of `build-knowledge` on a page that already has a `KNOWLEDGE.md` regenerat
   still exists keeps its id, a new one takes the next free id, and when a removal leaves a gap the
   ids are renumbered and **every cell in the file that cites one is rewritten to match** — the
   `State` column, `Blocks`, and the bracketed question ids in a condition. A renumbered state id is
-  printed, since `accounts.md` rows cite state ids and `build-knowledge` never writes that file.
+  printed.
 - **Every row of `## How a state is made` stays.** A chain row never has the origin `code`, so the
   rule above keeps it byte-intact. A renumbered state id is rewritten in the `State` cell of chain
   rows, as in every other cell that cites it. A derive or a regenerate never searches for a chain.

@@ -2,8 +2,8 @@
 
 What a `qa` skill confirms before it drives a real browser: the consent the adapter records, the
 HTTP Basic Auth in front of the preview, and that the Playwright MCP tools are in the session.
-`qa:prove-branch` and `qa:setup-states` both read this file (`../references/browser-readiness.md`);
-neither restates it.
+`qa:prove-branch` reads this file (`../references/browser-readiness.md`) and does not restate
+it.
 
 ## Consent
 

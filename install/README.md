@@ -57,7 +57,7 @@ bundle declares, and finishes by running `doctor`. Two adapter rows are written 
 asked: `## Design system` → `UI component lab`, which `figma-tools:create-ui-component-lab` writes,
 and `## QA` → `Sibling apps`, which `qa:build-knowledge`'s chain mode writes when a developer
 confirms an app during a search. `## QA` → `Staging writes` is the opposite: `/qa:setup` asks it once,
-as a yes or no, because whether `qa:setup-states` may make a state on staging is a project decision,
+as a yes or no, because whether `qa:prove-branch` may make an item on staging is a project decision,
 never one granted in the middle of a run. The same section's `Staging URL` and `QA folder` rows are
 asked once each: the app's staging base URL, and the folder that holds the project's recipes and
 made-items file, which defaults to `.claude/project/qa/` and receives no file from `setup`. Bundles are defined in

@@ -1,6 +1,6 @@
 ---
 name: build-knowledge
-description: Derive a page folder's `KNOWLEDGE.md` from the page's code — what the user sees and when, what the user can do and when, the data states behind both, and the open questions — in product words only; regenerate it without touching rows a human or a backend repo supplied; read locally cloned backend repos (`--repo <path>`) for the rules behind the page's yes-or-no permission reads; fill one answer on demand (`--fact "<question id>: <answer>"`); and, for named states only, search this app's code and its sibling apps' code for how each state is made, through the read-only `qa:qa-chain-searcher` agent, and write the chain into the file (`--chain S<n>...`), recording a sibling app the developer confirms in the adapter's *Sibling apps* row. It never runs the app, never signs in, never reads staging or `accounts.md`, and commits nothing. Invoke /qa:build-knowledge <page folder> [--repo <path>]... [--fact "Q<n>: <answer>" | --chain S<n>...].
+description: Derive a page folder's `KNOWLEDGE.md` from the page's code — what the user sees and when, what the user can do and when, the data states behind both, and the open questions — in product words only; regenerate it without touching rows a human or a backend repo supplied; read locally cloned backend repos (`--repo <path>`) for the rules behind the page's yes-or-no permission reads; fill one answer on demand (`--fact "<question id>: <answer>"`); and, for named states only, search this app's code and its sibling apps' code for how each state is made, through the read-only `qa:qa-chain-searcher` agent, and write the chain into the file (`--chain S<n>...`), recording a sibling app the developer confirms in the adapter's *Sibling apps* row. It never runs the app, never signs in, never reads staging or the project's QA folder, and commits nothing. Invoke /qa:build-knowledge <page folder> [--repo <path>]... [--fact "Q<n>: <answer>" | --chain S<n>...].
 disable-model-invocation: true
 ---
 
@@ -13,13 +13,13 @@ Read that file first, every run: it is the only definition of the header, the fi
 columns, the origins, the no-code-words rule and the regenerate rule. This skill restates none of
 it, and where this skill and that file seem to disagree, that file wins.
 
-**This skill is the file's only writer.** `qa:setup-states` and `qa:prove-branch` read it, and each
-writes it only by applying one of this skill's modes as the command would: `qa:prove-branch` the
-update mode, `qa:setup-states` the chain mode.
+**This skill is the file's only writer.** `qa:prove-branch` reads it, and writes it only by
+applying this skill's update mode as the command would.
 
 **It reads code and nothing else.** It never runs the app, never signs in, never opens a browser,
-never reads staging, and **never reads or writes `accounts.md`** — that file is the observed layer
-and this skill observes nothing ([`accounts-file.md`](../references/accounts-file.md) → *Writers*).
+never reads staging, and **never reads or writes the project's QA folder** — its recipes and its
+made-items file describe staging, and this skill observes nothing
+([`made-items-file.md`](../references/made-items-file.md)).
 Every mode but one reads this repo and the backend repos passed, asks nothing, and dispatches no agent
 but the project explorer. **The chain mode is the exception, and only it**: it dispatches the read-only
 `qa:qa-chain-searcher` agent, which reads this repo and front-end app repos beside it, asks the
@@ -210,9 +210,8 @@ from the page and its `CONTEXT.md` in one user-words sentence, `Derived at:` fro
 date read above, `Environment:` from any render condition that reads the environment, stated as a
 fact, or `none`. No `Backend read:` line unless `## The backend read` ran.
 
-**`Known account` is `none known` on every state this skill creates.** This skill never reads
-`accounts.md`, so it cannot know otherwise. The format says `accounts.md` wins wherever the two
-disagree, so the cell is a pointer the readers resolve, never a fact this skill establishes.
+**`Known account` is `none known` on every state this skill creates.** No skill resolves the cell:
+the data a flow starts from is resolved through the project's QA folder, never by a state id.
 
 ## The backend read
 
@@ -359,8 +358,8 @@ adapter, or one with no `## QA` section, write no row, and print the entry the d
 
 The role a tester signs in as in a sibling app is added to that app's entry **when a run first needs
 to sign in to that app** as that role. A search never signs in, so this write is never part of a
-`--chain` run: `qa:setup-states` applies this subsection when it signs in to a sibling app
-(`## Signing in` → *Signing in to a sibling app*), and nothing else writes it.
+`--chain` run: `qa:prove-branch` applies this subsection when it signs in to a sibling app
+(`## Scenarios` → *A session for each host*), and nothing else writes it.
 
 - The role is a label of the *Credential environment variables* row, written unquoted as that row
   writes it. A label the row does not list is never written.
@@ -414,15 +413,13 @@ End every run with:
 
 - the path written and the mode run;
 - the count of rows per table, and of rows kept byte-intact on a regenerate;
-- **every renumbered state id**, old → new, since `accounts.md` rows cite state ids and this skill
-  never writes that file;
+- **every renumbered state id**, old → new;
 - **every open question that remains**, one line each, with its id, the question, and **who or what
   can answer it**. A question the backend read answered only as far as the passed repos go remains,
   even with its `Answer` cell filled:
   - a first-kind question whose rule lives in a repo not passed → that repo by name, as `--repo`;
   - a first-kind question no passed repo could place → the developer, as the `--fact` command;
-  - a second-kind question → the staging org: print `/qa:setup-states` with the state ids it
-    blocks, literally, so the developer can run it.
+  - a second-kind question → the developer, as the `--fact` command.
 
 The chain mode prints, in place of the counts and the questions:
 
@@ -437,7 +434,7 @@ The chain mode prints, in place of the counts and the questions:
 ## Never
 
 - Never run the app, sign in, drive a browser, call an API, or read staging.
-- Never read or write `accounts.md`.
+- Never read or write the project's QA folder.
 - Never run a seeder or any end-to-end command.
 - Never write any file but the page folder's `KNOWLEDGE.md`, and the adapter's *Sibling apps* row in
   the chain mode, and never commit. Never write into a sibling repo.

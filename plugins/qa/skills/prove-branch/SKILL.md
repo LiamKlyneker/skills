@@ -1,6 +1,6 @@
 ---
 name: prove-branch
-description: Run the automated QA pass on the checked-out branch of a web project — resolve the ticket, the pull request and the preview deployment from the branch alone, read the acceptance criteria from the highest product source the branch reaches and the touched pages' KNOWLEDGE.md, start every flow from a state the project's accounts.md already holds — stopping with the one command to run, `/qa:build-knowledge` or `/qa:setup-states`, where either file falls short, and never creating data — drive and grade flows against the preview, and post one receipt to the ticket, or to the pull request when the branch names no ticket; it stops with a question wherever the branch is ambiguous, and on a failure asks fix now or file. Runs on user invocation only; neither loop ever invokes it. Invoke /qa:prove-branch with no argument, in a fresh session on the implemented branch.
+description: Run the automated QA pass on the checked-out branch of a web project — resolve the ticket, the pull request and the preview deployment from the branch alone, read the acceptance criteria from the highest product source the branch reaches and the touched pages' KNOWLEDGE.md, stopping with `/qa:build-knowledge` where a touched page has none; resolve the data each flow starts from, in user words, to an item an earlier run made or one a recipe in the project's QA folder makes now, and after one approval gate make those items on staging through one arrange driver at a time, in `Needs` order, under five write rules and with no cleanup; drive and grade flows against the preview, record every item made in the QA folder's made-items file, and post one receipt that lists them to the ticket, or to the pull request when the branch names no ticket; it stops with a question wherever the branch is ambiguous, and on a failure asks fix now or file. Runs on user invocation only; neither loop ever invokes it. Invoke /qa:prove-branch with no argument, in a fresh session on the implemented branch.
 disable-model-invocation: true
 ---
 
@@ -14,14 +14,16 @@ does not say exactly one thing, the skill **stops and asks**; it never guesses.
 
 **It is an external tester.** It writes nothing into the project under test: no test ids, no spec
 files, no fixtures, no configuration, no feature-flag overrides committed anywhere, no app code. The
-project is the same after a run as before it. What a run produces lives on the tracker, never in
-the tree. The one change a pass can lead to is a fix-now commit the developer asks for after
-grading, which a worker makes (`## On a Fail`).
+project's tracked tree is the same after a run as before it. What a run produces lives on the
+tracker and in folders git excludes. The one change a pass can lead to is a fix-now commit the
+developer asks for after grading, which a worker makes (`## On a Fail`).
 
-**It never creates data.** It reads what the project already knows — each touched page's
-`KNOWLEDGE.md` and the project's `accounts.md` — and starts every flow from a state those files
-name. Where they fall short it stops and names the one command that fills the gap. Its only writes
-to either file are a developer's own answers, written back (`### Write-backs`), so no run asks the
+**It makes the data a flow starts from, and only after the gate.** It reads what the project
+already knows — each touched page's `KNOWLEDGE.md`, and the recipes and the made-items file in the
+project's QA folder — and starts every flow from an item an earlier run made, or from one a recipe
+makes now on staging (`## Arranging`). An arrange driver makes each item under the write rules of
+`## Driving` → *The write rules*, and the receipt lists every item the run made. Its only writes to a
+knowledge file are a developer's own answers, written back (`### Write-backs`), so no run asks the
 same thing twice.
 
 **It runs on user invocation only.** Neither `work-on-prd` nor `work-on-spec` invokes it, and
@@ -51,7 +53,10 @@ From `## QA`, by row name:
 |---|---|
 | *Session method* | how a flow signs in — `api` against the endpoint written after the value, or `manual` |
 | *Credential environment variables* | per role, the **names** of the variables holding its username and password. Read them from the backticked tokens: roles are unquoted labels separated by ` · `, each followed by `→` and two backticked variable names, and everything after the em dash is guidance. The skill reads only names here and **never reads a credential value from the adapter** |
-| *Known accounts* | the path of the project's `accounts.md`; `<repo-root>/.claude/project/accounts.md`, beside the adapter, when the row is absent |
+| *Staging URL* | the base URL of this app's staging environment, where an arrange driver makes an item of this app (`## Arranging`) |
+| *QA folder* | the folder that holds the project's recipes and its made-items file; `.claude/project/qa/`, beside the adapter, when the row is absent (`### The QA folder`) |
+| *Staging writes* | optional: `yes` or `no`; absent or any other value reads as `no`. Only `yes` lets a run make an item on staging (`### Resolve each flow's data`) |
+| *Sibling apps* | optional: the other apps of the product, each with its staging URL and the roles that belong to it (`### Which role and which app`) |
 | *Preview URL pattern* | how the pull request's preview deployment URL is formed, or `pr-comment` — read in `## The target` |
 | *Preview basic auth* | optional: the **names** of the two variables holding the HTTP Basic Auth in front of the preview — read as [`browser-readiness.md`](../references/browser-readiness.md) → *Preview Basic Auth* says |
 | *Feature-flag override* | how one session turns a flag on or off, or `none` |
@@ -384,10 +389,11 @@ Once the run, the target and the criteria are resolved, print them before compos
 
 ## Knowledge
 
-Before composing, read what the project knows about the pages the branch touches. The two formats
-are defined once, in [`knowledge-file.md`](../references/knowledge-file.md) and
-[`accounts-file.md`](../references/accounts-file.md); read both, and where this skill and either
-file seem to disagree, that file wins.
+Before composing, read what the project knows about the pages the branch touches and the items it
+can make. The three formats are defined once, in [`knowledge-file.md`](../references/knowledge-file.md),
+[`recipe-file.md`](../references/recipe-file.md) and
+[`made-items-file.md`](../references/made-items-file.md); read all three, and where this skill and
+one of those files seem to disagree, that file wins.
 
 ### The touched page folders
 
@@ -410,20 +416,38 @@ yourself**: deriving a page writes a file into the tree, and that is the develop
 run. This skill writes to a knowledge file only through `### Write-backs`. No driver starts, and no
 receipt is posted, since nothing was tested.
 
-### `accounts.md`
+### The QA folder
 
-Find it through the adapter's *Known accounts* row, or beside the adapter when the row is absent.
-Read its `## Orgs` and `## States` tables; `## Preparing states` resolves flows against them. **A
-missing `accounts.md` is a stop** once a composed flow starts from a state: it prints `/qa:setup`,
-which writes the empty file, and nothing else is written or asked.
+Find it through the adapter's *QA folder* row, a path relative to the repo root, or at
+`.claude/project/qa/` beside the adapter when the row is absent. Read every recipe file in it and
+its `made-items.md`; `## Arranging` resolves flows against them. **A missing folder, a folder with
+no recipe, and a missing `made-items.md` are not stops**: the project then holds no recipe or no
+made item yet, and a flow that needs one resolves as `### Resolve each flow's data` says.
+
+**Before the first write into the folder, exclude it**, as `## Scenarios` → *The scenario directory*
+excludes that directory, with `<qa-folder>` the folder's path relative to the repo root:
+
+```bash
+exclude="$(git rev-parse --git-path info/exclude)"
+grep -qxF '/<qa-folder>/' "$exclude" 2>/dev/null || printf '/<qa-folder>/\n' >> "$exclude"
+```
+
+Never add the line to `.gitignore` instead. Then create the folder when it is missing, write
+`made-items.md` with the format's heading and empty table when it is missing, and confirm
+`git check-ignore -q <qa-folder>/made-items.md` succeeds. If it fails, say so and stop before any
+arrange driver starts. The skill writes the exclude line without asking, and says that it did.
+
+The run writes into the folder only these: a made-items row for each item it makes, the `used` or
+`gone` status of a row, and the `Last proved` cell of a recipe option that a drive made. It deletes
+no row and writes no other recipe cell.
 
 ## Composing the flows
 
 The composer turns the criteria and the diff into a short list of **flows**. It reads six things,
 all already in hand: the numbered criteria and the Out of Scope items from `## Criteria`, the diff,
-the commit subjects on the branch, the touched pages' `KNOWLEDGE.md` files, and the project's
-`accounts.md`. **It reads nothing
-else to write the flows** — not the wider codebase, not the running app.
+the commit subjects on the branch, the touched pages' `KNOWLEDGE.md` files, and the QA folder's
+recipes and made-items file. **It reads nothing else to write the flows** — not the wider codebase,
+not the running app.
 
 ### Flows test the ticket, not the app
 
@@ -441,12 +465,13 @@ is never a verdict.
 
 ### What a flow is
 
-A **flow** is a run of sub-steps that share a starting state and end somewhere the next flow can
+A **flow** is a run of sub-steps that share a starting point and end somewhere the next flow can
 begin from. Each flow has:
 
 - a **name** — what is being exercised, in the ticket's words;
-- an explicit **`start from:` line** — a state id from the page's `KNOWLEDGE.md` `## States` with
-  the state in user words beside it, or a prior flow by number, and the role the flow signs in as;
+- an explicit **`start from:` line** — the data the flow starts from, in user words, as an item and
+  its options (`### The data a flow starts from`), or a prior flow by number, and the role the flow
+  signs in as;
 - **sub-steps**, numbered `<flow>.<k>`, each naming one **action** and one **observable result** —
   something the page shows or the app answers, which a driver can see is there or is not;
 - **attribution** — the tickets whose code the flow exercises: the `(#N)` suffixes or ticket-source
@@ -455,7 +480,7 @@ begin from. Each flow has:
 
 ```
 Flow 2 — <name>
-start from: S4 — <the state, in user words> — as <role>
+start from: <item> — <options, or none> — as <role>
 attribution: #228, #229
   2.1  <action> → <observable result>
   2.2  <action> → <observable result>
@@ -467,14 +492,13 @@ is not a sub-step. Rewrite it as what the page shows, or leave its criterion unc
 **The first flow is always "get running"**: open the target URL from `## The target` with each
 role's scenario loaded (`## Scenarios`), and see the app signed in as that role — one sub-step per
 role the pass uses. Its line is `start from: the target URL`, the one flow that starts from neither
-a state nor a prior flow. A later flow that needs no particular data starts from it:
+an item nor a prior flow. A later flow that needs no particular data starts from it:
 `start from: flow 1 completed, as <role>`.
 
 **A cross-flow dependency is named in `start from:`**, never left implicit. A flow that starts from
-a prior flow inherits that flow's state, and cannot run when that flow cannot.
+a prior flow inherits where that flow ended, and cannot run when that flow cannot.
 A flow starts from a prior flow only when its criterion is about what that flow did. Data a flow
-merely needs to exist is a state, started from by id: never make it by driving another flow's
-actions first, since that creates data the pass does not own.
+merely needs to exist is an item, which `## Arranging` resolves and an arrange driver makes.
 
 **The role** a flow signs in as is the one its criterion names. Where none is named, it is the first
 role the adapter's *Credential environment variables* row lists; where that row lists no role, the
@@ -482,12 +506,12 @@ pass uses one role, `default`.
 
 ### Flow boundaries
 
-Boundaries follow **cohesion**: same screen, same role, same starting state. **Never "by child" and
+Boundaries follow **cohesion**: same screen, same role, same starting point. **Never "by child" and
 never "every N sub-steps".** A child that touched three unrelated surfaces earns sub-steps in three
 flows; three children that changed one screen share one.
 
 3–7 sub-steps is a smell test, not a rule. A one-sub-step flow is fine. A flow past a dozen
-sub-steps is usually two flows whose shared starting state has not been named yet.
+sub-steps is usually two flows whose shared starting point has not been named yet.
 
 ### The coverage map
 
@@ -517,117 +541,145 @@ are handed to `## Receipt`. **Not in this branch and not browser-observable are 
 they are shown in the map and listed under the receipt's **Noted**. A row carries a status, never a
 confidence figure.
 
-### Start states from the knowledge file
+### The data a flow starts from
 
-A flow that needs particular data starts from **a state id in its page's `KNOWLEDGE.md`**. Pick the
-state whose `State, in user terms` cell is what the flow's first sub-step needs, using the
-`What the user sees` and `What the user can do` rows that cite it. Write the id and the state's
-words on the `start from:` line, so the developer reads what the flow needs without opening the
-file.
+A flow that needs particular data says so on its `start from:` line **in user words, as an item and
+its options**: `shelf — with a waitlist`. Find what the flow's first sub-step needs in the page's
+`KNOWLEDGE.md` — the state whose `State, in user terms` cell fits, and the `What the user sees` and
+`What the user can do` rows that cite it — and write it as the item a user would name:
+
+- **the item** — the name of the recipe that makes it, when a recipe file in the QA folder makes it
+  (`shelf`, from `shelf.md`); otherwise the item in user words, in the same kebab form;
+- **the options** — the option names of that recipe's `## Options` table the flow needs, or `none`
+  when the item alone is enough.
+
+A state id is a label inside the knowledge file and never a key into another file, so it never
+appears on the line. Never stretch an item to fit. A flow that needs a shelf with an overdue loan
+does not start from a shelf with no loans.
 
 - **a prior flow** — nothing to resolve; the flow follows that flow's outcome.
-- **a state id** — resolved against `accounts.md` in `## Preparing states`.
-- **no state in the file fits** — the flow is **Unable to verify** now, with the reason
-  `the page's KNOWLEDGE.md names no state "<what the flow needs>"`, and the remedy
-  `/qa:build-knowledge <page folder>`, the regenerate that derives the state. Compose it in full
-  anyway, so the developer sees exactly what could not be checked.
+- **an item** — resolved, checked and made by `## Arranging`.
 
-Never stretch a state to fit. A flow that needs a team with an overdue loan does not start from a
-state whose team has no loans.
+## Arranging
 
-## Preparing states
+Every flow that starts from an item has that item resolved before the gate and made after it. The
+run's order is:
 
-Every flow that starts from a state is resolved to a known instance of it in `accounts.md` before
-the gate. **The skill never creates data, never walks the app looking for data, and never asks the
-developer for a URL, an org id, an order number or any other id of a state** — finding those is
-`qa:setup-states`'s job.
+1. **Before the gate, read only.** Resolve each flow's item from the files (`### Resolve each
+   flow's data`), settle the scenarios (`## Scenarios`), and check that each made item the run
+   would use again still exists (`### Checking a made item`). **Nothing is written to staging before
+   "go".**
+2. **The gate** lists the items the run will use again and the items it will make, each with its
+   whole `Needs` chain (`## The approval gate`).
+3. **After "go"**, arrange drivers make the items, one at a time, in `Needs` order (`## Driving` →
+   *Arrange drivers*). The flow drivers start after the last of them returns.
+
+**Arrange always drives staging. Only the flows under test drive the preview.** A bug in the branch
+under test therefore cannot break the making of its own start data.
 
 ### Staging or not
 
-The target decides which `accounts.md` rows apply, by their `Env` column:
+The target decides whether an item on staging is there for the flows:
 
-- The pull request's preview deployment resolved in `## The target` is staging: `staging` rows
-  apply.
+- The pull request's preview deployment resolved in `## The target` is staging: it reads staging's
+  data.
 - A developer-stated URL is staging only when the developer says so in this session. When they have
-  not, ask once, before resolving any state, whether the target is staging. The question is about
-  the target and names no id.
-- A target the adapter or the developer names as production resolves no row: no skill writes `prod`
-  rows yet, and a prod row permits read-only flows only.
+  not, ask once, before resolving any item, whether the target reads staging's data. The question is
+  about the target and names no item.
+- A target the adapter or the developer names as production resolves no item.
 
-On a target that is not staging, every flow that starts from a state is Unable to verify, with the
+On a target that is not staging, every flow that starts from an item is Unable to verify, with the
 reason `target is not confirmed as staging`.
 
-### Resolve each state
+### Resolve each flow's data
 
-For each flow's state id, find the `## States` rows whose `Env` applies, whose `Page` is the page's
-`Route:` line and whose `State` is the id. A row whose `Last verified` reads `stale …` counts as no
-row. When several rows qualify, take the most recently verified and say which.
+For each flow's item and options, take **the first source that answers**, in this order:
 
-When there is no row, read the state in the knowledge file's `## How a state is made` table
-([`knowledge-file.md`](../references/knowledge-file.md)). A file with no such table holds no chain
-for any state. The table gives each state one of three readings:
-
-| The chain table holds | The state |
+| Source | The flow |
 |---|---|
-| numbered steps for the state | can be made |
-| a step `none` row for the state | cannot be made; the row gives the reason |
-| nothing for the state | is unknown |
+| a row of `made-items.md` whose `Item` is the item, whose `Options` hold every option the flow names, whose `Status` is `fresh`, and whose item still exists (`### Checking a made item`) | **uses the item again**. When several rows fit, take the most recent `Made` and say which |
+| a recipe file named for the item, whose `## Options` table has a row for every option the flow names, when the adapter's *Staging writes* row reads `yes` | **makes the item** after the gate, by that recipe and its `Needs` chain (`### The Needs chain`) |
+| neither | is **Unable to verify** |
 
-Each state comes out as one of these:
+An Unable-to-verify flow carries one of these reasons, with its remedy:
 
-| Found | Outcome |
-|---|---|
-| a row | the flow is **ready**. The row's `Org` and `Ids` are its starting state's ids, shown on an `account:` line under `start from:`. An `Org` of `self` shows as `<role>'s own account` |
-| no row, and the chain table holds a step `none` row for the state | the flow is **Unable to verify**: `state S<n> "<the state, in user words>" cannot be made by a tester — <that row's reason, as written>, and accounts.md has no row for it`. Its remedy names the state's `Seeder (for a human)` hint from `KNOWLEDGE.md`, as written, as the fast path for a human to make the state — or `none known` — and then `/qa:setup-states <page folder> S<n>` to record it |
-| no row, and the state cell says the state needs time to pass or a payment to fail | the flow is **Unable to verify**: `state S<n> "<the state, in user words>" <needs time to pass · needs a payment to fail>, and accounts.md has no row for it`. Its remedy is the same as in the row above |
-| no row, and the chain table holds numbered steps for the state | a **missing account** — `### The missing-account stop`, which names `/qa:setup-states` |
-| no row, and the chain table holds nothing for the state | a **missing account** — `### The missing-account stop`. The `/qa:setup-states` command in the stop is where a chain search is offered |
+| Found | Reason | Remedy |
+|---|---|---|
+| no fitting `fresh` row, and no recipe for the item or the option | `no made item "<item>" <with options> and no recipe in the QA folder makes it` | a recipe for the item with that option in the QA folder, in the format of [`recipe-file.md`](../references/recipe-file.md) |
+| no fitting `fresh` row, and a recipe, while the *Staging writes* row is not `yes` | `the adapter's Staging writes row is not yes, so the run makes no item` | the row set to `yes`, which `/qa:setup` asks |
+| a recipe whose chain cannot be made | the reason `### The Needs chain` or `### Which role and which app` gives | the recipe named in the reason, fixed |
 
-The "needs time to pass" clause ("more than 90 days ago", "more than 14 days overdue") and the
-"needs a payment to fail" clause are read from the state's `State, in user terms` cell. The cell is
-not read for "set in another application": that fact is a chain row. Never run a state's seeder:
-the hint is for a human. This skill never performs a chain and never starts a chain search.
+The made item's steps are its recipe's shared steps, then the steps of each option the flow names,
+in the order the `## Options` table lists them.
+
+**Two flows share one item only when neither has a sub-step that changes data.** Otherwise each
+flow takes its own row, or its own drive, so that a flow that changes its item cannot change the
+start of another flow driven beside it.
 
 A flow that starts from an Unable-to-verify flow is Unable to verify too, naming that flow.
 
-```
-Flow 3 — <name>
-start from: S4 — the team has an archived shelf — as owner
-  account: team `t-301` · archived shelf `s-40` (accounts.md, last verified 2026-10-20)
-attribution: #228
-  3.1  <action> → <observable result>
-```
+### The `Needs` chain
 
-### The missing-account stop
+A recipe whose `Needs` line names other recipes is made after the items they make. Resolve each
+needed item the same way, to its end, before the gate: a `fresh` row of that item, whatever its
+options, or else its recipe's shared steps alone. A needed recipe that is not in the QA folder, or a
+chain that reaches the same recipe twice, makes every flow that needs the chain Unable to verify,
+with the reason `recipe "<name>" needs "<needed item>", which <no recipe in the QA folder makes ·
+needs "<name>" again>`.
 
-**Any missing account is a stop before the gate.** Name every one in one message, then end the
-turn:
+The order of making is the `Needs` order: a needed item before the item that needs it. Each arrange
+driver passes the link or ids its item returned to the next driver of the chain, as the ids of that
+driver's starting state. An item two chains need in the same run is made once and serves both.
 
-```
-prove-branch cannot start these flows: accounts.md has no <env> row for their state.
-  flow <n> — <flow name>: S<n> — <the state, in user words> (page <route>)
-/qa:setup-states <page folder> S<n> S<m>
-```
+### Checking a made item
 
-One command per page folder, alone on its line, carrying every missing state id of that page. Then
-say to run `/qa:prove-branch` again once the states are recorded. No scenario is captured, no driver
-starts, and no receipt is posted.
+**Every `fresh` row the run would use again is checked before the gate**: the item still exists.
+The check runs after `## Scenarios` has settled the row's role's session for the staging host
+(*A session for each host*), and after `## Driving` → *Playwright MCP readiness* has passed.
 
-**The stop asks for no id and invites none.** It names the command that finds the state, and
-nothing else: no question, and no offer to take a team, an org, a URL or an id instead. A developer
-who answers with an instance anyway is recorded by `### Write-backs`.
+- **One `qa:qa-driver` per row**, dispatched as `## Driving` → *The agent types* says, with a flow
+  in its input contract: the name `check <item>`, the word `look` on its own line under the name,
+  which makes every sub-step read-only for the driver, `start from:` the row's link `— as <role>`,
+  and one sub-step: open the link → the item shows under its `qa-setup` name. The checks may run in
+  parallel, by the readiness rule for one browser context per driver.
+- The prompt carries what *Dispatching the drivers* lists: the flow, the role and its session path,
+  the row's `Link or ids` as the ids of the starting state, the staging URL of the item's app as the
+  target URL, and the flow's folder in the arrange folder (`## Driving` → *The run folder*).
+- **The skill reads a check's evidence itself.** A check decides where a flow starts, never a
+  verdict, and the grader never sees it. Read the sub-step's `snapshot.md`, and its `screenshot.png`
+  where the snapshot does not settle it.
+
+| The evidence shows | The row |
+|---|---|
+| the item, under its `qa-setup` name | is used again |
+| no such item: a not-found page, an empty place, another item | takes `gone <today's date>` in its `Status`, and the flow resolves from the next source |
+| no answer: the driver reported `session not accepted` or `preview auth not accepted` | is not used and keeps its status; the flow resolves from the next source |
+
+### Which role and which app
+
+- **An arrange drive signs in as its recipe's `Role`**, a label of the *Credential environment
+  variables* row. A label the row does not list makes every flow that needs the recipe Unable to
+  verify, with the reason `recipe "<name>" signs in as <role>, which the Credential environment
+  variables row does not list`. No skill creates a user.
+- **A role label belongs to one app**, and is unique in the project:
+  1. the app whose *Sibling apps* entry lists the label under `roles:`;
+  2. otherwise the app the recipe's `Made in` line names, when it names a sibling app's label;
+  3. otherwise this app.
+
+  Two different apps for one label, by those three, is a stop that names the label and both apps.
+- **A recipe made in an app the adapter does not list** — its `Made in` app is neither this app nor
+  an entry of the *Sibling apps* row — makes every flow that needs it Unable to verify, with the
+  reason `recipe "<name>" is made in <app>, which the adapter's Sibling apps row does not list`.
+- **The drive starts at the URL on the recipe's `Made in` line.** Its origin is the drive's target
+  URL: this app's *Staging URL*, or a sibling app's staging URL from its entry. A start URL on any
+  other origin makes the recipe's flows Unable to verify, with the reason `recipe "<name>" starts
+  outside staging`.
 
 ### Write-backs
 
 A developer's answer during a run is written to the file it belongs to, so no later run asks again.
-These are the **only writes** this skill makes to either file:
+This is the **only write** this skill makes to a knowledge file:
 
-- **An instance, named after the missing-account stop** — "team `t-301` has archived shelf `s-40`".
-  Append one `accounts.md` `## States` row: the `Env` from `### Staging or not`; the org, which is
-  the `## Orgs` row for that `Env` unless the developer names another; the page's route; the state
-  id; the ids the developer named, in user words; today's date (`date +%F`) as `Last verified`; and
-  origin `developer, <today's date>`. Never change or delete another row. Then resolve the flow from
-  the new row and carry on.
 - **An answer to an open question** of the page's `KNOWLEDGE.md` (`Q<n>`). Write it through
   `qa:build-knowledge`'s update mode: read
   [`../build-knowledge/SKILL.md`](../build-knowledge/SKILL.md) → `## Update mode` and apply it to the
@@ -635,17 +687,19 @@ These are the **only writes** this skill makes to either file:
   nothing that mode does not touch. Name that command in the print.
 
 An answer that is not a fact — a guess, a "probably" — is not written; ask the one question that
-would make it one. Say each write-back in the next print: the file, the row or the question, and the
-origin. A write-back is never committed.
+would make it one. Say each write-back in the next print: the file, the question, and the origin. A
+write-back is never committed.
 
 ### Handed over
 
-- To `## The approval gate`: every flow with its resolved state, and the Unable-to-verify flows with
-  their reasons and remedies.
-- To `## Driving`: the flows that are ready, each with the ids of the state it starts from — the
-  `accounts.md` row's org and ids.
-- To `## Receipt`: the Unable-to-verify flows with their reasons and remedies, and the uncovered and
-  ambiguous criteria.
+- To `## The approval gate`: every flow with its resolved item — used again, with its row, or made,
+  with its recipe and its whole `Needs` chain — and the Unable-to-verify flows with their reasons
+  and remedies.
+- To `## Driving`: the items to make, in `Needs` order, each with its recipe, its options, its app,
+  its role and its start URL; and the flows that are ready, each with the link or ids of its item,
+  or the item it waits for.
+- To `## Receipt`: the Unable-to-verify flows with their reasons and remedies, every row marked
+  `gone`, and the uncovered and ambiguous criteria.
 
 No Unable-to-verify flow is driven.
 
@@ -654,8 +708,9 @@ No Unable-to-verify flow is driven.
 A **scenario** is a saved login session for one role plus a short description of it. The pass signs
 in through scenarios only: no flow, sub-step or driver ever handles a credential.
 
-Scenarios are settled after `## Preparing states` has resolved every flow's state, since the flows
-name the roles, and before `## The approval gate`.
+Scenarios are settled after `### Resolve each flow's data` has resolved every flow's item, since
+the flows and the recipes name the roles, and before `### Checking a made item` and
+`## The approval gate`.
 
 ### The scenario directory
 
@@ -665,7 +720,8 @@ role:
 | Path | What it holds |
 |---|---|
 | `.qa-scenarios/<role>/session.json` | the saved session, as a **Playwright storage-state file** (`cookies` and `origins`), the form the driver loads |
-| `.qa-scenarios/<role>/scenario.md` | the description: the role, the session method, the origin the session was captured against, and the date captured |
+| `.qa-scenarios/<role>/session-<host>.json` | a second saved session for one more host, only when `session.json` does not cover it (*A session for each host*) |
+| `.qa-scenarios/<role>/scenario.md` | the description: the role, the session method, the origin each session file was captured against, and the date captured |
 
 `<role>` is the role's label in lower case, with every character outside `a-z`, `0-9` and `-`
 replaced by `-`.
@@ -685,12 +741,11 @@ write-backs. If either
 check fails, say which and stop.
 
 The skill writes the exclude line and creates this directory without asking, and says that it did.
-They are the only things it writes on the developer's machine, neither reaches the repository, and
-a later run reuses both.
+Neither reaches the repository, and a later run reuses both.
 
 ### Reuse or capture
 
-For each role the flows use, before anything else uses it:
+For each role the flows and the arrange drives use, before anything else uses it:
 
 1. **Reuse** the saved session when `session.json` exists, its cookies cover the target's host, at
    least one of them is unexpired, and the target accepts it: a request made with the session
@@ -758,37 +813,84 @@ sees what was typed. When Playwright or its browser is not available, say which 
 install anything into the project. Then confirm the target accepts the new session, as in step 1 of
 *Reuse or capture*.
 
+### A session for each host
+
+A role's session is checked against **each host a driver of this run opens with it**: the target's
+host for a flow driver, and the staging host of the item's app for a check or an arrange driver
+(`### Which role and which app`). *Reuse or capture* applies to each host, with that host's base URL
+in place of the target URL. `session.json` serves the first host; when it does not cover another
+one, capture `session-<host>.json` for that host by the same method, and give a driver the file
+that covers the host it opens.
+
+- **A role of this app** signs in by the *Session method* row, against this app's target or its
+  *Staging URL*.
+- **A role of a sibling app signs in by `manual` only**, by *`manual` — one login in a visible
+  window*, against the app's staging URL from its *Sibling apps* entry, whatever the *Session
+  method* row says: there is no `api` sign-in for a sibling app.
+- **The first time a run signs in to a sibling app as a role its entry does not list**, add the role
+  to that entry, by `qa:build-knowledge`'s *Recording a sibling app's role*: read
+  [`../build-knowledge/SKILL.md`](../build-knowledge/SKILL.md) → `## Chain mode` → *Recording a
+  sibling app's role* and apply it, touching nothing that subsection does not touch. Say the write
+  in the print.
+
+A role left with no session that covers the host a recipe needs makes every flow that needs the
+recipe Unable to verify, with the reason `no saved session for <role> on <host>`.
+
 ### No credential value leaves the shell
 
 A credential value appears in **none** of these: the adapter, a flow, a sub-step, `scenario.md`, the
-receipt, a prompt to a driver. The only file under `.qa-scenarios/` that holds anything secret is
-the `session.json` a sign-in produced.
+receipt, a prompt to a driver. The only files under `.qa-scenarios/` that hold anything secret are
+the session files a sign-in produced.
 
-**Handed over**, per role: the path to its `session.json` and its `scenario.md` description. A driver
-is given the path, never the file's contents and never a credential.
+**Handed over**, per role: the path to each of its session files, with the host it covers, and its
+`scenario.md` description. A driver is given a path, never the file's contents and never a
+credential.
 
 ## The approval gate
 
 Show the composed pass **once**, whole:
 
 - the target URL and the SHA tested;
-- the flows, numbered, each with its name, `start from:` line, the `account:` line its state
-  resolved to, attribution and sub-steps;
+- the flows, numbered, each with its name, `start from:` line, the `item:` line its item resolved
+  to — `use again`, with the row's link or ids, or `make`, with the recipe and its options —
+  attribution and sub-steps;
+- **the items to use again**: each `made-items.md` row, with its link or ids, its role, its `Made`
+  date and origin, and the flows that start from it;
+- **the items to make**: each with its whole `Needs` chain in the order of making, and per item the
+  recipe, its options, the app and the start URL, the role it signs in as, every `qa-setup` name
+  its steps type, and the flows that start from it. Say that the arrange drives create items only,
+  change or remove nothing this run did not create, enter no payment details, and remove nothing
+  afterwards;
+- the made-items rows the checks marked `gone`;
 - the coverage map, with uncovered and ambiguous criteria called out;
 - the Unable-to-verify flows, each with its reason and remedy.
 
-The developer may edit — drop or add a flow, change a sub-step, settle an ambiguous criterion — or
-say go. An edit is applied, a new flow's state is resolved by `## Preparing states`, the coverage
-map and the Unable-to-verify list are recomputed, and the changed list is shown again. **No driver
-starts without go.**
+```
+Flow 3 — <name>
+start from: shelf — with a waitlist — as owner
+  item: make — recipe shelf, option with a waitlist (needs: team, made first)
+attribution: #228
+  3.1  <action> → <observable result>
+```
 
-This is the pass's one approval gate. No flow asks for approval again.
+The developer may edit — drop or add a flow, change a sub-step, settle an ambiguous criterion,
+remove an item — or say go. Removing an item to use again resolves its flows from the next source;
+removing an item to make makes its flows Unable to verify, with the reason
+`the developer removed "<item>" at the gate`. An edit is applied, a new flow's item is resolved by
+`## Arranging`, the items, the coverage map and the Unable-to-verify list are recomputed, and the
+changed list is shown again. **No driver that writes starts without go, and nothing is written to
+staging before it.**
+
+This is the pass's one approval gate. One "go" covers every arrange drive and every flow. No flow
+and no item asks for approval again.
 
 ## Driving
 
-Each ready flow is driven by its own `qa-driver` agent in a real browser against the target. The
-skill prepares the run folder, checks that Playwright MCP is there, and dispatches the drivers. It
-never drives a flow itself and never judges what a driver saved.
+Each item to make is made by its own arrange driver on staging, and each ready flow is driven by its
+own `qa-driver` agent in a real browser against the target. The skill prepares the run folders,
+checks that Playwright MCP is there, and dispatches the drivers. It never drives a flow or an
+arrange drive itself and never judges what a flow driver saved. It reads a check's and an arrange
+drive's evidence, because that evidence decides where a flow starts, never a verdict.
 
 ### The agent types
 
@@ -818,8 +920,8 @@ Every run gets a new folder inside the excluded scenario directory, created unde
 
 - **`run.md`** carries the ticket and the key that resolved it, the product source, the pull
   request, the target URL, the SHA tested (marked `developer-stated` where it applies), the time
-  the run started, and per driven flow its role and the ids of its starting state. It carries no
-  credential and no session contents.
+  the run started, and per driven flow its role and the link or ids of the item it starts from. It
+  carries no credential and no session contents.
 - The skill writes `run.md` and creates every `flow-<n>/step-<k>/` folder before any driver
   starts, so a driver only saves files into folders that exist.
 - **`driver.md`** is the driver's report, saved verbatim by the skill when the driver returns.
@@ -827,20 +929,111 @@ Every run gets a new folder inside the excluded scenario directory, created unde
   under `.qa-scenarios/`, `git status --short` shows nothing but this run's write-backs
   (`### Write-backs`); confirm it after creating the folder, and stop if it shows anything else.
 
+**The checks and the arrange drives get a folder of their own**, beside the run folder and never
+inside it, so the grader, which reads the run folder, never sees how the data was made:
+
+```
+.qa-scenarios/runs/<short SHA tested>-<UTC timestamp>-arrange/
+  run.md
+  flow-<n>/        one per check and per arrange drive, numbered in dispatch order
+```
+
+Both folders carry the same timestamp, taken when the first of them is created. The arrange
+folder's `run.md` carries the target, the staging URLs, and per check or drive its item, its
+recipe and options, its role and the ids it starts from, with no credential and no session
+contents. Its `flow-<n>/` folders have the run folder's shape.
+
 ### Playwright MCP readiness
 
-Before any driver starts, run the readiness check in
+Before any driver starts — a check before the gate, or an arrange or flow driver after it — run the
+readiness check in
 [`browser-readiness.md`](../references/browser-readiness.md) → *Playwright MCP readiness*, including
 its rule for one browser context per driver. When it stops, the remedy it names ends with running
 `/qa:prove-branch` again.
 
+### The write rules
+
+Every arrange drive holds to these five rules, which ADR 0028 and ADR 0029 record:
+
+1. It creates items only.
+2. Every name it types starts with `qa-setup`.
+3. It never changes or removes an item it did not create in this run.
+4. It never enters payment details.
+5. It signs in only through the saved sessions of roles the adapter lists.
+
+**No cleanup.** A run never deletes a `qa-setup` item, this run's or an earlier run's.
+
+This skill holds all five when it composes a drive. The driver holds them again, on its own, for
+every sub-step of a flow marked `setup` (`qa-driver` → mandate 11). A step that either one would
+refuse is not performed, and the drive fails there (*A recipe that fails*).
+
+### Arrange drivers
+
+**After "go", before any flow driver, one `qa:qa-driver` per item to make, one at a time, in
+`Needs` order.** The next is dispatched only after the previous has returned and its item is
+recorded, or its failure reported.
+
+1. **Compose the drive as a flow** in the driver's input contract:
+   - its name, `make <item> — <options>`, and the word `setup` on its own line under the name,
+     which puts the driver under its mandate 11;
+   - `start from:` the recipe's start URL, in its app, `— as <role>`;
+   - one sub-step per step: the recipe's shared steps, then each option's steps. Each names its app
+     and role, the screen by the name its step gives it, the action with the control by its quoted
+     label and every input quoted, each name marked as a name, and the step's result as the
+     observable result. A step that uses an item this one needs names it by the link or ids that
+     item returned.
+2. **Dispatch it** with the prompt *Dispatching the drivers* lists: the flow; the role and the path
+   of the session file that covers the drive's host (*A session for each host*); the link or ids of
+   each item it needs as the ids of its starting state, or `none`; the drive's target URL, one per
+   app when its steps cross apps; and the flow's folder in the arrange folder. Never a credential
+   value, never a session file's contents.
+3. **Read the report and the evidence.** Save the report as `flow-<n>/driver.md` in the arrange
+   folder. Read each sub-step's `snapshot.md`, and its `reload/` snapshot, against the step's
+   result, and read what the recipe's `Returns` line names off the last screen: the link to the
+   item, or its ids.
+
+**Every sub-step performed, and each result shows**: the item is made. Record it
+(*Recording made items*), set the `Last proved` cell of each option the drive made to today's date
+in the recipe file, and dispatch the next drive.
+
+### A recipe that fails
+
+A drive fails at its **failing step**: the first sub-step the driver reports `not performed`, or the
+first performed sub-step whose result does not show in its evidence, whichever comes first. A
+driver that reports `session not accepted` or `preview auth not accepted` fails at its first step.
+
+- **No second attempt in this run.** Never dispatch the drive again with a changed input or a
+  different route. The one dispatch again is a driver that reported `missing input`: once, with the
+  same flow and the input supplied.
+- **The flows that needed it are Unable to verify**, every flow whose item is this one or needs it,
+  with the reason `recipe "<name>" failed at step <k>, "<the step>": <what the screen showed, in
+  user words>`. No later item of that chain is made.
+- **The other flows continue.** Every other drive is dispatched as planned.
+- **Remove nothing.** Report the failed recipe: the failing step, what the screen shows, and every
+  item the drive created before it, by its `qa-setup` name and id, from the driver's `created:`
+  list. These go to `## Receipt`. A failed drive writes no `made-items.md` row and no `Last proved`
+  date.
+
+### Recording made items
+
+Write one `made-items.md` row for each item a drive made, as soon as its drive succeeds, so a later
+stop loses nothing. The columns are the format's ([`made-items-file.md`](../references/made-items-file.md)):
+
+- `Item` and `Options`: the recipe's name and the options the drive made;
+- `Link or ids`: what the recipe's `Returns` line names, read off the screen, with the item's
+  `qa-setup` name, then every other item the driver's `created:` list names, each with its
+  `qa-setup` name and id;
+- `Role`: the role of the flow that starts from the item, or the recipe's `Role` for an item made
+  only as another item's need;
+- `Made`: today's date; `Origin`: `run <short SHA tested>`; `Status`: `fresh`.
+
 ### Dispatching the drivers
 
-**One `qa:qa-driver` per ready flow.** The flows handed over by `## Preparing states` are the
-ready ones; an Unable-to-verify flow is never driven.
+**One `qa:qa-driver` per ready flow.** The flows handed over by `## Arranging` are the ready ones;
+an Unable-to-verify flow is never driven, and neither is a flow whose recipe failed.
 
-- **Every flow that starts from a state or the target URL is dispatched at once, in
-  parallel** — all those `Agent` calls in one message.
+- **Every flow that starts from an item or the target URL is dispatched at once, in parallel**,
+  after the last arrange driver has returned — all those `Agent` calls in one message.
 - **A flow that starts from a prior flow** is dispatched when that flow's driver has returned, and
   only when that driver reported every sub-step `performed`. Otherwise the flow is Unable to
   verify, with the reason `flow <m> did not complete`, and goes to `## Receipt` undriven.
@@ -848,9 +1041,9 @@ ready ones; an Unable-to-verify flow is never driven.
 **The driver prompt carries exactly these:**
 
 - the flow — number, name, `start from:` line and sub-steps, as approved at the gate;
-- the role, and the **absolute path** to that role's `.qa-scenarios/<role>/session.json` — one
-  path per role for a flow that signs in as several;
-- the ids of the starting state;
+- the role, and the **absolute path** to that role's session file for the host the driver opens —
+  one path per role for a flow that signs in as several;
+- the ids of the starting state: the link or ids of the item the flow starts from;
 - the target URL;
 - the absolute path of the flow's folder, `<run folder>/flow-<n>/`.
 
@@ -861,6 +1054,14 @@ no diff, no file names, no commit subjects, no criteria.
 When a driver returns, save its report as `flow-<n>/driver.md`. A driver that reports
 `missing input` is re-dispatched once with the input supplied; a driver that reports
 `session not accepted` makes its flow Unable to verify, with that reason.
+
+### Marking used items
+
+**When a flow driver returns, every `made-items.md` row its flow started from takes
+`used <today's date>` in its `Status`** when the driver's report lists a performed sub-step with a
+`reload/` folder. The driver reloads after every sub-step that changes data (`qa-driver` → mandate
+5), so the mark needs no judgement. A row whose flow changed nothing stays `fresh`, and so does the
+row of an item made only as another item's need. No row is deleted.
 
 ## Grading
 
@@ -874,8 +1075,9 @@ When a driver returns, save its report as `flow-<n>/driver.md`. A driver that re
 - the absolute path of the run folder.
 
 **What it is not given**: the diff, the code, the commit subjects, the ticket beyond its
-criteria, the reasoning that produced the flows, the hygiene results, the scenarios, and anything
-from this conversation. The grader judges the evidence the way a tester who never saw the code
+criteria, the reasoning that produced the flows, the hygiene results, the scenarios, the arrange
+folder and anything else about how the start data was made — the recipes, the checks, the arrange
+drivers' reports and evidence, the made-items file — and anything from this conversation. The grader judges the evidence the way a tester who never saw the code
 would.
 
 ### Checking the grader's table
@@ -919,7 +1121,7 @@ the `gaps:` line, and the run folder's path.
 
 The developer is pulled in for **exactly four things**, and for nothing else:
 
-1. an **Unable-to-verify** flow or sub-step — from `## Preparing states`, `## Driving` or
+1. an **Unable-to-verify** flow or sub-step — from `## Arranging`, `## Driving` or
    `## Grading`;
 2. a **Fail**;
 3. an **uncovered** criterion;
@@ -945,8 +1147,8 @@ source gets nothing** when it is not the anchor: the receipt names it, and no po
 **A run with a ticket writes nothing to the pull request**: no comment, no label, no review.
 
 The receipt is posted once, after `## On a Fail` has settled every Fail, so it can say what
-happened to each. A pass that stops before any driver starts posts no receipt, since nothing was
-tested.
+happened to each. A pass that stops before any arrange or flow driver starts posts no receipt,
+since nothing was made or tested.
 
 ### What it carries
 
@@ -960,18 +1162,20 @@ First, the head:
 - the run folder's absolute path. It is on the developer's machine, nothing in it is uploaded, and
   every artifact path in the receipt is under it;
 - **completed** or **stopped early**, as `## End of pass` defines them, and for a stopped-early
-  pass, where it stopped.
+  pass, where it stopped;
+- **the items the run made**: every `made-items.md` row this run wrote, with its item, options,
+  link or ids and `qa-setup` name; every row it marked `used` or `gone`; and every recipe that
+  failed, with its failing step, what the screen showed, and each item the drive created before
+  it, by its `qa-setup` name and id. `none` when the run made nothing.
 
 Then four sections, **in this order**, each present and reading `none` when empty:
 
 1. **Unable to verify** — each Unable-to-verify flow and sub-step with its reason, then each
    uncovered and each ambiguous criterion with its coverage-map reason. Every item carries a
    **suggested remedy**: the one change that would make it checkable — the
-   `/qa:setup-states <page folder> S<n>` or `/qa:build-knowledge <page folder>` command to run, the
-   state's `Seeder (for a human)` hint for a state no tester can make, with the reason its step
-   `none` row gives, the variable to set, the
-   target to confirm as staging, the reading of the criterion to settle, or the check a human makes
-   by hand.
+   `/qa:build-knowledge <page folder>` command to run, the recipe to add or fix in the QA folder,
+   the *Staging writes* row to set, the variable to set, the target to confirm as staging, the
+   reading of the criterion to settle, or the check a human makes by hand.
 2. **Fails** — each Fail sub-step with its flow's name, the grader's reason, its **artifact path**,
    and its lane from `## On a Fail`: the finding's link or id, the fix-now commit, or `no lane` with
    the reason.

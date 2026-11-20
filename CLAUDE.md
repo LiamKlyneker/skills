@@ -66,7 +66,7 @@ it when it installs one, and `/figma-tools:design-component` reads it and follow
 to turn a design brief into a proposed component the user steers in the lab; absent means there is
 no lab. `## QA` → `Sibling apps` lists the other front-end apps of a product: `qa:build-knowledge`'s
 chain mode writes an app into it when a developer confirms one during a search, and
-`qa:setup-states` adds a role to an app through that mode's definition; absent means no sibling app
+`qa:prove-branch` adds a role to an app through that mode's definition; absent means no sibling app
 is known. `setup` never asks for either row and never treats its absence as a gap.
 
 **A skill ships a script for that reason and no other: the job is mechanical and must produce
