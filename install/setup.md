@@ -196,27 +196,25 @@ an adapter carrying none of them is finished, not half-filled. `## Design system
 so a fresh copy drops it and gap-fill never adds it.
 
 **`## QA` is asked only when the bundle declares it, and it takes credential names, never
-credential values.** Ask each of its eight rows once, in the template's order: the session method
+credential values.** Ask each of its nine rows once, in the template's order: the session method
 (`api` with its sign-in endpoint, or `manual`); the credential environment variables, as a
-variable **name** for the username and one for the password per role the flows need; the known
-accounts path, which defaults to `.claude/project/accounts.md` beside the adapter and is taken
+variable **name** for the username and one for the password per role the flows need; the staging
+URL of this app, an `http(s)` URL; the QA folder, which defaults to `.claude/project/qa/` beside the adapter and is taken
 as the default unless the human names another; the preview URL pattern, in the template's `<pr-number>` notation or the literal
 `pr-comment`; whether HTTP Basic Auth sits in front of the preview and, when it does, a variable
 **name** for its username and one for its password — "no" is a complete answer, deletes the row and
 records no warning; the feature-flag override, or `none`; and the browser automation consent, which is
-`yes` or the section is not written; and whether the QA skills may write to staging, as one yes or no — `yes` lets `qa:setup-states` perform a state's steps on staging itself, creating only items named `qa-setup` and only after it asks in the run, and `no` has it print the steps instead. The permission is a project decision and is never granted in the middle of a run. **Never ask for a state, an org or an account id** — the
-known accounts are observed later by `qa:setup-states`, never entered here. The `Sibling apps` row is
-not one of the eight and is not asked at all: `qa:build-knowledge`'s chain mode writes it when a
+`yes` or the section is not written; and whether the QA skills may write to staging, as one yes or no — `yes` lets `qa:setup-states` perform a state's steps on staging itself, creating only items named `qa-setup` and only after it asks in the run, and `no` has it print the steps instead. The permission is a project decision and is never granted in the middle of a run. **Never ask for a state, an org or an account id.** The `Sibling apps` row is
+not one of the nine and is not asked at all: `qa:build-knowledge`'s chain mode writes it when a
 developer confirms an app during a search, so a fresh copy drops it, gap-fill never adds it, and an
-adapter without it is not a gap. When no file exists
-at the known accounts path, write it from the empty skeleton in the `qa` plugin's
-`skills/references/accounts-file.md`, verbatim; when one exists, leave it as it is, since setup
-never deletes from it or from the pointer row. **Never ask for a username, a password or a token,
+adapter without it is not a gap. Setup writes no file in the QA folder: the folder and its files
+appear on first use, and an old *Known accounts* row in an existing adapter stays where it is,
+since setup never deletes from the adapter. **Never ask for a username, a password or a token,
 never write one into the adapter, and never echo one a human volunteers** — the adapter is committed,
 and a value in it is a leaked secret. If a human offers a value, record only the name of the
 variable it belongs in and tell them to export it in their own shell. `doctor` then checks that
-every named variable is set and is a valid variable name, that the session method is `api` or `manual`, and that the known
-accounts file exists with its `## Orgs` and `## States` tables; whether the method
+every named variable is set and is a valid variable name, that the session method is `api` or `manual`, and that the *Staging URL* row is present and, once
+filled, an `http(s)` URL; whether the method
 yields a working session is the skill's check at run time, not the installer's.
 
 ### 5. Gates
@@ -278,7 +276,7 @@ its checks by hand or "spot-check" a subset.
 | `QA-SESSION` | the adapter's `## QA` has no *Session method* row, or one whose value is not `api` or `manual` |
 | `QA-BASIC-AUTH` | the adapter's `## QA` has a *Preview basic auth* row that does not name exactly two variables, names one that is not a valid variable name, or names one that is not set in the shell doctor runs in |
 | `QA-STAGING-WRITES` | the adapter's `## QA` has a *Staging writes* row whose value is not `yes` or `no`; an absent row is not reported, since `qa:setup-states` reads it as `no` |
-| `QA-ACCOUNTS` | the adapter's `## QA` has a *Known accounts* row whose path is not a file, or a file with no `## Orgs` or no `## States` section |
+| `QA-STAGING-URL` | the adapter's `## QA` has no *Staging URL* row, or one whose filled value is not an `http(s)` URL |
 
 `WARN` lines (a loose file in the skills directory, a manifest doctor could not read, a PR
 template recorded as a content snapshot rather than a path) count as warnings, not problems. `OK` and `INFO` are neither, and `--quiet` hides them.

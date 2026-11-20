@@ -203,11 +203,12 @@ build for one now.
 
 ## QA
 
-Read by the `qa` skills, which learn from this section how to sign in, where the project's known accounts are recorded and where the preview runs; every value here is non-secret, and a project that never runs the automated QA pass deletes the whole section.
+Read by the `qa` skills, which learn from this section how to sign in, where the app's staging runs, where the project's QA files live and where the preview runs; every value here is non-secret, and a project that never runs the automated QA pass deletes the whole section.
 
 - Session method: `<api or manual>` · `<sign-in endpoint, api only>` — `api` signs in with one call against the endpoint written after the value, using the credentials named in the next row; `manual` pauses for a one-time login in a visible browser window and saves that session for later runs.
 - Credential environment variables: <role> → `<username-env-var>`, `<password-env-var>` — per role, the **names** of the environment variables holding its username and password, never a value; roles are free-form labels (`admin`, `member`), each unique in the project and belonging to one app, written unquoted and separated by ` · `, so every backticked token before this dash is a variable name `doctor` checks is set.
-- Known accounts: `<path>` — the project's `accounts.md`, beside this adapter (`.claude/project/accounts.md`), relative to the repo root: the staging org the pass uses and the page states known to exist there. `qa:setup` writes the empty file, `qa:setup-states` fills it, `qa:prove-branch` reads it; `doctor` checks it exists with its `## Orgs` and `## States` tables.
+- Staging URL: `<staging-url>` — the base URL of this app's staging environment, an `http(s)` URL; `doctor` checks the row is present and, once filled, that the value is one.
+- QA folder: `<path>` — the folder that holds the project's recipes and made-items file, relative to the repo root; the default is `.claude/project/qa/`, beside this adapter. The folder and its files appear on first use, so `qa:setup` writes none of them.
 - Preview URL pattern: `<preview-url-pattern>` — how a pull request's preview deployment URL is formed, in this file's placeholder notation (`https://app-pr-<pr-number>.preview.example.com`), or the literal `pr-comment` when a bot posts the URL as a comment on the pull request.
 - Preview basic auth: `<username-env-var>`, `<password-env-var>` — optional: the **names** of the environment variables holding the HTTP Basic Auth username and password that sit in front of the preview, before the app's own sign-in, never a value; `doctor` checks both are set. Delete the row when the preview has no Basic Auth.
 - Feature-flag override: `<flag override mechanism, or none>` — how one session turns a feature flag on or off (a query parameter, a cookie, an admin toggle), or `none` when flags cannot be overridden per session.
