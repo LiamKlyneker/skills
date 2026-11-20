@@ -48,7 +48,7 @@ sections and nothing else:
 | `## Commands` | the read-only and verify commands the skill may run without asking |
 | `## Verify ladder` | what a sub-step must name to be executable, and what the skill can verify without a human |
 | `## QA` | the rows below, by name |
-| `## Sources of truth` | the **project explorer agent** for on-demand elaboration — `Explore` where it says None |
+| `## Sources of truth` | the **project explorer agent** for on-demand elaboration and for the trace of shared code to the pages that render it (`### Shared code`) — `Explore` where it says None |
 
 From `## QA`, by row name:
 
@@ -424,9 +424,12 @@ one of those files seem to disagree, that file wins.
 List the changed paths with `git diff --name-only origin/<default-branch>...HEAD`. A **page folder** is a
 folder holding a route entry file that the framework renders as a page. Each changed path belongs to
 its nearest page folder at or above it: a change under `app/shelves/components/` touches the page
-folder `app/shelves`. A changed path with no page folder above it touches no page.
+folder `app/shelves`. A changed path with no page folder above it is shared code, and
+`### Shared code` traces it to the pages that render it.
 
-Read the `KNOWLEDGE.md` in every touched page folder. **A page folder whose file is missing, is not
+Read the `KNOWLEDGE.md` in every touched page folder, and in every page `### Shared code` selects to
+drive. A page the trace reaches and does not select is not a touched page: it is neither read nor
+derived. **A page folder whose file is missing, is not
 in the four-table shape, or was derived before the page changed is derived again by this run, and the
 run continues.** Nothing is a stop and no command is printed for the developer to type. Per page
 folder:
@@ -445,6 +448,42 @@ sections do not touch. **Never restate those sections here.** The backend read d
 question about a backend rule stays open and `### Open questions` raises it. The run then reads the
 file it wrote. Say each derive or regenerate in the next print: the page folder, the mode, and what
 a regenerate dropped from an old-shape file. A derive is never committed.
+
+### Shared code
+
+A changed path with no page folder above it is traced to the page folders that render it. **The trace
+follows the symbol, never the file**: a general utilities file holds many symbols, and a file-level
+trace would reach every page that imports any of them.
+
+1. **Name the changed symbols.** Read the diff of each such path
+   (`git diff origin/<default-branch>...HEAD -- <path>`) and list the exported declarations whose
+   lines changed, each with its path. A declaration the diff does not touch adds nothing, even beside
+   one that changed. A changed path that declares nothing a page can import — a script, a
+   configuration file, a test, a document — has no symbol and reaches no page.
+2. **Dispatch the project explorer agent**, once, with the changed symbols and the repo's absolute
+   path. Where the adapter's `## Sources of truth` names no agent, the agent is `Explore`. The
+   trace is a read of the code and the agent writes nothing. Ask for, per symbol, the page folders
+   that render it, following each importer up to the route entry file of a page, in the order the
+   import chain reaches them, nearest first. The agent's report is the trace.
+3. **Select the pages to drive: three at most**, in this order, a page taking a place only once
+   and a tier taking only the places left:
+   1. the pages a criterion names, by the page's name or route, or because a result the criterion
+      states rests on the page;
+   2. the pages whose folder already holds a `KNOWLEDGE.md`, read before any derive;
+   3. the pages in the order the trace reported them.
+
+   A page folder the diff touches directly is driven anyway and takes no place. When the trace
+   reaches three pages or fewer, it selects all of them.
+
+A page the trace selects is a touched page for the rule above, and flows are composed for it as for
+any touched page. The **pages not driven** are the pages the trace reached and did not select. The
+approval gate shows both lists and the developer may change them, and the receipt names the pages
+not driven.
+
+A branch whose shared code reaches no page — no symbol, or a symbol no page renders — and which
+touches no page folder reaches no page. **It composes no flow**, not even `get running`, and drives
+nothing. Say so in the next print, with each changed path and why it reached no page, and post the
+receipt (`## Receipt`), which says the branch reaches no page.
 
 ### The QA folder
 
@@ -616,7 +655,9 @@ Beside the flows, build a table from **every** criterion to the sub-steps that c
 - **Not browser-observable**: the criterion is about code — tests, lint, documentation, file
   layout, generated types — and no page could show it.
 - **Uncovered**: the branch touches the criterion and a user could see it, yet no sub-step checks
-  it. Say why in the row. Never stretch a sub-step to claim a criterion it does not observe.
+  it. Say why in the row. Never stretch a sub-step to claim a criterion it does not observe. A
+  criterion that only a page the run did not drive shows (`### Shared code`) is uncovered, with the
+  reason `<page folder> is not among the pages this run drives`.
 - **Ambiguous**: the criterion admits more than one reading with different observable results, or
   names no result at all. Give the readings and say which one a sub-step checks, if any.
 - A criterion checked only by sub-steps in Unable-to-verify flows is marked
@@ -1213,6 +1254,11 @@ Show the composed pass **once**, whole:
 - **the targets**, one per app the run uses, as `## The target` → *One target per app* gives them:
   each app's label, the target its flows under test drive, and the staging URL its arrange drives,
   checks and screen reads open;
+- **the pages to drive**: each page `### Shared code` selected, in order, with its tier — `criterion`,
+  `has a knowledge file` or `trace order` — and the symbol that reached it, then the pages not
+  driven. The developer swaps, adds or drops a page; a page added is derived if it has no
+  knowledge file (`## Knowledge`), the flows and the coverage map are recomputed, and the list is
+  shown again;
 - the flows, numbered, each with its name, `start from:` line, the `item:` line its item resolved
   to — `use again`, with the row's link or ids, or `make`, with the recipe and its options —
   attribution and sub-steps, each sub-step with its app in a flow that crosses apps. A flow that
@@ -1261,7 +1307,7 @@ Item to make — shelf, option with a waitlist — learned in this run, saved af
   option with a waitlist: 3. Turn on "Waitlist", then "Save"         (code, likely)
 ```
 
-The developer may edit — drop or add a flow, change a sub-step, settle an ambiguous criterion,
+The developer may edit — drop or add a flow, swap a page to drive, change a sub-step, settle an ambiguous criterion,
 remove an item, give a link, answer an open question — or say go. A link is recorded and checked
 before "go" (`### A link from the developer`); an answer is written through `### Write-backs`.
 Removing an item to use again resolves its flows from the next source; removing an item to make
@@ -1566,7 +1612,8 @@ source gets nothing** when it is not the anchor: the receipt names it, and no po
 
 The receipt is posted once, after `## On a Fail` has settled every Fail, so it can say what
 happened to each. A pass that stops before any arrange or flow driver starts posts no receipt,
-since nothing was made or tested.
+since nothing was made or tested — except a branch that reaches no page (`### Shared code`), whose
+receipt says so.
 
 ### What it carries
 
@@ -1581,6 +1628,10 @@ First, the head:
   every artifact path in the receipt is under it;
 - **completed** or **stopped early**, as `## End of pass` defines them, and for a stopped-early
   pass, where it stopped;
+- **the pages not driven**: each page the trace reached and did not select, with the symbol that
+  reached it, and each changed path of shared code that reached no page. A branch that reaches no
+  page says `the branch reaches no page`, composes no flow, and carries nothing in the sections
+  below but `none`;
 - **the items the run made**: every `made-items.md` row this run wrote, with its item, options,
   link or ids and `qa-setup` name; every row it marked `used` or `gone`; every recipe and option
   this run learned and saved; every *Sibling apps* entry or role it recorded; and every recipe that
@@ -1824,7 +1875,8 @@ The fields are filled from the pass:
 
 A pass that took a verdict on every sub-step of every driven flow, and an answer on every Fail, is
 **completed** — unless fix now made a commit. A pass is **stopped early** when the developer stops
-before that, when the skill stops after a driver started, or when a fix-now commit landed: the
+before that, when the skill stops after a driver started, when the branch reaches no page and no
+flow was composed, or when a fix-now commit landed: the
 branch has then moved past the SHA tested, and the rerun is the pass that proves it.
 
 Unable-to-verify verdicts do not make a pass incomplete; they are on the receipt. **Findings do
