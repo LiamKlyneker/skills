@@ -1,8 +1,11 @@
 # ADR 0028 — `setup-states` may create data, under write rules
 
-- **Status**: Accepted
+- **Status**: Accepted, amended by ADR [0029](0029-test-data-is-made-on-demand-from-recipes.md)
 - **Date**: 2026-11-11
 - **Context**: PRD #301
+- **Amended**: 2026-11-20 — by ADR [0029](0029-test-data-is-made-on-demand-from-recipes.md), on the clause
+  "`prove-branch` never creates data" and on the decision that a chain is kept in the consumer's
+  knowledge file.
 - **Amends**: ADR [0022](0022-knowledge-is-derived-accounts-are-observed.md), on its clause
   "the pass never creates data" only. Everything else in 0022 stands: the two files, their split by
   how each drifts, and the three writers of `accounts.md`.
