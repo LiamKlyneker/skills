@@ -1,6 +1,6 @@
 ---
 name: prove-branch
-description: Run the automated QA pass on the checked-out branch of a web project — resolve the ticket, the pull request and the preview deployment from the branch alone, read the acceptance criteria from the highest product source the branch reaches and the touched pages' KNOWLEDGE.md, deriving a page's file itself where it has none, is in an old shape or the page changed since it was derived; resolve the data each flow starts from, in user words, to an item an earlier run made or one a recipe in the project's QA folder makes now, learning a missing recipe or option from the code, then the screens, then the developer, while writing nothing to staging; and after one approval gate, which shows the steps of each learned recipe, also asks for a link to any item no recipe makes and lists the open backend-rule questions that block a flow, make those items on staging through one arrange driver at a time, in `Needs` order, under five write rules and with no cleanup, saving a learned recipe only once a drive made its item; drive and grade flows against one target per app — the preview for this app, the staging URL for each sibling app a flow crosses into — composing a flow that makes an item on the preview when the branch changes how it is made; record every item made in the QA folder's made-items file, and post one receipt that lists them to the ticket, or to the pull request when the branch names no ticket; it stops with a question wherever the branch is ambiguous, and on a failure asks fix now or file. Runs on user invocation only; neither loop ever invokes it. Invoke /qa:prove-branch with no argument, in a fresh session on the implemented branch.
+description: Run the automated QA pass on the checked-out branch of a web project. It resolves the ticket, the pull request and the preview deployment from the branch alone, and reads the acceptance criteria from the highest product source the branch reaches. It maps the diff to the touched pages, tracing changed shared code by symbol to a sample of the pages that render it, and derives a page's KNOWLEDGE.md where it is missing or stale. It resolves the data each flow starts from, in user words, to an item an earlier run made, an item a recipe in the project's QA folder makes on staging, or a link from the developer, learning a missing recipe from the code, the screens and the developer while writing nothing to staging. After one approval gate it makes those items under write rules, drives the flows against one target per app, grades the evidence in a cold context, records every item it made, and posts one receipt to the ticket, or to the pull request when the branch names none. It stops with a question wherever the branch is ambiguous, and on a failure asks fix now or file. It never needs qa:setup-env to have run. Runs on user invocation only; neither loop ever invokes it. Invoke /qa:prove-branch with no argument, in a fresh session on the implemented branch.
 disable-model-invocation: true
 ---
 
@@ -1154,6 +1154,9 @@ a screen read or an arrange driver (`### Which role and which app`).
    base URL: into `session.json` when the role has no session file that serves another host, and
    into `session-<host>.json` when `session.json` serves another host of this run.
 
+**A role with no session file is captured here like any other, and the run goes on.** A project
+where `/qa:setup-env` never ran is not a stop: the run signs in and learns its recipes itself.
+
 **A session file that passes the test for several hosts serves all of them, and no second file is
 captured.** Give a driver the file that covers the host it opens. Say for each role and host whether
 its session was reused or captured, and which file serves it.
@@ -1583,7 +1586,11 @@ the `gaps:` line, and the run folder's path.
 
 ## Escalation
 
-The developer is pulled in for **exactly four things**, and for nothing else:
+Before driving, the developer answers what the run cannot settle alone: a stop that asks a
+question, the question of `### Staging or not`, *The app question* and *The recipe question* of
+`## Learning a recipe`, and at `## The approval gate` the links, the open questions and the go. After grading, the developer
+gives the Human-only verdicts of `## Grading` and answers `## On a Fail`. Beside those, an
+**escalation** is one of exactly four things, and nothing else:
 
 1. an **Unable-to-verify** flow or sub-step — from `## Arranging`, `## Driving` or
    `## Grading`;

@@ -8,8 +8,8 @@ description: >
   sub-step into the flow folder, and reports each item it created with the id the app shows.
   Requires the flow, the role's saved-session path, the target URL of each app the flow names and
   the flow folder — inputs
-  only that skill supplies. It never grades. Never invoke it directly, and never outside a
-  prove-branch run.
+  only that skill supplies, or setup-env, which drives by that skill's rules. It never grades.
+  Never invoke it directly, and never outside a prove-branch or setup-env run.
 model: sonnet
 effort: medium
 disallowedTools: Agent, Write, Edit, NotebookEdit
@@ -106,7 +106,7 @@ If any is missing, or arrives as an unresolved `<placeholder>`, stop and report
     `not performed`, with what the snapshot showed, and the flow stops there: every later sub-step
     is `not reached`. A look has no mutation, so mandate 5 never applies to it.
 11. **A setup flow creates, and changes only what it created.** A flow marked `setup` is an
-    arrange drive of `prove-branch`'s arrange phase. It may submit forms and press controls that
+    arrange drive of `prove-branch`'s arrange phase, or of `setup-env`, which follows it. It may submit forms and press controls that
     change data, under four rules you hold on your own, whatever a sub-step says:
     - **Every name you type starts with `qa-setup`.** A sub-step whose name input does not is
       `not performed`.

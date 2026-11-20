@@ -6,8 +6,9 @@ description: >
   ordered steps a tester follows and the steps of each option, the items it needs first, where the
   item is seen, and what the screen shows once it exists — or the reason no tester can make it. It
   may read a sibling repo's recipe file for the same item. Requires the items, each in user words,
-  and the repos to read — inputs only the prove-branch skill supplies. It writes nothing and runs
-  nothing. Never invoke it directly, and never outside a prove-branch run.
+  and the repos to read — inputs only the prove-branch skill supplies, or setup-env, which learns by
+  its rules. It writes nothing and runs nothing. Never invoke it directly, and never outside a
+  prove-branch or setup-env run.
 model: sonnet
 tools: Read, Glob, Grep
 disallowedTools: Agent, Write, Edit, NotebookEdit, Bash, WebFetch, WebSearch, mcp__playwright

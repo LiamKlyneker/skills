@@ -39,7 +39,7 @@ One row per item.
 
 | Origin | The item came from |
 |---|---|
-| `run <short sha>` | an arrange drive in a `prove-branch` run at that SHA |
+| `run <short sha>` | an arrange drive at that SHA, in a `prove-branch` run or in `qa:setup-env` |
 | `developer` | a link a developer gave, at the gate or in `qa:setup-env` |
 
 **Status vocabulary**, and only this:
