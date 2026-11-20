@@ -205,8 +205,8 @@ as the default unless the human names another; the preview URL pattern, in the t
 **name** for its username and one for its password — "no" is a complete answer, deletes the row and
 records no warning; the feature-flag override, or `none`; and the browser automation consent, which is
 `yes` or the section is not written; and whether the QA skills may write to staging, as one yes or no — `yes` lets `qa:prove-branch` make the items its flows start from on staging itself, creating only items named `qa-setup` and only after its approval gate, and `no` has it make none. The permission is a project decision and is never granted in the middle of a run. **Never ask for a state, an org or an account id.** The `Sibling apps` row is
-not one of the nine and is not asked at all: `qa:build-knowledge`'s chain mode writes it when a
-developer confirms an app during a search, so a fresh copy drops it, gap-fill never adds it, and an
+not one of the nine and is not asked at all: `qa:prove-branch`'s recipe learner writes it when a
+recipe first needs an app and the developer confirms it, so a fresh copy drops it, gap-fill never adds it, and an
 adapter without it is not a gap. Setup writes no file in the QA folder: the folder and its files
 appear on first use, and an old *Known accounts* row in an existing adapter stays where it is,
 since setup never deletes from the adapter. **Never ask for a username, a password or a token,

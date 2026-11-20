@@ -35,6 +35,7 @@ Seen in: <app> · <how the item is opened there, in user words>
 Role: <the role that makes the item, by the label the adapter's credential row uses>
 Needs: <other items that must exist first, by recipe name, or `none`>
 Returns: <a link, or the ids the item is found by>
+Failed: <YYYY-MM-DD> at step <k> — only after a drive of the recipe failed
 
 ## Shared steps
 
@@ -56,6 +57,7 @@ Returns: <a link, or the ids the item is found by>
 | `Role` | the role that makes the item, by the label the adapter's credential row uses |
 | `Needs` | the recipes whose items must exist before this one is made, or `none`. A chain is made in `Needs` order and shown whole at the gate |
 | `Returns` | what the drive reads off the screen when the item exists: a link to it, or the ids that find it |
+| `Failed` | optional: the date a drive of the recipe failed and the step it failed at. The next run learns a recipe that carries this line again, and the line goes when a drive proves the recipe learned again |
 
 When a branch's diff touches a page folder that is one of a recipe's `Made in` screens, the branch
 changes how the item is made. `Made in` and `Seen in` are the connection between two apps, at the
@@ -78,7 +80,7 @@ waitlist. An option row holds the steps that follow the shared steps, and `Last 
 - **An option no drive proved is not in the file.** A learned option waits in the gate and is
   written after the drive makes the item.
 - **A recipe has no expiry.** It stays valid until a drive fails. A recipe that fails in a run gets
-  no second attempt in that run, and the next run learns it again.
+  no second attempt in that run; the run writes its `Failed` line, and the next run learns it again.
 
 ## What a recipe may and may not do
 

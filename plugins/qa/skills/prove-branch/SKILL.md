@@ -1,6 +1,6 @@
 ---
 name: prove-branch
-description: Run the automated QA pass on the checked-out branch of a web project — resolve the ticket, the pull request and the preview deployment from the branch alone, read the acceptance criteria from the highest product source the branch reaches and the touched pages' KNOWLEDGE.md, stopping with `/qa:build-knowledge` where a touched page has none; resolve the data each flow starts from, in user words, to an item an earlier run made or one a recipe in the project's QA folder makes now, and after one approval gate, which also asks for a link to any item no recipe makes and lists the open backend-rule questions that block a flow, make those items on staging through one arrange driver at a time, in `Needs` order, under five write rules and with no cleanup; drive and grade flows against the preview, record every item made in the QA folder's made-items file, and post one receipt that lists them to the ticket, or to the pull request when the branch names no ticket; it stops with a question wherever the branch is ambiguous, and on a failure asks fix now or file. Runs on user invocation only; neither loop ever invokes it. Invoke /qa:prove-branch with no argument, in a fresh session on the implemented branch.
+description: Run the automated QA pass on the checked-out branch of a web project — resolve the ticket, the pull request and the preview deployment from the branch alone, read the acceptance criteria from the highest product source the branch reaches and the touched pages' KNOWLEDGE.md, stopping with `/qa:build-knowledge` where a touched page has none; resolve the data each flow starts from, in user words, to an item an earlier run made or one a recipe in the project's QA folder makes now, learning a missing recipe or option from the code, then the screens, then the developer, while writing nothing to staging; and after one approval gate, which shows the steps of each learned recipe, also asks for a link to any item no recipe makes and lists the open backend-rule questions that block a flow, make those items on staging through one arrange driver at a time, in `Needs` order, under five write rules and with no cleanup, saving a learned recipe only once a drive made its item; drive and grade flows against the preview, record every item made in the QA folder's made-items file, and post one receipt that lists them to the ticket, or to the pull request when the branch names no ticket; it stops with a question wherever the branch is ambiguous, and on a failure asks fix now or file. Runs on user invocation only; neither loop ever invokes it. Invoke /qa:prove-branch with no argument, in a fresh session on the implemented branch.
 disable-model-invocation: true
 ---
 
@@ -21,8 +21,9 @@ developer asks for after grading, which a worker makes (`## On a Fail`).
 **It makes the data a flow starts from, and only after the gate.** It reads what the project
 already knows — each touched page's `KNOWLEDGE.md`, and the recipes and the made-items file in the
 project's QA folder — and starts every flow from an item an earlier run made, or from one a recipe
-makes now on staging (`## Arranging`) — or, where the project forbids staging writes or no recipe
-makes the item, from a link the developer gives at the gate. An arrange driver makes each item under the write rules of
+makes now on staging (`## Arranging`) — learning a recipe it does not have first (`## Learning a
+recipe`) — or, where the project forbids staging writes or no recipe makes the item, from a link the
+developer gives at the gate. An arrange driver makes each item under the write rules of
 `## Driving` → *The write rules*, and the receipt lists every item the run made. Its only writes to a
 knowledge file are a developer's own answers, written back (`### Write-backs`), so no run asks the
 same thing twice.
@@ -57,7 +58,7 @@ From `## QA`, by row name:
 | *Staging URL* | the base URL of this app's staging environment, where an arrange driver makes an item of this app (`## Arranging`) |
 | *QA folder* | the folder that holds the project's recipes and its made-items file; `.claude/project/qa/`, beside the adapter, when the row is absent (`### The QA folder`) |
 | *Staging writes* | optional: `yes` or `no`; absent or any other value reads as `no`. Only `yes` lets a run make an item on staging; on `no` the run arranges nothing and asks the developer for links (`### Resolve each flow's data`) |
-| *Sibling apps* | optional: the other apps of the product, each with its staging URL and the roles that belong to it (`### Which role and which app`) |
+| *Sibling apps* | optional: the other apps of the product, each with its repo folder name, its staging URL and the roles that belong to it (`### Which role and which app`). This skill is the row's only writer (`## Learning a recipe` → *Recording a sibling app*) |
 | *Preview URL pattern* | how the pull request's preview deployment URL is formed, or `pr-comment` — read in `## The target` |
 | *Preview basic auth* | optional: the **names** of the two variables holding the HTTP Basic Auth in front of the preview — read as [`browser-readiness.md`](../references/browser-readiness.md) → *Preview Basic Auth* says |
 | *Feature-flag override* | how one session turns a flag on or off, or `none` |
@@ -439,8 +440,11 @@ Never add the line to `.gitignore` instead. Then create the folder when it is mi
 arrange driver starts. The skill writes the exclude line without asking, and says that it did.
 
 The run writes into the folder only these: a made-items row for each item it makes or each link a
-developer gives, the `used` or `gone` status of a row, and the `Last proved` cell of a recipe option that a drive made. It deletes
-no row and writes no other recipe cell.
+developer gives, the `used` or `gone` status of a row, the `Last proved` cell of a recipe option that
+a drive made, a learned recipe or option once a drive made its item (`## Driving` → *Arrange
+drivers*), and the `Failed` line of a recipe whose drive failed (`### A recipe that fails`). It
+deletes no made-items row and changes a recipe file in no other way. **It never writes into a
+sibling repo.**
 
 ## Composing the flows
 
@@ -561,18 +565,228 @@ does not start from a shelf with no loans.
 - **a prior flow** — nothing to resolve; the flow follows that flow's outcome.
 - **an item** — resolved, checked and made by `## Arranging`.
 
+## Learning a recipe
+
+An item a flow starts from that no `fresh` row fits, and that no recipe in the QA folder makes as the
+flow needs it, is **learned during the run**: its recipe, or its missing option, is found and drafted
+before the gate, shown at the gate, and saved only once a drive after "go" made the item.
+
+**Nothing is learned unless the adapter's *Staging writes* row reads `yes`.** On any other value no
+drive can prove a recipe, so the item goes straight to a link at the gate (`### A link from the
+developer`).
+
+### What is learned
+
+- **A recipe**: the QA folder has no file named for the item.
+- **An option**: the recipe file has no `## Options` row for an option the flow names. Only that
+  option's steps are learned; the recipe's header lines, its shared steps and its other options stay
+  as they are.
+- **A recipe again**: the recipe file carries a `Failed` line, written when a drive of it failed in an
+  earlier run ([`recipe-file.md`](../references/recipe-file.md)). The whole recipe is learned again,
+  with the old file and its failing step as material, and no command from the developer.
+- **A needed recipe**: an item a recipe being learned or used names on its `Needs` line, when the QA
+  folder has no recipe for it. It is learned the same way, to the end of the chain.
+
+A recipe that failed **in this run** is never learned again in this run (`## Driving` → *A recipe
+that fails*).
+
+### Before the gate the run only reads
+
+Learning reads code, reads screens and asks the developer. **It writes nothing to staging**: the
+screen read is a look, read-only for its driver. Before the gate learning writes only the draft of each
+learned recipe, in the arrange folder (*The draft*), a *Sibling apps* entry the developer confirmed
+(*Recording a sibling app*), and a role on an entry when the screen read first signs in to that app
+(*Recording a sibling app's role*). Nothing reaches the QA folder before a drive made the item.
+
+### The sources, in order
+
+1. **The code**: this repo and each sibling app's repo that sits beside it, read by the read-only
+   `qa:qa-chain-searcher` agent (*The code read*).
+2. **The screens**: a read-only look on staging confirms what the code said and reads what it could
+   not (*The screen read*).
+3. **The developer**: one question for what neither answered (*The recipe question*).
+
+A later source fills only what the earlier ones left open. A step the code read `confirmed` and the
+screen read showed is never asked.
+
+### The code read
+
+List the repos to read, this repo first. This repo is `this app`. Then each app the adapter's
+*Sibling apps* row lists, at its folder beside this repo — the folder with the entry's folder name in
+this repo's parent folder. A listed app whose folder is not there is not read, and the gate names
+it. For each sibling repo, its recipe folder is the *QA folder* row of that repo's own adapter, at
+`<sibling repo>/.claude/project/adapter.md`, or `.claude/project/qa/` when that adapter has no such
+row.
+
+**Dispatch one `qa:qa-chain-searcher` agent** with every item to learn — each with its name, the
+options the flows need, the route of the page whose flow starts from it, and the description of the
+state that page needs with the rows that show it, from the page's `KNOWLEDGE.md`; for a recipe
+learned again, also the old recipe file and the step it failed at — and the repos listed above, each
+with its absolute path, its label and, for a sibling repo, its recipe folder. The agent writes
+nothing and runs nothing; this skill turns its report into drafts.
+
+The type is **`subagent_type: qa:qa-chain-searcher`**, always with the `qa:` prefix. A
+`subagent_type` that does not resolve raises no error: the call runs as `general-purpose`, which
+carries neither the agent's model pin nor its tool denials. Pass no `model`; the agent pins its own.
+
+### Sibling apps
+
+An item whose report reads `not found`, or whose steps stop at a step the agent placed `elsewhere`,
+may be made in an app not read yet. **Look for evidence of one in three places:**
+
+- a backend answer in the page's `KNOWLEDGE.md` that names another system;
+- an origin this app links to, from the agent's `elsewhere` lines;
+- a front-end repo in the folder beside this one: a folder whose package manifest names a web
+  framework, not yet listed in the *Sibling apps* row.
+
+### Made in and Seen in
+
+The two lines hold the connection between two apps, at the level of the item
+([`recipe-file.md`](../references/recipe-file.md)). Learn them from three sources, in this order,
+and take the first that answers:
+
+1. **A recipe file for the same item in a sibling repo** beside this one, which the code read reports
+   as its `sibling recipe:` line. Its `Made in` and `Seen in` lines are material for the draft. The
+   file is read and never written.
+2. **A criterion that no page of this app can show**: a result the criterion names that no page
+   folder of this repo renders, by the touched pages' `KNOWLEDGE.md` and the code read. It makes the
+   run ask once which app shows it, in *The app question*.
+3. **A link that leaves the app**: an origin the code read placed `elsewhere`. It is a hint only. The
+   run proposes it in *The app question* and at the gate, and does not trust it until a drive made
+   the item.
+
+With none of the three, both lines name the app the code read found the item made in.
+
+### The app question
+
+When an app has evidence, an item has none, or a criterion needs an app named, **ask the developer
+one question**, once per run, covering every open item:
+
+- **for each app with evidence**: the evidence, quoted; the label proposed for it; its repo folder
+  name; and the staging URL proposed from the origin this app links to, or a request for one when no
+  link names it. The developer answers yes, no, or a correction to any of the three values.
+- **for each criterion no page of this app can show**: which app shows it, by its label.
+- **for each item with no evidence**: which repo makes it, as a path, or "none".
+
+Never read an app the developer did not agree to. On a yes or a path, dispatch the agent once more,
+for the items still open, with this repo first and each agreed app after it. On "none", or a no, the
+item is not learned (*When nothing is learned*).
+
+### Recording a sibling app
+
+On a yes, write the app into the adapter's `## QA` section, on the *Sibling apps* row, as the
+template gives it: the label, the repo folder name and the confirmed staging URL. Add the row when
+it is absent, and add an entry to it when it is present; never change or remove an entry. **The row
+holds no path on disk**: a path the developer gave is read in this run only, and a later run finds the
+folder beside this repo. An app given as a path is recorded only when the developer gave its staging
+URL in the same answer; its label is the folder name. Recording an app writes no role: the roles a
+tester uses in the app are added by *Recording a sibling app's role*. With no adapter, or one with no
+`## QA` section, write no row, and print the entry the developer confirmed.
+
+### Recording a sibling app's role
+
+The role a tester signs in as in a sibling app is added to that app's entry **when a run first needs
+to sign in to that app** as that role. Learning a recipe never signs in for this write: the run
+applies this subsection when it signs in to a sibling app (`## Scenarios` → *A session for each
+host*), and nothing else writes it.
+
+- The role is a label of the *Credential environment variables* row, written unquoted as that row
+  writes it. A label the row does not list is never written.
+- The entry gains `, roles: <label>` after its staging URL the first time, and each later role is
+  added to that list as `, <label>`, in the order the runs needed them, as the template gives it.
+- A label belongs to one app: a label another entry already lists is never written, and the run
+  that needed it stops and names both apps.
+- **Add only.** Never change or remove an entry's label, folder name, staging URL or a role it
+  already lists, and never touch another entry or another row. An entry that already lists the role
+  is left as it is.
+- With no *Sibling apps* entry for the app, write nothing: the app is recorded by *Recording a
+  sibling app* first.
+
+### The draft
+
+Turn each item's report into a draft recipe, in the format of
+[`recipe-file.md`](../references/recipe-file.md), at `<arrange folder>/recipes/<item>.md`
+(`## Driving` → *The run folder*):
+
+- `Made in`: the app's label, or `this app`, and the screens the steps use, in user words. Its
+  `starts at` URL is the one *The recipe question* settles.
+- `Seen in`, `Needs` and `Returns` from the report, in user words; `Needs` names recipes in kebab
+  case.
+- `Role`: a label of the *Credential environment variables* row. A role the code names that the row
+  does not list is asked in *The recipe question*.
+- **The steps in the words on the screen**: the control by its quoted label, each input quoted, never
+  a selector, a test id, a component name or a code word. Every name a step types starts with
+  `qa-setup`. A reported code word is paraphrased, never copied.
+- Each option's row reads `—` under `Last proved`: no drive has proved it.
+- For a learned option, the draft is the existing recipe file with the new option's row added.
+
+The draft is what the gate shows and what an arrange driver drives. It reaches the QA folder only
+after a drive made the item.
+
+### The screen read
+
+For each draft, **one `qa:qa-driver` look on staging**, dispatched as `## Driving` → *The agent
+types* says, once `## Scenarios` has settled a session for the draft's role on the host of its
+`Made in` app (*A session for each host*) and `## Driving` → *Playwright MCP readiness* has passed.
+The looks run beside the checks of `### Checking a made item`, by the readiness rule for one browser
+context per driver.
+
+- **The flow**: the name `learn <item>`, the word `look` on its own line under the name, which makes
+  every sub-step read-only for the driver; `start from:` the `Made in` app's staging URL `— as
+  <role>`; and one sub-step per step of the draft, in order, **up to the first step that would write**:
+  reach the step's screen as a user would, by the names the draft gives → the step's control shows
+  under its label. The step that would write is read for its control and never used.
+- The prompt carries what *Dispatching the drivers* lists: the flow, the role and its session path,
+  `none` as the ids of the starting state, the app's staging URL as the target URL, and the flow's
+  folder in the arrange folder.
+- **The skill reads the look's evidence itself**, as it reads a check's: each sub-step's
+  `snapshot.md`, and its `screenshot.png` where the snapshot does not settle it. A label the screen
+  shows differently from the code takes the screen's words. A screen the look did not reach, or a
+  control it did not find, stays open for *The recipe question*.
+- The URL of the first step's screen, as the look reached it, is proposed as the recipe's start URL.
+
+Steps after the first write are not read on screen: they stay as the code read gave them, and the
+drive after "go" proves them.
+
+### The recipe question
+
+After the screen reads, **ask the developer one question**, once per run, covering every draft, and
+only for what the code and the screens left open:
+
+- **the start URL** of each new recipe and each recipe learned again: the URL the screen read
+  reached, proposed for a yes, or the route pattern the code read found, with a request for the URL.
+  The developer gives it once; the recipe keeps it.
+- **each step or option the two sources left open**, quoted as the draft holds it, for a yes, a
+  correction, or "none";
+- **the role**, when the code names one the *Credential environment variables* row does not list:
+  which label of that row signs in as it.
+
+Never ask for an id of an item, an org or an account: the start URL carries whatever the app needs
+to scope the data. A learned option takes its start URL from the existing recipe and asks none.
+
+### When nothing is learned
+
+An item is not learned when the code read reports `no path`; when every read ends `not found` and
+the developer answers "none" or no; or when *The recipe question* leaves its start URL, a step or its
+role open. It then resolves from the next source, a link at the gate. With no link, the flow is
+Unable to verify, with the reason `no made item "<item>" <with options>, no recipe in the QA folder
+makes it, the run could not learn one: <the reason>, and the developer gave no link`.
+
+A needed recipe that is not learned makes every flow that needs the chain resolve the same way.
+
 ## Arranging
 
 Every flow that starts from an item has that item resolved before the gate and made after it. The
 run's order is:
 
 1. **Before the gate, read only.** Resolve each flow's item from the files (`### Resolve each
-   flow's data`), settle the scenarios (`## Scenarios`), and check that each made item the run
-   would use again still exists (`### Checking a made item`). **Nothing is written to staging before
-   "go".**
+   flow's data`), read the code for each recipe or option to learn and ask *The app question*
+   (`## Learning a recipe`), settle the scenarios (`## Scenarios`), check that each made item the
+   run would use again still exists (`### Checking a made item`) beside the screen read of each
+   draft, and ask *The recipe question*. **Nothing is written to staging before "go".**
 2. **The gate** lists the items the run will use again and the items it will make, each with its
-   whole `Needs` chain, the items it asks the developer to link, and the open questions that block a
-   flow (`## The approval gate`).
+   whole `Needs` chain and the steps of each recipe learned in this run, the items it asks the
+   developer to link, and the open questions that block a flow (`## The approval gate`).
 3. **After "go"**, arrange drivers make the items, one at a time, in `Needs` order (`## Driving` →
    *Arrange drivers*). The flow drivers start after the last of them returns.
 
@@ -600,19 +814,21 @@ For each flow's item and options, take **the first source that answers**, in thi
 | Source | The flow |
 |---|---|
 | a row of `made-items.md` whose `Item` is the item, whose `Options` hold every option the flow names, whose `Status` is `fresh`, and whose item still exists (`### Checking a made item`) — a `developer` row as much as a `run` row. When several rows fit, take the most recent `Made` and say which | **uses the item again** |
-| a recipe file named for the item, whose `## Options` table has a row for every option the flow names, when the adapter's *Staging writes* row reads `yes` | **makes the item** after the gate, by that recipe and its `Needs` chain (`### The Needs chain`) |
+| a recipe file named for the item, carrying no `Failed` line, whose `## Options` table has a row for every option the flow names, when the adapter's *Staging writes* row reads `yes` | **makes the item** after the gate, by that recipe and its `Needs` chain (`### The Needs chain`) |
+| a recipe or an option the run learns now, when the *Staging writes* row reads `yes` (`## Learning a recipe`) | **makes the item** after the gate, by the draft and its `Needs` chain, and saves the recipe or option once the drive made the item |
 | a link the developer gives at the gate (`### A link from the developer`) | **uses the link**, recorded as a row with origin `developer` |
 | none of these | is **Unable to verify** |
 
 **A target that forbids staging writes arranges nothing.** When the *Staging writes* row is `no` or
-absent, no recipe makes an item: the second source never answers, no arrange driver is dispatched
-and no `Needs` chain is resolved. A flow that no `fresh` row fits is resolved by the third source.
+absent, no recipe makes an item and none is learned: the second and third sources never answer, no
+arrange driver is dispatched and no `Needs` chain is resolved. A flow that no `fresh` row fits is
+resolved by the fourth source.
 
 An Unable-to-verify flow carries one of these reasons, with its remedy:
 
 | Found | Reason | Remedy |
 |---|---|---|
-| no fitting `fresh` row, no recipe for the item or the option, and no link given at the gate | `no made item "<item>" <with options>, no recipe in the QA folder makes it, and the developer gave no link` | a link to the item at the gate, or a recipe for the item with that option in the QA folder, in the format of [`recipe-file.md`](../references/recipe-file.md) |
+| no fitting `fresh` row, no recipe for the item or the option, none learned, and no link given at the gate | `no made item "<item>" <with options>, no recipe in the QA folder makes it, the run could not learn one: <the reason>, and the developer gave no link` | a link to the item at the gate, or a recipe for the item with that option in the QA folder, in the format of [`recipe-file.md`](../references/recipe-file.md) |
 | no fitting `fresh` row, and no link given at the gate, while the *Staging writes* row is not `yes` | `the adapter's Staging writes row is not yes, so the run makes no item, and the developer gave no link for "<item>" <with options>` | a link to the item at the gate, or the row set to `yes`, which `/qa:setup` asks |
 | a recipe whose chain cannot be made | the reason `### The Needs chain` or `### Which role and which app` gives | the recipe named in the reason, fixed |
 
@@ -627,11 +843,12 @@ A flow that starts from an Unable-to-verify flow is Unable to verify too, naming
 
 ### A link from the developer
 
-An item no recipe can make, or any item on a project that forbids staging writes, is a **link the
-developer gives at the gate**, never one the skill goes looking for.
+An item no recipe can make and the run could not learn, or any item on a project that forbids
+staging writes, is a **link the developer gives at the gate**, never one the skill goes looking for.
 
 - **The gate asks once per item.** It lists each item the run needs that no `fresh` row fits — and
-  that no recipe makes, when the *Staging writes* row is `yes` — with the options each flow names,
+  that no recipe makes and none was learned for, when the *Staging writes* row is `yes` — with the
+  options each flow names,
   the flows that start from it and the role they sign in as, and asks for a link to each. An item the
   developer answers with no link is Unable to verify, with the reason of the table above. Showing the
   gate again after an edit never asks for that item again.
@@ -653,8 +870,9 @@ developer gives at the gate**, never one the skill goes looking for.
 
 A recipe whose `Needs` line names other recipes is made after the items they make. Resolve each
 needed item the same way, to its end, before the gate: a `fresh` row of that item, whatever its
-options, or else its recipe's shared steps alone. A needed recipe that is not in the QA folder, or a
-chain that reaches the same recipe twice, makes every flow that needs the chain Unable to verify,
+options, or else its recipe's shared steps alone, learned first when the QA folder has none or it
+carries a `Failed` line (`## Learning a recipe`). A needed recipe that is not in the QA folder and
+was not learned, or a chain that reaches the same recipe twice, makes every flow that needs the chain Unable to verify,
 with the reason `recipe "<name>" needs "<needed item>", which <no recipe in the QA folder makes ·
 needs "<name>" again>`.
 
@@ -699,7 +917,8 @@ The check runs after `## Scenarios` has settled the row's role's session for the
 
   Two different apps for one label, by those three, is a stop that names the label and both apps.
 - **A recipe made in an app the adapter does not list** — its `Made in` app is neither this app nor
-  an entry of the *Sibling apps* row — makes every flow that needs it Unable to verify, with the
+  an entry of the *Sibling apps* row, after *The app question* recorded what the developer
+  confirmed — makes every flow that needs it Unable to verify, with the
   reason `recipe "<name>" is made in <app>, which the adapter's Sibling apps row does not list`.
 - **The drive starts at the URL on the recipe's `Made in` line.** Its origin is the drive's target
   URL: this app's *Staging URL*, or a sibling app's staging URL from its entry. A start URL on any
@@ -740,11 +959,11 @@ write-back is never committed.
 ### Handed over
 
 - To `## The approval gate`: every flow with its resolved item — used again, with its row, made,
-  with its recipe and its whole `Needs` chain, or linked by the developer — the items to ask a link
-  for, the open questions that block a flow, and the Unable-to-verify flows with their reasons and
+  with its recipe or its draft and its whole `Needs` chain, or linked by the developer — the items
+  to ask a link for, each *Sibling apps* entry recorded, the open questions that block a flow, and the Unable-to-verify flows with their reasons and
   remedies.
-- To `## Driving`: the items to make, in `Needs` order, each with its recipe, its options, its app,
-  its role and its start URL; and the flows that are ready, each with the link or ids of its item,
+- To `## Driving`: the items to make, in `Needs` order, each with its recipe or its draft, its
+  options, its app, its role and its start URL; and the flows that are ready, each with the link or ids of its item,
   or the item it waits for.
 - To `## Receipt`: the Unable-to-verify flows with their reasons and remedies, every row marked
   `gone`, and the uncovered and ambiguous criteria.
@@ -756,8 +975,9 @@ No Unable-to-verify flow is driven.
 A **scenario** is a saved login session for one role plus a short description of it. The pass signs
 in through scenarios only: no flow, sub-step or driver ever handles a credential.
 
-Scenarios are settled after `### Resolve each flow's data` has resolved every flow's item, since
-the flows and the recipes name the roles, and before `### Checking a made item` and
+Scenarios are settled after `### Resolve each flow's data` has resolved every flow's item and
+`## Learning a recipe` has drafted every recipe it learns, since the flows, the recipes and the
+drafts name the roles, and before `### Checking a made item`, the screen read and
 `## The approval gate`.
 
 ### The scenario directory
@@ -864,8 +1084,8 @@ install anything into the project. Then confirm the target accepts the new sessi
 ### A session for each host
 
 A role's session is checked against **each host a driver of this run opens with it**: the target's
-host for a flow driver, and the staging host of the item's app for a check or an arrange driver
-(`### Which role and which app`). *Reuse or capture* applies to each host, with that host's base URL
+host for a flow driver, and the staging host of the item's app for a check, a screen read or an
+arrange driver (`### Which role and which app`). *Reuse or capture* applies to each host, with that host's base URL
 in place of the target URL. `session.json` serves the first host; when it does not cover another
 one, capture `session-<host>.json` for that host by the same method, and give a driver the file
 that covers the host it opens.
@@ -876,10 +1096,8 @@ that covers the host it opens.
   window*, against the app's staging URL from its *Sibling apps* entry, whatever the *Session
   method* row says: there is no `api` sign-in for a sibling app.
 - **The first time a run signs in to a sibling app as a role its entry does not list**, add the role
-  to that entry, by `qa:build-knowledge`'s *Recording a sibling app's role*: read
-  [`../build-knowledge/SKILL.md`](../build-knowledge/SKILL.md) → `## Chain mode` → *Recording a
-  sibling app's role* and apply it, touching nothing that subsection does not touch. Say the write
-  in the print.
+  to that entry, by `## Learning a recipe` → *Recording a sibling app's role*, touching nothing that
+  subsection does not touch. Say the write in the print.
 
 A role left with no session that covers the host a recipe needs makes every flow that needs the
 recipe Unable to verify, with the reason `no saved session for <role> on <host>`.
@@ -906,7 +1124,16 @@ Show the composed pass **once**, whole:
   date and origin, and the flows that start from it;
 - **the items to make**: each with its whole `Needs` chain in the order of making, and per item the
   recipe, its options, the app and the start URL, the role it signs in as, every `qa-setup` name
-  its steps type, and the flows that start from it. Say that the arrange drives create items only,
+  its steps type, and the flows that start from it.
+- **the steps of each new recipe**: for each recipe, option or recipe learned again in this run,
+  under its item in the items to make, the draft whole — its `Made in`, `Seen in`, `Role`, `Needs`
+  and `Returns` lines, its shared steps and the learned option's steps — with the source of each
+  step, `code`, `screen` or `developer`, a step only a spec or a sibling recipe supports marked so,
+  and a `Made in` or `Seen in` that rests on a link leaving the app marked as a hint. Say that the
+  recipe is saved to the QA folder only after its drive made the item, and that an option no drive
+  proves is not saved;
+- **the *Sibling apps* entries** this run recorded, and each listed app whose folder is not beside
+  this repo, so its code was not read; Say that the arrange drives create items only,
   change or remove nothing this run did not create, enter no payment details, and remove nothing
   afterwards;
 - the made-items rows the checks marked `gone`;
@@ -926,13 +1153,23 @@ start from: shelf — with a waitlist — as owner
   item: make — recipe shelf, option with a waitlist (needs: team, made first)
 attribution: #228
   3.1  <action> → <observable result>
+
+Item to make — shelf, option with a waitlist — learned in this run, saved after its drive
+  Made in: admin · Shelves, New shelf · starts at <start URL>        (code, screen, developer)
+  Seen in: this app · the shelf's link                               (sibling recipe)
+  Role: owner · Needs: team · Returns: a link to the shelf
+  1. On "Shelves", choose "New shelf"                                (code, screen)
+  2. Type the name "qa-setup shelf" in "Name", then "Save"           (code)
+  option with a waitlist: 3. Turn on "Waitlist", then "Save"         (code, likely)
 ```
 
 The developer may edit — drop or add a flow, change a sub-step, settle an ambiguous criterion,
 remove an item, give a link, answer an open question — or say go. A link is recorded and checked
 before "go" (`### A link from the developer`); an answer is written through `### Write-backs`.
-Removing an item to use again resolves its flows from the next source; an item to make makes its flows Unable to verify, with the reason
-`the developer removed "<item>" at the gate`. An edit is applied, a new flow's item is resolved by
+Removing an item to use again resolves its flows from the next source; removing an item to make
+makes its flows Unable to verify, with the reason `the developer removed "<item>" at the gate`, and
+saves no draft of it. A change to a learned recipe's step edits its draft, and the drive proves the
+edited step. An edit is applied, a new flow's item is resolved by
 `## Arranging`, the items, the coverage map and the Unable-to-verify list are recomputed, and the
 changed list is shown again. **No driver that writes starts without go, and nothing is written to
 staging before it.**
@@ -985,18 +1222,20 @@ Every run gets a new folder inside the excluded scenario directory, created unde
   under `.qa-scenarios/`, `git status --short` shows nothing but this run's write-backs
   (`### Write-backs`); confirm it after creating the folder, and stop if it shows anything else.
 
-**The checks and the arrange drives get a folder of their own**, beside the run folder and never
-inside it, so the grader, which reads the run folder, never sees how the data was made:
+**The checks, the screen reads and the arrange drives get a folder of their own**, beside the run
+folder and never inside it, so the grader, which reads the run folder, never sees how the data was
+made:
 
 ```
 .qa-scenarios/runs/<short SHA tested>-<UTC timestamp>-arrange/
   run.md
-  flow-<n>/        one per check and per arrange drive, numbered in dispatch order
+  recipes/<item>.md   the draft of each recipe learned in this run (## Learning a recipe)
+  flow-<n>/           one per check, per screen read and per arrange drive, numbered in dispatch order
 ```
 
 Both folders carry the same timestamp, taken when the first of them is created. The arrange
-folder's `run.md` carries the target, the staging URLs, and per check or drive its item, its
-recipe and options, its role and the ids it starts from, with no credential and no session
+folder's `run.md` carries the target, the staging URLs, and per check, screen read or drive its
+item, its recipe or draft and options, its role and the ids it starts from, with no credential and no session
 contents. Its `flow-<n>/` folders have the run folder's shape.
 
 ### Playwright MCP readiness
@@ -1052,6 +1291,19 @@ recorded, or its failure reported.
 (*Recording made items*), set the `Last proved` cell of each option the drive made to today's date
 in the recipe file, and dispatch the next drive.
 
+**A drive of a draft saves it** into the QA folder, as soon as the drive made the item, before the
+next drive. Exclude the folder first (`### The QA folder`).
+
+- **A new recipe** is written as `<item>.md`, with the `## Options` rows of the options this drive
+  made, each with today's date under `Last proved`. An option no drive made is left out.
+- **A learned option** gains its row in the existing recipe file, with today's date, and nothing
+  else in the file changes.
+- **A recipe learned again** replaces its file: the header lines with no `Failed` line, the shared
+  steps, and the options this drive made with today's date. An old option row stays only when the
+  shared steps are unchanged.
+
+A drive of a draft that fails saves nothing (*A recipe that fails*).
+
 ### A recipe that fails
 
 A drive fails at its **failing step**: the first sub-step the driver reports `not performed`, or the
@@ -1069,6 +1321,10 @@ driver that reports `session not accepted` or `preview auth not accepted` fails 
   item the drive created before it, by its `qa-setup` name and id, from the driver's `created:`
   list. These go to `## Receipt`. A failed drive writes no `made-items.md` row and no `Last proved`
   date.
+- **Mark the recipe for the next run.** A drive of a recipe file that fails writes, or replaces, the
+  file's `Failed` line with today's date and the failing step, so the next run learns the recipe
+  again (`## Learning a recipe`); it changes nothing else in the file. A drive of a draft that fails
+  saves no draft and writes no `Failed` line, because the QA folder holds no file for it.
 
 ### Recording made items
 
@@ -1220,9 +1476,11 @@ First, the head:
 - **completed** or **stopped early**, as `## End of pass` defines them, and for a stopped-early
   pass, where it stopped;
 - **the items the run made**: every `made-items.md` row this run wrote, with its item, options,
-  link or ids and `qa-setup` name; every row it marked `used` or `gone`; and every recipe that
-  failed, with its failing step, what the screen showed, and each item the drive created before
-  it, by its `qa-setup` name and id. `none` when the run made nothing.
+  link or ids and `qa-setup` name; every row it marked `used` or `gone`; every recipe and option
+  this run learned and saved; every *Sibling apps* entry or role it recorded; and every recipe that
+  failed, with its failing step, what the screen showed, each item the drive created before it, by
+  its `qa-setup` name and id, and whether its `Failed` line was written. `none` when the run made
+  nothing.
 
 Then four sections, **in this order**, each present and reading `none` when empty:
 

@@ -274,12 +274,12 @@ cross-boundary root cause gets filed locally and flagged as unmodelled.
 ## `qa`
 
 The automated QA pass and the files it starts from. `build-knowledge` derives a page's
-`KNOWLEDGE.md` from its code, and on demand searches this app's and its sibling apps' code for how a
-state is made; `prove-branch` resolves the run from the checked-out branch, composes flows from the
-diff, the ticket's acceptance criteria and the touched pages' knowledge files, resolves the data
-each flow starts from to an item an earlier run made or one a recipe in the project's QA folder
-makes, and, when the project permits writes to staging, makes those items there after its approval
-gate under write rules; it then drives the flows in a real browser against the pull request's
+`KNOWLEDGE.md` from its code; `prove-branch` resolves the run from the checked-out branch, composes
+flows from the diff, the ticket's acceptance criteria and the touched pages' knowledge files,
+resolves the data each flow starts from to an item an earlier run made or one a recipe in the
+project's QA folder makes, and, when the project permits writes to staging, learns a missing recipe
+from the code, the screens and the developer, and makes those items there after its approval gate
+under write rules; it then drives the flows in a real browser against the pull request's
 preview deployment, and posts one receipt to the ticket that lists every item it made.
 
 - **Status:** ready
@@ -293,7 +293,7 @@ Which skill drives which section:
 | `## Repo` | `prove-branch` — the `Tracker:` line, which decides where the run's ticket and pull request are read from and where the receipt is posted, plus that tracker's sub-section for the repo and default branch |
 | `## Commands` | `prove-branch` — the commands that build and boot what a flow exercises, when a flow needs more than the preview deployment; `build-knowledge` — where the end-to-end suite lives and how its data-creation tasks are registered |
 | `## Verify ladder` | `prove-branch` — the **L5** rung, which says what exercising this app means and so what a flow's steps are written against |
-| `## QA` | `prove-branch`, and `build-knowledge` in its chain mode only — the optional *Sibling apps* row, the other front-end apps of the product by label, repo folder name and staging URL, which the chain mode reads and **writes** when a developer confirms an app during a search, which `prove-branch` reads to sign in to an app a recipe is made in and adds a role to, and which the interview therefore never asks and never treats as a gap; the session method and the credential variable **names** per role, which `prove-branch` signs in with; the *Staging URL* row, the app's staging base URL, which `setup` asks, `doctor` checks is an `http(s)` URL, and `prove-branch` makes items on; the *QA folder* row, the folder that holds the project's recipes and made-items file, which defaults to `.claude/project/qa/`, which `setup` asks and writes no file into, and which `prove-branch` reads and writes; the browser automation consent, which `prove-branch` reads; the *Staging writes* row, `yes` or `no`, which `setup` asks once and `prove-branch` reads to decide whether it makes the items its flows start from; the preview URL pattern and the feature-flag override, which `prove-branch` reads; and the optional *Preview basic auth* row, the two variable **names** for HTTP Basic Auth in front of the preview, which `prove-branch` reads. Every value is non-secret: the interview never asks for a credential value or a state, and never writes a credential |
+| `## QA` | `prove-branch` — the optional *Sibling apps* row, the other front-end apps of the product by label, repo folder name and staging URL, which `prove-branch`'s recipe learner reads and **writes** when a recipe first needs an app and the developer confirms it, which `prove-branch` reads to sign in to an app a recipe is made in and adds a role to, and which the interview therefore never asks and never treats as a gap; the session method and the credential variable **names** per role, which `prove-branch` signs in with; the *Staging URL* row, the app's staging base URL, which `setup` asks, `doctor` checks is an `http(s)` URL, and `prove-branch` makes items on; the *QA folder* row, the folder that holds the project's recipes and made-items file, which defaults to `.claude/project/qa/`, which `setup` asks and writes no file into, and which `prove-branch` reads and writes; the browser automation consent, which `prove-branch` reads; the *Staging writes* row, `yes` or `no`, which `setup` asks once and `prove-branch` reads to decide whether it makes the items its flows start from; the preview URL pattern and the feature-flag override, which `prove-branch` reads; and the optional *Preview basic auth* row, the two variable **names** for HTTP Basic Auth in front of the preview, which `prove-branch` reads. Every value is non-secret: the interview never asks for a credential value or a state, and never writes a credential |
 | `## Sources of truth` | `prove-branch` and `build-knowledge` — the project explorer agent, for reading the code behind a flow it composes from the diff, or a component a page imports from far away |
 
 **Pairs with either loop, and with `prd-qa` or `ado-qa` for `triage`.** `prove-branch` runs
