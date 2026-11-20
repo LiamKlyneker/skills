@@ -1,6 +1,6 @@
 ---
 name: prove-branch
-description: Run the automated QA pass on the checked-out branch of a web project — resolve the ticket, the pull request and the preview deployment from the branch alone, read the acceptance criteria from the highest product source the branch reaches and the touched pages' KNOWLEDGE.md, stopping with `/qa:build-knowledge` where a touched page has none; resolve the data each flow starts from, in user words, to an item an earlier run made or one a recipe in the project's QA folder makes now, and after one approval gate make those items on staging through one arrange driver at a time, in `Needs` order, under five write rules and with no cleanup; drive and grade flows against the preview, record every item made in the QA folder's made-items file, and post one receipt that lists them to the ticket, or to the pull request when the branch names no ticket; it stops with a question wherever the branch is ambiguous, and on a failure asks fix now or file. Runs on user invocation only; neither loop ever invokes it. Invoke /qa:prove-branch with no argument, in a fresh session on the implemented branch.
+description: Run the automated QA pass on the checked-out branch of a web project — resolve the ticket, the pull request and the preview deployment from the branch alone, read the acceptance criteria from the highest product source the branch reaches and the touched pages' KNOWLEDGE.md, stopping with `/qa:build-knowledge` where a touched page has none; resolve the data each flow starts from, in user words, to an item an earlier run made or one a recipe in the project's QA folder makes now, and after one approval gate, which also asks for a link to any item no recipe makes and lists the open backend-rule questions that block a flow, make those items on staging through one arrange driver at a time, in `Needs` order, under five write rules and with no cleanup; drive and grade flows against the preview, record every item made in the QA folder's made-items file, and post one receipt that lists them to the ticket, or to the pull request when the branch names no ticket; it stops with a question wherever the branch is ambiguous, and on a failure asks fix now or file. Runs on user invocation only; neither loop ever invokes it. Invoke /qa:prove-branch with no argument, in a fresh session on the implemented branch.
 disable-model-invocation: true
 ---
 
@@ -21,7 +21,8 @@ developer asks for after grading, which a worker makes (`## On a Fail`).
 **It makes the data a flow starts from, and only after the gate.** It reads what the project
 already knows — each touched page's `KNOWLEDGE.md`, and the recipes and the made-items file in the
 project's QA folder — and starts every flow from an item an earlier run made, or from one a recipe
-makes now on staging (`## Arranging`). An arrange driver makes each item under the write rules of
+makes now on staging (`## Arranging`) — or, where the project forbids staging writes or no recipe
+makes the item, from a link the developer gives at the gate. An arrange driver makes each item under the write rules of
 `## Driving` → *The write rules*, and the receipt lists every item the run made. Its only writes to a
 knowledge file are a developer's own answers, written back (`### Write-backs`), so no run asks the
 same thing twice.
@@ -55,7 +56,7 @@ From `## QA`, by row name:
 | *Credential environment variables* | per role, the **names** of the variables holding its username and password. Read them from the backticked tokens: roles are unquoted labels separated by ` · `, each followed by `→` and two backticked variable names, and everything after the em dash is guidance. The skill reads only names here and **never reads a credential value from the adapter** |
 | *Staging URL* | the base URL of this app's staging environment, where an arrange driver makes an item of this app (`## Arranging`) |
 | *QA folder* | the folder that holds the project's recipes and its made-items file; `.claude/project/qa/`, beside the adapter, when the row is absent (`### The QA folder`) |
-| *Staging writes* | optional: `yes` or `no`; absent or any other value reads as `no`. Only `yes` lets a run make an item on staging (`### Resolve each flow's data`) |
+| *Staging writes* | optional: `yes` or `no`; absent or any other value reads as `no`. Only `yes` lets a run make an item on staging; on `no` the run arranges nothing and asks the developer for links (`### Resolve each flow's data`) |
 | *Sibling apps* | optional: the other apps of the product, each with its staging URL and the roles that belong to it (`### Which role and which app`) |
 | *Preview URL pattern* | how the pull request's preview deployment URL is formed, or `pr-comment` — read in `## The target` |
 | *Preview basic auth* | optional: the **names** of the two variables holding the HTTP Basic Auth in front of the preview — read as [`browser-readiness.md`](../references/browser-readiness.md) → *Preview Basic Auth* says |
@@ -437,8 +438,8 @@ Never add the line to `.gitignore` instead. Then create the folder when it is mi
 `git check-ignore -q <qa-folder>/made-items.md` succeeds. If it fails, say so and stop before any
 arrange driver starts. The skill writes the exclude line without asking, and says that it did.
 
-The run writes into the folder only these: a made-items row for each item it makes, the `used` or
-`gone` status of a row, and the `Last proved` cell of a recipe option that a drive made. It deletes
+The run writes into the folder only these: a made-items row for each item it makes or each link a
+developer gives, the `used` or `gone` status of a row, and the `Last proved` cell of a recipe option that a drive made. It deletes
 no row and writes no other recipe cell.
 
 ## Composing the flows
@@ -570,7 +571,8 @@ run's order is:
    would use again still exists (`### Checking a made item`). **Nothing is written to staging before
    "go".**
 2. **The gate** lists the items the run will use again and the items it will make, each with its
-   whole `Needs` chain (`## The approval gate`).
+   whole `Needs` chain, the items it asks the developer to link, and the open questions that block a
+   flow (`## The approval gate`).
 3. **After "go"**, arrange drivers make the items, one at a time, in `Needs` order (`## Driving` →
    *Arrange drivers*). The flow drivers start after the last of them returns.
 
@@ -597,16 +599,21 @@ For each flow's item and options, take **the first source that answers**, in thi
 
 | Source | The flow |
 |---|---|
-| a row of `made-items.md` whose `Item` is the item, whose `Options` hold every option the flow names, whose `Status` is `fresh`, and whose item still exists (`### Checking a made item`) | **uses the item again**. When several rows fit, take the most recent `Made` and say which |
+| a row of `made-items.md` whose `Item` is the item, whose `Options` hold every option the flow names, whose `Status` is `fresh`, and whose item still exists (`### Checking a made item`) — a `developer` row as much as a `run` row. When several rows fit, take the most recent `Made` and say which | **uses the item again** |
 | a recipe file named for the item, whose `## Options` table has a row for every option the flow names, when the adapter's *Staging writes* row reads `yes` | **makes the item** after the gate, by that recipe and its `Needs` chain (`### The Needs chain`) |
-| neither | is **Unable to verify** |
+| a link the developer gives at the gate (`### A link from the developer`) | **uses the link**, recorded as a row with origin `developer` |
+| none of these | is **Unable to verify** |
+
+**A target that forbids staging writes arranges nothing.** When the *Staging writes* row is `no` or
+absent, no recipe makes an item: the second source never answers, no arrange driver is dispatched
+and no `Needs` chain is resolved. A flow that no `fresh` row fits is resolved by the third source.
 
 An Unable-to-verify flow carries one of these reasons, with its remedy:
 
 | Found | Reason | Remedy |
 |---|---|---|
-| no fitting `fresh` row, and no recipe for the item or the option | `no made item "<item>" <with options> and no recipe in the QA folder makes it` | a recipe for the item with that option in the QA folder, in the format of [`recipe-file.md`](../references/recipe-file.md) |
-| no fitting `fresh` row, and a recipe, while the *Staging writes* row is not `yes` | `the adapter's Staging writes row is not yes, so the run makes no item` | the row set to `yes`, which `/qa:setup` asks |
+| no fitting `fresh` row, no recipe for the item or the option, and no link given at the gate | `no made item "<item>" <with options>, no recipe in the QA folder makes it, and the developer gave no link` | a link to the item at the gate, or a recipe for the item with that option in the QA folder, in the format of [`recipe-file.md`](../references/recipe-file.md) |
+| no fitting `fresh` row, and no link given at the gate, while the *Staging writes* row is not `yes` | `the adapter's Staging writes row is not yes, so the run makes no item, and the developer gave no link for "<item>" <with options>` | a link to the item at the gate, or the row set to `yes`, which `/qa:setup` asks |
 | a recipe whose chain cannot be made | the reason `### The Needs chain` or `### Which role and which app` gives | the recipe named in the reason, fixed |
 
 The made item's steps are its recipe's shared steps, then the steps of each option the flow names,
@@ -617,6 +624,30 @@ flow takes its own row, or its own drive, so that a flow that changes its item c
 start of another flow driven beside it.
 
 A flow that starts from an Unable-to-verify flow is Unable to verify too, naming that flow.
+
+### A link from the developer
+
+An item no recipe can make, or any item on a project that forbids staging writes, is a **link the
+developer gives at the gate**, never one the skill goes looking for.
+
+- **The gate asks once per item.** It lists each item the run needs that no `fresh` row fits — and
+  that no recipe makes, when the *Staging writes* row is `yes` — with the options each flow names,
+  the flows that start from it and the role they sign in as, and asks for a link to each. An item the
+  developer answers with no link is Unable to verify, with the reason of the table above. Showing the
+  gate again after an edit never asks for that item again.
+- **A link becomes a row** of `made-items.md` when it is given: `Item` and `Options` as the flow
+  names them, `Link or ids` the link as given, `Role` the role of the flow that starts from the
+  item, `Made` today's date, `Origin` `developer`, `Status` `fresh`. A developer's link has no
+  `qa-setup` name, and the row records none.
+- **The row is checked like any other** (`### Checking a made item`), before "go": the link must
+  open on the item's app and show an item. A link that shows no such item takes `gone <today's date>`,
+  the flow is Unable to verify with the reason `the link for "<item>" shows no such item`, and the
+  developer is not asked again.
+- **The run trusts what the developer says the item holds.** It does not check that the item has
+  the options the flow names. A flow that fails for that reason fails as any flow does, and the
+  receipt's items section names the link.
+- **A developer row follows the rules of every row.** A later run uses it only while it is `fresh`
+  and the item still exists, and `### Marking used items` marks it `used` when a flow changed it.
 
 ### The `Needs` chain
 
@@ -675,6 +706,22 @@ The check runs after `## Scenarios` has settled the row's role's session for the
   other origin makes the recipe's flows Unable to verify, with the reason `recipe "<name>" starts
   outside staging`.
 
+### Open questions
+
+Each touched page's `KNOWLEDGE.md` lists its open questions. A question is **open** while its
+`Answer` cell reads `—`. An open question **blocks a flow** when its `Blocks` cell names a state the
+flow starts from or a state whose rows a sub-step's result rests on, or when a cell the flow rests on
+cites it in brackets. A question that blocks no flow of this run is not raised.
+
+A flow with an open question that blocks it and no answer by "go" is **Unable to verify**, with the
+reason `open question <Qn> of <page folder>: "<the question>"`, and the remedy `answer it at the
+gate, or run /qa:build-knowledge <page folder> --fact "<Qn>: <answer>"`. The developer may answer
+it at the gate (`## The approval gate`) or accept Unable to verify.
+
+An answer is written by `### Write-backs`. The answer then changes what the page does, so the flows
+and sub-steps it touches are read again from the updated file and recomputed before the gate is shown
+again.
+
 ### Write-backs
 
 A developer's answer during a run is written to the file it belongs to, so no later run asks again.
@@ -692,9 +739,10 @@ write-back is never committed.
 
 ### Handed over
 
-- To `## The approval gate`: every flow with its resolved item — used again, with its row, or made,
-  with its recipe and its whole `Needs` chain — and the Unable-to-verify flows with their reasons
-  and remedies.
+- To `## The approval gate`: every flow with its resolved item — used again, with its row, made,
+  with its recipe and its whole `Needs` chain, or linked by the developer — the items to ask a link
+  for, the open questions that block a flow, and the Unable-to-verify flows with their reasons and
+  remedies.
 - To `## Driving`: the items to make, in `Needs` order, each with its recipe, its options, its app,
   its role and its start URL; and the flows that are ready, each with the link or ids of its item,
   or the item it waits for.
@@ -862,6 +910,13 @@ Show the composed pass **once**, whole:
   change or remove nothing this run did not create, enter no payment details, and remove nothing
   afterwards;
 - the made-items rows the checks marked `gone`;
+- **the links to ask for**: each item the run needs that no `fresh` row fits and no recipe makes
+  now, with its options, its flows and its role, and one request for a link to each
+  (`### A link from the developer`). On a project that forbids staging writes this is every such
+  item, and the gate says that the run arranges nothing;
+- **the open questions that block a flow**: each question of a touched page's `KNOWLEDGE.md` with
+  its id, its page folder, the flows it blocks and the readings of its `Question` cell, and for each
+  an invitation to answer it or to accept Unable to verify for those flows (`### Open questions`);
 - the coverage map, with uncovered and ambiguous criteria called out;
 - the Unable-to-verify flows, each with its reason and remedy.
 
@@ -874,8 +929,9 @@ attribution: #228
 ```
 
 The developer may edit — drop or add a flow, change a sub-step, settle an ambiguous criterion,
-remove an item — or say go. Removing an item to use again resolves its flows from the next source;
-removing an item to make makes its flows Unable to verify, with the reason
+remove an item, give a link, answer an open question — or say go. A link is recorded and checked
+before "go" (`### A link from the developer`); an answer is written through `### Write-backs`.
+Removing an item to use again resolves its flows from the next source; an item to make makes its flows Unable to verify, with the reason
 `the developer removed "<item>" at the gate`. An edit is applied, a new flow's item is resolved by
 `## Arranging`, the items, the coverage map and the Unable-to-verify list are recomputed, and the
 changed list is shown again. **No driver that writes starts without go, and nothing is written to

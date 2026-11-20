@@ -29,7 +29,7 @@ One row per item.
 |---|---|
 | `Item` | the recipe name of the item, as the recipe file is named: `shelf` |
 | `Options` | the options of the recipe the item was made with, or `none` |
-| `Link or ids` | the link to the item, or the ids that find it, each named in user words. The item's `qa-setup` name is recorded with it |
+| `Link or ids` | the link to the item, or the ids that find it, each named in user words. The item's `qa-setup` name is recorded with it; a row with origin `developer` has none |
 | `Role` | the role that sees the item, by the label the adapter's credential row uses |
 | `Made` | the date the row was written, `YYYY-MM-DD` |
 | `Origin` | where the item came from, from the vocabulary below |
