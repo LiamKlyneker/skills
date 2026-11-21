@@ -57,6 +57,20 @@ fact into a utility class, never name a DS component the ledger did not name, ne
 never add a layout fact that neither a ledger row nor a grill decision holds, and never take a
 layout fact from repo recon.
 
+## Pending mode
+
+The adapter is in Pending mode when at least one of its sections has, as its whole body, the line
+`Pending: this repo has no code yet. Run /<plugin>:setup again after the first code lands.`. When it is, print this line before step 1:
+
+> Pending mode: this repo has no code yet, so the adapter's command and verify sections wait for the first code. This is expected and does not block this step.
+
+and this line after the final print's last line:
+
+> Next: after the first code lands, run /prd-workflow:setup again to leave Pending mode.
+
+Nothing else changes: the PRD is written the same way, and a repo with no adapter at all takes the
+path it always took. A filled adapter prints neither line.
+
 ## Process
 
 1. Explore the repo to understand the current state of the codebase, if you haven't already. Use the project's domain glossary vocabulary throughout the PRD, and respect any ADRs in the area you're touching.

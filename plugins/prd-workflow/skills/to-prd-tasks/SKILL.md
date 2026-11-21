@@ -14,6 +14,19 @@ never translate a ledger fact into a utility class, never name a DS component th
 name, never rename an icon, never add a layout fact that neither a ledger row nor a grill decision
 holds, and never take a layout fact from repo recon.
 
+## Pending mode
+
+The adapter is in Pending mode when at least one of its sections has, as its whole body, the line
+`Pending: this repo has no code yet. Run /<plugin>:setup again after the first code lands.`. When it is, print this line before step 1:
+
+> Pending mode: this repo has no code yet, so the adapter's command and verify sections wait for the first code. This is expected and does not block this step.
+
+and this line after the final print's last line:
+
+> Next: after the first code lands, run /prd-workflow:setup again to leave Pending mode.
+
+Step 3 and step 4 change as stated there. A filled adapter prints neither line and slices as usual.
+
 ## Titles
 
 Every child issue is titled `[TASK] <the title>`.
@@ -81,6 +94,12 @@ Read the PRD's `## Readiness` section if present. Route each item to the place t
 
 Do not paste the section into any child.
 
+**In Pending mode** the adapter's `## Verify ladder` has no L2 command to copy, so the slices split
+around the slice that creates one:
+
+- The **scaffold slice** is the slice that creates the stack. It comes first, and its `## Worker context` → **Verify** line names the L2 command that slice itself creates.
+- Every other slice is `Blocked by` the scaffold slice. Its **Verify** line says verify is the adapter's `## Verify ladder` L2 at run time, and carries no copied command.
+
 While drafting each slice, also gather its `## Worker context` and `## QA notes` (see `../references/task-body.md`): explore the codebase for the real file paths, scoped `CONTEXT.md`s, and prior-art examples the slice needs; take verify commands from the **project adapter** at `<repo-root>/.claude/project/adapter.md` (never hardcode them) — a gate row's own trigger text, as the adapter's *Commands* table states it, decides which slice carries that row, and the slicer copies the row into a slice only when the trigger matches that slice; mark **User-visible: y/n** (y = app boot + screenshot verification applies). These two sections are what let an isolated orchestrated worker (`/work-on-prd`) implement the slice without plan mode — vague pointers here mean a blind worker there.
 
 ### 4. Quiz the user
@@ -92,12 +111,14 @@ Present the proposed breakdown as a numbered list. For each slice, show:
 - **Blocked by**: which other slices (if any) must complete first
 - **User stories covered**: which user stories this addresses (if the source material has them)
 - **Bundled bullets**: when a slice bundles multiple tracer bullets, list them so the user can sanity-check the grouping
+- **Verify** *(Pending mode only)*: the scaffold slice's own L2 command, or "adapter L2 at run time" for every other slice
 
 Ask the user:
 
 - Does the granularity feel right? (too coarse / too fine)
 - Are the dependency relationships correct?
 - Should any slices be merged or split further?
+- *(Pending mode)* Is the scaffold slice first, does it name the right L2 command, and is every other slice blocked by it?
 - Are the bundles grouped sensibly, and any expand/contract splits aligned with the PRD's `## Migration risk` section?
 
 Iterate until the user approves the breakdown.

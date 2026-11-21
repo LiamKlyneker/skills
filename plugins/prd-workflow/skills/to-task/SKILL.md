@@ -42,6 +42,21 @@ them by shape: an argument that names an existing file is the brief; anything el
 key. Two arguments that both name files, or a brief path that does not exist, is a stop — say which
 and do not guess.
 
+## Pending mode
+
+The adapter is in Pending mode when at least one of its sections has, as its whole body, the line
+`Pending: this repo has no code yet. Run /<plugin>:setup again after the first code lands.`. When it is, print this line before the preflight:
+
+> Pending mode: this repo has no code yet, so the adapter's command and verify sections wait for the first code. This is expected and does not block this step.
+
+and this line after the final print's last line:
+
+> Next: after the first code lands, run /prd-workflow:setup again to leave Pending mode.
+
+In Pending mode the `## Verify ladder` has no L2 command to read. The task's own L2 command goes
+in the body's **Verify** line instead, per `../references/task-body.md`. A filled adapter prints
+neither line and writes the body as usual.
+
 ## Preflight
 
 Before writing a single line of the body:
@@ -155,7 +170,7 @@ issue body written: <path>
 /prd-workflow:work-on-task <path>
 ```
 
-Those two lines close the print, bare — nothing after them. Above them, one line per **deviation** — in ledger mode, a ledger row left out of scope
+Those two lines close the print, bare — nothing after them but the Pending mode end line, when it applies. Above them, one line per **deviation** — in ledger mode, a ledger row left out of scope
 because the grill never settled it, a scorecard element whose pass condition had no matching ledger
 row, a screenshot whose fetch line could not be resolved at the SHA. In ledger mode, when no fixed
 scorecard file carries a polish checklist for this ticket, print "no polish checklist for this

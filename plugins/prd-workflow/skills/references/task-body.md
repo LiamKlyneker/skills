@@ -137,7 +137,7 @@ Everything a cold, isolated worker session needs to implement this slice without
 
 - **Files**: real paths the slice touches (create/edit), plus the scoped `CONTEXT.md`(s) to read first.
 - **Prior art**: concrete in-repo examples to copy the pattern from (path + one line on what to imitate). Prior art is an **engineering** source only; never a layout-fact source (`../_shared/fidelity-ledger.md` §2 rule 9).
-- **Verify**: exact commands, taken from the project adapter at `<repo-root>/.claude/project/adapter.md` (L2 test command; L3 app/boot command if applicable).
+- **Verify**: exact commands, taken from the project adapter at `<repo-root>/.claude/project/adapter.md` (L2 test command; L3 app/boot command if applicable). When the adapter's `## Verify ladder` holds the `Pending:` literal there is nothing to copy: a task that creates the stack names the L2 command it creates, and any other task says verify is the adapter's `## Verify ladder` L2 at run time, with no command.
 - **User-visible**: y/n — y means the verify ladder's L3 (app boot + screenshot) applies.
 
 ## QA notes
