@@ -9,7 +9,7 @@
     {
       "name": "prd-workflow",
       "description": "PRD-to-merge workflow for Claude Code: turn context into a PRD, slice it into tracer-bullet issues and run the whole thing end-to-end with a per-issue worker subagent, or file and implement one self-contained task, and triage the QA findings that come back into cold-runnable issues. Start with /prd-workflow:setup, which writes the project adapter every skill here reads",
-      "version": "2.5.2",
+      "version": "2.6.0",
       "keywords": [
         "prd",
         "github-issues",
@@ -25,7 +25,7 @@
     {
       "name": "figma-tools",
       "description": "Design-to-brief tools for Claude Code, from two design sources: Figma nodes and a designer-authored code prototype. Turns either into a per-ticket design brief whose fidelity ledger the grill resolves, against a per-project design-system catalog its ds-catalog skill generates and annotates, or in a library repo against the library's own source. In a library repo it also turns a design brief into a proposed component the user steers in a UI component lab, which its create-ui-component-lab skill installs",
-      "version": "6.0.4",
+      "version": "6.1.0",
       "keywords": [
         "figma",
         "design-to-code",
@@ -40,7 +40,7 @@
     {
       "name": "ado-workflow",
       "description": "The PRD-to-merge workflow brought to Azure DevOps for Claude Code: publish a spec, slice it into tasks, pick the next one, and run the whole thing end-to-end with a per-task worker subagent. Start with /ado-workflow:setup, which writes the project adapter every skill here reads",
-      "version": "1.12.8",
+      "version": "1.13.0",
       "keywords": [
         "azure-devops",
         "ado",
@@ -55,7 +55,7 @@
     {
       "name": "lk",
       "description": "Liam Klyneker's personal Claude Code skills: the grills that interview a plan until every branch is resolved, plus pinpoint, scoped-context, his writing voice, report, which files a session's conclusion about a skill as a sanitized issue on the skills repo, and human-review, which walks a reviewer through one pull request and posts the one review they approve, and proposal-review, which reviews a proposal or standards PR by its effect on the projects it governs, and pr-feedback, which triages the review feedback on the author's own PR, and setup-repo, which turns a brainstorm session into a GitHub repo with a README of its decisions and a first issue of its open questions",
-      "version": "1.32.0",
+      "version": "1.33.0",
       "keywords": [
         "personal",
         "writing-voice",
@@ -68,7 +68,7 @@
     {
       "name": "qa",
       "description": "The automated QA pass for Claude Code, in three commands: setup writes the project adapter once, setup-env signs in to staging once and proves the first recipe, and prove-branch proves each implemented branch. prove-branch resolves the run from the checked-out branch, composes flows from the diff and the acceptance criteria, makes the data each flow starts from on staging from the recipes in the project's QA folder under write rules, drives the flows in a real browser against the pull request's preview deployment, grades the evidence in a cold-context session, and posts one receipt that lists every item it made. build-knowledge derives a page's KNOWLEDGE.md from its code, and prove-branch applies it on demand",
-      "version": "0.7.0",
+      "version": "0.8.0",
       "keywords": [
         "qa",
         "browser",

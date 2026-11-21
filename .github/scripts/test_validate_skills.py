@@ -137,6 +137,61 @@ class SkillVersionGuard(unittest.TestCase):
         self.assertEqual(validate.errors, [])
 
 
+class PendingLiteralGuard(unittest.TestCase):
+    """Every copy of the Pending literal must match it, with `<plugin>` optionally filled in."""
+
+    LITERAL = "Pending: this repo has no code yet. Run /<plugin>:setup again after the first code lands."
+
+    def setUp(self) -> None:
+        validate.errors.clear()
+
+    def run_guard(self, files: dict[str, str]) -> list[str]:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp).resolve()
+            for name, body in files.items():
+                path = root / name
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text(body, encoding="utf-8")
+            validate.check_pending_literal(root)
+        return list(validate.errors)
+
+    def test_exact_literal_passes(self) -> None:
+        self.assertEqual(self.run_guard({"install/setup.md": f"```\n{self.LITERAL}\n```\n"}), [])
+
+    def test_plugin_substituted_literal_passes(self) -> None:
+        body = self.LITERAL.replace("<plugin>", "prd-workflow")
+        self.assertEqual(self.run_guard({"plugins/lk/skills/a/SKILL.md": body + "\n"}), [])
+
+    def test_unknown_plugin_name_fails(self) -> None:
+        body = self.LITERAL.replace("<plugin>", "nope")
+        self.assertEqual(len(self.run_guard({"install/setup.md": body + "\n"})), 1)
+
+    def test_changed_word_fails_and_names_the_file(self) -> None:
+        errors = self.run_guard({
+            "install/good.md": self.LITERAL + "\n",
+            "install/bad.md": self.LITERAL.replace("no code", "no source") + "\n",
+        })
+        self.assertEqual(len(errors), 1, errors)
+        self.assertIn("install/bad.md", errors[0])
+        self.assertNotIn("good.md", errors[0])
+
+    def test_changed_punctuation_fails(self) -> None:
+        errors = self.run_guard({"install/x.md": self.LITERAL.rstrip(".") + "\n"})
+        self.assertEqual(len(errors), 1, errors)
+
+    def test_drifted_inline_quote_fails(self) -> None:
+        body = "Write `Pending: this repo has no code. Run /lk:setup again after the first code lands.`\n"
+        self.assertEqual(len(self.run_guard({"install/x.md": body})), 1)
+
+    def test_printed_pending_mode_line_is_not_a_quote(self) -> None:
+        body = "Pending mode: this repo has no code yet, so the adapter waits.\n"
+        self.assertEqual(self.run_guard({"plugins/lk/skills/a/SKILL.md": body}), [])
+
+    def test_the_real_repo_passes(self) -> None:
+        validate.check_pending_literal()
+        self.assertEqual(validate.errors, [])
+
+
 class MetadataParsing(unittest.TestCase):
     """`read_metadata` reads the nested block without disturbing `read_frontmatter`."""
 

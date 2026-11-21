@@ -33,6 +33,15 @@ NESTED_KEY = re.compile(r"^\s+([A-Za-z0-9_-]+):[ \t]*(.*)$")
 SEMVER = re.compile(r"^(\d+)\.(\d+)\.(\d+)$")
 SHARED_REF = re.compile(r"_shared/([A-Za-z0-9._-]+\.md)")
 POSITIONAL_PLACEHOLDER = re.compile(r"\$\d")
+PENDING_PLUGINS = ("prd-workflow", "ado-workflow", "figma-tools", "lk", "qa")
+# The whole body of a Pending section. `<plugin>` may be written literally or replaced by a
+# real plugin name; every other byte must match.
+PENDING_LITERAL = re.compile(
+    r"Pending: this repo has no code yet\. Run /(?:<plugin>|"
+    + "|".join(re.escape(n) for n in PENDING_PLUGINS)
+    + r"):setup again after the first code lands\."
+)
+PENDING_START = "Pending: this repo"
 BLOCK_SCALARS = {">", "|", ">-", "|-", ">+", "|+"}
 # `../_shared/x.md` is this repo's shorthand for "some shared doc" (see CLAUDE.md),
 # not a real filename. Prose uses it; don't try to resolve it.
@@ -385,6 +394,45 @@ def check_positional_placeholders() -> None:
                      "it with a skill argument; rewrite the snippet without it")
 
 
+def pending_literal_files(root: Path) -> list[Path]:
+    """Markdown files under `install/` and `plugins/*/skills/`, never through symlinks."""
+    starts = [root / "install", *sorted((root / "plugins").glob("*/skills"))]
+    found = []
+    for start in starts:
+        for dirpath, dirnames, filenames in os.walk(start, followlinks=False):
+            dirnames[:] = [d for d in dirnames if d != ".git"]
+            found += [Path(dirpath) / f for f in filenames if f.endswith(".md")]
+    return sorted(found)
+
+
+def check_pending_literal(root: Path = ROOT) -> None:
+    """Every quote of the Pending literal must be the literal, byte for byte.
+
+    A copy that drifted stops matching the section `setup` wrote, and `doctor` then stops
+    reporting it. Two things count as a quote: a line starting `Pending:`, which must be
+    the whole literal, and any `Pending: this repo` fragment, which must begin it. A line
+    starting `Pending mode` is prose, not a quote, and is never checked.
+    """
+    for path in pending_literal_files(root):
+        text = path.read_text(encoding="utf-8")
+        bad = []
+        for number, line in enumerate(text.splitlines(), 1):
+            stripped = line.strip()
+            whole = stripped.startswith("Pending:") and not PENDING_LITERAL.fullmatch(stripped)
+            partial = any(
+                not PENDING_LITERAL.match(line, m.start())
+                for m in re.finditer(re.escape(PENDING_START), line)
+            )
+            if whole or partial:
+                bad.append(number)
+        if bad:
+            where = ", ".join(f"line {n}" for n in bad)
+            fail(path if path.is_relative_to(ROOT) else str(path),
+                 f"quotes the Pending literal differently ({where}) — it must read "
+                 "exactly 'Pending: this repo has no code yet. Run /<plugin>:setup again "
+                 "after the first code lands.' (a real plugin name may replace <plugin>)")
+
+
 def plugin_pathspecs(directory: Path) -> list[str]:
     """Every path whose contents land inside this plugin's *installed* copy.
 
@@ -510,6 +558,7 @@ def main(argv: list[str]) -> int:
     check_symlinks()
     check_shared_references()
     check_positional_placeholders()
+    check_pending_literal()
     check_version_bumps(plugin_dirs, args.base)
 
     if errors:
@@ -517,8 +566,8 @@ def main(argv: list[str]) -> int:
         for error in errors:
             print(f"  {error}", file=sys.stderr)
         return 1
-    print("✓ catalog, plugins, skills, skill versions, agents, symlinks, _shared refs "
-          "and positional placeholders all valid")
+    print("✓ catalog, plugins, skills, skill versions, agents, symlinks, _shared refs, "
+          "positional placeholders and the Pending literal all valid")
     return 0
 
 

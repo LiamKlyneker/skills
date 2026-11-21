@@ -85,3 +85,4 @@ or the adapter, and stops there.
 | [0027](0027-eval-cases-are-earned-by-a-failure.md) | Eval cases are earned by a failure | Accepted |
 | [0028](0028-setup-states-may-create-data-under-write-rules.md) | `setup-states` may create data, under write rules | Accepted, amended by ADR 0029 |
 | [0029](0029-test-data-is-made-on-demand-from-recipes.md) | Test data is made on demand, from recipes | Accepted |
+| [0030](0030-an-adapter-section-may-be-pending-until-code-exists.md) | An adapter section may be Pending until code exists | Accepted |

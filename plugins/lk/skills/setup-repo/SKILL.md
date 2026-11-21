@@ -173,12 +173,8 @@ Created <repo-url>, issue #1: <issue-url>
 
 Next steps:
 1. Start a new Claude Code session in <local-path>.
-2. Run /lk:setup for the `grill` bundle, then /prd-workflow:setup for the `prd-workflow` bundle.
+2. Run /lk:setup for the `grill` bundle and /prd-workflow:setup for the `prd-workflow` bundle, both now. The code sections of the adapter stay Pending until the first code lands.
 3. Run /lk:grill on issue #1.
-
-Risk on step 2: the repo has no code yet, so setup can ask for facts that do not exist, such as
-the verify commands. If it does, run /lk:setup now and run /prd-workflow:setup after the grill.
-See https://github.com/LiamKlyneker/skills/issues/342.
 ```
 
 Nothing is created or edited after this print.

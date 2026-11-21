@@ -39,6 +39,32 @@ load-bearing may exist only in mid-session narration.
 | The brief     | fidelity mode only — the path the issue names. Source of the **full** `## Fidelity ledger`. |
 | Project facts | `<repo-root>/.claude/project/adapter.md` — tracker, title prefixes, branch pattern, verify ladder, project gates, repo discipline. Never hardcode these. |
 
+## Pending mode
+
+The adapter is in Pending mode when at least one of its sections has, as its whole body, the line
+`Pending: this repo has no code yet. Run /<plugin>:setup again after the first code lands.`. Then
+the task decides the run, once Preflight step 1 has fetched it:
+
+- **The scaffold task** — its `## Worker context` → **Verify** line names an L2 command of its own,
+  the one this task creates (`../references/task-body.md`). Print this line before the readiness
+  gate:
+
+  > Pending mode: this repo has no code yet, so the adapter's command and verify sections wait for the first code. This is expected and does not block this step.
+
+  The run proceeds as usual, except that the verify gate's L2 is the command the body names. After
+  the commit, this is the final print's last line:
+
+  > Code now exists. Run /prd-workflow:setup again to leave Pending mode.
+
+- **Any other task**, when `## Commands` or `## Verify ladder` holds the literal — the verify gate
+  needs a command that does not exist yet. The readiness gate stops it: change no file, print this
+  line, and stop:
+
+  > Pending mode: this step needs the adapter's verify commands, and they do not exist until the first code lands. Run /prd-workflow:setup again, then run this step again.
+
+This skill never writes the adapter; `setup` fills it from the code the scaffold task created. A
+filled adapter prints none of these lines and runs as usual.
+
 ## Preflight
 
 1. **Resolve and fetch the issue.**
@@ -70,6 +96,8 @@ load-bearing may exist only in mid-session narration.
      "done" looks like.
    - **An open question** — the body raises a decision the task, the codebase and the adapter
      cannot answer.
+   - **Pending, and not the scaffold task** — per `## Pending mode`, which gives this stop its own
+     line in place of the print below.
 
    `## Blocked by` and `## External steps` are optional, and their absence is not a blocker. So is
    a missing title prefix: `[PRD]` is the only prefix that refuses.
@@ -158,7 +186,8 @@ the ledger (§5, for a ticket with no fixed scorecard) is ticked exactly like a 
 
 ## Verify gate
 
-1. **L2 — floor, non-negotiable.** Run the adapter's `## Verify ladder` L2 command verbatim.
+1. **L2 — floor, non-negotiable.** Run the adapter's `## Verify ladder` L2 command verbatim — or,
+   for the scaffold task in Pending mode, the L2 command its body names.
 2. **Further gates.** Run any further gate the verify ladder or the adapter's `## Project gates`
    registry names for the files this task changed.
 3. **L3** — per the verify ladder: run it where the ladder says it applies to a User-visible task,

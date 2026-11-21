@@ -61,6 +61,20 @@ thing separating one kind of child from another, since all four are the same wor
 under the same parent — so a filter that reads the wrong prefix returns an empty set, not an
 error.
 
+## Pending mode
+
+The adapter is in Pending mode when at least one of its sections has, as its whole body, the line
+`Pending: this repo has no code yet. Run /<plugin>:setup again after the first code lands.`. When it is, print this line before step 1:
+
+> Pending mode: this repo has no code yet, so the adapter's command and verify sections wait for the first code. This is expected and does not block this step.
+
+and this line after the final print's last line:
+
+> Next: after the first code lands, run /ado-workflow:setup again to leave Pending mode.
+
+Step 4 and the template's **Verify** line change as stated there. A filled adapter prints neither
+line and slices as usual.
+
 ## Readiness: the ADO MCP server
 
 Requires the Azure DevOps MCP server (`mcp__ado__*` tools), except with a `<spec-file>` and
@@ -160,6 +174,12 @@ That document decides *where*, not *whether*. Resolve it to a concrete slice lis
   This is a normal, common outcome — not a fallback and not a failure. There is no verdict to
   print, nothing to plan-mode into, and no path through this skill that creates zero `[TASK]`s.
 
+**In Pending mode** the adapter's `## Commands` and `## Verify ladder` have no L2 command to copy,
+so the slices split around the slice that creates one:
+
+- The **scaffold `[TASK]`** is the slice that creates the stack. It comes first, and its `## Worker context` → **Verify** line names the L2 command that slice itself creates. It is a `[TASK]` like any other, because the prefix is what makes it pickable.
+- Every other `[TASK]` is `Blocked by` the scaffold `[TASK]`. Its **Verify** line says verify is the adapter's `## Verify ladder` L2 at run time, and carries no copied command.
+
 ### 5. Present the slice list
 
 Print:
@@ -170,6 +190,7 @@ Proposed [TASK]s:
    Scope: <2–3 lines>
    Blocked by: <#id from this list, or "None">
    Covers AC: <numbers from the SPEC>
+   Verify: <Pending mode only: the scaffold's own L2 command, or "adapter L2 at run time">
 2. ...
 
 Approve? (approve / edit / abort)
@@ -278,7 +299,9 @@ Omit the whole section for a slice with no ledger rows.
 Deliberately slim, and **slice-local only** — facts that belong to this slice and cannot drift:
 
 - **Verify**: the exact commands, taken from the adapter's `## Commands` table (L2 test command;
-  L3 boot/screenshot command when user-visible).
+  L3 boot/screenshot command when user-visible). When the adapter holds the `Pending:` literal
+  there is nothing to copy: the scaffold `[TASK]` names the L2 command it creates, and any other
+  `[TASK]` says verify is the adapter's `## Verify ladder` L2 at run time, with no command.
 - **User-visible**: y/n — y means the verify ladder's L3 applies.
 
 Whatever prior art the `[SPEC]` points this slice at is an **engineering** source only; never a
@@ -342,6 +365,8 @@ Filter: `../_shared/final-prints.md`. §5 showed the slice list and the human ap
 Done — <k> tickets created.
 /ado-workflow:work-on-spec <spec-id>
 ```
+
+In Pending mode the Pending mode end line follows the last line of the print.
 
 With `--out`, the print is one line, and no `work-on-spec` line follows it — no ids exist to run
 against:

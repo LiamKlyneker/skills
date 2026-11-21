@@ -77,6 +77,14 @@ On `azure-devops` the work-item and pull-request reads go through the Azure DevO
 missing, discover the equivalent from the running server and announce the substitution. A read that
 cannot be performed at all is a stop, never a silent omission.
 
+## Pending mode
+
+When at least one adapter section has, as its whole body, the line
+`Pending: this repo has no code yet. Run /<plugin>:setup again after the first code lands.`, this step cannot run: it needs
+the adapter's verify commands. Change nothing, print this line, and stop. There is no scaffold exception.
+
+> Pending mode: this step needs the adapter's verify commands, and they do not exist until the first code lands. Run /qa:setup again, then run this step again.
+
 ## Resolving the run
 
 The run is two things: the **ticket** the run is anchored to — the item the receipt, the findings

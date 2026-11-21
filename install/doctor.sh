@@ -62,6 +62,8 @@ bundles="$canonical/install/bundles.md"
 
 err()  { printf '%-9s %s\n' "$1" "$2"; errors=$((errors + 1)); }
 warn() { printf '%-9s %s\n' "WARN" "$1"; warnings=$((warnings + 1)); }
+# A warning that carries its own label, for a state that is expected rather than wrong.
+warn_as() { printf '%-9s %s\n' "$1" "$2"; warnings=$((warnings + 1)); }
 info() { [ "$quiet" -eq 1 ] || printf '%-9s %s\n' "INFO" "$1"; }
 ok()   { [ "$quiet" -eq 1 ] || printf '%-9s %s\n' "OK" "$1"; }
 
@@ -382,6 +384,19 @@ elif [ -f "$adapter" ]; then
     [ -f "$target" ] ||
       err "POINTER" "$(rel "$adapter") points its PR template at \`$value\`, which is not a file in this repo"
   done < <(printf '%s\n' "$repo_section" | grep -E '^[[:space:]]*[-*][[:space:]]+(\*\*)?PR template')
+
+  # 7f. Pending mode. `setup` writes the `Pending:` literal as the whole body of a
+  # code section while the repo has no code; that is a starting state, so it is a
+  # warning and never UNFILLED. Only these three sections may carry the marker.
+  for sec in '## Commands' '## App facts' '## Verify ladder'; do
+    pending_line="$(awk -v s="$sec" '
+      index($0, s) == 1 { inb = 1; next }
+      /^## / { inb = 0 }
+      inb && /^Pending:/ { print; exit }' "$adapter")"
+    [ -n "$pending_line" ] || continue
+    setup_cmd="$(printf '%s\n' "$pending_line" | grep -oE '/[A-Za-z0-9_-]+:setup' | head -1)"
+    warn_as "PENDING" "$(rel "$adapter") \`$sec\` is in Pending mode — this repo has no code yet; after the first code lands, run ${setup_cmd:-setup} again to fill it"
+  done
 
   ok "$(rel "$adapter") present"
 fi

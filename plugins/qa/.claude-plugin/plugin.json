@@ -1,7 +1,7 @@
 {
   "name": "qa",
   "description": "The automated QA pass for Claude Code, in three commands: setup writes the project adapter once, setup-env signs in to staging once and proves the first recipe, and prove-branch proves each implemented branch. prove-branch resolves the run from the checked-out branch, composes flows from the diff and the acceptance criteria, makes the data each flow starts from on staging from the recipes in the project's QA folder under write rules, drives the flows in a real browser against the pull request's preview deployment, grades the evidence in a cold-context session, and posts one receipt that lists every item it made. build-knowledge derives a page's KNOWLEDGE.md from its code, and prove-branch applies it on demand",
-  "version": "0.7.0",
+  "version": "0.8.0",
   "author": {
     "name": "Liam Klyneker",
     "url": "https://github.com/LiamKlyneker"
