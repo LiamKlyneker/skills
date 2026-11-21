@@ -55,6 +55,19 @@ Requires the Azure DevOps MCP server (`mcp__ado__*` tools).
      likelier one is a server running correctly under the wrong key, which this probe cannot
      distinguish from no server at all.
 
+## Pending mode
+
+The adapter is in Pending mode when at least one of its sections has, as its whole body, the line
+`Pending: this repo has no code yet. Run /<plugin>:setup again after the first code lands.`. When it is, print this line before step 1:
+
+> Pending mode: this repo has no code yet, so the adapter's command and verify sections wait for the first code. This is expected and does not block this step.
+
+and this line after the final print's last line:
+
+> Next: after the first code lands, run /ado-workflow:setup again to leave Pending mode.
+
+Nothing else changes: the `[SPEC]` is written the same way. A filled adapter prints neither line.
+
 ## Modes
 
 - **CREATE** (default) — no `[SPEC]` exists under the lead work item → author a new one.

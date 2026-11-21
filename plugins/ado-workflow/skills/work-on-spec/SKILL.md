@@ -33,7 +33,8 @@ route provides.
   - `end` — pause only at QA (loop end).
   - Graduation path: task → events → end.
 - **Regardless of gate**: a `[TASK]` with unmet `## External steps` always pauses and asks the
-  human — except under `--unattended`, where it is skipped (Loop step 2).
+  human — except under `--unattended`, where it is skipped (Loop step 2). So does the Pending pause
+  (`## Pending mode`), which `--unattended` turns into a Stop.
 - `--unattended` (off by default) — no human is available, so nothing may wait for one. See
   `### Unattended` below. Without the flag, everything in this skill behaves exactly as written
   and none of the unattended clauses applies.
@@ -47,7 +48,7 @@ resolves one of three ways**, and the list below is exhaustive:
 |---|---|---|
 | **Continue** | a failed `[TASK]` (Loop step 9) · a deviation or an ambiguity the gate would pause on (Loop step 7) · a destructive or irreversible action (Loop step 7) | the `[TASK]` takes the **continue path** below, and the loop picks the next `[TASK]` |
 | **Skip** | a `[TASK]` with an unmet `## External steps` item (Loop step 2) | the `[TASK]` is not claimed and gets one `Skipped` line in the final print; the loop picks the next `[TASK]` |
-| **Stop** | no argument · the ADO MCP server cannot be reached or set up (*Readiness*) · a tool step the running server cannot perform (*Tool names come from the running server*) · zero `[TASK]`s · a cycle in `Blocked by` (Setup step 1) · a blocker outside this spec (Loop step 1) · the second consecutive failure (Loop step 9) | print exactly what that stop prints today, then the **unattended exit** below |
+| **Stop** | no argument · the ADO MCP server cannot be reached or set up (*Readiness*) · a tool step the running server cannot perform (*Tool names come from the running server*) · zero `[TASK]`s · a cycle in `Blocked by` (Setup step 1) · a blocker outside this spec (Loop step 1) · the second consecutive failure (Loop step 9) · the Pending pause (`## Pending mode`) | print exactly what that stop prints today, then the **unattended exit** below |
 
 **The continue path**, for one `[TASK]`, in this order:
 
@@ -152,6 +153,43 @@ Requires the Azure DevOps MCP server (`mcp__ado__*` tools).
      before concluding the server is missing** — a probe failure has two causes, and the likelier
      one is a server running correctly under the wrong key, which this probe cannot distinguish
      from no server at all.
+
+## Pending mode
+
+The adapter is in Pending mode when at least one of its sections has, as its whole body, the line
+`Pending: this repo has no code yet. Run /<plugin>:setup again after the first code lands.`. When it is, print this line before Setup:
+
+> Pending mode: this repo has no code yet, so the adapter's command and verify sections wait for the first code. This is expected and does not block this step.
+
+Only the **scaffold `[TASK]`** runs: the `[TASK]` whose `## Worker context` → **Verify** line names
+an L2 command of its own, the one it creates (`to-spec-tasks`, *The `[TASK]` body template*). Its
+worker runs that command as its L2. Every other `[TASK]` needs the adapter's L2, which does not
+exist until `setup` reads it from the scaffold's code. So the loop takes the **Pending pause**,
+whatever the gate:
+
+- right after the scaffold `[TASK]`'s success path (Loop step 8), and
+- on any pick that is not the scaffold `[TASK]` while the adapter is still Pending (Loop step 1).
+
+A `[TASK]` that is not the scaffold and has a Pending section it needs stops with this line:
+
+> Pending mode: this step needs the adapter's verify commands, and they do not exist until the first code lands. Run /ado-workflow:setup again, then run this step again.
+
+The pause prints this and waits for the human:
+
+```
+Paused — the adapter is in Pending mode, and the next [TASK] needs its verify commands.
+Run /ado-workflow:setup on the branch <branch>, and commit the adapter on that branch so it lands in this pull request.
+Then resume with: /ado-workflow:work-on-spec <spec-id>
+```
+
+The resume is the ordinary re-entrant run. Setup step 4 finds the scaffold `[TASK]` done by its
+commit, the adapter is filled, so this section no longer applies and the loop picks the next
+`[TASK]` as usual. Neither the loop nor its worker ever writes the adapter.
+
+**Under `--unattended` the pause is an escalation, not a wait.** When the scaffold `[TASK]` landed
+in this run, it takes the continue path (`### Unattended`) with the pause's three lines as the
+reason. Then the run takes the unattended Stop: every `[TASK]` left needs the L2 that the human's
+`setup` run creates.
 
 ## Non-negotiables (circuit breakers)
 
@@ -367,7 +405,8 @@ transition anything.
    grep in Setup step 4, not by reading `System.State`. Tasks close on PR completion rather than
    on commit, so without this every `Blocked by` chain would deadlock the loop. None eligible but
    open blocked `[TASK]`s exist → report the blocking chain; if the blockers are outside this
-   spec, pause for the human (under `--unattended`, a Stop). None open at all → go to **Loop end**.
+   spec, pause for the human (under `--unattended`, a Stop). None open at all → go to **Loop end**. On a Pending adapter, a pick that is not the scaffold
+   `[TASK]` takes the Pending pause instead (`## Pending mode`).
 2. **External steps**: any unmet `- [ ]` under `## External steps` → pause, list them, wait for
    the human. Always, regardless of gate. **Under `--unattended`, skip instead**: do not claim
    the `[TASK]`, record one `Skipped` line naming its first unmet step for the final print, and
@@ -440,7 +479,8 @@ transition anything.
    done and takes step 9.
 8. **Success path**: push the branch → move the `[TASK]` to the adapter's
    **committed-awaiting-merge** state → attach its id to the pull request (see *Pull-request
-   wiring*) → tick its checkbox in the PR body. The PR stays a draft.
+   wiring*) → tick its checkbox in the PR body. The PR stays a draft. On a Pending adapter, the scaffold
+   `[TASK]`'s success path ends in the Pending pause (`## Pending mode`).
 9. **Failure path** (worker exhausted its 2 attempts, or report judged unacceptable): discard
    uncommitted work (reset/clean, spec branch only) → move the `[TASK]` back to the **pickable**
    state (failure is a backward transition, not a new state) → post an **escalation comment** on

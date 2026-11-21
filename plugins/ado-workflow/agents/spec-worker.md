@@ -54,7 +54,11 @@ never guess, and never try to read it from the tracker.
    adapter's to define, and it is the only definition — run the commands in its **Commands**
    table as written. On a project with no GUI, "boot the app" and "screenshot" are whatever
    that table says they are, up to and including `None`; a row reading `None` is a real answer,
-   never a licence to skip the rung. Terminal output pasted verbatim is evidence.
+   never a licence to skip the rung. Terminal output pasted verbatim is evidence. When `## Commands` or
+   `## Verify ladder` has the line `Pending: this repo has no code yet. Run /<plugin>:setup again after the first code lands.`
+   as its whole body, your L2 is the command the `[TASK]`'s `## Worker context` → **Verify** names,
+   the one this `[TASK]` creates; a `[TASK]` that names none cannot verify, so report that and stop.
+   Never edit `.claude/project/adapter.md`: `setup` fills it after your commit.
 5. **Commit only after verify passes.** Never commit on a failing verify.
 6. **The work-item reference goes in the commit *body*, as a trailer** — never in the subject.
 
