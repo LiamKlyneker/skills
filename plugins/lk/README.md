@@ -34,6 +34,7 @@ plugins/lk/
     report/                            # a session's conclusion, filed upstream
     readiness/                         # what a cold worker would lack, before filing
     sprint-plan/                       # sprint groups, the plan file, the night script
+    setup-repo/                        # a brainstorm session, made into a new repo
 ```
 
 Nothing sits at the plugin root, and there are no agents. A directory holding
