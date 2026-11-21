@@ -59,6 +59,14 @@ row**, written out for readability. If that row names different prefixes, they w
 the prefix is load-bearing rather than decorative — all four kinds are the same work-item type under
 one parent — so a filter reading the wrong prefix returns an empty set, not an error.
 
+## Pending mode
+
+When at least one adapter section has, as its whole body, the line
+`Pending: this repo has no code yet. Run /<plugin>:setup again after the first code lands.`, this step cannot run: it needs
+the adapter's verify commands. Change nothing, print this line, and stop. There is no scaffold exception.
+
+> Pending mode: this step needs the adapter's verify commands, and they do not exist until the first code lands. Run /ado-workflow:setup again, then run this step again.
+
 ## Readiness: the ADO MCP server
 
 Requires the Azure DevOps MCP server (`mcp__ado__*` tools).

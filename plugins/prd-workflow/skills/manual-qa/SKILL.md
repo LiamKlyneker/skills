@@ -25,6 +25,14 @@ Every project-specific value comes from the **project adapter** at `<repo-root>/
 | `## Verify ladder` | **L5**, which defines what a sub-step must name to be executable at all, and **L2/L3**, which define what the driver can verify without the human |
 | `## Sources of truth` | the **project explorer agent** for on-demand elaboration — `Explore` where it says None |
 
+## Pending mode
+
+When at least one adapter section has, as its whole body, the line
+`Pending: this repo has no code yet. Run /<plugin>:setup again after the first code lands.`, this step cannot run: it needs
+the adapter's verify commands. Change nothing, print this line, and stop. There is no scaffold exception.
+
+> Pending mode: this step needs the adapter's verify commands, and they do not exist until the first code lands. Run /prd-workflow:setup again, then run this step again.
+
 ## Three non-negotiables
 
 1. **Capture, don't solve.** `<the-line>` says exactly where investigation stops. It has not moved: composing the pass added authorship, not licence to debug.
