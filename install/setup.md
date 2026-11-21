@@ -155,6 +155,24 @@ ADO-only repo that keeps the `### GitHub` sub-section keeps its `<owner>/<repo>`
 placeholder forever, and `doctor` reports it `UNFILLED` on every run from then on. A check
 that is always noisy is a check nobody reads.
 
+**The second exception: a Pending section is a gap.** A section `setup` wrote in Pending mode
+(step 4) holds a marker, not an answer, and a later run replaces it with real content once the
+code exists. All three conditions must hold or you replace nothing:
+
+- the section is `## Commands`, `## App facts` or `## Verify ladder`;
+- its whole body, blank lines aside, is exactly the `Pending:` literal and nothing else;
+- the repo now has what the inference table reads for that section, or the human has
+  answered its questions.
+
+Then gap-fill that section as if it were missing, and touch nothing else. **Any other content
+in a section that carries the literal makes it the project's own work**: a line added under the
+marker, an edited marker, a marker beside real rows. `setup` stops, shows the section, and asks
+the human what to do with it. It never merges into it and never overwrites it.
+
+This exception earns its place for the same reason as the first: nobody filled the marker in.
+`setup` wrote it as a placeholder that a human can read, so replacing it destroys no one's work,
+and keeping it would leave `doctor` warning `PENDING` on every run after the code exists.
+
 ### 4. Interview — infer first, ask for the rest
 
 Read `interview.md`. The rule: anything a file already states, read; only
@@ -163,6 +181,39 @@ in `package.json` is how an install earns a reputation for being tedious.
 
 Fill only the sections the bundle requires. That list is what keeps the interview finite
 and bundle-specific rather than asking every question every time.
+
+**Pending mode: a code section may wait for the code.** When the *Read this* column of the
+inference table in `interview.md` finds nothing for `## Commands`, `## App facts` **and**
+`## Verify ladder` — no manifest, no scripts, no tests — ask one confirmation for the whole set,
+not one per section:
+
+> No manifest, scripts or tests yet — is the stack still undecided?
+
+- **Yes** → write this literal, byte for byte, as the **whole body** of each of those three
+  sections the bundle requires, with `<plugin>` replaced by the plugin whose `setup` is running
+  (`prd-workflow`, `ado-workflow`, …):
+
+  ```
+  Pending: this repo has no code yet. Run /<plugin>:setup again after the first code lands.
+  ```
+
+  Delete the template's rows and comments in those sections; the literal is all they hold.
+  The adapter is then in **Pending mode**, and `doctor` reports each such section `PENDING`.
+- **No** → run the normal questions for those sections. A prose-only repo with no manifest
+  still has a real answer, and it gets one.
+
+The literal is a parse contract shared by the installer and every skill that reads the adapter.
+It is hardcoded, never registered in the adapter, and never paraphrased. There is no repo-level
+"no code" mode: the question is about these three sections and nothing else.
+
+**Only those three sections may carry the marker.** Every other section takes a real answer
+now, and on a repo with no code one exists: `## Project gates` defaults to None, and "nothing
+yet" is a true answer for `## Repo discipline`. The *no test suite* rule for `## Verify ladder`
+in `interview.md` is a different case and stays as it is: it records a permanent fact, and
+Pending records a temporary one.
+
+**A later run leaves Pending mode** by the second never-delete exception in step 3: a section
+whose whole body is the literal is a gap, and gap-fill replaces it from the files that now exist.
 
 **Ask one tracker's questions, never both.** The tracker settled in 3a decides which
 branch of `## Repo` and `## One-time repo preconditions` the interview covers — GitHub's
@@ -277,9 +328,11 @@ its checks by hand or "spot-check" a subset.
 | `QA-BASIC-AUTH` | the adapter's `## QA` has a *Preview basic auth* row that does not name exactly two variables, names one that is not a valid variable name, or names one that is not set in the shell doctor runs in |
 | `QA-STAGING-WRITES` | the adapter's `## QA` has a *Staging writes* row whose value is not `yes` or `no`; an absent row is not reported, since `qa:prove-branch` reads it as `no` |
 | `QA-STAGING-URL` | the adapter's `## QA` has no *Staging URL* row, or one whose filled value is not an `http(s)` URL |
+| `PENDING` | **a warning, not a problem**: `## Commands`, `## App facts` or `## Verify ladder` holds the `Pending:` literal, so the adapter is in Pending mode until the first code lands and `setup` runs again. Never reported as `UNFILLED` |
 
 `WARN` lines (a loose file in the skills directory, a manifest doctor could not read, a PR
-template recorded as a content snapshot rather than a path) count as warnings, not problems. `OK` and `INFO` are neither, and `--quiet` hides them.
+template recorded as a content snapshot rather than a path) and `PENDING` lines count as
+warnings, not problems. `OK` and `INFO` are neither, and `--quiet` hides them.
 
 Exit 0 clean · 1 problems · 2 usage error.
 
