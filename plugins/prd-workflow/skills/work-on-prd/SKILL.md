@@ -28,7 +28,7 @@ whichever form your route provides.
   - `events` — run free; pause only on: verify failure after retries · deviation from spec · destructive/irreversible action · ambiguity.
   - `end` — pause only at QA (loop end).
   - Graduation path: issue → events → end.
-- **Regardless of gate**: an issue with unmet `## External steps` always pauses and asks the human — except under `--unattended`, where it is skipped (Loop step 2).
+- **Regardless of gate**: an issue with unmet `## External steps` always pauses and asks the human — except under `--unattended`, where it is skipped (Loop step 2). So does the Pending pause (`## Pending mode`), which `--unattended` turns into a Stop.
 - `--unattended` (off by default) — no human is available, so nothing may wait for one. See `### Unattended` below. Without the flag, everything in this skill behaves exactly as written and none of the unattended clauses applies.
 
 ### Unattended
@@ -39,7 +39,7 @@ Under `--unattended` the loop never pauses. **Every place this skill would pause
 |---|---|---|
 | **Continue** | a failed child (Loop step 9) · a deviation or an ambiguity the gate would pause on (Loop step 7) · a destructive or irreversible action (Loop step 7) | the child takes the **continue path** below, and the loop picks the next child |
 | **Skip** | a child with an unmet `## External steps` item (Loop step 2) | the child is not claimed and gets one `Skipped` line in the final print; the loop picks the next child |
-| **Stop** | zero children · a cycle in `Blocked by` (Setup step 1) · two open PRs claiming this PRD (Setup step 1) · a branch-name collision (Setup step 2) · a blocker outside this PRD (Loop step 1) · the second consecutive failure (Loop step 9) | print exactly what that stop prints today, then the **unattended exit** below |
+| **Stop** | zero children · a cycle in `Blocked by` (Setup step 1) · two open PRs claiming this PRD (Setup step 1) · a branch-name collision (Setup step 2) · a blocker outside this PRD (Loop step 1) · the second consecutive failure (Loop step 9) · the Pending pause (`## Pending mode`) | print exactly what that stop prints today, then the **unattended exit** below |
 
 **The continue path**, for one child, in this order:
 
@@ -61,6 +61,38 @@ kill -TERM "$PPID"
 ```
 
 `$PPID` of the Bash tool's shell is the Claude Code process itself, so this is the session ending with a non-zero status. Under a headless `--output-format json` run it leaves no result JSON; the stop's print stays in the session transcript, reachable by the session id the caller assigned. A caller that runs the loop under a deny-by-default permission mode must allow this command, or the stop exits 0.
+
+## Pending mode
+
+The adapter is in Pending mode when at least one of its sections has, as its whole body, the line
+`Pending: this repo has no code yet. Run /<plugin>:setup again after the first code lands.`. When it is, print this line before Setup:
+
+> Pending mode: this repo has no code yet, so the adapter's command and verify sections wait for the first code. This is expected and does not block this step.
+
+Only the **scaffold child** runs: the child whose `## Worker context` → **Verify** line names an L2
+command of its own, the one it creates (`../references/task-body.md`). Its worker runs that command
+as its L2. Every other child needs the adapter's L2, which does not exist until `setup` reads it from
+the scaffold's code. So the loop takes the **Pending pause**, whatever the gate:
+
+- right after the scaffold child's success path (Loop step 8), and
+- on any pick that is not the scaffold child while the adapter is still Pending (Loop step 1).
+
+The pause prints this and waits for the human:
+
+```
+Paused — the adapter is in Pending mode, and the next child needs its verify commands.
+Run /prd-workflow:setup on the branch <branch>, and commit the adapter on that branch so it lands in this PR.
+Then resume with: /prd-workflow:work-on-prd #<prd>
+```
+
+The resume is the ordinary re-entrant run. Setup step 4 finds the scaffold child done by its commit,
+the adapter is filled, so this section no longer applies and the loop picks the next child as usual.
+Neither the loop nor its worker ever writes the adapter.
+
+**Under `--unattended` the pause is an escalation, not a wait.** When the scaffold child landed in
+this run, it takes the continue path (`### Unattended`) with the pause's three lines as the reason.
+Then the run takes the unattended Stop: every child left needs the L2 that the human's `setup` run
+creates.
 
 ## Non-negotiables (circuit breakers)
 
@@ -294,7 +326,7 @@ Copy what is inside the fence, not the prose around it. The rules are deliberate
 
 ## Loop (per issue)
 
-1. **Pick** the next eligible child per `../_shared/prd-eligibility.md` (open ∧ blockers closed; picking order as specced) — with one orchestrated-mode relaxation: a blocker **inside this PRD** is also satisfied when its commit exists on the PRD branch (`state:done-on-branch`), since children only close on merge; without this, every `Blocked by` chain would deadlock the loop. None eligible but open blocked children exist → report the blocking chain; if the blockers are outside this PRD, pause for the human (under `--unattended`, a Stop). None open at all → go to **Loop end**.
+1. **Pick** the next eligible child per `../_shared/prd-eligibility.md` (open ∧ blockers closed; picking order as specced) — with one orchestrated-mode relaxation: a blocker **inside this PRD** is also satisfied when its commit exists on the PRD branch (`state:done-on-branch`), since children only close on merge; without this, every `Blocked by` chain would deadlock the loop. None eligible but open blocked children exist → report the blocking chain; if the blockers are outside this PRD, pause for the human (under `--unattended`, a Stop). None open at all → go to **Loop end**. On a Pending adapter, a pick that is not the scaffold child takes the Pending pause instead (`## Pending mode`).
 2. **External steps**: any unmet `- [ ]` under `## External steps` → pause, list them, wait for the human. Always, regardless of gate. **Under `--unattended`, skip instead**: do not claim the child, record one `Skipped` line naming its first unmet step for the final print, and go back to step 1. A skipped child is not re-picked in this run and is not a failure — the consecutive-failure counter does not move. A child whose blockers include a skipped child is therefore never eligible this run, and that is the blocking chain step 1 reports.
 3. **Claim**: remove `ready-to-start`, add `state:in-progress` (remove-old-before-add-new — always this order; one state per axis).
 4. **Route model**: apply `../_shared/model-effort-heuristics.md` **in orchestrated mode** — the default flips: workers start Sonnet-class and *upgrade* to Opus-class on the file's heavier/risk signals. Announce the routing call (tier + matched signals) before spawning.
@@ -313,7 +345,7 @@ Copy what is inside the fence, not the prose around it. The rules are deliberate
 
    **One more check when the child issue carries a `## Fidelity ledger (in scope)` table.** The report must contain the evidence line — "read ledger (N rows), N screenshots, N source slices" — and the per-ledger-row self-audit table, with no row marked deviated and left without a reason. A report missing either is judged **not done** and takes step 9's failure path, exactly like a failed L2.
 7. **Gate** per `--gate` mode (see Invocation). On pause: present the report + your judgement, wait for the human. **Under `--unattended` there is no pause**: a deviation or an ambiguity the gate would pause on, on a child whose commit landed, takes the continue path (`### Unattended`) after step 8 — the commit stands and the escalation asks a human to review it. A destructive or irreversible action is never taken unattended: the child is judged not done and takes step 9.
-8. **Success path**: push the branch → labels: remove `state:in-progress`, add `state:done-on-branch` → PR body: **edit the machine block, and nothing else**. Tick that child in the block's checklist, and append it to the block's `Closes` line with the **keyword repeated per issue** — `Closes #41, closes #42` (a bare `#42` after a comma does NOT close). The team's prose stays exactly as PR open left it until loop end: an in-progress placeholder that stays honest for nine issues and is filled once beats a running summary rewritten nine times and read by nobody.
+8. **Success path**: push the branch → labels: remove `state:in-progress`, add `state:done-on-branch` → PR body: **edit the machine block, and nothing else**. Tick that child in the block's checklist, and append it to the block's `Closes` line with the **keyword repeated per issue** — `Closes #41, closes #42` (a bare `#42` after a comma does NOT close). The team's prose stays exactly as PR open left it until loop end: an in-progress placeholder that stays honest for nine issues and is filled once beats a running summary rewritten nine times and read by nobody. On a Pending adapter, the scaffold child's success path ends in the Pending pause (`## Pending mode`).
 9. **Failure path** (worker exhausted its 2 attempts, or report judged unacceptable): discard uncommitted work (reset/clean, branch only) → backward label transition: remove `state:in-progress`, re-add `ready-to-start` (failure is a backward transition, not a new label) → post an **escalation comment** on the issue: what was tried, what failed, evidence → pause per gate (`issue`/`events` pause; `end` records and continues) → increment the consecutive-failure counter; at 2, full stop with summary. A success resets the counter. A failed issue is not re-picked in this run unless the human unblocks it.
 
    **Under `--unattended`**, the escalation comment is the continue path's first step: after the backward label transition, run the whole continue path (`### Unattended`) — comment, `needs-human`, the external-step line — whatever the gate. Then the counter: below 2, pick the next child; at 2, the full stop with summary is a Stop, and ends with the unattended exit.
