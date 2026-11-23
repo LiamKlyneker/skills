@@ -1,7 +1,7 @@
 {
   "name": "lk",
   "description": "Liam Klyneker's personal Claude Code skills: the grills that interview a plan until every branch is resolved, plus pinpoint, scoped-context, his writing voice, report, which files a session's conclusion about a skill as a sanitized issue on the skills repo, and human-review, which walks a reviewer through one pull request and posts the one review they approve, and proposal-review, which reviews a proposal or standards PR by its effect on the projects it governs, and pr-feedback, which triages the review feedback on the author's own PR, and setup-repo, which turns a brainstorm session into a GitHub repo with a README of its decisions and a first issue of its open questions",
-  "version": "1.33.0",
+  "version": "1.34.0",
   "author": {
     "name": "Liam Klyneker",
     "url": "https://github.com/LiamKlyneker"
