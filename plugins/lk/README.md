@@ -1,15 +1,17 @@
 # lk
 
-The eight skills that travel everywhere Liam does, packaged as a Claude Code
+The fourteen skills that travel everywhere Liam does, packaged as a Claude Code
 plugin: `grill` and `deep-grill` for interviewing a plan, `readiness` for
 what a cold worker would lack, `sprint-plan` for the day/night split,
-`pinpoint`, `scoped-context`, `scribe`, and `report`.
+`pinpoint`, `scoped-context`, `scribe`, `scribe-harvest` for collecting voice
+data for `scribe`, `report`, `human-review`, `proposal-review`, `pr-feedback`,
+`setup-repo`, and `setup`.
 
 None of them is bound to the **project's** tracker, which is exactly why they
 do not belong to a tracker-bound workflow plugin. Before this plugin they
 reached a machine only as hand-made symlinks, one per skill per config
 directory, recorded nowhere the repo could check. This plugin ended that:
-`/plugin install lk@liamklyneker` places all eight at once, at a version the
+`/plugin install lk@liamklyneker` places all of them at once, at a version the
 catalog pins.
 
 That criterion — never the project's tracker — is the whole membership rule.
@@ -19,6 +21,7 @@ repo's workflow plugin: the PRD QA loop writes to GitHub, so `triage` lives in
 rule from the other side. It files issues, but never on the project's tracker —
 its target is `LiamKlyneker/skills`, hardcoded, wherever it runs, and it reads
 nothing from the project's adapter and writes nothing to the project.
+`scribe-harvest` passes it the same way.
 
 ## Layout
 
@@ -30,11 +33,16 @@ plugins/lk/
     grill/  deep-grill/                # the interviews
     pinpoint/                          # throwaway-subagent search
     scoped-context/                    # the CONTEXT.md convention
+    references/                        # text two lk skills share
     scribe/                            # Liam's voice, with references/
+    scribe-harvest/                    # voice data from a session, filed upstream
     report/                            # a session's conclusion, filed upstream
+    human-review/  proposal-review/    # a review the reviewer approves, posted
+    pr-feedback/                       # the author's side of a review
     readiness/                         # what a cold worker would lack, before filing
     sprint-plan/                       # sprint groups, the plan file, the night script
     setup-repo/                        # a brainstorm session, made into a new repo
+    setup/                             # the installer's bundle table for lk
 ```
 
 Nothing sits at the plugin root, and there are no agents. A directory holding
