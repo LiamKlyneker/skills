@@ -3,7 +3,10 @@
 One bank for each slot of a message. A draft for a work surface (a PR comment, a review reply, a
 Slack or Teams message, an issue or ticket comment to a teammate) fills each slot from its bank. The
 banks hold only what Liam's writing attests: `../SKILL.md`, the three sample files in this directory,
-and `corrections.md`. An entry the attested text does not show is not added here.
+and `corrections.md`. `liam-session-messages.md` and the harvests admitted from it are a source too,
+but an entry that only session messages attest enters at `rare`. Its level rises only when a later
+harvest or one of the other sources shows it again. An entry the attested text does not show is not
+added here.
 
 **Levels.** Each entry has a level, `often`, `sometimes` or `rare`. A level says how often the entry
 fills its slot across many messages, not inside one message. Pick `often` entries most, `sometimes`
@@ -31,6 +34,7 @@ How the first words of the message start.
 - **`nitpick:`** — `sometimes` · PR comment only, a small point.
 - **`this is for later...`** — `rare` · PR comment only, a deferred point.
 - **`same here,`** — `rare` · PR comment only, the same point made again.
+- **`ok...`** — accepts the previous point and then moves on — `rare` · a reply only. *"ok... agree but a difference from the type those banks can be used randomized from its creation..."*
 - **`so` after a mention or at the start** — `sometimes` · not on a spec page (rule 18). *"@Drews, Franciele so this one is not the G..."*
 - **`Again,`** — `rare` · Slack only, when the point was made before.
 - **`I looked at this one...` / `I checked this with...`** — `rare` · a spec-page reply only (rule 18).
@@ -55,13 +59,17 @@ What softens a claim or turns it around.
 - **`tho`** — `often`. *"This PR tho, introduces..."*, *"we should confirm this with design tho..."*, *"one thing before merge tho"*, *"even tho"*.
 - **`I think`** — `often`. *"I think the name here is implying..."*, *"I think we need to refactor this..."*. On a spec page the next step is conditional instead (rule 18).
 - **`maybe`** — `often`. *"maybe we can update the name to..."*, *"maybe in the future we can consider..."*
-- **`I'd suggest` / `I'd say` / `I'd pass`** — `sometimes`. *"I'd suggest to create a utility function"*
+- **`I'd suggest` / `I'd say` / `I'd pass`** — `sometimes`. *"I'd suggest to create a utility function"*. `I'd say` also closes a clause: *"if it doesnt harm to add some kind of extra register then its ok id say..."*
 - **`if this is out of the scope of this PR...`** — `sometimes` · PR comment only.
 - **`idk`** — `sometimes`. *"idk how that works in azure tho"*, *"idk tbh"*
 - **`I mean`** — `sometimes` · Slack, Teams or casual. *"I mean lets reference it but we should move these files over there right?"*
+- **`basically`** — `sometimes`. *"you will analyse the session and basically gather what would be the best stuff"*
 - **`from what I can tell`** — `rare`.
+- **`I believe`** — `rare`. *"but i believe that a bank with options is what will make shine this skill"*
+- **`although`** — reopens a point just after agreeing to it — `rare`. *"agreed... although if we reach understanding i have one more question"*
 - **`in my opinion` / `from my point of view`** — `rare` · Slack only.
 - **`now that I think of it`** — a revision mid-comment — `rare`. *"...that also can be a very good option now that I think of it"*
+- **`you know what...`** — a change of mind in the middle of a message — `rare` · Slack or casual. *"you know what... lets remove the typos from this desing..."*
 - **`That being said...`** — `rare` · Slack only, a long post.
 - **`not gonna lie`** — `rare` · not in a PR comment.
 - **`tbh`** — `rare`.
@@ -76,6 +84,7 @@ The question that asks for the reader's side.
 - **`something that I'm not seeing?` / `or is there something I'm missing?`** — `sometimes`.
 - **`lmk` / `lmk if anything` / `lmk if there's a reason for it`** — `sometimes`.
 - **`does that make sense tho?`** — `rare`.
+- **`ykwim?` / `you know what I mean?`** — `rare` · casual only. *"like some times i just start directly liek "i was doing that"... ykwim?"*
 - **`what do you guys think on this one?`** — `rare` · Slack only.
 - **`Please share your thoughts about it`** — `rare` · Slack only, a long post.
 
@@ -99,6 +108,7 @@ A short word that reacts to what someone else said or did.
 - **nothing** — `often`.
 - **`nice!`** — `sometimes` · PR reply after a suggestion was applied.
 - **`yep,`** — `rare`. *"yep, rule of 3, we need to move this..."*
+- **`agreed` / `agreed on the rest`** — a reply to a list of points — `rare`. *"agreed on the rest"*
 - **a lone 😆** — `rare` · PR reply to a joke only (rule 7).
 - **`hahahahah`** — `rare` · casual only.
 - **`omg`** — `rare` · casual only.
