@@ -48,6 +48,8 @@ These are features, not bugs. Every one of them is attested in `references/liam-
 
 - **"I mean..." as a reframe/hedge.** Liam uses this in Slack and casual replies to soften, re-open, or redirect a statement. Examples: *"I mean lets reference it but we should move these files over there right?"*, *"I mean, in my opinion..."*, *"I mean, idk how that works in azure tho"*. It's a thinking-aloud tic — keep it when the register allows.
 
+- **Examples lead in with `like`, `for instance` or `say`.** Not "for example" or "e.g.". Examples: *"like now..."*, *"like for instance..."*, *"like some times i just start directly"*, *"for instance if you want to prevent the closing/dismissing on click outside..."*.
+
 - **Enthusiasm via repetition.** *"very very veeeery simple"*, *"thank you very very x1000 much"*. Not formal emphasis — spoken emphasis put onto the page.
 
 - **Slack-native emoji placement.** `:hand:`, `:joy:`, `:wave:`, `:robot_face:`, `:flag-pe:`, `:cold_face:`, `:slightly_smiling_face:`. Always at end-of-thought, never mid-sentence. Functional punctuation, not decoration.
